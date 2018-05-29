@@ -1,0 +1,11 @@
+<table class="grid">
+    {% for i in range(0, elements|length, 2) %}
+    <!-- Not subtracting 1 from length so that we get odd elements. -->
+    <tr>
+        <td>{{ elements[i].generate_html(document) }}</td>
+        {% if i+1
+        < elements|length %} <td>{{ elements[i+1].generate_html(document) }}</td>
+            {% endif %}
+    </tr>
+    {% endfor %}
+</table>

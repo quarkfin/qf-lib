@@ -1,0 +1,38 @@
+# NOTE: This style should be used in conjuction with 'seaborn-poster'.
+
+# Lines width
+lines.linewidth   : 3
+
+# Weight of text in chart
+#font.weight: bold
+#text.color: black
+
+# Legend box
+legend.fancybox      : true     # includes round box around legend
+legend.framealpha    : 0.7      # opacity of of legend frame (number from 0 to 1)
+
+# Title
+axes.titlesize: 22
+axes.titleweight: bold
+
+# Axes background
+axes.facecolor: white
+
+# Change thickness of axes and size of labels
+axes.linewidth: 3
+xtick.major.size: 5
+xtick.major.width: 4
+ytick.major.size: 5
+ytick.major.width: 4
+xtick.labelsize  : xx-large
+ytick.labelsize  : xx-large
+
+# Gridlines settings
+axes.grid: True
+
+grid.color: d5d5d5
+grid.linestyle: -    # solid line
+grid.alpha: 0.3
+
+#                                    blue     red      grey    black     green      yellow    dark green  pink    dark red
+axes.prop_cycle: cycler('color', ['0A3AA8', '940F00', '9d9d9d', '1c1d1e', '98B954', 'FBC15E', '01560f', 'FFB5B8', 'c10303'])

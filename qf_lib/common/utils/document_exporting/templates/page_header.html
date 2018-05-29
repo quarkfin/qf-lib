@@ -1,0 +1,10 @@
+<div class="page-header">
+    {% if logo_path is not none %}
+        <img src="file:///{{logo_path}}">
+    {% endif %}
+    <p>
+        <strong>{{major_line}}</strong>
+        {{minor_line}}
+        <br> {{date}}
+    </p>
+</div>

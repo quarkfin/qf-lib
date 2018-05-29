@@ -1,0 +1,189 @@
+from os import makedirs
+from os.path import exists, isfile, join, dirname
+from typing import Any
+
+import numpy
+from openpyxl import Workbook, load_workbook
+from pandas import Series, DataFrame
+
+from qf_lib.common.utils.excel.helpers import row_and_column
+from qf_lib.common.utils.excel.write_mode import WriteMode
+from qf_lib.get_sources_root import get_src_root
+from qf_lib.settings import Settings
+
+
+class ExcelExporter(object):
+
+    def __init__(self, settings: Settings):
+        self.settings = settings
+
+    def export_container(self, container, file_path: str, write_mode: WriteMode=WriteMode.CREATE_IF_DOESNT_EXIST,
+                         starting_cell: str='A1', sheet_name: str=None, include_index: bool=True,
+                         include_column_names: bool=False) -> None:
+        """
+        Exports the container (Series, DataFrame) to the excel file.
+
+        Parameters
+        ----------
+        container: Series/DataFrame
+            container with data to be exported
+        file_path: str
+            path (relative to the output root directory) to the file to which data should be exported
+        write_mode: WriteMode, optional
+            mode in which the file should be opened; default: WriteMode.CREATE_IF_DOESNT_EXIST
+        starting_cell: str, optional
+            the address of the cell which should be the top left corner of the exporter container
+            default: 'A1'
+        sheet_name: str, optional
+            the name of the sheet to which the container should be exported. If a sheet of this name doesn't exist
+            it will be created. If it does: it will be edited (but not cleared). If no sheet_name is specified,
+            then the currently active one will be picked
+        include_index
+            determines whether the index should be written together with the data.
+        include_column_names
+            determines whethe the column names should be written together with the data. For series containers the
+            column names are always "Index" and "Values".
+        """
+        starting_row, starting_column = row_and_column(starting_cell)
+
+        file_path = join(get_src_root(), self.settings.output_directory, file_path)
+
+        work_book = self.get_workbook(file_path, write_mode)
+        work_sheet = self.get_worksheet(work_book, sheet_name)
+
+        self.write_to_worksheet(container, work_sheet, starting_row, starting_column, include_index,
+                                include_column_names)
+        work_book.save(file_path)
+
+    def write_cell(self, file_path: str, cell_reference: str, value: Any,
+                   write_mode: WriteMode=WriteMode.CREATE_IF_DOESNT_EXIST, sheet_name: str=None):
+        """
+        Writes a value into the specified ``cell_reference``.
+
+        Parameters
+        ----------
+        file_path
+            path to the xlsl file where the cell should be written in
+        cell_reference
+            the address of the cell where the value should be placed, for example 'C10'
+        value
+            the value to write in the cell
+        write_mode
+            mode in which the file should be opened
+        sheet_name
+            the name of the sheet where the cell should be written. If a sheet of this name doesn't exist
+            it will be created. If it does: it will be edited (but not cleared). If no sheet_name is specified,
+            then the currently active one will be picked
+        """
+        row, column = row_and_column(cell_reference)
+        work_book = self.get_workbook(file_path, write_mode)
+        work_sheet = self.get_worksheet(work_book, sheet_name)
+
+        self.write_to_worksheet(value, work_sheet, row, column, include_index=False, include_column_names=False)
+        work_book.save(file_path)
+
+    def get_workbook(self, file_path: str, write_mode: WriteMode) -> Workbook:
+        """
+        Takes a path to the file (creates it if necessary), opens the file and retrieves a Workbook object from it.
+        """
+        work_book = None
+
+        if write_mode == WriteMode.CREATE_IF_DOESNT_EXIST:
+            if exists(file_path) and isfile(file_path):
+                write_mode = WriteMode.OPEN_EXISTING
+            else:
+                write_mode = WriteMode.CREATE
+                dir_path = dirname(file_path)
+                makedirs(dir_path, exist_ok=True)
+
+        if write_mode == WriteMode.CREATE:
+            assert not exists(file_path)
+            work_book = Workbook()
+        elif write_mode == WriteMode.OPEN_EXISTING:
+            assert exists(file_path)
+            work_book = load_workbook(file_path)
+
+        return work_book
+
+    def get_worksheet(self, work_book: Workbook, sheet_name: str=None):
+        """
+        Gets a worksheet of given name from a provided workbook. If :sheet_name is None, then the active sheet
+        from the workbook is returned.
+        """
+        if sheet_name is None:
+            work_sheet = work_book.active
+        else:
+            work_sheet = self._get_or_create_worksheet(work_book, sheet_name)
+
+        return work_sheet
+
+    def write_to_worksheet(self, exported_value: Any, work_sheet, starting_row, starting_column,
+                           include_index: bool, include_column_names: bool):
+        """
+        Exports a given value to Excel worksheet. If the :exported_value is a series or dataframe, then the
+        :starting_row and :starting_column correspond to the top left corner of the container's values
+        in the worksheet. If the :exported_value isn't a series nor dataframe, then the :include_index
+        and :include_column_names parameters should be False.
+        """
+        if isinstance(exported_value, Series):
+            self._write_series_to_worksheet(exported_value, work_sheet, starting_row, starting_column,
+                                            include_index, exported_value.name if include_column_names else None)
+        elif isinstance(exported_value, DataFrame):
+            self._write_dataframe_to_worksheet(exported_value, work_sheet, starting_row, starting_column,
+                                               include_index, include_column_names)
+        else:
+            assert not include_index and not include_column_names
+            work_sheet.cell(row=starting_row, column=starting_column, value=self._to_supported_type(exported_value))
+
+    def _get_or_create_worksheet(self, work_book, sheet_name):
+        if sheet_name in work_book:
+            work_sheet = work_book[sheet_name]
+        else:
+            work_sheet = work_book.create_sheet(sheet_name)
+
+        return work_sheet
+
+    def _write_series_to_worksheet(self, series, work_sheet, starting_row: int, starting_column: int,
+                                   include_index: bool, column_name: str):
+        column = starting_column
+        if include_index:
+            self._export_index(series, starting_column, starting_row, work_sheet, column_name is not None)
+            column += 1
+
+        row = starting_row
+        if column_name is not None:
+            work_sheet.cell(row=row, column=column, value=self._to_supported_type(column_name))
+            row += 1
+
+        for date, value in series.iteritems():
+            work_sheet.cell(row=row, column=column, value=self._to_supported_type(value))
+            row += 1
+
+    def _write_dataframe_to_worksheet(self, dataframe, work_sheet, starting_row: int, starting_column: int,
+                                      include_index: bool, include_column_names: bool):
+        if include_index:
+            self._export_index(dataframe, starting_column, starting_row, work_sheet, include_column_names)
+            column = starting_column + 1
+        else:
+            column = starting_column
+
+        for series_name, series in dataframe.iteritems():
+            self._write_series_to_worksheet(series, work_sheet, starting_row, column, include_index=False,
+                                            column_name=series_name if include_column_names else None)
+            column += 1
+
+    def _export_index(self, dataframe, starting_column, starting_row, work_sheet, include_column_names):
+        row = starting_row
+        if include_column_names:
+            work_sheet.cell(row=row, column=starting_column, value="Index")
+            row += 1
+
+        for date in dataframe.index:
+            work_sheet.cell(row=row, column=starting_column, value=self._to_supported_type(date))
+            row += 1
+
+    def _to_supported_type(self, value):
+        if isinstance(value, (numpy.int64, numpy.int32)):
+            return int(value)
+        else:
+            return value

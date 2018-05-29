@@ -1,0 +1,22 @@
+{
+  "company_name": "CERN Pension Fund",
+  "timezone": "Europe/Zurich",
+  "bloomberg": {
+    "host": "localhost",
+    "port": 8194
+  },
+  "input_directory": "input",
+  "document_css_directory": "input/document_css",
+  "email_templates_directory": "input/email_templates",
+  "logo_path": "input/images/cern_logo.png",
+  "output_directory": "output",
+  "logs_directory": "logs",
+  "smtp": {
+    "host": "smtp.cern.ch",
+    "port": 587,
+    "domain": "CERN",
+    "tls": true,
+    "sender": "pfreport@cern.ch"
+  },
+  "haver_path": "O:\\Macro\\DLX\\DATA"
+}

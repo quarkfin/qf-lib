@@ -1,0 +1,68 @@
+patch.linewidth: 0.5
+patch.facecolor: 348ABD  # blue
+patch.edgecolor: EEEEEE
+patch.antialiased: True
+
+font.size: 10.0
+
+# Lines
+lines.linewidth: 2
+lines.markersize : 4   # markersize of the scatterplot
+
+# Axes
+axes.facecolor : F5F5F5   # light grey
+axes.edgecolor: black
+
+xtick.color : black
+xtick.top : False
+xtick.major.top : False
+
+ytick.color : black
+ytick.direction: out
+ytick.right : False
+ytick.major.right : False
+
+# Set visibility of axes 'spines', the lines around the chart denoting data boundary
+axes.spines.left:    True
+axes.spines.right:   False
+axes.spines.bottom:  True
+axes.spines.top:     False
+axes.linewidth: 1
+
+axes.grid: True
+axes.titlesize: x-large
+axes.labelsize: large
+axes.labelcolor: 555555
+axes.axisbelow: True       # grid/ticks are below elements (e.g., lines, text)
+axes.formatter.useoffset: False
+
+#                                cern_blue  dark_grey light_blue light_grey
+axes.prop_cycle: cycler('color', ['0053A1', '666666', '70A0CC', '8d8d8d'])
+
+grid.color: d7d7d7
+grid.linestyle: -    # solid line
+grid.alpha: 0.6
+
+figure.facecolor: white
+figure.edgecolor: 0.50
+
+### Legend
+legend.fancybox      : False # if True, use a rounded box for the
+                             # legend, else a rectangle
+legend.numpoints     : 1     # the number of points in the legend line
+legend.fontsize      : medium
+legend.borderpad     : 0.5   # border whitespace in fontsize units
+legend.markerscale   : 1.0   # the relative size of legend markers vs. original
+
+# the following dimensions are in axes coords
+legend.labelspacing  : 0.5   # the vertical space between the legend entries in fraction of fontsize
+legend.handlelength  : 2.    # the length of the legend lines in fraction of fontsize
+legend.handleheight  : 0.7   # the height of the legend handle in fraction of fontsize
+legend.handletextpad : 0.8   # the space between the legend line and legend text in fraction of fontsize
+legend.borderaxespad : 0.5   # the border between the axes and legend edge in fraction of fontsize
+legend.columnspacing : 2.    # the border between the axes and legend edge in fraction of fontsize
+legend.shadow        : False
+legend.frameon       : True  # whether or not to draw a frame around legend
+legend.framealpha    : 0.5   # opacity of of legend frame
+legend.scatterpoints : 3     # number of scatter points
+legend.facecolor : white

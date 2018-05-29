@@ -1,0 +1,28 @@
+{% if level == 1 %}
+    <h1
+{% elif level == 2 %}
+    <h2
+{% elif level == 3 %}
+    <h3
+{% elif level == 4 %}
+    <h4
+{% elif level == 5 %}
+    <h5
+{% elif level == 6 %}
+    <h6
+{% endif %}
+class="heading" id="{{ id }}"> {{ text }}
+
+{% if level == 1 %}
+    </h1>
+{% elif level == 2 %}
+    </h2>
+{% elif level == 3 %}
+    </h3>
+{% elif level == 4 %}
+    </h4>
+{% elif level == 5 %}
+    </h5>
+{% elif level == 6 %}
+    </h6>
+{% endif %}

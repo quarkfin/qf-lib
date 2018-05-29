@@ -1,0 +1,21 @@
+variables:
+  DOCKER_REGISTRY: gitlab-registry.cern.ch/pfreport/quant-fin-server
+  DOCKER_IMAGE: $DOCKER_REGISTRY:python3.6.3
+
+image: $DOCKER_IMAGE
+before_script:
+- python setup.py install
+
+stages:
+  - unittest
+  - integrationtest
+
+unit_tests:
+  stage: unittest
+  script:
+  - python qf_lib_tests/run_unit_tests.py
+
+integration_tests:
+  stage: integrationtest
+  script:
+  - python qf_lib_tests/run_integration_tests.py

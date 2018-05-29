@@ -1,0 +1,20 @@
+<h1 style="text-align: center">Contents</h1>
+<div class="index">
+    {% for element in elements %} {% for i in range(1, element.level+1) %}
+    <!-- Generate <ul> and <li> tags for each level (to indent the text) -->
+    {% if i != element.level %}
+    <ul>
+        <li>
+            {% else %}
+            <ul class="present">
+                <li>
+                    <!-- Add a hyperlink to the element only if we are at its level. -->
+                    <a href="#{{ element.id }}">{{element.text}}</a>
+                    <!-- Generate the necessary closing tags -->
+                    {% for _ in range(i) %}
+                </li>
+            </ul>
+            {% endfor %} {% endif %} {% endfor %} {% endfor %}
+</div>
+<p style="page-break-before: always"></p>
+<!-- Force a page break -->

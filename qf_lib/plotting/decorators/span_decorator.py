@@ -1,0 +1,72 @@
+import warnings
+from datetime import datetime
+from typing import Tuple, Sequence
+
+from qf_lib.containers.series.qf_series import QFSeries
+from qf_lib.plotting.decorators.chart_decorator import ChartDecorator
+from qf_lib.plotting.decorators.simple_legend_item import SimpleLegendItem
+
+
+class SpanDecorator(ChartDecorator, SimpleLegendItem):
+    def __init__(self, shadowed_periods: Sequence[Tuple[datetime, datetime]], key=None, **plot_settings):
+        """
+        Uses a series of periods (tuples containing start date and end date of each period) to draw vertical spans
+        (rectangles).
+
+        Parameters
+        ----------
+        shadowed_periods
+            sequence of tuples, where each tuple indicates a period that should be shadowed
+
+            Example:
+                [("2017-01-01", "2017-02-03"), ("2017-03-05", "2017-03-10")]
+        key
+            see ChartDecorator.key.__init__#key
+        plot_settings
+            additional plot settings for matplotlib
+        """
+        super().__init__(key)
+        assert shadowed_periods  # check if list is not None and is not empty
+        self._shadowed_periods = shadowed_periods
+        self.plot_settings = plot_settings
+
+    @classmethod
+    def from_int_list(cls, series: QFSeries, key=None, **plot_settings):
+        warnings.warn("This method is deprecated. Use SpanDecorator.__init__() instead.")
+        periods = cls._periods_from_int_series(series)
+        return SpanDecorator(periods, key, **plot_settings)
+
+    def decorate(self, chart) -> None:
+        axes = chart.axes
+
+        self.plot_settings.setdefault('alpha', 0.3)
+        self.plot_settings.setdefault('color', 'grey')
+
+        for start_date, end_date in self._shadowed_periods:
+            self.legend_artist = axes.axvspan(start_date, end_date, **self.plot_settings)
+
+    @classmethod
+    def _periods_from_int_series(cls, series: QFSeries) -> Sequence[Tuple[datetime, datetime]]:
+        """
+        Converts a time series with multiple 1/0 values into a condensed list of date ranges specifying where
+        the rectangles should begin and end.
+
+        For example:
+            1920-03-31    0.0
+            1920-06-30    1.0
+            1920-09-30    1.0
+            1920-12-31    0.0
+
+        For this series, the area from 1920-06-30 to 1920-09-30 will be highlighted.
+        """
+        result = []  # List[Tuple[start_date, end_date]]
+
+        start_date = None
+        for index, value in series.iteritems():
+            if value < 1.0 and start_date is not None:
+                result.append((start_date, index))
+                start_date = None
+            if value >= 1.0 and start_date is None:
+                start_date = index
+
+        return result

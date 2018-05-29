@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CERN Pension Fund</title>
+</head>
+<body>
+    {% for element in elements %}
+        {{ element.generate_html(document) }}
+    {% endfor %}
+</body>
+</html>

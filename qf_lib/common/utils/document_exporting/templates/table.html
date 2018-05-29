@@ -1,0 +1,21 @@
+<table class="{{ css_class }}" {{ table._generate_data_attributes() }}>
+    <caption>{{ table.title }}</caption>
+    <thead>
+        <tr>
+            {% for col in table._column_cells: %}
+            <th class="{{ col.css_class }} {{ col.column_css_class }}">{{ col }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in table.rows: %}
+        <tr>
+            {% for i in range(0, row|length): %}
+            <td class="{{ row[i].css_class }} {{ table._column_cells[i].column_css_class }}">
+                {{ row[i] }}
+            </td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

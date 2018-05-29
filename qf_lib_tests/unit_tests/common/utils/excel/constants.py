@@ -1,0 +1,9 @@
+SINGLE_SHEET_ONE_SERIES = 'single_sheet_one_series.xlsx'
+SINGLE_SHEET_ONE_SERIES_2 = 'single_sheet_one_series.xlsx'
+SINGLE_SHEET_TWO_SERIES = 'single_sheet_two_series.xlsx'
+TWO_SHEETS_TWO_SERIES = 'two_sheets_two_series.xlsx'
+TWO_SHEETS_THREE_SERIES = 'two_sheets_three_series.xlsx'
+SINGLE_SHEET_ONE_DATA_FRAME = 'single_sheet_one_dataframe.xlsx'
+SINGLE_SHEET_CUSTOM_INDEX_DATA_FRAME = 'single_sheet_custom_index_data_frame.xlsx'
+SINGLE_SHEET_CUSTOM_INDEX_DATA_FRAME_SHIFTED = 'single_sheet_custom_index_data_frame_shifted.xlsx'
+SINGLE_CELLS = "single_cells.xlsx"

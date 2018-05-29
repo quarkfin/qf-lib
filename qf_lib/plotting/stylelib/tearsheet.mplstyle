@@ -1,0 +1,15 @@
+axes.titleweight : bold
+axes.titlesize : 9
+axes.labelsize : 8
+
+# Change thickness of axes and size of labels
+xtick.labelsize : 8
+ytick.labelsize : 8
+
+legend.fontsize : 8
+
+# Default axes position
+figure.subplot.left : 0.14
+figure.subplot.right : 0.97
+figure.subplot.bottom : 0.19
+figure.subplot.top : 0.90

@@ -1,0 +1,11 @@
+# Lines width
+lines.linewidth   : 3
+
+# Title
+axes.titlesize : 24
+axes.titleweight : bold
+
+# Change thickness of axes and size of labels
+axes.linewidth: 3
+xtick.labelsize  : 20
+ytick.labelsize  : 24

@@ -1,0 +1,78 @@
+import json
+import textwrap
+
+from jinja2 import Template
+
+from qf_lib.common.enums.matplotlib_location import Location
+from qf_lib.plotting.decorators.chart_decorator import ChartDecorator
+from qf_lib.plotting.decorators.simple_legend_item import SimpleLegendItem
+
+
+class LegendDecorator(ChartDecorator):
+    """
+    A decorator which draws a legend on the graph. The legend titles are automatically determined based on what was
+    specified during decorator creation and series addition.
+    """
+    def __init__(self, legend_placement: Location = Location.BEST, key=None):
+        """
+        legend_placement: LegendPlacement, optional
+            where the legend should be placed on the chart
+        key: object, optional
+            the identifier of the decorator
+        """
+        super().__init__(key)
+        self.legend_placement = legend_placement
+        self.item_labels = []
+
+    def add_entry(self, item: SimpleLegendItem, label: str) -> None:
+        """
+        Adds new entry to the legend.
+
+        Parameters
+        ----------
+        item: SimpleLegendItem
+            a decorator which should be described in the legend or the matplotlib's Artist object
+        label: str
+            a label which should be assigned to a given decorator
+        """
+        if not isinstance(label, str):
+            label = str(label)
+        self.item_labels.append((item, label))
+
+    def decorate(self, chart) -> None:
+        axes = chart.axes
+        if chart.secondary_axes is not None:
+            axes = chart.secondary_axes
+
+        # If there are no items to be included in the legend, don't show the legend at all
+        if not self.item_labels:
+            return
+
+        handles = []
+        labels = []
+        for item, label in self.item_labels:
+            handle = item.legend_artist
+            assert handle is not None
+            handles.append(handle)
+            if label is None:
+                label = '<no label>'
+            adjusted_label = "\n".join(textwrap.wrap(label, width=60))
+            labels.append(adjusted_label)
+
+        axes.legend(handles, labels, loc=self.legend_placement.code)
+
+    def decorate_html(self, chart, chart_id) -> str:
+        # For docs relating to this, see: http://api.highcharts.com/highcharts/legend
+        template = Template("""
+            window.chart_data["{{ chart_id }}"].legend_labels = {{ legend_labels }};
+            decorator_options.legend = {
+                enabled: true,
+                labelFormatter: function () {
+                    return window.chart_data["{{ chart_id }}"].legend_labels[this.name];
+                }
+            };""")
+
+        legend_labels = {}
+        for item, label in self.item_labels:
+            legend_labels[item.key] = label
+        return template.render(chart_id=chart_id, legend_labels=json.dumps(legend_labels))
