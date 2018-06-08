@@ -1,4 +1,3 @@
-import logging
 import warnings
 from datetime import datetime
 from typing import Union, Sequence, Dict
@@ -10,6 +9,7 @@ from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import BloombergTicker, tickers_as_strings
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
@@ -39,7 +39,7 @@ class BloombergDataProvider(AbstractPriceDataProvider):
         self._historical_data_provider = HistoricalDataProvider(self.session)
         self._reference_data_provider = ReferenceDataProvider(self.session)
         self.connected = False
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = qf_logger.getChild(self.__class__.__name__)
 
     def connect(self):
         """

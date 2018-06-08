@@ -1,4 +1,3 @@
-import logging
 from abc import abstractmethod, ABCMeta
 from functools import total_ordering
 from typing import Union, Sequence, Tuple, List, Optional
@@ -6,6 +5,7 @@ from typing import Union, Sequence, Tuple, List, Optional
 from os.path import basename
 
 from qf_lib.common.enums.quandl_db_type import QuandlDBType
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 
 
 @total_ordering
@@ -232,7 +232,7 @@ def str_to_ticker(ticker_str: Union[str, Sequence[str]]) -> Union[None, Ticker, 
         else:
             return None
 
-    logger = logging.getLogger(basename(__file__))
+    logger = qf_logger.getChild(basename(__file__))
     if isinstance(ticker_str, str):
         ticker = convert_single_ticker(ticker_str)
         if ticker is None:

@@ -1,4 +1,3 @@
-import logging
 import queue
 import warnings
 from typing import Dict, Type, Sequence
@@ -7,6 +6,7 @@ from qf_lib.backtesting.qstrader.events.empty_queue_event.empty_queue_event impo
 from qf_lib.backtesting.qstrader.events.end_trading_event.end_trading_event import EndTradingEvent
 from qf_lib.backtesting.qstrader.events.event_base import Event, EventNotifier, EventListener
 from qf_lib.common.utils.dateutils.timer import Timer
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 
 _EventType = Type[Event]
 
@@ -19,7 +19,7 @@ class EventManager(object):
     """
 
     def __init__(self, timer: Timer) -> None:
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = qf_logger.getChild(self.__class__.__name__)
         self.events_queue = queue.Queue()  # type: queue.Queue
         self.timer = timer
 

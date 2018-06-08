@@ -1,6 +1,6 @@
-import logging
 import os
 import threading
+import warnings
 from datetime import datetime
 from typing import Union, Sequence, Dict, Optional
 
@@ -8,6 +8,7 @@ from pandas import PeriodIndex, Panel, DataFrame
 
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import HaverTicker
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
@@ -18,7 +19,7 @@ try:
     is_haver_installed = True
 except ImportError:
     is_haver_installed = False
-    logging.warning("No Haver installed.")
+    warnings.warn("No Haver installed.")
 
 
 class HaverDataProvider(AbstractPriceDataProvider):
@@ -36,6 +37,8 @@ class HaverDataProvider(AbstractPriceDataProvider):
         self.db_location = settings.haver_path
         self.connected = False
 
+        self.logger = qf_logger.getChild(self.__class__.__name__)
+
     def get_history(self, tickers: Union[HaverTicker, Sequence[HaverTicker]], fields=None, start_date: datetime=None,
                     end_date: datetime=None, **kwargs) -> Union[QFSeries, QFDataFrame, Panel]:
         """
@@ -46,7 +49,7 @@ class HaverDataProvider(AbstractPriceDataProvider):
         this method will never return a panel.
         """
         if fields is not None:
-            logging.warning("Data field is provided but it will nor be used")
+            self.logger.warning("Data field is provided but it will nor be used")
 
         self._connect_if_needed()
         HaverDataProvider.get_lock.acquire()
@@ -99,7 +102,7 @@ class HaverDataProvider(AbstractPriceDataProvider):
                 Haver.path(self.db_location)
                 self.connected = True
             else:
-                logging.warning("Couldn't access Haver directory. Probably there is no access to the O: drive.")
+                self.logger.warning("Couldn't access Haver directory. Probably there is no access to the O: drive.")
 
     def _connect_if_needed(self):
         """

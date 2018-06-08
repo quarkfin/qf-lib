@@ -1,4 +1,3 @@
-import logging
 
 from qf_lib.backtesting.qstrader.backtest_result.backtest_result import BacktestResult
 from qf_lib.backtesting.qstrader.broker.backtest_brokerr import BacktestBroker
@@ -19,6 +18,7 @@ from qf_lib.backtesting.qstrader.trading_session.notifiers import Notifiers
 from qf_lib.common.utils.dateutils.date_to_string import date_to_str
 from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
 from qf_lib.settings import Settings
 
@@ -33,7 +33,7 @@ class BacktestTradingSession(object):
         """
         Set up the backtest variables according to what has been passed in.
         """
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = qf_logger.getChild(self.__class__.__name__)
 
         self.logger.info(
             "\n".join([

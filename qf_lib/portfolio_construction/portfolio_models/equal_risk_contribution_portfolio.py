@@ -1,9 +1,9 @@
-import logging
 from typing import Union, Sequence
 
 import pandas as pd
 
 from qf_lib.common.timeseries_analysis.risk_contribution_analysis import RiskContributionAnalysis
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.portfolio_construction.optimizers.nonlinear_function_optimizer import NonlinearFunctionOptimizer
 from qf_lib.portfolio_construction.portfolio_models.portfolio import Portfolio
@@ -17,6 +17,8 @@ class EqualRiskContributionPortfolio(Portfolio):
         self.upper_constraint = upper_constraint
         self.max_iter = 10000  # maximal number of iterations during finding the solution
 
+        self.logger = qf_logger.getChild(self.__class__.__name__)
+
     def get_weights(self) -> pd.Series:
 
         def minimised_func(weights_values: Sequence[float]):
@@ -29,6 +31,6 @@ class EqualRiskContributionPortfolio(Portfolio):
         weights = pd.Series(data=weights, index=self.cov_matrix.columns.copy())
 
         if not RiskContributionAnalysis.is_equal_risk_contribution(self.cov_matrix, weights):
-            logging.warning("EqualRiskContributionPortfolio: calculated weights do not create an ERC Portfolio.")
+            self.logger.warning("EqualRiskContributionPortfolio: calculated weights do not create an ERC Portfolio.")
 
         return weights

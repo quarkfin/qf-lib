@@ -1,10 +1,10 @@
 import io
-import logging
 
 import emails
 import os.path as path
 from emails.template import JinjaTemplate as T
 
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.get_sources_root import get_src_root
 from qf_lib.settings import Settings
 
@@ -13,7 +13,7 @@ class EmailPublisher(object):
     def __init__(self, settings: Settings):
         self.smtp_settings = settings.smtp
         self.templates_path = path.join(get_src_root(), settings.email_templates_directory)
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = qf_logger.getChild(self.__class__.__name__)
 
     def publish(self, mail_to, subject, template_path, cc=None, bcc=None,
                 attachments=(), context=None, templates_encoding='utf8'):

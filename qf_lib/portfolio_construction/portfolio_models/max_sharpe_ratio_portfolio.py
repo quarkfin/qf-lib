@@ -1,10 +1,10 @@
-import logging
 from typing import Union, Sequence
 
 import numpy as np
 import pandas as pd
 import scipy
 
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.portfolio_construction.optimizers.quadratic_optimizer import QuadraticOptimizer
@@ -25,6 +25,8 @@ class MaxSharpeRatioPortfolio(Portfolio):
         self.upper_constraint = upper_constraint
         self.risk_free_rate = risk_free_rate
         self.max_iter = max_iter
+
+        self.logger = qf_logger.getChild(self.__class__.__name__)
 
     def get_weights(self) -> pd.Series:
         cov_matrix = self.cov_matrix.values
@@ -60,7 +62,7 @@ class MaxSharpeRatioPortfolio(Portfolio):
                                                       bounds=[(0, None)], options=options)
 
         if not optimization_result.success:
-            logging.warning("Unsuccessful optimization: " + optimization_result.message)
+            self.logger.warning("Unsuccessful optimization: " + optimization_result.message)
 
         k = optimization_result.x
         k = k.squeeze()

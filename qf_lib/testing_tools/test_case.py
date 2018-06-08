@@ -1,13 +1,14 @@
-import logging
 import os
 import shutil
 from unittest import TestCase
+
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 
 
 class TestCaseWithFileOutput(TestCase):
     def __init__(self, methodName='runTest'):
         super().__init__(methodName)
-        self._logger = logging.getLogger(self.__class__.__name__)
+        self._logger = qf_logger.getChild(self.__class__.__name__)
 
     def templates_dir(self):
         raise NotImplementedError()

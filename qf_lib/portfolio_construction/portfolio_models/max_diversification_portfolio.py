@@ -1,4 +1,3 @@
-import logging
 from typing import Union, Sequence
 
 import numpy as np
@@ -6,6 +5,7 @@ import pandas as pd
 from cvxopt.base import matrix
 from cvxopt.coneprog import qp
 
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.portfolio_construction.optimizers.helpers.quadratic_constraints_helpers import \
@@ -23,12 +23,15 @@ class MaxDiversificationPortfolio(Portfolio):
         'show_progress': False
     }
 
-    def __init__(self, cov_matrix: QFDataFrame, std_of_assets: QFSeries, upper_constraint: Union[float, Sequence[float]] = None):
+    def __init__(self, cov_matrix: QFDataFrame, std_of_assets: QFSeries,
+                 upper_constraint: Union[float, Sequence[float]]=None):
         self.cov_matrix = cov_matrix
         self.std_of_assets = std_of_assets
         self.upper_constraint = upper_constraint
         self.upper_bound_tolerance = 0.012
         self.max_iter = 10  # maximal number of iterations during finding the solution
+
+        self.logger = qf_logger.getChild(self.__class__.__name__)
 
     def get_weights(self) -> pd.Series:
         assets_number = self.cov_matrix.shape[1]

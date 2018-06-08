@@ -1,4 +1,3 @@
-import logging
 import math
 from itertools import count
 from typing import Dict, List, Sequence
@@ -15,6 +14,7 @@ from qf_lib.common.exceptions.broker_exceptions import OrderCancellingException
 from qf_lib.backtesting.qstrader.order_fill import OrderFill
 from qf_lib.backtesting.qstrader.portfolio.portfolio import Portfolio
 from qf_lib.common.utils.dateutils.timer import Timer
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from .execution_handler import ExecutionHandler
 
 
@@ -28,7 +28,7 @@ class SimulatedExecutionHandler(ExecutionHandler):
                  contracts_to_tickers_mapper: ContractTickerMapper, portfolio: Portfolio) -> None:
         scheduler.subscribe(MarketOpenEvent, self)
 
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = qf_logger.getChild(self.__class__.__name__)
 
         self.event_manager = event_manager
         self.data_handler = data_handler

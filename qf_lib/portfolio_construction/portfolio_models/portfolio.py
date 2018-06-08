@@ -1,11 +1,11 @@
 import abc
-import logging
 from typing import Tuple
 
 import numpy as np
 import pandas as pd
 
 from qf_lib.common.utils.dateutils.date_to_string import date_to_str
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.dataframe.simple_returns_dataframe import SimpleReturnsDataFrame
 from qf_lib.containers.series.cast_series import cast_series
@@ -16,8 +16,6 @@ from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
 class Portfolio(metaclass=abc.ABCMeta):
     EPSILON = 1e-5
 
-    logger = logging.getLogger("Portfolio")
-
     @abc.abstractmethod
     def get_weights(self) -> pd.Series:
         """
@@ -26,6 +24,10 @@ class Portfolio(metaclass=abc.ABCMeta):
         a series indexed with names of assets containing weights (one for each asset).
         """
         pass
+
+    @classmethod
+    def logger(cls):
+        return qf_logger.getChild(cls.__name__)
 
     @classmethod
     def constant_weights(cls, assets_rets_df: SimpleReturnsDataFrame, weights: pd.Series)\
@@ -56,7 +58,7 @@ class Portfolio(metaclass=abc.ABCMeta):
 
         weights_sum = weights.sum()
         if abs(weights_sum) - 1.0 > cls.EPSILON:
-            cls.logger.warning("Sum of all weights is not equal to 1.0: sum(weights) = {:f}".format(weights_sum))
+            cls.logger().warning("Sum of all weights is not equal to 1.0: sum(weights) = {:f}".format(weights_sum))
 
         num_of_assets = assets_rets_df.num_of_rows
 
@@ -96,7 +98,7 @@ class Portfolio(metaclass=abc.ABCMeta):
 
         weights_sum = weights.sum()
         if abs(weights_sum - 1.0) > cls.EPSILON:
-            cls.logger.warning("Sum of all weights is not equal to 1.0: sum(weights) = {:f}".format(weights_sum))
+            cls.logger().warning("Sum of all weights is not equal to 1.0: sum(weights) = {:f}".format(weights_sum))
 
         # create a data frame with cumulative returns with a row of zeroes at the beginning
         assets_prices_df = assets_rets_df.to_prices(initial_prices=weights.values)
@@ -153,7 +155,7 @@ class Portfolio(metaclass=abc.ABCMeta):
             dates = allocations_df.index.values[incorrect_weights_rows]
             dates_str = ", ".join([date_to_str(date) for date in dates])
 
-            cls.logger.warning("Weights don't sum up to 1 for the following dates: " + dates_str)
+            cls.logger().warning("Weights don't sum up to 1 for the following dates: " + dates_str)
 
         scaled_returns = assets_rets_df * allocations_df  # type: np.ndarray
         portfolio_rets = scaled_returns.sum(axis=1)

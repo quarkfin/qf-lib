@@ -1,17 +1,16 @@
-import logging
-
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import ElasticNet
 from sklearn.linear_model import ElasticNetCV
 
+from qf_lib.common.utils.factorization.factors_identification.factors_identifier import FactorsIdentifier
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.plotting.charts.line_chart import LineChart
 from qf_lib.plotting.decorators.data_element_decorator import DataElementDecorator
 from qf_lib.plotting.decorators.line_decorators import VerticalLineDecorator
 from qf_lib.plotting.decorators.title_decorator import TitleDecorator
-from qf_lib.common.utils.factorization.factors_identification.factors_identifier import FactorsIdentifier
 
 
 class ElasticNetFactorsIdentifier(FactorsIdentifier):
@@ -48,6 +47,8 @@ class ElasticNetFactorsIdentifier(FactorsIdentifier):
             default False; If True, then some additional debug info will be plotted (used when tuning
             the ElasticNetFactorsIdentifier's parameters)
         """
+        self.logger = qf_logger.getChild(self.__class__.__name__)
+
         self.max_number_of_regressors = max_number_of_regressors
         self.epsilon = epsilon
         self.l1_ratio = l1_ratio
@@ -76,7 +77,7 @@ class ElasticNetFactorsIdentifier(FactorsIdentifier):
             Subset of the original regressors_df. Only contains rows corresponding to dates common for it and
             analysed_tms. Only contains columns corresponding to coefficients which should be included in the model
         """
-        logging.debug("Model selection using Elastic Net in progress...")
+        self.logger.debug("Model selection using Elastic Net in progress...")
 
         alphas, index_1se, enet_optimizer = self._optimize_using_enet(analysed_tms, regressors_df)
 
@@ -96,9 +97,9 @@ class ElasticNetFactorsIdentifier(FactorsIdentifier):
             coefficients_vector = coeffs_path[solutions_idx]
 
         if self._number_of_non_zero_coefficients(coefficients_vector) <= self.max_number_of_regressors:
-            logging.info("Solution within one std from minimum MSE found")
+            self.logger.info("Solution within one std from minimum MSE found")
         else:
-            logging.warning('No solution within one std from minimum MSE')
+            self.logger.warning('No solution within one std from minimum MSE')
             coefficients_vector, solutions_idx = self._simplify_model(coeffs_path, index_1se)
 
         included_coefficients_idx = self._indices_of_non_zero_coefficients(coefficients_vector)
@@ -124,7 +125,7 @@ class ElasticNetFactorsIdentifier(FactorsIdentifier):
         enet_optimizer = ElasticNetCV(l1_ratio=self.l1_ratio, n_alphas=self.number_of_alphas,
                                       cv=self.NUMBER_OF_FOLDS, fit_intercept=self.is_intercept)
         enet_optimizer.fit(regressors_df, analysed_tms)
-        logging.debug('Finished Elastic Net analysis')
+        self.logger.debug('Finished Elastic Net analysis')
         alphas = enet_optimizer.alphas_
         mean_square_errors = np.mean(enet_optimizer.mse_path_, axis=1)
         index_1se = self._get_arg_alpha_1se(alphas, mean_square_errors)

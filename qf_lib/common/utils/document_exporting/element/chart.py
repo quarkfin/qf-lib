@@ -1,4 +1,3 @@
-import logging
 import uuid
 from typing import Tuple
 
@@ -9,6 +8,7 @@ from qf_lib.common.enums.plotting_mode import PlottingMode
 from qf_lib.common.utils.document_exporting import templates
 from qf_lib.common.utils.document_exporting.document import Document
 from qf_lib.common.utils.document_exporting.element import Element
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.plotting.charts.chart import Chart
 
 
@@ -49,7 +49,7 @@ class ChartElement(Element):
         self.optimise = optimise
         self.grid_proportion = grid_proportion
         self.comment = comment
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = qf_logger.getChild(self.__class__.__name__)
 
     def get_grid_proportion_css_class(self) -> str:
         return str(self.grid_proportion)

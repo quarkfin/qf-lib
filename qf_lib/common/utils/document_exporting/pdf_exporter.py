@@ -1,12 +1,12 @@
-import logging
 import os
-from os.path import join
 from typing import List
 
+from os.path import join
 from weasyprint import HTML, CSS
 
 from qf_lib.common.utils.document_exporting.document import Document
 from qf_lib.common.utils.document_exporting.document_exporter import DocumentExporter
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.get_sources_root import get_src_root
 from qf_lib.settings import Settings
 
@@ -21,7 +21,7 @@ class PDFExporter(DocumentExporter):
         super().__init__(settings)
         self._document_css_dir = join(get_src_root(), settings.document_css_directory)
 
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = qf_logger.getChild(self.__class__.__name__)
 
     def generate(self, documents: List[Document], export_dir: str, filename: str,
                  include_table_of_contents=False, css_file_names: List[str] = None) -> List[str]:

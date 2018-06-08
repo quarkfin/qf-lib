@@ -1,19 +1,22 @@
 import datetime
-import logging
 from itertools import islice
-from os.path import exists
 
 import numpy as np
 import pandas as pd
 from openpyxl import load_workbook
+from os.path import exists
 
 from qf_lib.common.utils.excel.helpers import get_bounding_box
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 
 
 class ExcelImporter(object):
     """
     Class used for importing Series and DataFrames from the Excel files.
     """
+
+    def __init__(self):
+        self.logger = qf_logger.getChild(self.__class__.__name__)
 
     def import_container(self, file_path: str, starting_cell: str, ending_cell: str, container_type: type=None,
                          sheet_name: str=None, include_index: bool=True, include_column_names: bool=False):
@@ -46,7 +49,7 @@ class ExcelImporter(object):
         container: Series or DataFrame
             object containing the imported data
         """
-        logging.info("Started importing data from {}".format(file_path))
+        self.logger.info("Started importing data from {}".format(file_path))
         start_time = datetime.datetime.now()
 
         work_book = self._get_work_book(file_path)
@@ -67,7 +70,7 @@ class ExcelImporter(object):
 
         end_time = datetime.datetime.now()
         execution_time = end_time - start_time
-        logging.info("Ended importing data from {} after {}".format(file_path, execution_time))
+        self.logger.info("Ended importing data from {} after {}".format(file_path, execution_time))
 
         return container.squeeze()
 

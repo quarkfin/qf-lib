@@ -1,4 +1,3 @@
-import logging
 from threading import Event
 from typing import List
 
@@ -14,13 +13,14 @@ from qf_lib.backtesting.qstrader.order.execution_style import StopOrder, MarketO
 from qf_lib.backtesting.qstrader.order.order import Order
 from qf_lib.backtesting.qstrader.portfolio.broker_positon import BrokerPosition
 from qf_lib.backtesting.qstrader.portfolio.position import Position
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 
 
 class IBWrapper(EWrapper):
     def __init__(self, action_event_lock: Event):
 
         self.action_event_lock = action_event_lock
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = qf_logger.getChild(self.__class__.__name__)
 
         self.net_liquidation = None
         self.tmp_value = None

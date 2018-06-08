@@ -1,8 +1,9 @@
-import logging
 from typing import Callable, Sequence, Union, Tuple, List
 
 import numpy as np
 import scipy.optimize
+
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 
 
 class NonlinearFunctionOptimizer(object):
@@ -33,11 +34,11 @@ class NonlinearFunctionOptimizer(object):
         optimization_result = scipy.optimize.minimize(fun=minimised_func, method='SLSQP', x0=one_over_n_weights,
                                                       bounds=bounds, constraints=weights_sum_up_to_one_constr,
                                                       options=options)
-
+        logger = qf_logger.getChild(cls.__name__)
         if optimization_result.success:
-            logging.info(optimization_result.message)
+            logger.info(optimization_result.message)
         else:
-            logging.warning("Unsuccessful optimization: " + optimization_result.message)
+            logger.warning("Unsuccessful optimization: " + optimization_result.message)
 
         return optimization_result.x
 

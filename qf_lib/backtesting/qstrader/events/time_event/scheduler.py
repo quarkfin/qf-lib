@@ -1,9 +1,9 @@
-import logging
 from datetime import datetime
 from typing import Dict, Type, TypeVar, List, Any, Generator, Tuple
 
 from qf_lib.backtesting.qstrader.events.time_event.time_event import TimeEvent
 from qf_lib.common.utils.dateutils.timer import Timer
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 
 ConcreteTimeEvent = TypeVar('TimeEventType', bound=TimeEvent)
 TypeOfEvent = Type[ConcreteTimeEvent]
@@ -23,7 +23,7 @@ class Scheduler(object):
 
     def __init__(self, timer: Timer):
         self.timer = timer
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = qf_logger.getChild(self.__class__.__name__)
 
         self._time_event_to_subscribers = {}  # type: Dict[TypeOfEvent, List[Any]]
 

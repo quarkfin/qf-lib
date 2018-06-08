@@ -1,4 +1,3 @@
-import logging
 from math import floor
 
 import numpy as np
@@ -11,12 +10,13 @@ from statsmodels.stats.stattools import durbin_watson
 
 from qf_lib.common.timeseries_analysis.return_attribution_analysis import ReturnAttributionAnalysis
 from qf_lib.common.timeseries_analysis.risk_contribution_analysis import RiskContributionAnalysis
+from qf_lib.common.utils.factorization.data_models.data_model_input import DataModelInput
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.containers.dataframe.cast_dataframe import cast_dataframe
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.cast_series import cast_series
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.timeseries_analysis.timeseries_analysis import TimeseriesAnalysis
-from qf_lib.common.utils.factorization.data_models.data_model_input import DataModelInput
 
 
 class DataModel(object):
@@ -44,6 +44,7 @@ class DataModel(object):
         data_model_input
             data from which the model is built
         """
+        self.logger = qf_logger.getChild(self.__class__.__name__)
 
         self.input_data = data_model_input
 
@@ -166,8 +167,8 @@ class DataModel(object):
         model = sm.OLS(analysed_tms, regressors)
         fit = model.fit()
 
-        logging.info("Fitted model for given regressors and fund returns time series:")
-        logging.info(fit.summary())
+        self.logger.info("Fitted model for given regressors and fund returns time series:")
+        self.logger.info(fit.summary())
 
         coefficients_, intercept_ = self._get_model_params(fit)
 
@@ -200,7 +201,7 @@ class DataModel(object):
         """
         analysed_tms = self.input_data.analysed_tms
         regressors_df = self.input_data.regressors_df
-        number_of_data_in_sample = floor(len(analysed_tms) * 2 / 3)
+        number_of_data_in_sample = int(floor(len(analysed_tms) * 2 / 3))
 
         self.oos_start_date = analysed_tms.index[number_of_data_in_sample - 1]
 
@@ -210,14 +211,14 @@ class DataModel(object):
         if len(regressors_in_sample_df.columns) <= 1:
             return
 
-        logging.info("Fitting in sample using {:d} data points".format(number_of_data_in_sample))
+        self.logger.info("Fitting in sample using {:d} data points".format(number_of_data_in_sample))
 
         if self.input_data.is_fit_intercept:
             regressors_in_sample_df = sm.add_constant(regressors_in_sample_df, prepend=False)
 
         model = sm.OLS(fund_returns_in_sample_tms, regressors_in_sample_df)
         fit = model.fit()
-        logging.info(fit.summary())
+        self.logger.info(fit.summary())
 
         coeffs_in_sample, intercept_in_sample = self._get_model_params(fit)
 

@@ -1,7 +1,8 @@
-import logging
 from typing import Optional
 
 import numpy as np
+
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 
 
 def prepare_upper_bounds_vector(assets_number, upper_constraints) -> Optional[np.ndarray]:
@@ -45,8 +46,9 @@ def put_weights_below_constraint(weights: np.ndarray, upper_constraints: np.ndar
         if max_difference <= epsilon:
             break
     else:
-        logging.warning("put_weights_below_constraint: \nIt was not possible to find weights within the constraints "
-                        "in {:d} iterations".format(max_iter))
+        logger = qf_logger.getChild(__name__)
+        logger.warning("put_weights_below_constraint: \nIt was not possible to find weights within the constraints "
+                       "in {:d} iterations".format(max_iter))
 
     return new_weights
 

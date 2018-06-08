@@ -1,4 +1,3 @@
-import logging
 from threading import Thread, Event, Lock
 from typing import List
 
@@ -10,13 +9,14 @@ from qf_lib.backtesting.qstrader.broker.broker import Broker
 from qf_lib.backtesting.qstrader.order.execution_style import MarketOrder, StopOrder
 from qf_lib.backtesting.qstrader.order.order import Order
 from qf_lib.backtesting.qstrader.portfolio.position import Position
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.exceptions.broker_exceptions import BrokerException, OrderCancellingException
 from qf_lib.interactive_brokers.ib_wrapper import IBWrapper
 
 
 class IBBroker(Broker):
     def __init__(self):
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = qf_logger.getChild(self.__class__.__name__)
         self.lock = Lock()
         self.waiting_time = 5  # expressed in seconds
         self.action_event_lock = Event()

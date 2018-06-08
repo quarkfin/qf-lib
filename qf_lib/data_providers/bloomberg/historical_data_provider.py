@@ -1,4 +1,3 @@
-import logging
 from datetime import datetime
 from typing import Any, Sequence
 
@@ -6,6 +5,7 @@ import pandas as pd
 
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.tickers.tickers import BloombergTicker
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.data_providers.bloomberg.bloomberg_names import REF_DATA_SERVICE_URI, CURRENCY, START_DATE, END_DATE, \
     PERIODICITY_SELECTION, PERIODICITY_ADJUSTMENT, SECURITY, FIELD_DATA, DATE
 from qf_lib.data_providers.bloomberg.exceptions import BloombergError
@@ -25,7 +25,7 @@ class HistoricalDataProvider(object):
 
     def __init__(self, session):
         self._session = session
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = qf_logger.getChild(self.__class__.__name__)
 
     def get(
         self, tickers: Sequence[str], fields: Sequence[str], start_date: datetime, end_date: datetime,

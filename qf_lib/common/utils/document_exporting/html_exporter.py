@@ -1,9 +1,10 @@
-import logging
-import os.path
 from typing import List
+
+import os.path
 
 from qf_lib.common.utils.document_exporting import Document
 from qf_lib.common.utils.document_exporting.document_exporter import DocumentExporter
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.settings import Settings
 
 
@@ -14,7 +15,7 @@ class HTMLExporter(DocumentExporter):
 
     def __init__(self, settings: Settings):
         super().__init__(settings)
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = qf_logger.getChild(self.__class__.__name__)
 
     def generate(self, documents: List[Document], export_dir: str, filename: str = None,
                  include_table_of_contents=True) -> List[str]:

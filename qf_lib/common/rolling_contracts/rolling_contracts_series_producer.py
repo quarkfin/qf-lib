@@ -1,4 +1,3 @@
-import logging
 from typing import Sequence, Dict
 
 import numpy as np
@@ -7,6 +6,7 @@ import pandas as pd
 from qf_lib.common.rolling_contracts.rolling_contracts_data import RollingContractData
 from qf_lib.common.utils.dateutils.date_to_string import date_to_str
 from qf_lib.common.utils.dateutils.timer import Timer
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.series.cast_series import cast_series
 from qf_lib.containers.series.prices_series import PricesSeries
@@ -20,6 +20,7 @@ class RollingContractsSeriesProducer(object):
 
     def __init__(self, timer: Timer):
         self.timer = timer
+        self.logger = qf_logger.getChild(self.__class__.__name__)
 
     def get_rolling_contracts_data(self, real_contracts_prices_df: PricesDataFrame, rolling_dates: pd.DatetimeIndex,
                                    contract_numbers: Sequence[int] = (1,)) \
@@ -59,7 +60,7 @@ class RollingContractsSeriesProducer(object):
         """
         nonfuture_rolling_dates = rolling_dates[rolling_dates <= self.timer.now()]
         if len(nonfuture_rolling_dates) < len(rolling_dates):
-            logging.warning("rolling_dates contains future dates")
+            self.logger.warning("rolling_dates contains future dates")
 
         return nonfuture_rolling_dates
 
@@ -157,4 +158,4 @@ class RollingContractsSeriesProducer(object):
                            first_available_date=date_to_str(first_available_date),
                            last_available_date=date_to_str(last_available_date),
                            contract_name=real_contracts_prices_tms.name)
-            logging.warning(warning_msg)
+            self.logger.warning(warning_msg)

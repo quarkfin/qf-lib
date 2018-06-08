@@ -1,15 +1,17 @@
 import json
-import logging
 import os
-import os.path
 from typing import Optional
+
+import os.path
+
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 
 
 class Settings(object):
     def __init__(self, settings_path: Optional[str], secret_path: Optional[str]=None, init_properties=True):
         self.settings_path = settings_path
         self.secret_path = secret_path
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = qf_logger.getChild(self.__class__.__name__)
 
         if init_properties:
             self._init_settings()

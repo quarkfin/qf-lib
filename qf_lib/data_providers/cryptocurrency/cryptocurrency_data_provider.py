@@ -1,4 +1,3 @@
-import logging
 from datetime import date, datetime
 from typing import Dict, Optional, Sequence, Union
 
@@ -9,6 +8,7 @@ from requests import Session
 
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import CcyTicker
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
@@ -21,7 +21,7 @@ class CryptoCurrencyDataProvider(AbstractPriceDataProvider):
     """
 
     def __init__(self):
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = qf_logger.getChild(self.__class__.__name__)
         self.earliest_api_date = "20130428"
 
     def get_history(self, tickers: Union[CcyTicker, Sequence[CcyTicker]],

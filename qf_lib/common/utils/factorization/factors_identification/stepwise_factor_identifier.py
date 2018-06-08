@@ -1,12 +1,12 @@
-import logging
 from typing import List
 
 import numpy as np
 from sklearn.linear_model import LinearRegression
 
+from qf_lib.common.utils.factorization.factors_identification.factors_identifier import FactorsIdentifier
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
-from qf_lib.common.utils.factorization.factors_identification.factors_identifier import FactorsIdentifier
 
 
 class StepwiseFactorsIdentifier(FactorsIdentifier):
@@ -25,6 +25,8 @@ class StepwiseFactorsIdentifier(FactorsIdentifier):
             True if the output model shall include the intercept, False otherwise (e.g. because data is centered
             already).
         """
+        self.logger = qf_logger.getChild(self.__class__.__name__)
+
         self.epsilon = epsilon
         self.linear_regression = LinearRegression(fit_intercept=is_intercept)
 
@@ -51,12 +53,12 @@ class StepwiseFactorsIdentifier(FactorsIdentifier):
             Subset of the original regressors_df. Only contains rows corresponding to dates common for it and
             analysed_tms. Only contains columns corresponding to coefficients which should be included in the model
         """
-        logging.info("Model selection using Stepwise in progress...")
+        self.logger.info("Model selection using Stepwise in progress...")
 
         selected_columns_inds = self._select_with_forward_selection(regressors_df, analysed_tms)
         selected_columns_inds = np.sort(selected_columns_inds)
 
-        logging.info("Finished Stepwise regression analysis")
+        self.logger.info("Finished Stepwise regression analysis")
 
         return regressors_df.iloc[:, selected_columns_inds]
 

@@ -1,4 +1,3 @@
-import logging
 from datetime import datetime
 from itertools import groupby
 from typing import Union, Sequence, Dict
@@ -10,6 +9,7 @@ from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.enums.quandl_db_type import QuandlDBType
 from qf_lib.common.tickers.tickers import QuandlTicker
 from qf_lib.common.utils.dateutils.date_to_string import date_to_str
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
@@ -26,7 +26,7 @@ class QuandlDataProvider(AbstractPriceDataProvider):
     def __init__(self, settings: Settings):
         self.key = settings.quandl_key
         quandl.ApiConfig.api_key = self.key
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = qf_logger.getChild(self.__class__.__name__)
 
     def get_history(self, tickers: Union[QuandlTicker, Sequence[QuandlTicker]],
                     fields: Union[None, str, Sequence[str]]=None,
@@ -107,10 +107,7 @@ class QuandlDataProvider(AbstractPriceDataProvider):
         return price_field_dict
 
     def _get_history_from_table(self,  tickers: Sequence[QuandlTicker], fields: Sequence[str],
-                                start_date: datetime, end_date: datetime) -> Dict[str, pd.DataFrame]:
-        """
-        Returns dict: ticker_string -> DataFrame
-        """
+                                start_date: datetime, end_date: datetime) -> Dict[QuandlTicker, pd.DataFrame]:
         # Possibly this method is not generic enough, but I couldn't find another table db to test it.
 
         field_options = {}
@@ -131,6 +128,7 @@ class QuandlDataProvider(AbstractPriceDataProvider):
             for ticker_str, ticker_df in ticker_grouping:
                 ticker = QuandlTicker(ticker=ticker_str, database_name=db_name, database_type=QuandlDBType.Table)
                 result_dict[ticker] = self._format_single_ticker_table(ticker_df, start_date, end_date)
+
         return result_dict
 
     def _get_history_from_timeseries(self, tickers: Sequence[QuandlTicker], fields: Sequence[str],

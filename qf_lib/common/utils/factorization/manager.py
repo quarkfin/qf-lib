@@ -1,16 +1,16 @@
-import logging
 from typing import Tuple
 
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.utils.data_cleaner import DataCleaner
 from qf_lib.common.utils.dateutils.get_values_common_dates import get_values_for_common_dates
-from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
-from qf_lib.containers.series.qf_series import QFSeries
-from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
 from qf_lib.common.utils.factorization.data_models.data_model import DataModel
 from qf_lib.common.utils.factorization.data_models.data_model_input import DataModelInput
 from qf_lib.common.utils.factorization.data_models.rolling_data_model import RollingDataModel
 from qf_lib.common.utils.factorization.factors_identification.factors_identifier import FactorsIdentifier
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
+from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
+from qf_lib.containers.series.qf_series import QFSeries
+from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
 
 
 class FactorizationManager(object):
@@ -34,6 +34,8 @@ class FactorizationManager(object):
         is_fit_intercept
             default True; True if the calculated model should include the intercept coefficient
         """
+        self.logger = qf_logger.getChild(self.__class__.__name__)
+
         self.analysed_tms = analysed_tms.to_simple_returns()
         self.regressors_df = regressors_df.to_simple_returns()
 
@@ -93,13 +95,13 @@ class FactorizationManager(object):
         proxies missing data).
         """
 
-        logging.debug("Length of input timeseries: {:d} \n".format(len(analysed_tms)))
+        self.logger.debug("Length of input timeseries: {:d} \n".format(len(analysed_tms)))
 
         data_cleaner = DataCleaner(regressors_df)
         common_regressors_df = data_cleaner.proxy_using_regression(analysed_tms, columns_type=SimpleReturnsSeries)
         common_regressors_df, common_analysed_tms = get_values_for_common_dates(common_regressors_df, analysed_tms)
 
-        logging.debug("Length of preprocessed timeseries: {:d}".format(common_analysed_tms.size))
-        logging.debug("Number of regressors: {:d}".format(common_regressors_df.shape[1]))
+        self.logger.debug("Length of preprocessed timeseries: {:d}".format(common_analysed_tms.size))
+        self.logger.debug("Number of regressors: {:d}".format(common_regressors_df.shape[1]))
 
         return common_regressors_df, common_analysed_tms
