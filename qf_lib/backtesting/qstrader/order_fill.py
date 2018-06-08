@@ -1,23 +1,16 @@
 from datetime import datetime
 
 from qf_lib.backtesting.qstrader.contract.contract import Contract
-from qf_lib.backtesting.qstrader.events.event_base import Event
 from qf_lib.common.utils.dateutils.date_to_string import date_to_str
 
 
-class FillEvent(Event):
+class OrderFill(object):
     """
-    Encapsulates the notion of a filled order, as returned
-    from a brokerage. Stores the quantity of an instrument
-    actually filled and at what price. In addition, stores
-    the commission of the trade from the brokerage.
-
-    TODO: Currently does not support filling positions at
-    different prices. This will be simulated by averaging
-    the cost.
+    Encapsulates the notion of a filled Order, as returned from a Brokerage. Stores the quantity of an instrument
+    actually filled and at what price. In addition, stores the commission of the trade from the Brokerage.
     """
 
-    def __init__(self, time: datetime, contract: Contract, quantity: int, price: float, commission: float) -> None:
+    def __init__(self, time: datetime, contract: Contract, quantity: int, price: float, commission: float):
         """
         Parameters
         ----------
@@ -32,7 +25,7 @@ class FillEvent(Event):
         commission
             brokerage commission for carrying out the trade
         """
-        super().__init__(time)
+        self.time = time
         self.contract = contract
         self.quantity = quantity
         self.price = price
@@ -49,8 +42,13 @@ class FillEvent(Event):
         return result
 
     def __str__(self):
-        string_template = "{} - {:<25} -> Contract: {:>30}, Quantity: {:>7}, Price: {:>7.2f}, Commission: {:>7.2f}".\
-            format(date_to_str(self.time), self.__class__.__name__, str(self.contract), self.quantity, self.price,
-                   self.commission)
+        string_template = "{datetime_str:s} - {class_name:<25} -> Contract: {contract_str:>30}," \
+                          "Quantity: {quantity:>7}, Price: {price:>7.2f}, " \
+                          "Commission: {commission:>7.2f}".\
+            format(
+                datetime_str=date_to_str(self.time), class_name=self.__class__.__name__,
+                contract_str=str(self.contract), quantity=self.quantity, price=self.price,
+                commission=self.commission
+            )
 
         return string_template

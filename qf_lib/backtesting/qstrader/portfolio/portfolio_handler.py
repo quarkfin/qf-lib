@@ -1,6 +1,3 @@
-from qf_lib.backtesting.qstrader.events.fill_event.fill_event import FillEvent
-from qf_lib.backtesting.qstrader.events.fill_event.fill_event_listener import FillEventListener
-from qf_lib.backtesting.qstrader.events.fill_event.fill_event_notifier import FillEventNotifier
 from qf_lib.backtesting.qstrader.events.signal_event.signal_event import SignalEvent
 from qf_lib.backtesting.qstrader.events.signal_event.signal_event_listener import SignalEventListener
 from qf_lib.backtesting.qstrader.events.signal_event.signal_event_notifier import SignalEventNotifier
@@ -14,7 +11,7 @@ from qf_lib.backtesting.qstrader.position_sizer.base import AbstractPositionSize
 from qf_lib.backtesting.qstrader.risk_manager.base import AbstractRiskManager
 
 
-class PortfolioHandler(SignalEventListener, FillEventListener):
+class PortfolioHandler(SignalEventListener):
     """
     The PortfolioHandler is designed to interact with the backtesting or live trading overall event-driven
     architecture. Each PortfolioHandler contains a Portfolio object, which stores the actual BacktestPosition objects.
@@ -29,7 +26,6 @@ class PortfolioHandler(SignalEventListener, FillEventListener):
     def __init__(self, execution_handler: ExecutionHandler, portfolio: Portfolio,
                  position_sizer: AbstractPositionSizer, risk_manager: AbstractRiskManager,
                  monitor: AbstractMonitor, scheduler: Scheduler,
-                 fill_event_notifier: FillEventNotifier,
                  signal_event_notifier: SignalEventNotifier)-> None:
         self.execution_handler = execution_handler
         self.position_sizer = position_sizer
@@ -38,7 +34,6 @@ class PortfolioHandler(SignalEventListener, FillEventListener):
         self.monitor = monitor
 
         scheduler.subscribe(AfterMarketCloseEvent, listener=self)
-        fill_event_notifier.subscribe(listener=self)
         signal_event_notifier.subscribe(listener=self)
 
     def on_after_market_close(self, event: TimeEvent):
@@ -57,13 +52,3 @@ class PortfolioHandler(SignalEventListener, FillEventListener):
         # Once the RiskManager has verified, modified or eliminated any Order objects, they are sent
         # to the ExecutionHandler.
         self.execution_handler.accept_orders(refined_orders)
-
-    def on_fill_event(self, fill_event: FillEvent):
-        """
-        This is called by the backtester or live trading architecture to take a FillEvent and update the Portfolio
-        object with new or modified Positions.
-
-        In a backtesting environment these FillEvents will be simulated by a model representing the execution, whereas
-        in live trading they will come directly from a brokerage (such as Interactive Brokers).
-        """
-        self.portfolio.transact_fill_event(fill_event)

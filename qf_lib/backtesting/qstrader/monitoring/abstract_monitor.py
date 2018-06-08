@@ -2,7 +2,7 @@ from abc import ABCMeta, abstractmethod
 from datetime import datetime
 
 from qf_lib.backtesting.qstrader.backtest_result.backtest_result import BacktestResult
-from qf_lib.backtesting.qstrader.events.fill_event.fill_event import FillEvent
+from qf_lib.backtesting.qstrader.order_fill import OrderFill
 
 
 class AbstractMonitor(metaclass=ABCMeta):
@@ -38,8 +38,8 @@ class AbstractMonitor(metaclass=ABCMeta):
         raise NotImplementedError("Should implement end_of_trading_update()")
 
     @abstractmethod
-    def record_trade(self, fill_event: FillEvent):
+    def record_trade(self, fills: OrderFill):
         """
-        This method is called every time execution handler receives a new Fill Event
+        This method is called every time ExecutionHandler creates a new OrderFill
         """
         raise NotImplementedError("Should implement record_trade()")

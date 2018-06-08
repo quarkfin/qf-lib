@@ -1,3 +1,4 @@
+import logging
 import math
 from itertools import count
 from typing import Dict, List, Sequence
@@ -5,13 +6,14 @@ from typing import Dict, List, Sequence
 from qf_lib.backtesting.qstrader.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.qstrader.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.qstrader.events.event_manager import EventManager
-from qf_lib.backtesting.qstrader.events.fill_event.fill_event import FillEvent
 from qf_lib.backtesting.qstrader.events.time_event.market_open_event import MarketOpenEvent
 from qf_lib.backtesting.qstrader.events.time_event.scheduler import Scheduler
 from qf_lib.backtesting.qstrader.execution_handler.commission_models.commission_model import CommissionModel
 from qf_lib.backtesting.qstrader.monitoring.abstract_monitor import AbstractMonitor
 from qf_lib.backtesting.qstrader.order.order import Order
 from qf_lib.common.exceptions.broker_exceptions import OrderCancellingException
+from qf_lib.backtesting.qstrader.order_fill import OrderFill
+from qf_lib.backtesting.qstrader.portfolio.portfolio import Portfolio
 from qf_lib.common.utils.dateutils.timer import Timer
 from .execution_handler import ExecutionHandler
 
@@ -23,8 +25,10 @@ class SimulatedExecutionHandler(ExecutionHandler):
 
     def __init__(self, event_manager: EventManager, data_handler: DataHandler, timer: Timer,
                  scheduler: Scheduler, monitor: AbstractMonitor, commission_model: CommissionModel,
-                 contracts_to_tickers_mapper: ContractTickerMapper) -> None:
+                 contracts_to_tickers_mapper: ContractTickerMapper, portfolio: Portfolio) -> None:
         scheduler.subscribe(MarketOpenEvent, self)
+
+        self.logger = logging.getLogger(self.__class__.__name__)
 
         self.event_manager = event_manager
         self.data_handler = data_handler
@@ -32,6 +36,7 @@ class SimulatedExecutionHandler(ExecutionHandler):
         self.monitor = monitor
         self.commission_model = commission_model
         self.contracts_to_tickers_mapper = contracts_to_tickers_mapper
+        self.portfolio = portfolio
 
         self._awaiting_orders = {}  # type: Dict[int, Order]
         self._order_id_generator = count(start=1)
@@ -72,7 +77,7 @@ class SimulatedExecutionHandler(ExecutionHandler):
 
     def _execute_orders(self):
         """
-        Converts Orders into FillEvents using Market Open prices
+        Converts Orders into OrderFills.
         """
         all_contracts = [order.contract for order in self._awaiting_orders.values()]
         contracts_to_tickers = {
@@ -96,9 +101,9 @@ class SimulatedExecutionHandler(ExecutionHandler):
 
     def _execute_order(self, order: Order, security_price: float):
         """
-        Simulates execution of single order by converting the Order into FillEvent.
+        Simulates execution of a single Order by converting the Order into OrderFill.
         """
-        # Obtain values from the OrderEvent
+        # obtain values from the OrderEvent
         timestamp = self.timer.now()
         contract = order.contract
         quantity = order.quantity
@@ -109,10 +114,12 @@ class SimulatedExecutionHandler(ExecutionHandler):
         # set a dummy exchange and calculate trade commission
         commission = self.commission_model.calculate_commission(quantity, fill_price)
 
-        # create the FillEvent and place in the event manager
-        fill_event = FillEvent(timestamp, contract, quantity, fill_price, commission)
-        self.event_manager.publish(fill_event)
-        self.monitor.record_trade(fill_event)
+        # create the OrderFill and update Portfolio
+        order_fill = OrderFill(timestamp, contract, quantity, fill_price, commission)
+        self.monitor.record_trade(order_fill)
+
+        self.logger.info("Order executed. OrderFill has been created:\n{:s}".format(str(order_fill)))
+        self.portfolio.transact_order_fill(order_fill)
 
     @staticmethod
     def _calculate_fill_price(_: Order, security_price: float) -> float:

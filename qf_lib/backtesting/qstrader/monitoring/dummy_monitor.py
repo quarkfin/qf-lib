@@ -1,8 +1,8 @@
 from datetime import datetime
 
 from qf_lib.backtesting.qstrader.backtest_result.backtest_result import BacktestResult
-from qf_lib.backtesting.qstrader.events.fill_event.fill_event import FillEvent
 from qf_lib.backtesting.qstrader.monitoring.abstract_monitor import AbstractMonitor
+from qf_lib.backtesting.qstrader.order_fill import OrderFill
 
 
 class DummyMonitor(AbstractMonitor):
@@ -19,5 +19,5 @@ class DummyMonitor(AbstractMonitor):
     def real_time_update(self, timestamp: datetime):
         pass
 
-    def record_trade(self, fill_event: FillEvent):
+    def record_trade(self, order_fill: OrderFill):
         pass

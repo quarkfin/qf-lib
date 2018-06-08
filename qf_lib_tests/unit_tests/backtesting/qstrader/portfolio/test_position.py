@@ -1,7 +1,7 @@
 import unittest
 
 from qf_lib.backtesting.qstrader.contract.contract import Contract
-from qf_lib.backtesting.qstrader.events.fill_event.fill_event import FillEvent
+from qf_lib.backtesting.qstrader.order_fill import OrderFill
 from qf_lib.backtesting.qstrader.portfolio.backtest_position import BacktestPosition
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 
@@ -29,7 +29,7 @@ class TestPosition(unittest.TestCase):
 
     def test_initial_fill_position(self):
         position = BacktestPosition(self.contract)
-        position.transact_fill_event(FillEvent(self.time, self.contract, 50, 100, 5))
+        position.transact_order_fill(OrderFill(self.time, self.contract, 50, 100, 5))
         position.update_price(110, 120)
 
         self.assertEqual(position.contract, self.contract)
@@ -43,13 +43,13 @@ class TestPosition(unittest.TestCase):
     def test_without_commission_position(self):
         position = BacktestPosition(self.contract)
 
-        position.transact_fill_event(FillEvent(self.time, self.contract, 50, 100, 0))
-        position.transact_fill_event(FillEvent(self.time, self.contract, 30, 120, 0))
-        position.transact_fill_event(FillEvent(self.time, self.contract, -20, 175, 0))
-        position.transact_fill_event(FillEvent(self.time, self.contract, -30, 160, 0))
-        position.transact_fill_event(FillEvent(self.time, self.contract, 10, 150, 0))
-        position.transact_fill_event(FillEvent(self.time, self.contract, 10, 170, 0))
-        position.transact_fill_event(FillEvent(self.time, self.contract, -20, 150, 0))
+        position.transact_order_fill(OrderFill(self.time, self.contract, 50, 100, 0))
+        position.transact_order_fill(OrderFill(self.time, self.contract, 30, 120, 0))
+        position.transact_order_fill(OrderFill(self.time, self.contract, -20, 175, 0))
+        position.transact_order_fill(OrderFill(self.time, self.contract, -30, 160, 0))
+        position.transact_order_fill(OrderFill(self.time, self.contract, 10, 150, 0))
+        position.transact_order_fill(OrderFill(self.time, self.contract, 10, 170, 0))
+        position.transact_order_fill(OrderFill(self.time, self.contract, -20, 150, 0))
         position.update_price(110, 120)
 
         self.assertEqual(position.contract, self.contract)
@@ -63,13 +63,13 @@ class TestPosition(unittest.TestCase):
     def test_position(self):
         position = BacktestPosition(self.contract)
 
-        position.transact_fill_event(FillEvent(self.time, self.contract, 50, 100, 5))
-        position.transact_fill_event(FillEvent(self.time, self.contract, 30, 120, 3))
-        position.transact_fill_event(FillEvent(self.time, self.contract, -20, 175, 2))
-        position.transact_fill_event(FillEvent(self.time, self.contract, -30, 160, 1))
-        position.transact_fill_event(FillEvent(self.time, self.contract, 10, 150, 7))
-        position.transact_fill_event(FillEvent(self.time, self.contract, 10, 170, 4))
-        position.transact_fill_event(FillEvent(self.time, self.contract, -20, 150, 5))
+        position.transact_order_fill(OrderFill(self.time, self.contract, 50, 100, 5))
+        position.transact_order_fill(OrderFill(self.time, self.contract, 30, 120, 3))
+        position.transact_order_fill(OrderFill(self.time, self.contract, -20, 175, 2))
+        position.transact_order_fill(OrderFill(self.time, self.contract, -30, 160, 1))
+        position.transact_order_fill(OrderFill(self.time, self.contract, 10, 150, 7))
+        position.transact_order_fill(OrderFill(self.time, self.contract, 10, 170, 4))
+        position.transact_order_fill(OrderFill(self.time, self.contract, -20, 150, 5))
         position.update_price(110, 120)
 
         self.assertEqual(position.contract, self.contract)
@@ -83,18 +83,18 @@ class TestPosition(unittest.TestCase):
     def test_position_close(self):
         position = BacktestPosition(self.contract)
         self.assertEqual(position.is_closed, False)
-        position.transact_fill_event(FillEvent(self.time, self.contract, 20, 100, 0))
+        position.transact_order_fill(OrderFill(self.time, self.contract, 20, 100, 0))
         self.assertEqual(position.is_closed, False)
-        position.transact_fill_event(FillEvent(self.time, self.contract, -10, 120, 20))
+        position.transact_order_fill(OrderFill(self.time, self.contract, -10, 120, 20))
         self.assertEqual(position.is_closed, False)
-        position.transact_fill_event(FillEvent(self.time, self.contract, -10, 110, 20))
+        position.transact_order_fill(OrderFill(self.time, self.contract, -10, 110, 20))
         self.assertEqual(position.is_closed, True)
 
     def test_position_stats_on_close(self):
         position = BacktestPosition(self.contract)
-        position.transact_fill_event(FillEvent(self.time, self.contract, 20, 100, 0))
+        position.transact_order_fill(OrderFill(self.time, self.contract, 20, 100, 0))
         position.update_price(110, 120)
-        position.transact_fill_event(FillEvent(self.time, self.contract, -20, 120, 0))
+        position.transact_order_fill(OrderFill(self.time, self.contract, -20, 120, 0))
 
         self.assertEqual(position.contract, self.contract)
         self.assertEqual(position.number_of_shares, 0)
@@ -108,62 +108,62 @@ class TestPosition(unittest.TestCase):
     def test_position_direction(self):
         position = BacktestPosition(self.contract)
         self.assertEqual(position.direction, 0)
-        position.transact_fill_event(FillEvent(self.time, self.contract, 20, 100, 0))
+        position.transact_order_fill(OrderFill(self.time, self.contract, 20, 100, 0))
         self.assertEqual(position.direction, 1)
-        position.transact_fill_event(FillEvent(self.time, self.contract, -10, 100, 0))
+        position.transact_order_fill(OrderFill(self.time, self.contract, -10, 100, 0))
         self.assertEqual(position.direction, 1)
-        position.transact_fill_event(FillEvent(self.time, self.contract, -10, 100, 0))
+        position.transact_order_fill(OrderFill(self.time, self.contract, -10, 100, 0))
         self.assertEqual(position.direction, 1)
 
         position = BacktestPosition(self.contract)
-        position.transact_fill_event(FillEvent(self.time, self.contract, -20, 100, 0))
+        position.transact_order_fill(OrderFill(self.time, self.contract, -20, 100, 0))
         self.assertEqual(position.direction, -1)
 
         position = BacktestPosition(self.contract)
-        position.transact_fill_event(FillEvent(self.time, self.contract, 20, 100, 0))
+        position.transact_order_fill(OrderFill(self.time, self.contract, 20, 100, 0))
         with self.assertRaises(AssertionError):
-            position.transact_fill_event(FillEvent(self.time, self.contract, -21, 100, 0))
+            position.transact_order_fill(OrderFill(self.time, self.contract, -21, 100, 0))
 
     def test_closed_position(self):
         position = BacktestPosition(self.contract)
-        position.transact_fill_event(FillEvent(self.time, self.contract, 20, 100, 0))
-        position.transact_fill_event(FillEvent(self.time, self.contract, -20, 100, 0))
+        position.transact_order_fill(OrderFill(self.time, self.contract, 20, 100, 0))
+        position.transact_order_fill(OrderFill(self.time, self.contract, -20, 100, 0))
 
         with self.assertRaises(AssertionError):
-            position.transact_fill_event(FillEvent(self.time, self.contract, 1, 100, 0))
+            position.transact_order_fill(OrderFill(self.time, self.contract, 1, 100, 0))
 
         with self.assertRaises(AssertionError):
-            position.transact_fill_event(FillEvent(self.time, self.contract, -1, 100, 0))
+            position.transact_order_fill(OrderFill(self.time, self.contract, -1, 100, 0))
 
         with self.assertRaises(AssertionError):
             position.update_price(110, 120)
 
     def test_realised_pnl(self):
         position = BacktestPosition(self.contract)
-        position.transact_fill_event(FillEvent(self.time, self.contract, 20, 100, 0))
-        position.transact_fill_event(FillEvent(self.time, self.contract, -10, 120, 20))
+        position.transact_order_fill(OrderFill(self.time, self.contract, 20, 100, 0))
+        position.transact_order_fill(OrderFill(self.time, self.contract, -10, 120, 20))
         self.assertEqual(position.realized_pnl(), 180)
 
         position = BacktestPosition(self.contract)
-        position.transact_fill_event(FillEvent(self.time, self.contract, 20, 100, 0))
-        position.transact_fill_event(FillEvent(self.time, self.contract, -10, 80, 20))
+        position.transact_order_fill(OrderFill(self.time, self.contract, 20, 100, 0))
+        position.transact_order_fill(OrderFill(self.time, self.contract, -10, 80, 20))
         self.assertEqual(position.realized_pnl(), -220)
 
         position = BacktestPosition(self.contract)
-        position.transact_fill_event(FillEvent(self.time, self.contract, -20, 100, 0))
-        position.transact_fill_event(FillEvent(self.time, self.contract, 10, 120, 20))
+        position.transact_order_fill(OrderFill(self.time, self.contract, -20, 100, 0))
+        position.transact_order_fill(OrderFill(self.time, self.contract, 10, 120, 20))
         self.assertEqual(position.realized_pnl(), -220)
 
         position = BacktestPosition(self.contract)
-        position.transact_fill_event(FillEvent(self.time, self.contract, -20, 100, 0))
-        position.transact_fill_event(FillEvent(self.time, self.contract, 10, 80, 20))
+        position.transact_order_fill(OrderFill(self.time, self.contract, -20, 100, 0))
+        position.transact_order_fill(OrderFill(self.time, self.contract, 10, 80, 20))
         self.assertEqual(position.realized_pnl(), 180)
 
         position = BacktestPosition(self.contract)
-        position.transact_fill_event(FillEvent(self.time, self.contract, 20, 100, 0))
-        position.transact_fill_event(FillEvent(self.time, self.contract, -10, 120, 20))
+        position.transact_order_fill(OrderFill(self.time, self.contract, 20, 100, 0))
+        position.transact_order_fill(OrderFill(self.time, self.contract, -10, 120, 20))
         self.assertEqual(position.realized_pnl(), 180)
-        position.transact_fill_event(FillEvent(self.time, self.contract, -10, 110, 20))
+        position.transact_order_fill(OrderFill(self.time, self.contract, -10, 110, 20))
         self.assertEqual(position.realized_pnl(), 260)
 
 

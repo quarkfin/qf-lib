@@ -7,7 +7,7 @@ from numpy import sign
 from qf_lib.backtesting.qstrader.contract.contract import Contract
 from qf_lib.backtesting.qstrader.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.qstrader.data_handler.data_handler import DataHandler
-from qf_lib.backtesting.qstrader.events.fill_event.fill_event import FillEvent
+from qf_lib.backtesting.qstrader.order_fill import OrderFill
 from qf_lib.backtesting.qstrader.portfolio.backtest_position import BacktestPosition
 from qf_lib.backtesting.qstrader.portfolio.trade import Trade
 from qf_lib.common.utils.dateutils.timer import Timer
@@ -38,21 +38,21 @@ class Portfolio(object):
         self.closed_positions = []      # type: List[BacktestPosition]
         self.trades = []                # type: List[Trade]
 
-    def transact_fill_event(self, fill_event: FillEvent):
+    def transact_order_fill(self, order_fill: OrderFill):
         """
         Adjusts positions to account for a transaction.
         Handles any new position or modification to a current position
         """
 
-        position = self._get_or_create_position(fill_event.contract)
-        transaction_cost = position.transact_fill_event(fill_event)
+        position = self._get_or_create_position(order_fill.contract)
+        transaction_cost = position.transact_order_fill(order_fill)
         self.current_cash -= transaction_cost
 
-        self._record_trade(position, fill_event)
+        self._record_trade(position, order_fill)
 
         # if the position was closed: remove it from open positions and place in closed positions
         if position.is_closed:
-            self.open_positions_dict.pop(fill_event.contract)
+            self.open_positions_dict.pop(order_fill.contract)
             self.closed_positions.append(position)
 
     def update(self):
@@ -97,7 +97,7 @@ class Portfolio(object):
 
         return position
 
-    def _record_trade(self, position: BacktestPosition, fill_event: FillEvent):
+    def _record_trade(self, position: BacktestPosition, order_fill: OrderFill):
         """
         Trade is defined as a transaction that goes in the direction of making your position smaller.
         For example:
@@ -105,13 +105,13 @@ class Portfolio(object):
            buying back part or entire short position is a trade
            buying additional shares of existing long position is NOT a trade
         """
-        is_a_trade = sign(fill_event.quantity) != sign(position.number_of_shares)
+        is_a_trade = sign(order_fill.quantity) != sign(position.number_of_shares)
         if is_a_trade:
-            time = fill_event.time
+            time = order_fill.time
             contract = position.contract
-            quantity = fill_event.quantity
+            quantity = order_fill.quantity
             entry_price = position.avg_cost_per_share()
-            exit_price = fill_event.average_price_including_commission()
+            exit_price = order_fill.average_price_including_commission()
             trade = Trade(time=time,
                           contract=contract,
                           quantity=quantity,

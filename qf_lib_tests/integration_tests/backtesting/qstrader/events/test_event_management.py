@@ -2,15 +2,12 @@ import unittest
 from typing import List
 from unittest import TestCase
 
-from qf_lib.backtesting.qstrader.contract.contract import Contract
 from qf_lib.backtesting.qstrader.events.empty_queue_event.empty_queue_event import EmptyQueueEvent
 from qf_lib.backtesting.qstrader.events.empty_queue_event.empty_queue_event_listener import EmptyQueueEventListener
 from qf_lib.backtesting.qstrader.events.end_trading_event.end_trading_event import EndTradingEvent
 from qf_lib.backtesting.qstrader.events.end_trading_event.end_trading_event_listener import EndTradingEventListener
 from qf_lib.backtesting.qstrader.events.event_base import AllEventListener, Event
 from qf_lib.backtesting.qstrader.events.event_manager import EventManager
-from qf_lib.backtesting.qstrader.events.fill_event.fill_event import FillEvent
-from qf_lib.backtesting.qstrader.events.fill_event.fill_event_listener import FillEventListener
 from qf_lib.backtesting.qstrader.events.signal_event.signal_event import SignalEvent
 from qf_lib.backtesting.qstrader.events.signal_event.signal_event_listener import SignalEventListener
 from qf_lib.backtesting.qstrader.events.time_event.after_market_close_event import AfterMarketCloseEvent
@@ -25,7 +22,7 @@ from qf_lib.common.utils.dateutils.timer import SettableTimer, Timer
 from qf_lib.testing_tools.containers_comparison import assert_lists_equal
 
 
-class DummyListener(AllEventListener, EmptyQueueEventListener, EndTradingEventListener, FillEventListener,
+class DummyListener(AllEventListener, EmptyQueueEventListener, EndTradingEventListener,
                     SignalEventListener):
     """
     A "driver" class used for the integration test. It simulates the behavior of a Strategy, PortfolioHandler,
@@ -40,9 +37,7 @@ class DummyListener(AllEventListener, EmptyQueueEventListener, EndTradingEventLi
 
         notifiers.empty_queue_event_notifier.subscribe(self)
         notifiers.end_trading_event_notifier.subscribe(self)
-        notifiers.fill_event_notifier.subscribe(self)
         notifiers.signal_event_notifier.subscribe(self)
-
         notifiers.scheduler.subscribe(MarketOpenEvent, self)
         notifiers.scheduler.subscribe(BeforeMarketOpenEvent, self)
         notifiers.scheduler.subscribe(AfterMarketCloseEvent, self)
@@ -52,9 +47,6 @@ class DummyListener(AllEventListener, EmptyQueueEventListener, EndTradingEventLi
         self._register_event(event)
 
     def on_end_trading_event(self, event: EndTradingEvent):
-        self._register_event(event)
-
-    def on_fill_event(self, event: FillEvent):
         self._register_event(event)
 
     def on_signal_event(self, event: SignalEvent):
@@ -69,10 +61,6 @@ class DummyListener(AllEventListener, EmptyQueueEventListener, EndTradingEventLi
 
     def on_market_open(self, event: MarketOpenEvent):
         self._register_event(event)
-        test_contract = Contract(symbol="TEST_SYMBOL", security_type="STK", exchange="NASDAQ")
-        self.event_manager.publish(
-            FillEvent(self.timer.now(), contract=test_contract, quantity=8, price=112.09, commission=0.001)
-        )
 
     def on_after_market_close(self, event: AfterMarketCloseEvent):
         self._register_event(event)
@@ -117,7 +105,6 @@ class TestEventManagement(TestCase):
             (SignalEvent, str_to_date("2018-04-10 08:00:00.000000", DateFormat.FULL_ISO)),
             (EmptyQueueEvent, str_to_date("2018-04-10 08:00:00.000000", DateFormat.FULL_ISO)),
             (MarketOpenEvent, str_to_date("2018-04-10 09:30:00.000000", DateFormat.FULL_ISO)),
-            (FillEvent, str_to_date("2018-04-10 09:30:00.000000", DateFormat.FULL_ISO)),
             (EmptyQueueEvent, str_to_date("2018-04-10 09:30:00.000000", DateFormat.FULL_ISO)),
             (MarketCloseEvent, str_to_date("2018-04-10 16:00:00.000000", DateFormat.FULL_ISO)),
             (EmptyQueueEvent, str_to_date("2018-04-10 16:00:00.000000", DateFormat.FULL_ISO)),
@@ -136,7 +123,6 @@ class TestEventManagement(TestCase):
         event_manager.register_notifiers([
             notifiers.empty_queue_event_notifier,
             notifiers.end_trading_event_notifier,
-            notifiers.fill_event_notifier,
             notifiers.signal_event_notifier,
             notifiers.scheduler
         ])

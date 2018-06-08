@@ -3,7 +3,7 @@ from typing import List
 from numpy import sign
 
 from qf_lib.backtesting.qstrader.contract.contract import Contract
-from qf_lib.backtesting.qstrader.events.fill_event.fill_event import FillEvent
+from qf_lib.backtesting.qstrader.order_fill import OrderFill
 from qf_lib.backtesting.qstrader.portfolio.position import Position
 
 
@@ -15,7 +15,7 @@ class BacktestPosition(Position):
         self.is_closed = False
         """Determines if the positions has been closed"""
 
-        self.transactions = []     # type: List[FillEvent]
+        self.transactions = []     # type: List[OrderFill]
         """List of all transactions for the asset"""
 
         self.number_of_shares = 0  # type: int
@@ -33,9 +33,9 @@ class BacktestPosition(Position):
         """ Estimated current market value of the position """
         return self.number_of_shares * self.current_price
 
-    def transact_fill_event(self, fill_event: FillEvent) -> float:
+    def transact_order_fill(self, order_fill: OrderFill) -> float:
         """
-        Update the state of a position by using the fill event containing information about datetime, price,
+        Update the state of a Position by using the OrderFill containing information about datetime, price,
         quantity and commission.
 
         Returns
@@ -44,21 +44,21 @@ class BacktestPosition(Position):
         For SELL transaction: much we received for selling shares including commission (it will be a negative number)
         """
         self._check_if_open()
-        self._check_if_direction_does_not_change(fill_event)
-        assert fill_event.contract == self.contract, "Contract of fill event has to match the contract of a position"
-        assert fill_event.quantity != 0, "`fill_quantity` shouldn't be 0"
-        assert fill_event.price > 0.0, "`fill_price` must be positive. For short sales use a negative quantity"
+        self._check_if_direction_does_not_change(order_fill)
+        assert order_fill.contract == self.contract, "Contract of OrderFill has to match the Contract of a Position"
+        assert order_fill.quantity != 0, "`OrderFill.quantity` shouldn't be 0"
+        assert order_fill.price > 0.0, "OrderFill.price must be positive. For short sales use a negative quantity"
 
         if not self.transactions:   # the first transaction decides the direction of the position
-            self.direction = sign(fill_event.quantity)
+            self.direction = sign(order_fill.quantity)
 
-        self.transactions.append(fill_event)
-        self.number_of_shares += fill_event.quantity
+        self.transactions.append(order_fill)
+        self.number_of_shares += order_fill.quantity
 
         if self.number_of_shares == 0:  # close the position if the number of shares drops to zero
             self.is_closed = True
 
-        return self._calculate_cost_of_transaction(fill_event)
+        return self._calculate_cost_of_transaction(order_fill)
 
     def update_price(self, bid_price: float, ask_price: float):
         """
@@ -138,25 +138,25 @@ class BacktestPosition(Position):
         return pnl
 
     @staticmethod
-    def _calculate_cost_of_transaction(fill_event: FillEvent):
+    def _calculate_cost_of_transaction(order_fill: OrderFill):
         """
         Calculates how much we paid to buy assets or how much we received for selling assets (including commission)
         For the proceeds of the assets we sold it returns a negative number
         """
-        result = fill_event.price * fill_event.quantity
-        result += fill_event.commission
+        result = order_fill.price * order_fill.quantity
+        result += order_fill.commission
         return result
 
     def _check_if_open(self):
         assert not self.is_closed, "The position has already been closed"
 
-    def _check_if_direction_does_not_change(self, fill_event: FillEvent):
+    def _check_if_direction_does_not_change(self, order_fill: OrderFill):
         """
-        Checks if the position will still be of the same direction.
+        Checks if the Position will still be of the same direction.
         We do not allow changing the direction from Long to Short and from Short to Long
-        We should close the position first and then open a new one in the opposite direction.
+        We should close the Position first and then open a new one in the opposite direction.
         """
-        sign_after_transaction = sign(self.number_of_shares + fill_event.quantity)
+        sign_after_transaction = sign(self.number_of_shares + order_fill.quantity)
         change = abs(sign_after_transaction - self.direction)
         assert change < 2, "Transaction cannot change the direction of the position. " \
                            "Close the position and open new one in the opposite direction."

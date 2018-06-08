@@ -2,7 +2,7 @@
 import matplotlib.pyplot as plt
 plt.ion()  # required for dynamic chart
 import csv
-from qf_lib.backtesting.qstrader.events.fill_event.fill_event import FillEvent
+from qf_lib.backtesting.qstrader.order_fill import OrderFill
 from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.get_sources_root import get_src_root
 from qf_lib.settings import Settings
@@ -80,11 +80,11 @@ class BacktestMonitor(AbstractMonitor):
         """
         pass
 
-    def record_trade(self, fill_event: FillEvent):
+    def record_trade(self, order_fill: OrderFill):
         """
         Print the trade to the CSV file and on the console
         """
-        self._save_trade_to_file(fill_event)
+        self._save_trade_to_file(order_fill)
 
     def _init_csv_file(self) -> str:
         """
@@ -106,16 +106,16 @@ class BacktestMonitor(AbstractMonitor):
 
         return file_path
 
-    def _save_trade_to_file(self, fill_event: FillEvent):
+    def _save_trade_to_file(self, order_fill: OrderFill):
         """
-        Append all details about the FillEvent to the CSV trade log.
+        Append all details about the OrderFill to the CSV trade log.
         """
         with open(self._trades_file_path, 'a', newline='') as csv_file:
             writer = csv.writer(csv_file)
             writer.writerow([
-                fill_event.time,
-                fill_event.contract.symbol,
-                fill_event.quantity,
-                fill_event.price,
-                fill_event.commission
+                order_fill.time,
+                order_fill.contract.symbol,
+                order_fill.quantity,
+                order_fill.price,
+                order_fill.commission
             ])

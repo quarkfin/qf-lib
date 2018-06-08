@@ -63,7 +63,7 @@ class BacktestTradingSession(object):
 
         execution_handler = SimulatedExecutionHandler(
             events_manager, data_handler, timer, notifiers.scheduler, monitor, commission_model,
-            contract_to_tickers_mapper)
+            contract_to_tickers_mapper, portfolio)
 
         broker = BacktestBroker(portfolio, execution_handler)
         order_factory = OrderFactory(broker, data_handler, contract_to_tickers_mapper)
@@ -73,7 +73,7 @@ class BacktestTradingSession(object):
         )
         portfolio_handler = PortfolioHandler(
             execution_handler, portfolio, position_sizer, risk_manager, monitor,
-            notifiers.scheduler, notifiers.fill_event_notifier, notifiers.signal_event_notifier
+            notifiers.scheduler, notifiers.signal_event_notifier
         )
 
         self.logger.info(
@@ -115,7 +115,6 @@ class BacktestTradingSession(object):
             notifiers.all_event_notifier,
             notifiers.empty_queue_event_notifier,
             notifiers.end_trading_event_notifier,
-            notifiers.fill_event_notifier,
             notifiers.signal_event_notifier,
             notifiers.scheduler
         ])
