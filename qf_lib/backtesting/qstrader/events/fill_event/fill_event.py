@@ -1,7 +1,7 @@
 from datetime import datetime
 
+from qf_lib.backtesting.qstrader.contract.contract import Contract
 from qf_lib.backtesting.qstrader.events.event_base import Event
-from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.date_to_string import date_to_str
 
 
@@ -17,14 +17,14 @@ class FillEvent(Event):
     the cost.
     """
 
-    def __init__(self, time: datetime, ticker: Ticker, quantity: int, price: float, commission: float) -> None:
+    def __init__(self, time: datetime, contract: Contract, quantity: int, price: float, commission: float) -> None:
         """
         Parameters
         ----------
         time
             time when the order was filled
-        ticker
-            ticker identifying the asset
+        contract
+            contract identifying the asset
         quantity
             filled quantity, positive for assets bought and negative for assets sold
         price
@@ -33,7 +33,7 @@ class FillEvent(Event):
             brokerage commission for carrying out the trade
         """
         super().__init__(time)
-        self.ticker = ticker
+        self.contract = contract
         self.quantity = quantity
         self.price = price
         self.commission = commission
@@ -49,8 +49,8 @@ class FillEvent(Event):
         return result
 
     def __str__(self):
-        string_template = "{} - {:<25} -> Ticker: {:>17}, Quantity: {:>7}, Price: {:>7.2f}, Commission: {:>7.2f}".\
-            format(date_to_str(self.time), self.__class__.__name__, self.ticker.as_string(),
-                   self.quantity, self.price, self.commission
-        )
+        string_template = "{} - {:<25} -> Contract: {:>30}, Quantity: {:>7}, Price: {:>7.2f}, Commission: {:>7.2f}".\
+            format(date_to_str(self.time), self.__class__.__name__, str(self.contract), self.quantity, self.price,
+                   self.commission)
+
         return string_template

@@ -1,16 +1,20 @@
 import logging
 from threading import Thread, Event, Lock
-from typing import List, Optional
+from typing import List
 
 from ibapi.client import EClient
-from ibapi.contract import Contract
-from ibapi.order import Order
+from ibapi.contract import Contract as IBContract
+from ibapi.order import Order as IBOrder
 
-from qf_lib.interactive_brokers.ib_utils import IBPositionInfo, IBOrderInfo
+from qf_lib.backtesting.qstrader.broker.broker import Broker
+from qf_lib.backtesting.qstrader.order.execution_style import MarketOrder, StopOrder
+from qf_lib.backtesting.qstrader.order.order import Order
+from qf_lib.backtesting.qstrader.portfolio.position import Position
+from qf_lib.common.exceptions.broker_exceptions import BrokerException, OrderCancellingException
 from qf_lib.interactive_brokers.ib_wrapper import IBWrapper
 
 
-class IBBroker(object):
+class IBBroker(Broker):
     def __init__(self):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.lock = Lock()
@@ -31,7 +35,7 @@ class IBBroker(object):
         if not self._wait_for_results():
             raise ConnectionError("IB Broker was not initialized correctly")
 
-    def get_portfolio_value(self) -> Optional[float]:
+    def get_portfolio_value(self) -> float:
         with self.lock:
             request_id = 1
             self.client.reqAccountSummary(request_id, 'All', 'NetLiquidation')
@@ -41,10 +45,11 @@ class IBBroker(object):
             if wait_result:
                 return self.wrapper.net_liquidation
             else:
-                self.logger.error('===> Time out while getting portfolio value')
-                return None
+                error_msg = 'Time out while getting portfolio value'
+                self.logger.error('===> {}'.format(error_msg))
+                raise BrokerException(error_msg)
 
-    def get_portfolio_tag(self, tag: str) -> Optional[float]:
+    def get_portfolio_tag(self, tag: str) -> float:
         with self.lock:
             request_id = 2
             self.client.reqAccountSummary(request_id, 'All', tag)
@@ -54,10 +59,11 @@ class IBBroker(object):
             if wait_result:
                 return self.wrapper.tmp_value
             else:
-                self.logger.error('===> Time out while getting portfolio tag: {}'.format(tag))
-                return None
+                error_msg = 'Time out while getting portfolio tag: {}'.format(tag)
+                self.logger.error('===> {}'.format(error_msg))
+                raise BrokerException(error_msg)
 
-    def get_positions(self) -> Optional[List[IBPositionInfo]]:
+    def get_positions(self) -> List[Position]:
         with self.lock:
             self.wrapper.reset_position_list()
             self.client.reqPositions()
@@ -65,34 +71,38 @@ class IBBroker(object):
             if self._wait_for_results():
                 return self.wrapper.position_list
             else:
-                self.logger.error('===> Time out while getting positions')
-                return None
+                error_msg = 'Time out while getting positions'
+                self.logger.error('===> {}'.format(error_msg))
+                raise BrokerException(error_msg)
 
-    def place_order(self, contract: Contract, order: Order) -> Optional[int]:
+    def place_order(self, order: Order) -> int:
         with self.lock:
             order_id = self.wrapper.next_order_id()
             self.wrapper.set_waiting_order_id(order_id)
-            self.client.placeOrder(order_id, contract, order)
+
+            ib_contract = self._to_ib_contract(order.contract)
+            ib_order = self._to_ib_order(order)
+
+            self.client.placeOrder(order_id, ib_contract, ib_order)
 
             if self._wait_for_results():
                 return order_id
             else:
-                self.logger.error('===> Time out while placing the trade for: \n'
-                                  '\tcontract: {}\n'
-                                  '\torder: {}'.format(contract, order))
-                return None
+                error_msg = 'Time out while placing the trade for: \n\torder: {}'.format(order)
+                self.logger.error('===> {}'.format(error_msg))
+                raise BrokerException(error_msg)
 
-    def cancel_order(self, order_id: int) -> bool:
+    def cancel_order(self, order_id: int):
         with self.lock:
             self.wrapper.set_cancel_order_id(order_id)
             self.client.cancelOrder(order_id)
-            if self._wait_for_results():
-                return True
-            else:
-                self.logger.error('===> Time out while cancelling order id {} : \n'.format(order_id))
-                return False
 
-    def get_open_orders(self)-> Optional[List[IBOrderInfo]]:
+            if not self._wait_for_results():
+                error_msg = 'Time out while cancelling order id {} : \n'.format(order_id)
+                self.logger.error('===> {}'.format(error_msg))
+                raise OrderCancellingException(error_msg)
+
+    def get_open_orders(self)-> List[Order]:
         with self.lock:
             self.wrapper.reset_order_list()
             self.client.reqOpenOrders()
@@ -100,8 +110,9 @@ class IBBroker(object):
             if self._wait_for_results():
                 return self.wrapper.order_list
             else:
-                self.logger.error('===> Time out while getting orders')
-                return None
+                error_msg = 'Time out while getting orders'
+                self.logger.error('===> {}'.format(error_msg))
+                raise BrokerException(error_msg)
 
     def cancel_all_open_orders(self):
         """
@@ -115,3 +126,33 @@ class IBBroker(object):
         wait_result = self.action_event_lock.wait(self.waiting_time)
         self.action_event_lock.clear()
         return wait_result
+
+    def _to_ib_contract(self, contract):
+        ib_contract = IBContract()
+        ib_contract.symbol = contract.symbol
+        ib_contract.secType = contract.security_type
+        ib_contract.exchange = contract.exchange
+        return ib_contract
+
+    def _to_ib_order(self, order):
+        ib_order = IBOrder()
+
+        if order.quantity > 0:
+            ib_order.action = 'BUY'
+        else:
+            ib_order.action = 'SELL'
+
+        ib_order.totalQuantity = abs(order.quantity)
+
+        execution_style = order.execution_style
+        self._set_execution_style(ib_order, execution_style)
+
+        ib_order.tif = order.tif
+        return ib_order
+
+    def _set_execution_style(self, ib_order, execution_style):
+        if isinstance(execution_style, MarketOrder):
+            ib_order.orderType = "MKT"
+        elif isinstance(execution_style, StopOrder):
+            ib_order.orderType = "STP"
+            ib_order.auxPrice = execution_style.stop_price

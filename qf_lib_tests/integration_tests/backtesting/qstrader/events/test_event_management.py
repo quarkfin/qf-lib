@@ -2,6 +2,7 @@ import unittest
 from typing import List
 from unittest import TestCase
 
+from qf_lib.backtesting.qstrader.contract.contract import Contract
 from qf_lib.backtesting.qstrader.events.empty_queue_event.empty_queue_event import EmptyQueueEvent
 from qf_lib.backtesting.qstrader.events.empty_queue_event.empty_queue_event_listener import EmptyQueueEventListener
 from qf_lib.backtesting.qstrader.events.end_trading_event.end_trading_event import EndTradingEvent
@@ -18,7 +19,6 @@ from qf_lib.backtesting.qstrader.events.time_event.market_close_event import Mar
 from qf_lib.backtesting.qstrader.events.time_event.market_open_event import MarketOpenEvent
 from qf_lib.backtesting.qstrader.events.time_flow_controller import BacktestTimeFlowController
 from qf_lib.backtesting.qstrader.trading_session.notifiers import Notifiers
-from qf_lib.common.tickers.tickers import QuandlTicker
 from qf_lib.common.utils.dateutils.date_format import DateFormat
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.dateutils.timer import SettableTimer, Timer
@@ -69,9 +69,9 @@ class DummyListener(AllEventListener, EmptyQueueEventListener, EndTradingEventLi
 
     def on_market_open(self, event: MarketOpenEvent):
         self._register_event(event)
-        test_ticker = QuandlTicker("TEST_TICKER", "TEST_DB")
+        test_contract = Contract(symbol="TEST_SYMBOL", security_type="STK", exchange="NASDAQ")
         self.event_manager.publish(
-            FillEvent(self.timer.now(), ticker=test_ticker, quantity=8, price=112.09, commission=0.001)
+            FillEvent(self.timer.now(), contract=test_contract, quantity=8, price=112.09, commission=0.001)
         )
 
     def on_after_market_close(self, event: AfterMarketCloseEvent):

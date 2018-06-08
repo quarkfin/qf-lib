@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from qf_lib.common.tickers.tickers import Ticker
+from qf_lib.backtesting.qstrader.contract.contract import Contract
 
 
 class Trade(object):
@@ -10,10 +10,10 @@ class Trade(object):
         We buy 10 shares of X and then we sell 3 shares of X. This creates a trade when we buy and sell 3 shares of X
     """
 
-    def __init__(self, time: datetime, ticker: Ticker, quantity: int, entry_price: float, exit_price: float,
+    def __init__(self, time: datetime, contract: Contract, quantity: int, entry_price: float, exit_price: float,
                  risk_as_percent: float=float('nan')):
         self.time = time
-        self.ticker = ticker
+        self.contract = contract
         self.quantity = quantity
         self.entry_price = entry_price
         self.exit_price = exit_price
@@ -36,7 +36,7 @@ class Trade(object):
     def total_risk(self) -> float:
         """
         total risk associated with a trade expressed in currency units.
-        It is the maximum loss that we expect to get while holding 'self.quantity' units of 'self.ticker'
+        It is the maximum loss that we expect to get while holding 'self.quantity' units of 'self.contract'
         """
         total_risk = abs(self.entry_price * self.risk_as_percent * self.quantity)
         return total_risk

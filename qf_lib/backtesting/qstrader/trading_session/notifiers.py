@@ -2,9 +2,6 @@ from qf_lib.backtesting.qstrader.events.empty_queue_event.empty_queue_event_noti
 from qf_lib.backtesting.qstrader.events.end_trading_event.end_trading_event_notifier import EndTradingEventNotifier
 from qf_lib.backtesting.qstrader.events.event_base import AllEventNotifier
 from qf_lib.backtesting.qstrader.events.fill_event.fill_event_notifier import FillEventNotifier
-from qf_lib.backtesting.qstrader.events.price_events.bar_event.bar_event_notifier import BarEventNotifier
-from qf_lib.backtesting.qstrader.events.price_events.price_event_notifier import PriceEventNotifier
-from qf_lib.backtesting.qstrader.events.price_events.tick_event.tick_event_notifier import TickEventNotifier
 from qf_lib.backtesting.qstrader.events.signal_event.signal_event_notifier import SignalEventNotifier
 from qf_lib.backtesting.qstrader.events.time_event.scheduler import Scheduler
 from qf_lib.common.utils.dateutils.timer import Timer
@@ -34,7 +31,4 @@ class Notifiers(object):
         self.end_trading_event_notifier = EndTradingEventNotifier(self.all_event_notifier)
         self.fill_event_notifier = FillEventNotifier(self.all_event_notifier)
         self.signal_event_notifier = SignalEventNotifier(self.all_event_notifier)
-        self.price_event_notifier = PriceEventNotifier(self.all_event_notifier)
-        self.bar_event_notifier = BarEventNotifier(self.price_event_notifier)
-        self.tick_event_notifier = TickEventNotifier(self.price_event_notifier)
         self.scheduler = Scheduler(timer)

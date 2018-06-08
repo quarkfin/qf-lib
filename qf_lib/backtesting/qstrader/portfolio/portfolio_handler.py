@@ -7,7 +7,7 @@ from qf_lib.backtesting.qstrader.events.signal_event.signal_event_notifier impor
 from qf_lib.backtesting.qstrader.events.time_event.after_market_close_event import AfterMarketCloseEvent
 from qf_lib.backtesting.qstrader.events.time_event.scheduler import Scheduler
 from qf_lib.backtesting.qstrader.events.time_event.time_event import TimeEvent
-from qf_lib.backtesting.qstrader.execution_handler.base import ExecutionHandler
+from qf_lib.backtesting.qstrader.execution_handler.execution_handler import ExecutionHandler
 from qf_lib.backtesting.qstrader.monitoring.abstract_monitor import AbstractMonitor
 from qf_lib.backtesting.qstrader.portfolio.portfolio import Portfolio
 from qf_lib.backtesting.qstrader.position_sizer.base import AbstractPositionSizer
@@ -17,7 +17,7 @@ from qf_lib.backtesting.qstrader.risk_manager.base import AbstractRiskManager
 class PortfolioHandler(SignalEventListener, FillEventListener):
     """
     The PortfolioHandler is designed to interact with the backtesting or live trading overall event-driven
-    architecture. Each PortfolioHandler contains a Portfolio object, which stores the actual Position objects.
+    architecture. Each PortfolioHandler contains a Portfolio object, which stores the actual BacktestPosition objects.
 
     The PortfolioHandler takes a handle to a PositionSizer object which determines a mechanism, based on the current
     Portfolio, as to how to size a new Order.

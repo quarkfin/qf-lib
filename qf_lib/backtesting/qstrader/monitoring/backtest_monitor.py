@@ -48,7 +48,8 @@ class BacktestMonitor(AbstractMonitor):
         """
         portfolio_tms = self.backtest_result.portfolio.get_portfolio_timeseries()
         portfolio_tms.name = self.backtest_result.backtest_name
-        tearsheet = TearsheetWithoutBenchmark(self._settings, self._pdf_exporter, portfolio_tms, title=portfolio_tms.name)
+        tearsheet = TearsheetWithoutBenchmark(
+            self._settings, self._pdf_exporter, portfolio_tms, title=portfolio_tms.name)
         tearsheet.build_document()
         tearsheet.save()
 
@@ -92,15 +93,17 @@ class BacktestMonitor(AbstractMonitor):
         output_dir = path.join(get_src_root(), self._settings.output_directory, "Trades")
         if not path.exists(output_dir):
             makedirs(output_dir)
+
         file_name_template = "%Y_%m_%d-%H%M {}.csv".format(self.backtest_result.backtest_name)
         csv_filename = datetime.now().strftime(file_name_template)
         file_path = path.expanduser(path.join(output_dir, csv_filename))
 
         # Write new file header
-        fieldnames = ["Timestamp", "Ticker", "Quantity", "Price", "Commission"]
+        fieldnames = ["Timestamp", "Contract", "Quantity", "Price", "Commission"]
         with open(file_path, 'a', newline='') as csv_file:
             writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
             writer.writeheader()
+
         return file_path
 
     def _save_trade_to_file(self, fill_event: FillEvent):
@@ -111,7 +114,7 @@ class BacktestMonitor(AbstractMonitor):
             writer = csv.writer(csv_file)
             writer.writerow([
                 fill_event.time,
-                fill_event.ticker.as_string(),
+                fill_event.contract.symbol,
                 fill_event.quantity,
                 fill_event.price,
                 fill_event.commission

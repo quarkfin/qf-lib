@@ -1,7 +1,8 @@
 import math
-from collections import defaultdict
+from itertools import count
 from typing import Dict, List, Sequence
 
+from qf_lib.backtesting.qstrader.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.qstrader.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.qstrader.events.event_manager import EventManager
 from qf_lib.backtesting.qstrader.events.fill_event.fill_event import FillEvent
@@ -10,9 +11,9 @@ from qf_lib.backtesting.qstrader.events.time_event.scheduler import Scheduler
 from qf_lib.backtesting.qstrader.execution_handler.commission_models.commission_model import CommissionModel
 from qf_lib.backtesting.qstrader.monitoring.abstract_monitor import AbstractMonitor
 from qf_lib.backtesting.qstrader.order.order import Order
-from qf_lib.common.tickers.tickers import Ticker
+from qf_lib.common.exceptions.broker_exceptions import OrderCancellingException
 from qf_lib.common.utils.dateutils.timer import Timer
-from .base import ExecutionHandler
+from .execution_handler import ExecutionHandler
 
 
 class SimulatedExecutionHandler(ExecutionHandler):
@@ -21,7 +22,8 @@ class SimulatedExecutionHandler(ExecutionHandler):
     """
 
     def __init__(self, event_manager: EventManager, data_handler: DataHandler, timer: Timer,
-                 scheduler: Scheduler, monitor: AbstractMonitor, commission_model: CommissionModel) -> None:
+                 scheduler: Scheduler, monitor: AbstractMonitor, commission_model: CommissionModel,
+                 contracts_to_tickers_mapper: ContractTickerMapper) -> None:
         scheduler.subscribe(MarketOpenEvent, self)
 
         self.event_manager = event_manager
@@ -29,41 +31,68 @@ class SimulatedExecutionHandler(ExecutionHandler):
         self.timer = timer
         self.monitor = monitor
         self.commission_model = commission_model
+        self.contracts_to_tickers_mapper = contracts_to_tickers_mapper
 
-        self.awaiting_orders = defaultdict(list)  # type: Dict[Ticker, List[Order]]
+        self._awaiting_orders = {}  # type: Dict[int, Order]
+        self._order_id_generator = count(start=1)
 
     def on_market_open(self, _: MarketOpenEvent):
-        self._execute_orders()
+        if self._awaiting_orders:
+            self._execute_orders()
 
-    def accept_orders(self, orders: Sequence[Order]) -> None:
+    def accept_orders(self, orders: Sequence[Order]) -> List[int]:
         """
-        Appends Orders to a list of orders waiting to be carried out.
+        Appends Orders to a list of Orders waiting to be carried out.
         """
+        order_id_list = []
         for order in orders:
-            ticker = order.ticker
-            self.awaiting_orders[ticker].append(order)
+            order.id = self._get_next_order_id()
+            order.order_state = "Awaiting"
+
+            order_id_list.append(order.id)
+            self._awaiting_orders[order.id] = order
+
+        return order_id_list
+
+    def cancel_order(self, order_id: int) -> bool:
+        # if order_id is in the awaiting orders its id will be returned, otherwise: None will be returned
+        try:
+            del self._awaiting_orders[order_id]
+        except KeyError:
+            raise OrderCancellingException("Order of id: {:d} wasn't found in the list of awaiting Orders")
+
+    def get_open_orders(self) -> List[Order]:
+        return list(self._awaiting_orders.values())
+
+    def cancel_all_open_orders(self):
+        self._awaiting_orders.clear()
+
+    def _get_next_order_id(self) -> int:
+        return next(self._order_id_generator)
 
     def _execute_orders(self):
         """
         Converts Orders into FillEvents using Market Open prices
         """
-        all_tickers_in_orders = list(self.awaiting_orders.keys())
+        all_contracts = [order.contract for order in self._awaiting_orders.values()]
+        contracts_to_tickers = {
+            contract: self.contracts_to_tickers_mapper.contract_to_ticker(contract) for contract in all_contracts
+        }
 
-        # obtain the current market open prices
-        current_prices_series = self.data_handler.get_current_price(tickers=all_tickers_in_orders)
+        all_tickers = list(contracts_to_tickers.values())
+        current_prices_series = self.data_handler.get_current_price(tickers=all_tickers)
+        unexecuted_orders_dict = {}  # type: Dict[int, Order]
 
-        unexecuted_orders = defaultdict(list)  # type: Dict[Ticker, List[Order]]
-
-        for ticker, order_list in self.awaiting_orders.items():
-            security_price = current_prices_series[ticker]  # Market open price for given security
+        for order in self._awaiting_orders.values():
+            ticker = contracts_to_tickers[order.contract]
+            security_price = current_prices_series[ticker]
 
             if math.isnan(security_price):
-                unexecuted_orders[ticker] = order_list
+                unexecuted_orders_dict[order.id] = order
             else:
-                for order in order_list:
-                    self._execute_order(order, security_price)
+                self._execute_order(order, security_price)
 
-        self.awaiting_orders = unexecuted_orders
+        self._awaiting_orders = unexecuted_orders_dict
 
     def _execute_order(self, order: Order, security_price: float):
         """
@@ -71,7 +100,7 @@ class SimulatedExecutionHandler(ExecutionHandler):
         """
         # Obtain values from the OrderEvent
         timestamp = self.timer.now()
-        ticker = order.ticker
+        contract = order.contract
         quantity = order.quantity
 
         # obtain the fill price
@@ -81,7 +110,7 @@ class SimulatedExecutionHandler(ExecutionHandler):
         commission = self.commission_model.calculate_commission(quantity, fill_price)
 
         # create the FillEvent and place in the event manager
-        fill_event = FillEvent(timestamp, ticker, quantity, fill_price, commission)
+        fill_event = FillEvent(timestamp, contract, quantity, fill_price, commission)
         self.event_manager.publish(fill_event)
         self.monitor.record_trade(fill_event)
 

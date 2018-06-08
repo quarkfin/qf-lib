@@ -4,17 +4,19 @@ from typing import Optional, List, Dict
 
 from numpy import sign
 
-from qf_lib.backtesting.qstrader.events.fill_event.fill_event import FillEvent
-from qf_lib.backtesting.qstrader.portfolio.position import Position
-from qf_lib.backtesting.qstrader.portfolio.trade import Trade
+from qf_lib.backtesting.qstrader.contract.contract import Contract
+from qf_lib.backtesting.qstrader.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.qstrader.data_handler.data_handler import DataHandler
-from qf_lib.common.tickers.tickers import Ticker
+from qf_lib.backtesting.qstrader.events.fill_event.fill_event import FillEvent
+from qf_lib.backtesting.qstrader.portfolio.backtest_position import BacktestPosition
+from qf_lib.backtesting.qstrader.portfolio.trade import Trade
 from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.containers.series.prices_series import PricesSeries
 
 
 class Portfolio(object):
-    def __init__(self, data_handler: DataHandler, initial_cash: float, timer: Timer):
+    def __init__(self, data_handler: DataHandler, initial_cash: float, timer: Timer,
+                 contract_to_ticker_mapper: ContractTickerMapper):
         """
         On creation, the Portfolio object contains no positions and all values are "reset" to the initial
         cash, with no PnL.
@@ -22,6 +24,7 @@ class Portfolio(object):
         self.initial_cash = initial_cash
         self.data_handler = data_handler
         self.timer = timer
+        self.contract_to_ticker_mapper = contract_to_ticker_mapper
 
         self.current_portfolio_value = initial_cash
         self.current_cash = initial_cash
@@ -31,8 +34,8 @@ class Portfolio(object):
         self.dates = []                 # type: List[datetime]
         self.portfolio_values = []      # type: List[float]
 
-        self.open_positions_dict = {}   # type: Dict[Ticker, Position]
-        self.closed_positions = []      # type: List[Position]
+        self.open_positions_dict = {}   # type: Dict[Contract, BacktestPosition]
+        self.closed_positions = []      # type: List[BacktestPosition]
         self.trades = []                # type: List[Trade]
 
     def transact_fill_event(self, fill_event: FillEvent):
@@ -41,7 +44,7 @@ class Portfolio(object):
         Handles any new position or modification to a current position
         """
 
-        position = self._get_or_create_position(fill_event.ticker)
+        position = self._get_or_create_position(fill_event.contract)
         transaction_cost = position.transact_fill_event(fill_event)
         self.current_cash -= transaction_cost
 
@@ -49,7 +52,7 @@ class Portfolio(object):
 
         # if the position was closed: remove it from open positions and place in closed positions
         if position.is_closed:
-            self.open_positions_dict.pop(fill_event.ticker)
+            self.open_positions_dict.pop(fill_event.contract)
             self.closed_positions.append(position)
 
     def update(self):
@@ -58,11 +61,16 @@ class Portfolio(object):
         """
         self.current_portfolio_value = self.current_cash
 
-        all_tickers_in_portfolio = list(self.open_positions_dict.keys())
-        # obtain the current market prices for all positions in one request
+        contracts = self.open_positions_dict.keys()
+        contract_to_ticker_dict = {
+            contract: self.contract_to_ticker_mapper.contract_to_ticker(contract) for contract in contracts
+        }
+
+        all_tickers_in_portfolio = list(contract_to_ticker_dict.values())
         current_prices_series = self.data_handler.get_last_available_price(tickers=all_tickers_in_portfolio)
 
-        for ticker, position in self.open_positions_dict.items():
+        for contract, position in self.open_positions_dict.items():
+            ticker = contract_to_ticker_dict[contract]
             security_price = current_prices_series[ticker]
             position.update_price(bid_price=security_price, ask_price=security_price)  # TODO: Model with Bid/Ask
             self.current_portfolio_value += position.market_value
@@ -70,11 +78,8 @@ class Portfolio(object):
         self.dates.append(self.timer.now())
         self.portfolio_values.append(self.current_portfolio_value)
 
-    def get_position(self, ticker: Ticker) -> Optional[Position]:
-        position = self.open_positions_dict.get(ticker, None)
-        if position is None:
-            return None
-
+    def get_position(self, contract: Contract) -> Optional[BacktestPosition]:
+        position = self.open_positions_dict.get(contract, None)
         return deepcopy(position)
 
     def get_portfolio_timeseries(self) -> PricesSeries:
@@ -84,15 +89,15 @@ class Portfolio(object):
         portfolio_timeseries = PricesSeries(data=self.portfolio_values, index=self.dates)
         return portfolio_timeseries
 
-    def _get_or_create_position(self, ticker: Ticker) -> Position:
-        position = self.open_positions_dict.get(ticker, None)
+    def _get_or_create_position(self, contract: Contract) -> BacktestPosition:
+        position = self.open_positions_dict.get(contract, None)
         if position is None:
-            position = Position(ticker)
-            self.open_positions_dict[ticker] = position
+            position = BacktestPosition(contract)
+            self.open_positions_dict[contract] = position
 
         return position
 
-    def _record_trade(self, position: Position, fill_event: FillEvent):
+    def _record_trade(self, position: BacktestPosition, fill_event: FillEvent):
         """
         Trade is defined as a transaction that goes in the direction of making your position smaller.
         For example:
@@ -103,12 +108,12 @@ class Portfolio(object):
         is_a_trade = sign(fill_event.quantity) != sign(position.number_of_shares)
         if is_a_trade:
             time = fill_event.time
-            ticker = position.ticker
+            contract = position.contract
             quantity = fill_event.quantity
-            entry_price = position.average_cost_per_share()
+            entry_price = position.avg_cost_per_share()
             exit_price = fill_event.average_price_including_commission()
             trade = Trade(time=time,
-                          ticker=ticker,
+                          contract=contract,
                           quantity=quantity,
                           entry_price=entry_price,
                           exit_price=exit_price)

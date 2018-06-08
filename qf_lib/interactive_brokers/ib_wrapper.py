@@ -3,13 +3,17 @@ from threading import Event
 from typing import List
 
 from ibapi.client import OrderId, TickerId
-from ibapi.contract import Contract
-from ibapi.order import Order
+from ibapi.contract import Contract as IBContract
+from ibapi.order import Order as IBOrder
 from ibapi.order_state import OrderState
 from ibapi.utils import iswrapper, current_fn_name
 from ibapi.wrapper import EWrapper
 
-from qf_lib.interactive_brokers.ib_utils import IBPositionInfo, IBOrderInfo
+from qf_lib.backtesting.qstrader.contract.contract import Contract
+from qf_lib.backtesting.qstrader.order.execution_style import StopOrder, MarketOrder
+from qf_lib.backtesting.qstrader.order.order import Order
+from qf_lib.backtesting.qstrader.portfolio.broker_positon import BrokerPosition
+from qf_lib.backtesting.qstrader.portfolio.position import Position
 
 
 class IBWrapper(EWrapper):
@@ -21,30 +25,29 @@ class IBWrapper(EWrapper):
         self.net_liquidation = None
         self.tmp_value = None
         self.nextValidOrderId = None
-        self.position_list = []  # type:  List[IBPositionInfo]
-        self.order_list = []  # type:  List[IBOrderInfo]
-        self._order_id_awaiting_submit = None  # type:  int
-        self._order_id_awaiting_cancel = None  # type:  int
+        self.position_list = []  # type: List[Position]
+        self.order_list = []  # type: List[Order]
+        self._order_id_awaiting_submit = None  # type: int
+        self._order_id_awaiting_cancel = None  # type: int
 
     @iswrapper
     def logAnswer(self, fn_name, fn_params):
-        if 'self' in fn_params:
-            params_dict = dict(fn_params)
+        params_dict = fn_params
+        if 'self' in params_dict:
             del params_dict['self']
-        else:
-            params_dict = fn_params
-            self.logger.info("->Function Call: \n"  
-                             "\tFunction Name: {}\n"
-                             "\tParameters:".format(fn_name))
+
+        log_message = " -> Function Call: {}\n\tParameters:\n".format(fn_name)
         for k, v in params_dict.items():
-            self.logger.info("\t\t{}: {}".format(k, v))
+            log_message += "\t\t{}: {}\n".format(k, v)
+
+        self.logger.info(log_message)
 
     @iswrapper
     def error(self, req_id: TickerId, error_code: int, error_string: str):
         if req_id == -1 and error_code != 502:
             self.logger.info("-> Data Connection info: {} {} {}".format(req_id, error_code, error_string))
         else:
-            self.logger.error("===> ERROR {} {} {}".format(req_id, error_code, error_string))
+            self.logger.error("===> error function call {} {} {}".format(req_id, error_code, error_string))
 
     @iswrapper
     def nextValidId(self, orderId: int):
@@ -64,8 +67,13 @@ class IBWrapper(EWrapper):
         self.action_event_lock.set()
 
     @iswrapper
-    def position(self, account: str, contract: Contract, position: float, avgCost: float):
-        position_info = IBPositionInfo(contract, position, avgCost)
+    def position(self, account: str, ib_contract: IBContract, position: float, avgCost: float):
+        contract = Contract(ib_contract.symbol, ib_contract.secType, ib_contract.exchange)
+
+        if not position.is_integer():
+            self.logger.warning("Position {} has non-integer quantity = {}".format(contract, position))
+
+        position_info = BrokerPosition(contract, int(position), avgCost)
         self.position_list.append(position_info)
 
     @iswrapper
@@ -86,9 +94,32 @@ class IBWrapper(EWrapper):
             self.action_event_lock.set()
 
     @iswrapper
-    def openOrder(self, orderId: OrderId, contract: Contract, order: Order, orderState: OrderState):
-        order_info = IBOrderInfo(orderId, contract, order, orderState)
-        self.order_list.append(order_info)
+    def openOrder(self, orderId: OrderId, ib_contract: IBContract, ib_order: IBOrder, orderState: OrderState):
+        contract = Contract(ib_contract.symbol, ib_contract.secType, ib_contract.exchange)
+
+        if ib_order.orderType == 'STP':
+            execution_style = StopOrder(ib_order.auxPrice)
+        elif ib_order.orderType == 'MKT':
+            execution_style = MarketOrder()
+        else:
+            error_message = "Order Type is not supported: {}".format(ib_order.orderType)
+            self.logger.error(error_message)
+            raise ValueError(error_message)
+
+        if ib_order.action == 'SELL':
+            quantity = -ib_order.totalQuantity
+        elif ib_order.action == 'BUY':
+            quantity = ib_order.totalQuantity
+        else:
+            error_message = "Order Action is not supported: {}".format(ib_order.action)
+            self.logger.error(error_message)
+            raise ValueError(error_message)
+
+        order = Order(contract=contract, quantity=quantity, execution_style=execution_style, tif=ib_order.tif,
+                      order_state=orderState.status)
+
+        order.id = int(orderId)
+        self.order_list.append(order)
 
     @iswrapper
     def openOrderEnd(self):

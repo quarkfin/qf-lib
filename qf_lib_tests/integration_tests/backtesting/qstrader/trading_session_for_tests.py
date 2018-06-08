@@ -9,7 +9,7 @@ from qf_lib.backtesting.qstrader.events.event_manager import EventManager
 from qf_lib.backtesting.qstrader.events.time_flow_controller import BacktestTimeFlowController
 from qf_lib.backtesting.qstrader.execution_handler.commission_models.fixed_commission_model import FixedCommissionModel
 from qf_lib.backtesting.qstrader.execution_handler.simulated_execution_handler import SimulatedExecutionHandler
-from qf_lib.backtesting.qstrader.monitoring.backtest_monitor import BacktestMonitor
+from qf_lib.backtesting.qstrader.monitoring.dummy_monitor import DummyMonitor
 from qf_lib.backtesting.qstrader.order.orderfactory import OrderFactory
 from qf_lib.backtesting.qstrader.portfolio.portfolio import Portfolio
 from qf_lib.backtesting.qstrader.portfolio.portfolio_handler import PortfolioHandler
@@ -18,18 +18,15 @@ from qf_lib.backtesting.qstrader.risk_manager.example import NaiveRiskManager
 from qf_lib.backtesting.qstrader.trading_session.notifiers import Notifiers
 from qf_lib.common.utils.dateutils.date_to_string import date_to_str
 from qf_lib.common.utils.dateutils.timer import SettableTimer
-from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
-from qf_lib.settings import Settings
 
 
-class BacktestTradingSession(object):
+class TestingTradingSession(object):
     """
     Encapsulates the settings and components for carrying out a backtest session. Pulls for data every day.
     """
 
-    def __init__(self, backtest_name: str, settings: Settings, data_provider: GeneralPriceProvider,
-                 pdf_exporter: PDFExporter, start_date, end_date, initial_cash):
+    def __init__(self, data_provider: GeneralPriceProvider, start_date, end_date, initial_cash):
         """
         Set up the backtest variables according to what has been passed in.
         """
@@ -37,8 +34,7 @@ class BacktestTradingSession(object):
 
         self.logger.info(
             "\n".join([
-                "Creating Backtest Trading Session.",
-                "Backtest name: {}".format(backtest_name),
+                "Testing the Backtester:",
                 "Start date: {:s}".format(date_to_str(start_date)),
                 "End date: {:s}".format(date_to_str(end_date)),
                 "Initial cash: {:.2f}".format(initial_cash)
@@ -55,10 +51,10 @@ class BacktestTradingSession(object):
 
         portfolio = Portfolio(data_handler, initial_cash, timer, contract_to_tickers_mapper)
 
-        backtest_result = BacktestResult(portfolio=portfolio, backtest_name=backtest_name,
+        backtest_result = BacktestResult(portfolio=portfolio, backtest_name="Testing the Backtester",
                                          start_date=start_date, end_date=end_date)
 
-        monitor = BacktestMonitor(backtest_result, settings, pdf_exporter)
+        monitor = DummyMonitor(backtest_result)
         commission_model = FixedCommissionModel(0.0)
 
         execution_handler = SimulatedExecutionHandler(
@@ -131,4 +127,4 @@ class BacktestTradingSession(object):
             self.event_manager.dispatch_next_event()
 
         self.logger.info("Backtest finished, generating report...")
-        self.monitor.end_of_trading_update()
+        self.monitor.end_of_trading_update(self.timer.now())

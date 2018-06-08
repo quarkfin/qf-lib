@@ -1,15 +1,18 @@
 import unittest
-from os.path import join
 from unittest import TestCase
 
 import matplotlib
+from os.path import join
 
+matplotlib.use("Agg")
+
+from qf_lib_tests.integration_tests.backtesting.qstrader.trading_session_for_tests import TestingTradingSession
+from qf_lib.backtesting.qstrader.contract.contract import Contract
+from qf_lib.backtesting.qstrader.order.execution_style import MarketOrder
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.data_providers.bloomberg import BloombergDataProvider
 from qf_lib.get_sources_root import get_src_root
 from qf_lib.testing_tools.containers_comparison import assert_series_equal
-
-matplotlib.use("Agg")
 
 from qf_lib.backtesting.qstrader.events.event_manager import EventManager
 from qf_lib.backtesting.qstrader.events.signal_event.signal_event import SignalEvent
@@ -17,11 +20,9 @@ from qf_lib.backtesting.qstrader.events.time_event.before_market_open_event impo
 from qf_lib.backtesting.qstrader.events.time_event.scheduler import Scheduler
 from qf_lib.backtesting.qstrader.order.orderfactory import OrderFactory
 from qf_lib.backtesting.qstrader.portfolio.portfolio import Portfolio
-from qf_lib.backtesting.qstrader.trading_session.backtest_trading_session import BacktestTradingSession
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.dateutils.timer import Timer
-from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
 from qf_lib.settings import Settings
 
@@ -34,6 +35,7 @@ class BuyAndHoldStrategy(object):
     A testing strategy that simply purchases (longs) an asset as soon as it starts and then holds until the completion
     of a backtest.
     """
+    MICROSOFT_CONTRACT = Contract(symbol="MSFT US Equity", security_type='STK', exchange='NASDAQ')
     MICROSOFT_TICKER = BloombergTicker("MSFT US Equity")
 
     def __init__(self, portfolio: Portfolio, order_factory: OrderFactory, timer: Timer, event_manager: EventManager,
@@ -51,7 +53,7 @@ class BuyAndHoldStrategy(object):
 
     def calculate_signals(self):
         if not self.invested:
-            orders = self.order_factory.percent_order({self.MICROSOFT_TICKER: 1.0})
+            orders = self.order_factory.percent_order({self.MICROSOFT_CONTRACT: 1.0}, MarketOrder(), "GTC")
             signal = SignalEvent(self.timer.now(), orders)
             self.event_manager.publish(signal)
             self.invested = True
@@ -67,7 +69,6 @@ class TestBacktester(TestCase):
         start_date = str_to_date("2010-01-01")
         end_date = str_to_date("2010-02-01")
         data_provider = GeneralPriceProvider(bbg_provider, None, None, None)
-        pdf_exporter = PDFExporter(settings)
 
         msft_prices = data_provider.get_price(
             BuyAndHoldStrategy.MICROSOFT_TICKER, fields=[PriceField.Open, PriceField.Close],
@@ -76,8 +77,7 @@ class TestBacktester(TestCase):
 
         first_trade_date = str_to_date("2010-01-04")
         initial_cash = msft_prices.loc[first_trade_date, PriceField.Open]
-        ts = BacktestTradingSession('Test Backtest', settings, data_provider, pdf_exporter,
-                                    start_date, end_date, initial_cash)
+        ts = TestingTradingSession(data_provider, start_date, end_date, initial_cash)
 
         BuyAndHoldStrategy(ts.portfolio, ts.order_factory, ts.timer, ts.event_manager, ts.notifiers.scheduler)
 
