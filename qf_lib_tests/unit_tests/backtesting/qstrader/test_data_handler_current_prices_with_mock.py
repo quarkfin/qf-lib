@@ -5,7 +5,7 @@ from unittest import TestCase
 from mockito import mock, when, ANY
 from pandas import Series, Panel, date_range
 
-from qf_lib.backtesting.qstrader.data_handler.data_handler import DataHandler
+from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import QuandlTicker
 from qf_lib.common.utils.dateutils.date_format import DateFormat

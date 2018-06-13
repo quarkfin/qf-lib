@@ -1,7 +1,7 @@
 import unittest
 from unittest import TestCase
 
-from qf_lib.backtesting.qstrader.events.time_event.market_open_event import MarketOpenEvent
+from qf_lib.backtesting.events.time_event.market_open_event import MarketOpenEvent
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date, DateFormat
 from qf_lib.common.utils.dateutils.timer import SettableTimer
 

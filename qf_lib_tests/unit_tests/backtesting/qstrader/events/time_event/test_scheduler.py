@@ -4,8 +4,8 @@ from unittest import TestCase
 
 from mockito import mock, when, verify, ANY
 
-from qf_lib.backtesting.qstrader.events.time_event.scheduler import Scheduler
-from qf_lib.backtesting.qstrader.events.time_event.time_event import TimeEvent
+from qf_lib.backtesting.events.time_event.scheduler import Scheduler
+from qf_lib.backtesting.events.time_event.time_event import TimeEvent
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.dateutils.timer import SettableTimer

@@ -1,16 +1,16 @@
 from threading import Thread, Event, Lock
-from typing import List
+from typing import List, Sequence
 
 from ibapi.client import EClient
 from ibapi.contract import Contract as IBContract
 from ibapi.order import Order as IBOrder
 
-from qf_lib.backtesting.qstrader.broker.broker import Broker
-from qf_lib.backtesting.qstrader.order.execution_style import MarketOrder, StopOrder
-from qf_lib.backtesting.qstrader.order.order import Order
-from qf_lib.backtesting.qstrader.portfolio.position import Position
-from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
+from qf_lib.backtesting.broker.broker import Broker
+from qf_lib.backtesting.order.execution_style import MarketOrder, StopOrder
+from qf_lib.backtesting.order.order import Order
+from qf_lib.backtesting.portfolio.position import Position
 from qf_lib.common.exceptions.broker_exceptions import BrokerException, OrderCancellingException
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.interactive_brokers.ib_wrapper import IBWrapper
 
 
@@ -75,22 +75,13 @@ class IBBroker(Broker):
                 self.logger.error('===> {}'.format(error_msg))
                 raise BrokerException(error_msg)
 
-    def place_order(self, order: Order) -> int:
-        with self.lock:
-            order_id = self.wrapper.next_order_id()
-            self.wrapper.set_waiting_order_id(order_id)
+    def place_orders(self, orders: Sequence[Order]) -> Sequence[int]:
+        order_ids_list = []
+        for order in orders:
+            order_id = self._execute_single_order(order)
+            order_ids_list.append(order_id)
 
-            ib_contract = self._to_ib_contract(order.contract)
-            ib_order = self._to_ib_order(order)
-
-            self.client.placeOrder(order_id, ib_contract, ib_order)
-
-            if self._wait_for_results():
-                return order_id
-            else:
-                error_msg = 'Time out while placing the trade for: \n\torder: {}'.format(order)
-                self.logger.error('===> {}'.format(error_msg))
-                raise BrokerException(error_msg)
+        return order_ids_list
 
     def cancel_order(self, order_id: int):
         with self.lock:
@@ -121,6 +112,23 @@ class IBBroker(Broker):
         """
         with self.lock:
             self.client.reqGlobalCancel()
+
+    def _execute_single_order(self, order) -> int:
+        with self.lock:
+            order_id = self.wrapper.next_order_id()
+            self.wrapper.set_waiting_order_id(order_id)
+
+            ib_contract = self._to_ib_contract(order.contract)
+            ib_order = self._to_ib_order(order)
+
+            self.client.placeOrder(order_id, ib_contract, ib_order)
+
+            if self._wait_for_results():
+                return order_id
+            else:
+                error_msg = 'Time out while placing the trade for: \n\torder: {}'.format(order)
+                self.logger.error('===> {}'.format(error_msg))
+                raise BrokerException(error_msg)
 
     def _wait_for_results(self) -> bool:
         wait_result = self.action_event_lock.wait(self.waiting_time)

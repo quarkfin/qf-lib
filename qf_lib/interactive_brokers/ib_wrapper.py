@@ -8,11 +8,11 @@ from ibapi.order_state import OrderState
 from ibapi.utils import iswrapper, current_fn_name
 from ibapi.wrapper import EWrapper
 
-from qf_lib.backtesting.qstrader.contract.contract import Contract
-from qf_lib.backtesting.qstrader.order.execution_style import StopOrder, MarketOrder
-from qf_lib.backtesting.qstrader.order.order import Order
-from qf_lib.backtesting.qstrader.portfolio.broker_positon import BrokerPosition
-from qf_lib.backtesting.qstrader.portfolio.position import Position
+from qf_lib.backtesting.contract.contract import Contract
+from qf_lib.backtesting.order.execution_style import StopOrder, MarketOrder
+from qf_lib.backtesting.order.order import Order
+from qf_lib.backtesting.portfolio.broker_positon import BrokerPosition
+from qf_lib.backtesting.portfolio.position import Position
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 
 

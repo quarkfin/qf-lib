@@ -4,12 +4,12 @@ from math import floor
 import pandas as pd
 from mockito import mock, when
 
-from qf_lib.backtesting.qstrader.contract.contract import Contract
-from qf_lib.backtesting.qstrader.contract_to_ticker_conversion.bloomberg_mapper import \
+from qf_lib.backtesting.contract.contract import Contract
+from qf_lib.backtesting.contract_to_ticker_conversion.bloomberg_mapper import \
     DummyBloombergContractTickerMapper
-from qf_lib.backtesting.qstrader.order.execution_style import MarketOrder, StopOrder
-from qf_lib.backtesting.qstrader.order.order import Order
-from qf_lib.backtesting.qstrader.order.orderfactory import OrderFactory
+from qf_lib.backtesting.order.execution_style import MarketOrder, StopOrder
+from qf_lib.backtesting.order.order import Order
+from qf_lib.backtesting.order.orderfactory import OrderFactory
 from qf_lib.common.tickers.tickers import BloombergTicker
 
 

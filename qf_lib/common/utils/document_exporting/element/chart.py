@@ -87,8 +87,8 @@ class ChartElement(Element):
             result = template.render(data=base64, width="100%")
 
         except Exception as ex:
-            logging.error('Chart generation error:')
-            logging.error(ex)
+            self.logger.error('Chart generation error:')
+            self.logger.error(ex)
             result = "<h2 class='chart-render-failure'>Failed to render chart</h1>"
         # Close the chart's figure as we are no longer going to be using it.
         self._chart.close()
