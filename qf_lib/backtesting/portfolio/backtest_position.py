@@ -9,7 +9,7 @@ from qf_lib.backtesting.portfolio.position import Position
 
 class BacktestPosition(Position):
     def __init__(self, contract: Contract) -> None:
-        self.contract = contract
+        self._contract = contract
         """Contract identifying the position"""
 
         self.is_closed = False
@@ -45,7 +45,7 @@ class BacktestPosition(Position):
         """
         self._check_if_open()
         self._check_if_direction_does_not_change(order_fill)
-        assert order_fill.contract == self.contract, "Contract of OrderFill has to match the Contract of a Position"
+        assert order_fill.contract == self._contract, "Contract of OrderFill has to match the Contract of a Position"
         assert order_fill.quantity != 0, "`OrderFill.quantity` shouldn't be 0"
         assert order_fill.price > 0.0, "OrderFill.price must be positive. For short sales use a negative quantity"
 
@@ -89,7 +89,7 @@ class BacktestPosition(Position):
         return result
 
     def contract(self) -> Contract:
-        return self.contract
+        return self._contract
 
     def quantity(self) -> float:
         return self.number_of_shares

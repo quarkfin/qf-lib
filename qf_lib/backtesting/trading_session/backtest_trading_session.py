@@ -35,13 +35,21 @@ class BacktestTradingSession(object):
         """
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
+        self.backtest_name = backtest_name
+        self.contract_ticker_mapper = contract_ticker_mapper
+        self.start_date = start_date
+        self.end_date = end_date
+        self.initial_cash = initial_cash
+
         self.logger.info(
             "\n".join([
                 "Creating Backtest Trading Session.",
-                "Backtest name: {}".format(backtest_name),
-                "Start date: {:s}".format(date_to_str(start_date)),
-                "End date: {:s}".format(date_to_str(end_date)),
-                "Initial cash: {:.2f}".format(initial_cash)
+                "\tBacktest Name: {}".format(backtest_name),
+                "\tData Provider: {}".format(data_provider.__class__.__name__),
+                "\tContract - Ticker Mapper: {}".format(contract_ticker_mapper.__class__.__name__),
+                "\tStart Date: {}".format(date_to_str(start_date)),
+                "\tEnd Date: {}".format(date_to_str(end_date)),
+                "\tInitial Cash: {:.2f}".format(initial_cash)
             ])
         )
 
@@ -77,23 +85,20 @@ class BacktestTradingSession(object):
         self.logger.info(
             "\n".join([
                 "Configuration of components:",
-                "Position sizer: {:s}".format(position_sizer.__class__.__name__),
-                "Timer: {:s}".format(timer.__class__.__name__),
-                "Risk Manager: {:s}".format(risk_manager.__class__.__name__),
-                "Data Provider: {:s}".format(data_provider.__class__.__name__),
-                "Backtest Result: {:s}".format(backtest_result.__class__.__name__),
-                "Monitor: {:s}".format(monitor.__class__.__name__),
-                "Execution Handler: {:s}".format(execution_handler.__class__.__name__),
-                "Commission Model: {:s}".format(commission_model.__class__.__name__),
-                "Broker: {:s}".format(broker.__class__.__name__),
-                "Contract-Ticker Mapper: {:s}".format(contract_ticker_mapper.__class__.__name__)
+                "\tPosition sizer: {:s}".format(position_sizer.__class__.__name__),
+                "\tTimer: {:s}".format(timer.__class__.__name__),
+                "\tRisk Manager: {:s}".format(risk_manager.__class__.__name__),
+                "\tData Handler: {:s}".format(data_handler.__class__.__name__),
+                "\tBacktest Result: {:s}".format(backtest_result.__class__.__name__),
+                "\tMonitor: {:s}".format(monitor.__class__.__name__),
+                "\tExecution Handler: {:s}".format(execution_handler.__class__.__name__),
+                "\tCommission Model: {:s}".format(commission_model.__class__.__name__),
+                "\tBroker: {:s}".format(broker.__class__.__name__),
             ])
         )
 
         self.notifiers = notifiers
-        self.initial_cash = initial_cash
-        self.start_date = start_date
-        self.end_date = end_date
+
         self.event_manager = events_manager
         self.data_handler = data_handler
         self.portfolio = portfolio
@@ -106,7 +111,7 @@ class BacktestTradingSession(object):
         self.order_factory = order_factory
         self.time_flow_controller = time_flow_controller
         self.broker = broker
-        self.contract_to_tickers_mapper = contract_ticker_mapper
+
 
     @staticmethod
     def _create_event_manager(timer, notifiers: Notifiers):

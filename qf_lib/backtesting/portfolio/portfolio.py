@@ -103,7 +103,7 @@ class Portfolio(object):
         is_a_trade = sign(order_fill.quantity) != sign(position.number_of_shares)
         if is_a_trade:
             time = order_fill.time
-            contract = position.contract
+            contract = position._contract
             quantity = order_fill.quantity
             entry_price = position.avg_cost_per_share()
             exit_price = order_fill.average_price_including_commission()
