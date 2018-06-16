@@ -49,8 +49,8 @@ class DataHandler(DataProvider):
         of this function will result in an Exception.
         """
         self._data_bundle = self.price_data_provider.get_price(tickers, fields, start_date, end_date)
-        self._tickers = isinstance(tickers, Ticker)
-        self._fields = isinstance(fields, PriceField)
+        self._tickers = tickers
+        self._fields = fields
         self.is_optimised = True
 
     def historical_price(self, tickers: Union[Ticker, Sequence[Ticker]],
@@ -166,6 +166,8 @@ class DataHandler(DataProvider):
                               ) -> Union[PricesSeries, PricesDataFrame, pd.Panel]:
 
         if isinstance(self._tickers, Ticker):
+            if not isinstance(tickers, Ticker):
+                tickers = tickers[0]  # sometimes single ticker is passed in a list
             # we have single ticker in the bundle so the type is Series or DataFrame
             if tickers != self._tickers:
                 raise ValueError("Ticker {} not available in the Data Bundle".format(tickers))
@@ -202,9 +204,18 @@ class DataHandler(DataProvider):
         current_date = datetime(current_datetime.year, current_datetime.month, current_datetime.day)
         start_date = current_date - RelativeDelta(days=7)
 
-        prices_panel = self.price_data_provider.get_price(
-            tickers, [PriceField.Open, PriceField.Close], start_date, current_date
-        )  # type: pd.Panel
+        price_fields = [PriceField.Open, PriceField.Close]
+
+        if self.is_optimised:
+            prices_panel = self._get_from_data_bundle(tickers, price_fields, start_date, current_date)
+            # TODO: clean this section
+            # it might happen that we have single ticker in the backtest and the Data frame is
+            # returned form optimised function.
+            if isinstance(prices_panel, QFDataFrame):
+                prices_panel = pd.Panel.from_dict(data={tickers[0]: prices_panel})
+                prices_panel = prices_panel.transpose(1, 0, 2)
+        else:
+            prices_panel = self.price_data_provider.get_price(tickers, price_fields, start_date, current_date)
 
         prices_df = self._panel_to_dataframe(prices_panel)
         prices_df = prices_df.loc[:current_datetime]
