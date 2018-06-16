@@ -18,7 +18,7 @@ class TestPosition(unittest.TestCase):
 
     def test_creating_empty_position(self):
         position = BacktestPosition(self.contract)
-        self.assertEqual(position.contract, self.contract)
+        self.assertEqual(position.contract(), self.contract)
         self.assertEqual(position.number_of_shares, 0)
         self.assertEqual(position.current_price, 0)
         self.assertEqual(position.market_value, 0.0)
@@ -32,7 +32,7 @@ class TestPosition(unittest.TestCase):
         position.transact_order_fill(OrderFill(self.time, self.contract, 50, 100, 5))
         position.update_price(110, 120)
 
-        self.assertEqual(position.contract, self.contract)
+        self.assertEqual(position.contract(), self.contract)
         self.assertEqual(position.number_of_shares, 50)
         self.assertEqual(position.current_price, 110)
         self.assertEqual(position.market_value, 50*110)
@@ -52,7 +52,7 @@ class TestPosition(unittest.TestCase):
         position.transact_order_fill(OrderFill(self.time, self.contract, -20, 150, 0))
         position.update_price(110, 120)
 
-        self.assertEqual(position.contract, self.contract)
+        self.assertEqual(position.contract(), self.contract)
         self.assertEqual(position.number_of_shares, 30)
         self.assertEqual(position.current_price, 110)
         self.assertEqual(position.market_value, 30*110)
@@ -72,7 +72,7 @@ class TestPosition(unittest.TestCase):
         position.transact_order_fill(OrderFill(self.time, self.contract, -20, 150, 5))
         position.update_price(110, 120)
 
-        self.assertEqual(position.contract, self.contract)
+        self.assertEqual(position.contract(), self.contract)
         self.assertEqual(position.number_of_shares, 30)
         self.assertEqual(position.current_price, 110)
         self.assertEqual(position.market_value, 30*110)
@@ -96,7 +96,7 @@ class TestPosition(unittest.TestCase):
         position.update_price(110, 120)
         position.transact_order_fill(OrderFill(self.time, self.contract, -20, 120, 0))
 
-        self.assertEqual(position.contract, self.contract)
+        self.assertEqual(position.contract(), self.contract)
         self.assertEqual(position.number_of_shares, 0)
         self.assertEqual(position.current_price, 110)
         self.assertEqual(position.market_value, 0)
