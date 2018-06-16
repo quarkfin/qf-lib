@@ -12,6 +12,21 @@ class Trade(object):
 
     def __init__(self, time: datetime, contract: Contract, quantity: int, entry_price: float, exit_price: float,
                  risk_as_percent: float=float('nan')):
+        """
+        time
+            moment when we close the trade
+        contract
+            contract defining the security
+        quantity
+            number of shares traded
+        entry_price
+            price at which the instrument has been bought including transaction costs
+        exit_price
+            price at which the trade was closed including all fees and commission
+        risk_as_percent
+            max percentage risk that we aim to have on this instrument.
+            for example it could be the the percentage that is used to calculate the stop price.
+        """
         self.time = time
         self.contract = contract
         self.quantity = quantity
@@ -21,6 +36,9 @@ class Trade(object):
         self.risk_as_percent = risk_as_percent
 
     def define_risk(self, risk_as_percent: float):
+        """
+        If not known up front (in the constructor), the risk percentage can be defined later on.
+        """
         self.risk_as_percent = risk_as_percent
 
     @property
