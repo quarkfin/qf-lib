@@ -34,6 +34,21 @@ class DataHandler(DataProvider):
         self.price_data_provider = price_data_provider
         self.timer = timer
         self.time_helper = _DataHandlerTimeHelper(timer)
+        self.is_optimised = False
+        self._data_bundle = None
+
+    def use_data_bundle(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
+                        start_date: datetime, end_date: datetime):
+        """
+        Optimises running of the backtest. All the data will be downloaded before the backtest.
+        Note that requesting during the backtest any other ticker or price field than the ones in the params
+        of this function will result in an Exception.
+        """
+        self._data_bundle = self.price_data_provider.get_price(tickers, fields, start_date, end_date)
+        self.is_optimised = True
+
+    def _get_price_from_data_bundle(self) -> Union[PricesSeries, PricesDataFrame, pd.Panel]:
+        pass
 
     def historical_price(self, tickers: Union[Ticker, Sequence[Ticker]],
                          fields: Union[PriceField, Sequence[PriceField]], nr_of_bars: int) \
@@ -46,7 +61,8 @@ class DataHandler(DataProvider):
         fields:
             PriceField or sequence of PriceFields of the securities
         nr_of_bars:
-            number of data samples (bars) to be returned
+            number of data samples (bars) to be returned.
+            Note: while requesting more than one ticker, some tickers may have fewer than n_of_bars data points
         """
 
         nr_of_days_to_go_back = int(nr_of_bars * (365 / 252) + 10)
