@@ -37,7 +37,6 @@ class Portfolio(object):
         self._current_cash = initial_cash
         self._dates = []                 # type: List[datetime]
         self._portfolio_values = []      # type: List[float]
-        self._portfolio_values = []      # type: List[float]
         self._leverage = []              # type: List[float]
 
         self.open_positions_dict = {}   # type: Dict[Contract, BacktestPosition]
@@ -97,7 +96,7 @@ class Portfolio(object):
 
     def leverage(self) -> QFSeries:
         """
-            Leverage = GrossPositionValue / NetLiquidation
+        Leverage = GrossPositionValue / NetLiquidation
         """
         return QFSeries(data=self.leverage(), index=self._dates)
 
