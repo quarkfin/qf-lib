@@ -10,7 +10,7 @@ from qf_lib.backtesting.events.time_event.scheduler import Scheduler
 from qf_lib.backtesting.execution_handler.commission_models.commission_model import CommissionModel
 from qf_lib.backtesting.monitoring.abstract_monitor import AbstractMonitor
 from qf_lib.backtesting.order.order import Order
-from qf_lib.backtesting.order_fill import OrderFill
+from qf_lib.backtesting.transaction import Transaction
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.common.exceptions.broker_exceptions import OrderCancellingException
 from qf_lib.common.utils.dateutils.timer import Timer
@@ -77,7 +77,7 @@ class SimulatedExecutionHandler(ExecutionHandler):
 
     def _execute_orders(self):
         """
-        Converts Orders into OrderFills.
+        Converts Orders into Transactions.
         """
         all_contracts = [order.contract for order in self._awaiting_orders.values()]
         contracts_to_tickers = {
@@ -101,7 +101,7 @@ class SimulatedExecutionHandler(ExecutionHandler):
 
     def _execute_order(self, order: Order, security_price: float):
         """
-        Simulates execution of a single Order by converting the Order into OrderFill.
+        Simulates execution of a single Order by converting the Order into Transaction.
         """
         # obtain values from the OrderEvent
         timestamp = self.timer.now()
@@ -114,12 +114,12 @@ class SimulatedExecutionHandler(ExecutionHandler):
         # set a dummy exchange and calculate trade commission
         commission = self.commission_model.calculate_commission(quantity, fill_price)
 
-        # create the OrderFill and update Portfolio
-        order_fill = OrderFill(timestamp, contract, quantity, fill_price, commission)
-        self.monitor.record_trade(order_fill)
+        # create the Transaction and update Portfolio
+        transaction = Transaction(timestamp, contract, quantity, fill_price, commission)
+        self.monitor.record_trade(transaction)
 
-        self.logger.info("Order executed. OrderFill has been created:\n{:s}".format(str(order_fill)))
-        self.portfolio.transact_order_fill(order_fill)
+        self.logger.info("Order executed. Transaction has been created:\n{:s}".format(str(transaction)))
+        self.portfolio.transact_transaction(transaction)
 
     @staticmethod
     def _calculate_fill_price(_: Order, security_price: float) -> float:

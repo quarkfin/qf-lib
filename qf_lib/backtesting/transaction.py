@@ -4,7 +4,7 @@ from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.common.utils.dateutils.date_to_string import date_to_str
 
 
-class OrderFill(object):
+class Transaction(object):
     """
     Encapsulates the notion of a filled Order, as returned from a Brokerage. Stores the quantity of an instrument
     actually filled and at what price. In addition, stores the commission of the trade from the Brokerage.
