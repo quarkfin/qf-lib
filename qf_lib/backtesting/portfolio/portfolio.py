@@ -6,7 +6,7 @@ from numpy import sign
 from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
-from qf_lib.backtesting.order_fill import OrderFill
+from qf_lib.backtesting.transaction import Transaction
 from qf_lib.backtesting.portfolio.backtest_position import BacktestPosition
 from qf_lib.backtesting.portfolio.trade import Trade
 from qf_lib.common.utils.dateutils.timer import Timer
@@ -41,24 +41,24 @@ class Portfolio(object):
 
         self.open_positions_dict = {}   # type: Dict[Contract, BacktestPosition]
         self.closed_positions = []      # type: List[BacktestPosition]
-        self.transactions = []          # type: List[OrderFill]
+        self.transactions = []          # type: List[Transaction]
         self.trades = []                # type: List[Trade]
 
-    def transact_order_fill(self, order_fill: OrderFill):
+    def transact_transaction(self, transaction: Transaction):
         """
         Adjusts positions to account for a transaction.
         Handles any new position or modification to a current position
         """
 
-        position = self._get_or_create_position(order_fill.contract)
-        transaction_cost = position.transact_order_fill(order_fill)
+        position = self._get_or_create_position(transaction.contract)
+        transaction_cost = position.transact_transaction(transaction)
         self._current_cash -= transaction_cost
 
-        self._record_trade_and_transaction(position, order_fill)
+        self._record_trade_and_transaction(position, transaction)
 
         # if the position was closed: remove it from open positions and place in closed positions
         if position.is_closed:
-            self.open_positions_dict.pop(order_fill.contract)
+            self.open_positions_dict.pop(transaction.contract)
             self.closed_positions.append(position)
 
     def update(self):
@@ -108,7 +108,7 @@ class Portfolio(object):
 
         return position
 
-    def _record_trade_and_transaction(self, position: BacktestPosition, order_fill: OrderFill):
+    def _record_trade_and_transaction(self, position: BacktestPosition, transaction: Transaction):
         """
         Trade is defined as a transaction that goes in the direction of making your position smaller.
         For example:
@@ -116,18 +116,18 @@ class Portfolio(object):
            buying back part or entire short position is a trade
            buying additional shares of existing long position is NOT a trade
         """
-        self.transactions.append(order_fill)
+        self.transactions.append(transaction)
 
-        is_a_trade = sign(order_fill.quantity) != sign(position.quantity())
+        is_a_trade = sign(transaction.quantity) != sign(position.quantity())
         if is_a_trade:
-            time = order_fill.time
-            contract = order_fill.contract
+            time = transaction.time
+            contract = transaction.contract
 
             # only the part that goes in the opposite direction is considered as a trade
-            quantity = min([abs(order_fill.quantity), abs(position.quantity())])
+            quantity = min([abs(transaction.quantity), abs(position.quantity())])
 
             entry_price = position.avg_cost_per_share()
-            exit_price = order_fill.average_price_including_commission()
+            exit_price = transaction.average_price_including_commission()
             trade = Trade(time=time,
                           contract=contract,
                           quantity=quantity,
