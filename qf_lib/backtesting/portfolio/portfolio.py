@@ -26,10 +26,10 @@ class Portfolio(object):
         self.timer = timer
         self.contract_ticker_mapper = contract_ticker_mapper
 
-        """Cash value includes futures P&L + stock value + securities options value + bond value + fund value."""
+        """cash value includes futures P&L + stock value + securities options value + bond value + fund value."""
         self.net_liquidation = initial_cash
 
-        """Equals the sum of the absolute value of all positions except cash."""
+        """equals the sum of the absolute value of all positions except cash """
         self.gross_value_of_positions = 0
 
         # dates and portfolio values are keep separately because it is inefficient to append to the QFSeries
