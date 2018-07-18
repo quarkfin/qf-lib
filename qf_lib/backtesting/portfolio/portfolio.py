@@ -34,9 +34,10 @@ class Portfolio(object):
 
         # dates and portfolio values are keep separately because it is inefficient to append to the QFSeries
         # use get_portfolio_timeseries() to get them as a series.
+        self.dates = []                 # type: List[datetime]
+        self.portfolio_values = []      # type: List[float]
+
         self._current_cash = initial_cash
-        self._dates = []                 # type: List[datetime]
-        self._portfolio_values = []      # type: List[float]
         self._leverage = []              # type: List[float]
 
         self.open_positions_dict = {}   # type: Dict[Contract, BacktestPosition]
@@ -83,22 +84,22 @@ class Portfolio(object):
             self.net_liquidation += position.market_value
             self.gross_value_of_positions += abs(position.market_value)
 
-        self._dates.append(self.timer.now())
-        self._portfolio_values.append(self.net_liquidation)
+        self.dates.append(self.timer.now())
+        self.portfolio_values.append(self.net_liquidation)
         self._leverage.append(self.gross_value_of_positions / self.net_liquidation)
 
     def get_portfolio_timeseries(self) -> PricesSeries:
         """
         Returns a timeseries of value of the portfolio expressed in currency units
         """
-        portfolio_timeseries = PricesSeries(data=self._portfolio_values, index=self._dates)
+        portfolio_timeseries = PricesSeries(data=self.portfolio_values, index=self.dates)
         return portfolio_timeseries
 
     def leverage(self) -> QFSeries:
         """
         Leverage = GrossPositionValue / NetLiquidation
         """
-        return QFSeries(data=self.leverage(), index=self._dates)
+        return QFSeries(data=self.leverage(), index=self.dates)
 
     def _get_or_create_position(self, contract: Contract) -> BacktestPosition:
         position = self.open_positions_dict.get(contract, None)

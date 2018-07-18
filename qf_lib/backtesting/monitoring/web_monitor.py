@@ -1,0 +1,50 @@
+from datetime import datetime
+from os import makedirs, path
+
+from geneva_analytics.web_api.backend.src.dao.portfolio_dao import PortfolioDAO
+from geneva_analytics.web_api.backend.src.dao.strategy_run_dao import StrategyRunDAO
+from qf_lib.backtesting.backtest_result.backtest_result import BacktestResult
+from qf_lib.backtesting.monitoring.abstract_monitor import AbstractMonitor
+from qf_lib.backtesting.transaction import Transaction
+from qf_lib.settings import Settings
+from geneva_analytics.data_providers.timeseries_data_provider import TimeseriesDataProvider
+from geneva_analytics.web_api.backend.models import StrategyRun
+
+
+class WebMonitor(AbstractMonitor):
+    def __init__(self, backtest_result: BacktestResult, strategy_run: StrategyRun):
+        super().__init__(backtest_result)
+        self._strategy_run = strategy_run
+        self._tms_id = self._strategy_run.portfolio_value.id
+        self._data_provider = TimeseriesDataProvider()
+
+        end_date = backtest_result.end_date
+        if end_date is None:
+            end_date = datetime.now()
+
+    def end_of_trading_update(self, _: datetime=None):
+        """
+        Saves the end portfolio and notifies the frontend that the strategy is no longer running
+        """
+        db_portfolio = PortfolioDAO.save(self.backtest_result.portfolio, strategy_run.portfolio_value)
+        StrategyRunDAO.edit(strategy_run.id, db_portfolio, False)
+
+    def end_of_day_update(self, timestamp: datetime=None):
+        """
+        Adds the latest days data to the timeseries
+        """
+        portfolio = self.backtest_result.portfolio
+        self._data_provider.add_timeseries_data_point(self._tms_id, portfolio.portfolio_values[-1], portfolio.dates[-1])
+        print("Adding: " + str([portfolio.portfolio_values[-1], portfolio.dates[-1]]))
+
+    def real_time_update(self, timestamp: datetime=None):
+        """
+        This method will not be used by the historical backtest
+        """
+        pass
+
+    def record_trade(self, transaction: Transaction):
+        """
+        WebMonitor doesn't have to do anything with recording trades
+        """
+        pass
