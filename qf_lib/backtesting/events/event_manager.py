@@ -101,7 +101,7 @@ class EventManager(object):
 
     def _dispatch_event(self, event: Event):
         str_template = 'Dispatching event: {}'.format(event)
-        self.logger.info(str_template)
+        self.logger.debug(str_template)
 
         from qf_lib.backtesting.events.time_event.time_event import TimeEvent
         event_type = type(event)

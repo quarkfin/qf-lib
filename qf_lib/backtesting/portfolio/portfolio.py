@@ -36,8 +36,8 @@ class Portfolio(object):
         # use get_portfolio_timeseries() to get them as a series.
         self.dates = []                 # type: List[datetime]
         self.portfolio_values = []      # type: List[float]
+        self.current_cash = initial_cash
 
-        self._current_cash = initial_cash
         self._leverage = []              # type: List[float]
 
         self.open_positions_dict = {}   # type: Dict[Contract, BacktestPosition]
@@ -53,7 +53,7 @@ class Portfolio(object):
 
         position = self._get_or_create_position(transaction.contract)
         transaction_cost = position.transact_transaction(transaction)
-        self._current_cash -= transaction_cost
+        self.current_cash -= transaction_cost
 
         self._record_trade_and_transaction(position, transaction)
 
@@ -66,7 +66,7 @@ class Portfolio(object):
         """
         Updates the value of all positions that are currently open by getting the most recent price.
         """
-        self.net_liquidation = self._current_cash
+        self.net_liquidation = self.current_cash
         self.gross_value_of_positions = 0
 
         contracts = self.open_positions_dict.keys()
@@ -99,7 +99,7 @@ class Portfolio(object):
         """
         Leverage = GrossPositionValue / NetLiquidation
         """
-        return QFSeries(data=self.leverage(), index=self.dates)
+        return QFSeries(data=self._leverage, index=self.dates)
 
     def _get_or_create_position(self, contract: Contract) -> BacktestPosition:
         position = self.open_positions_dict.get(contract, None)

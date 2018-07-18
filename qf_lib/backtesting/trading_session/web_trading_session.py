@@ -132,5 +132,4 @@ class WebTradingSession(object):
         while self.event_manager.continue_trading:
             self.event_manager.dispatch_next_event()
 
-        self.logger.info("Backtest finished, generating report...")
         self.monitor.end_of_trading_update()
