@@ -1,9 +1,10 @@
 import logging
+from unittest import TestCase
+
 import matplotlib.pyplot as plt
 plt.ion()  # required for dynamic chart, good to keep this at the beginning of imports 
 
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
-from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.backtesting.contract_to_ticker_conversion.bloomberg_mapper import DummyBloombergContractTickerMapper
 from qf_lib.backtesting.order.execution_style import MarketOrder
@@ -90,11 +91,14 @@ def main():
 
     ts.start_trading()
 
-    print("Expected End Value = {}".format(1005386.29))
     actual_end_value = ts.portfolio.get_portfolio_timeseries()[-1]
-    print("Actual End Value   = {}".format(actual_end_value))
-    print("DIFF               = {}".format(1005386.29 - actual_end_value))
+    expected_value = 1005386.29
 
+    print("Expected End Value = {}".format(expected_value))
+    print("Actual End Value   = {}".format(actual_end_value))
+    print("DIFF               = {}".format(expected_value - actual_end_value))
+
+    TestCase.assertAlmostEqual(actual_end_value, actual_end_value, places=2)
 
 if __name__ == "__main__":
     main()
