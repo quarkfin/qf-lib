@@ -98,7 +98,8 @@ def main():
     print("Actual End Value   = {}".format(actual_end_value))
     print("DIFF               = {}".format(expected_value - actual_end_value))
 
-    TestCase.assertAlmostEqual(actual_end_value, actual_end_value, places=2)
+    test = TestCase()
+    test.assertAlmostEqual(actual_end_value, actual_end_value, places=2)
 
 if __name__ == "__main__":
     main()
