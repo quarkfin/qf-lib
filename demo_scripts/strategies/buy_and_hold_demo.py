@@ -29,8 +29,6 @@ class BuyAndHoldStrategy(object):
     A testing strategy that simply purchases (longs) an asset as soon as it starts and then holds until the completion
     of a backtest.
     """
-    # MICROSOFT_TICKER = QuandlTicker("MSFT", "WIKI")
-    # APPLE_TICKER = QuandlTicker("AAPL", "WIKI")
 
     MICROSOFT_CONTRACT = Contract(symbol="MSFT US Equity", security_type='STK', exchange='NASDAQ')
     MICROSOFT_TICKER = BloombergTicker("MSFT US Equity")

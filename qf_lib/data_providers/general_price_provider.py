@@ -1,6 +1,6 @@
 from datetime import datetime
 from itertools import groupby
-from typing import Sequence, Union, Dict, Type, Optional
+from typing import Sequence, Union, Dict, Type
 
 import pandas as pd
 from pandas import Panel, concat
