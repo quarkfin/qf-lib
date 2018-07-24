@@ -19,13 +19,9 @@ class WebMonitor(AbstractMonitor):
         self._tms_id = self._strategy_run.portfolio_value.id
         self._data_provider = TimeseriesDataProvider()
 
-        end_date = backtest_result.end_date
-        if end_date is None:
-            end_date = datetime.now()
-
     def end_of_trading_update(self, _: datetime=None):
         """
-        Saves the end portfolio and notifies the frontend that the strategy is no longer running
+        Saves the end portfolio and marks the strategy as not running
         """
         leverage_series = self.backtest_result.portfolio.leverage()
         db_leverage = self._data_provider.add_timeseries(
