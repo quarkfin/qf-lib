@@ -2,7 +2,8 @@ import logging
 from unittest import TestCase
 
 import matplotlib.pyplot as plt
-plt.ion()  # required for dynamic chart, good to keep this at the beginning of imports 
+
+plt.ion()  # required for dynamic chart, good to keep this at the beginning of imports
 
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.enums.price_field import PriceField
@@ -100,6 +101,7 @@ def main():
 
     test = TestCase()
     test.assertAlmostEqual(actual_end_value, actual_end_value, places=2)
+
 
 if __name__ == "__main__":
     main()

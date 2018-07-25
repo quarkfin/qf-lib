@@ -37,10 +37,10 @@ class PrefetchingDataProvider(DataProvider):
                   ) -> Union[None, PricesSeries, PricesDataFrame, pd.Panel]:
 
         tickers, got_single_ticker = convert_to_list(tickers, Ticker)
-        fields, got_single_field = convert_to_list(tickers, PriceField)
+        fields, got_single_field = convert_to_list(fields, PriceField)
         got_single_date = (start_date == end_date)
 
-        self._check_if_cached_data_available(fields, tickers)
+        self._check_if_cached_data_available(tickers, fields)
 
         panel = self._data_bundle.loc[start_date:end_date, tickers, fields]
 
@@ -49,7 +49,7 @@ class PrefetchingDataProvider(DataProvider):
 
         return casted_result
 
-    def _check_if_cached_data_available(self, fields, tickers):
+    def _check_if_cached_data_available(self, tickers, fields):
         # tickers which are not cached but were requested
         uncached_tickers = [ticker for ticker in tickers if ticker not in self._tickers_cached]
         if uncached_tickers:

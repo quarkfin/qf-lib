@@ -175,12 +175,6 @@ class DataHandler(DataProvider):
         price_fields = [PriceField.Open, PriceField.Close]
 
         prices_panel = self.price_data_provider.get_price(tickers, price_fields, start_date, current_date)
-        if self.is_optimised and isinstance(prices_panel, QFDataFrame):
-            # TODO: clean this section
-            # it might happen that we have single ticker in the backtest and the Data frame is
-            # returned from optimised function.
-            prices_panel = pd.Panel.from_dict(data={tickers[0]: prices_panel})
-            prices_panel = prices_panel.transpose(1, 0, 2)
 
         prices_df = self._panel_to_dataframe(prices_panel)
         prices_df = prices_df.loc[:current_datetime]
