@@ -1,3 +1,4 @@
+import warnings
 from datetime import datetime
 from typing import Union, Sequence, Set, Type
 
@@ -64,7 +65,8 @@ class PrefetchingDataProvider(DataProvider):
                     fields: Union[str, Sequence[str]],
                     start_date: datetime, end_date: datetime = None, **kwargs
                     ) -> Union[QFSeries, QFDataFrame, pd.Panel]:
-        pass
+        warnings.warn("get_history() using the cached data is not supported yet. Normal request is being sent instead")
+        return self.data_provider.get_history(tickers, fields, start_date, end_date, **kwargs)
 
     def supported_ticker_types(self) -> Set[Type[Ticker]]:
         return self.data_provider.supported_ticker_types()
