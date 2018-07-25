@@ -10,10 +10,10 @@ from qf_lib.containers.dataframe.cast_dataframe import cast_dataframe
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.series.cast_series import cast_series
 from qf_lib.containers.series.prices_series import PricesSeries
-from qf_lib.data_providers.abstract_data_provider import AbstractDataProvider
+from qf_lib.data_providers.price_data_provider import DataProvider
 
 
-class AbstractPriceDataProvider(AbstractDataProvider, metaclass=ABCMeta):
+class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
     """
     An interface for data providers containing historical data of stocks, indices, futures
     and other asset classes. This is a base class of any simple data provider (a data provider that is associated with
@@ -110,6 +110,17 @@ class AbstractPriceDataProvider(AbstractDataProvider, metaclass=ABCMeta):
     @staticmethod
     def _is_single_price_field(fields: Union[None, PriceField, Sequence[PriceField]]):
         return fields is not None and isinstance(fields, PriceField)
+
+    @staticmethod
+    def _is_single_ticker(value):
+        if isinstance(value, Ticker):
+            return True
+
+        return False
+
+    @staticmethod
+    def _is_single_date(start_date, end_date):
+        return start_date is not None and (start_date == end_date)
 
     def _get_first_ticker(self, tickers):
         if self._is_single_ticker(tickers):

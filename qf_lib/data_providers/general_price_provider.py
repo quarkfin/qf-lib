@@ -50,7 +50,7 @@ class GeneralPriceProvider(DataProvider):
                     start_date: datetime, end_date: datetime = None, **kwargs) \
             -> Union[QFSeries, QFDataFrame, pd.Panel]:
         """"
-        Implements the functionality of AbstractDataProvider using duck-typing.
+        Implements the functionality of DataProvider using duck-typing.
         """
         if isinstance(tickers, Ticker):  # we have a single ticker
             data_provider = self._identify_data_provider(type(tickers))

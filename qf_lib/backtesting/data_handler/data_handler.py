@@ -16,6 +16,7 @@ from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.cast_series import cast_series
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
+from qf_lib.data_providers.prefetching_data_provider import PrefetchingDataProvider
 from qf_lib.data_providers.price_data_provider import DataProvider
 
 
@@ -35,11 +36,7 @@ class DataHandler(DataProvider):
         self.timer = timer
         self.time_helper = _DataHandlerTimeHelper(timer)
 
-        # attributes to handle optimisation
         self.is_optimised = False
-        self._data_bundle = None
-        self._tickers = None
-        self._fields = None
 
     def use_data_bundle(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
                         start_date: datetime, end_date: datetime):
@@ -48,9 +45,10 @@ class DataHandler(DataProvider):
         Note that requesting during the backtest any other ticker or price field than the ones in the params
         of this function will result in an Exception.
         """
-        self._data_bundle = self.price_data_provider.get_price(tickers, fields, start_date, end_date)
-        self._tickers = tickers
-        self._fields = fields
+        tickers, _ = convert_to_list(tickers, Ticker)
+        fields, _ = convert_to_list(fields, PriceField)
+        self.price_data_provider = PrefetchingDataProvider(self.price_data_provider, tickers, fields,
+                                                           start_date, end_date)
         self.is_optimised = True
 
     def historical_price(self, tickers: Union[Ticker, Sequence[Ticker]],
@@ -73,10 +71,7 @@ class DataHandler(DataProvider):
         latest_available_market_close = self.time_helper.datetime_of_latest_market_event(MarketCloseEvent)
         start_date = latest_available_market_close - RelativeDelta(days=nr_of_days_to_go_back)
 
-        if self.is_optimised:
-            container = self._get_from_data_bundle(tickers, fields, start_date, latest_available_market_close)
-        else:
-            container = self.price_data_provider.get_price(tickers, fields, start_date, latest_available_market_close)
+        container = self.price_data_provider.get_price(tickers, fields, start_date, latest_available_market_close)
 
         if container.shape[0] < nr_of_bars:
             if isinstance(tickers, Ticker):
@@ -102,10 +97,7 @@ class DataHandler(DataProvider):
         See: DataProvider.get_price(...)
         """
         end_date_without_look_ahead = self._get_end_date_without_look_ahead(end_date)
-        if self.is_optimised:
-            return self._get_from_data_bundle(tickers, fields, start_date, end_date_without_look_ahead)
-        else:
-            return self.price_data_provider.get_price(tickers, fields, start_date, end_date_without_look_ahead)
+        return self.price_data_provider.get_price(tickers, fields, start_date, end_date_without_look_ahead)
 
     def get_history(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[str, Sequence[str]],
                     start_date: datetime, end_date: datetime = None, **kwargs) \
@@ -117,10 +109,7 @@ class DataHandler(DataProvider):
         See: DataProvider.get_history(...)
         """
         end_date_without_look_ahead = self._get_end_date_without_look_ahead(end_date)
-        if self.is_optimised:
-            return self._get_from_data_bundle(tickers, fields, start_date, end_date_without_look_ahead)
-        else:
-            return self.price_data_provider.get_history(tickers, fields, start_date, end_date_without_look_ahead)
+        return self.price_data_provider.get_history(tickers, fields, start_date, end_date_without_look_ahead)
 
     def get_last_available_price(self, tickers: Union[Ticker, Sequence[Ticker]]) -> Union[float, pd.Series]:
         """
@@ -161,27 +150,6 @@ class DataHandler(DataProvider):
         """
         return self._get_single_date_price(tickers, nans_allowed=True)
 
-    def _get_from_data_bundle(self, tickers: Union[Ticker, Sequence[Ticker]],
-                              fields: Union[PriceField, Sequence[PriceField]], start_date: datetime, end_date: datetime
-                              ) -> Union[PricesSeries, PricesDataFrame, pd.Panel]:
-
-        if isinstance(self._tickers, Ticker):
-            if not isinstance(tickers, Ticker):
-                tickers = tickers[0]  # sometimes single ticker is passed in a list
-            # we have single ticker in the bundle so the type is Series or DataFrame
-            if tickers != self._tickers:
-                raise ValueError("Ticker {} not available in the Data Bundle".format(tickers))
-
-            if isinstance(self._fields, PriceField):
-                return self._data_bundle.loc[start_date: end_date]
-            else:
-                return self._data_bundle.loc[start_date:end_date, fields]
-        else:
-            if isinstance(self._fields, PriceField):
-                return self._data_bundle.loc[start_date:end_date, tickers]
-            else:
-                return self._data_bundle.loc[start_date:end_date, tickers, fields]
-
     def _get_end_date_without_look_ahead(self, end_date):
         latest_available_market_close = self.time_helper.datetime_of_latest_market_event(MarketCloseEvent)
         if end_date is not None:
@@ -206,16 +174,13 @@ class DataHandler(DataProvider):
 
         price_fields = [PriceField.Open, PriceField.Close]
 
-        if self.is_optimised:
-            prices_panel = self._get_from_data_bundle(tickers, price_fields, start_date, current_date)
+        prices_panel = self.price_data_provider.get_price(tickers, price_fields, start_date, current_date)
+        if self.is_optimised and isinstance(prices_panel, QFDataFrame):
             # TODO: clean this section
             # it might happen that we have single ticker in the backtest and the Data frame is
-            # returned form optimised function.
-            if isinstance(prices_panel, QFDataFrame):
-                prices_panel = pd.Panel.from_dict(data={tickers[0]: prices_panel})
-                prices_panel = prices_panel.transpose(1, 0, 2)
-        else:
-            prices_panel = self.price_data_provider.get_price(tickers, price_fields, start_date, current_date)
+            # returned from optimised function.
+            prices_panel = pd.Panel.from_dict(data={tickers[0]: prices_panel})
+            prices_panel = prices_panel.transpose(1, 0, 2)
 
         prices_df = self._panel_to_dataframe(prices_panel)
         prices_df = prices_df.loc[:current_datetime]
@@ -233,7 +198,8 @@ class DataHandler(DataProvider):
 
             if not last_available_close_prices.empty:
                 unavailable_prices_tickers = prices_series.isnull()
-                prices_series.loc[unavailable_prices_tickers] = last_available_close_prices.loc[unavailable_prices_tickers]
+                prices_series.loc[unavailable_prices_tickers] =\
+                    last_available_close_prices.loc[unavailable_prices_tickers]
 
             prices_series.name = "Last available asset prices"
 
