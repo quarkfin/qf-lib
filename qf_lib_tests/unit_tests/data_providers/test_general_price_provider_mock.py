@@ -3,14 +3,14 @@ import unittest
 import pandas as pd
 from mockito import mock, when
 
-from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import QuandlTicker, BloombergTicker, HaverTicker, CcyTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
+from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
 
 
-class TestPriceProviderMock(unittest.TestCase):
+class TestGeneralPriceProviderMock(unittest.TestCase):
     START_DATE = str_to_date('2017-10-02')
     END_DATE = str_to_date('2017-10-17')
 
