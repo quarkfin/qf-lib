@@ -1,3 +1,9 @@
+from qf_lib.containers.dataframe.cast_dataframe import cast_dataframe
+from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
+from qf_lib.containers.series.cast_series import cast_series
+from qf_lib.containers.series.qf_series import QFSeries
+
+
 def squeeze_panel(original_data_panel, got_single_date, got_single_ticker, got_single_field):
     original_shape = original_data_panel.shape
 
@@ -18,3 +24,15 @@ def squeeze_panel(original_data_panel, got_single_date, got_single_ticker, got_s
         container.name = original_data_panel.major_axis[0].as_string()
 
     return container
+
+
+def cast_result_to_proper_type(result):
+    num_of_dimensions = len(result.axes)
+    if num_of_dimensions == 1:
+        casted_result = cast_series(result, QFSeries)
+    elif num_of_dimensions == 2:
+        casted_result = cast_dataframe(result, QFDataFrame)
+    else:
+        casted_result = result
+
+    return casted_result
