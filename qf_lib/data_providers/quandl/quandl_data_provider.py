@@ -14,6 +14,7 @@ from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
+from qf_lib.data_providers.helpers import squeeze_panel
 from qf_lib.settings import Settings
 
 
@@ -55,7 +56,7 @@ class QuandlDataProvider(AbstractPriceDataProvider):
 
         panel = self._dict_to_panel_or_df(result_dict, tickers, fields)
         got_single_date = self._is_single_date(start_date, end_date)
-        result = self._squeeze_panel(panel, got_single_date, got_single_ticker, got_single_field)
+        result = squeeze_panel(panel, got_single_date, got_single_ticker, got_single_field)
         result = self._cast_result_to_proper_type(result)
         return result
 

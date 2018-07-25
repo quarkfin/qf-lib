@@ -17,6 +17,7 @@ from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceData
 from qf_lib.data_providers.bloomberg.bloomberg_names import REF_DATA_SERVICE_URI
 from qf_lib.data_providers.bloomberg.historical_data_provider import HistoricalDataProvider
 from qf_lib.data_providers.bloomberg.reference_data_provider import ReferenceDataProvider, BloombergError
+from qf_lib.data_providers.helpers import squeeze_panel
 from qf_lib.settings import Settings
 
 
@@ -126,7 +127,7 @@ class BloombergDataProvider(AbstractPriceDataProvider):
         # to keep the order of tickers and fields we reindex the panel
         data_panel = data_panel.reindex(major_axis=tickers, minor_axis=fields)
 
-        squeezed_result = self._squeeze_panel(data_panel, got_single_date, got_single_ticker, got_single_field)
+        squeezed_result = squeeze_panel(data_panel, got_single_date, got_single_ticker, got_single_field)
         casted_result = self._cast_result_to_proper_type(squeezed_result)
 
         return casted_result
