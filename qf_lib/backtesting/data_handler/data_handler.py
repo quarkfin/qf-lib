@@ -32,6 +32,7 @@ class DataHandler(DataProvider):
     is no look-ahead bias.
     """
     def __init__(self, price_data_provider: DataProvider, timer: Timer):
+        self._initial_data_provider = price_data_provider
         self.price_data_provider = price_data_provider
         self.timer = timer
         self.time_helper = _DataHandlerTimeHelper(timer)
@@ -47,7 +48,7 @@ class DataHandler(DataProvider):
         """
         tickers, _ = convert_to_list(tickers, Ticker)
         fields, _ = convert_to_list(fields, PriceField)
-        self.price_data_provider = PrefetchingDataProvider(self.price_data_provider, tickers, fields,
+        self.price_data_provider = PrefetchingDataProvider(self._initial_data_provider, tickers, fields,
                                                            start_date, end_date)
         self.is_optimised = True
 
