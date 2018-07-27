@@ -204,10 +204,14 @@ def _assert_same_index(expected_container, actual_container, check_index_type, c
             raise AssertionError("Incorrect index name. Expected {:s}, actual: {:s}".format(
                 expected_index_name, actual_index_name))
 
+    assert_same_axis_values(expected_index, actual_index)
+
+
+def assert_same_axis_values(expected_index, actual_index):
     different_index_values = expected_index.values != actual_index.values
     if np.any(different_index_values):
         diffrent_values_pos = np.where(different_index_values)[0]
-        messages = ["Different index values on positions: {:s}".format(str(diffrent_values_pos))]
+        messages = ["Different axis values on positions: {:s}".format(str(diffrent_values_pos))]
 
         for diff_position in diffrent_values_pos:
             msg = "{:d}: Expected: {:s}   Actual: {:s}".format(
