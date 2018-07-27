@@ -14,7 +14,7 @@ def squeeze_panel(original_data_panel, got_single_date, got_single_ticker, got_s
 
     container = original_data_panel.iloc[dates_indices, tickers_indices, fields_indices]
 
-    # correction of containers axis order (if last or pre-last axis is being removed, than the data frame needs
+    # correction of containers axis order (if last or penultimate axis is being removed, than the data frame needs
     # to be transposed to keep the axis order: dates, tickers, fields)
     if len(container.shape) == 2 and (original_shape[1] == 1 or original_shape[2] == 1):
         container = container.transpose()

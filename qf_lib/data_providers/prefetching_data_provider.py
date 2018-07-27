@@ -18,7 +18,7 @@ from qf_lib.data_providers.price_data_provider import DataProvider
 class PrefetchingDataProvider(DataProvider):
     """
     Optimises running of the DataProvider by pre-fetching all the data at startup and then using the cached data
-    instead of sending over-the-network requests every time the data is requested from it. If not all data requested
+    instead of sending over-the-network requests every time the data is requested. If not all data requested
     is available the ValueError will be raised.
     """
 
