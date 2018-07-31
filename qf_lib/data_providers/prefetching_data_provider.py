@@ -7,11 +7,13 @@ import pandas as pd
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
+from qf_lib.containers.dataframe.cast_dataframe import cast_dataframe
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
+from qf_lib.containers.series.cast_series import cast_series
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
-from qf_lib.data_providers.helpers import squeeze_panel, cast_result_to_proper_type
+from qf_lib.data_providers.helpers import squeeze_panel
 from qf_lib.data_providers.price_data_provider import DataProvider
 
 
@@ -48,7 +50,7 @@ class PrefetchingDataProvider(DataProvider):
         panel = self._data_bundle.loc[start_date:end_date, tickers, fields]
 
         squeezed_result = squeeze_panel(panel, got_single_date, got_single_ticker, got_single_field)
-        casted_result = cast_result_to_proper_type(squeezed_result)
+        casted_result = self._cast_result_to_proper_type(squeezed_result)
 
         return casted_result
 
@@ -65,6 +67,17 @@ class PrefetchingDataProvider(DataProvider):
 
         if start_date < self._start_date or end_date > self._end_date:
             raise ValueError("Requested dates are outside of the cached period".format(fields))
+
+    def _cast_result_to_proper_type(self, result):
+        num_of_dimensions = len(result.axes)
+        if num_of_dimensions == 1:
+            casted_result = cast_series(result, PricesSeries)
+        elif num_of_dimensions == 2:
+            casted_result = cast_dataframe(result, PricesDataFrame)
+        else:
+            casted_result = result
+
+        return casted_result
 
     def get_history(self, tickers: Union[Ticker, Sequence[Ticker]],
                     fields: Union[str, Sequence[str]],
