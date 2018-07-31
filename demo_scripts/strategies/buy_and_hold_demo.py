@@ -1,6 +1,7 @@
 import logging
 
 import matplotlib.pyplot as plt
+
 plt.ion()  # required for dynamic chart
 
 from qf_lib.backtesting.broker.broker import Broker
@@ -12,7 +13,7 @@ from qf_lib.backtesting.risk_manager.risk_manager import RiskManager
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.excel.excel_exporter import ExcelExporter
-from qf_common.config import container
+from qf_common.config.ioc import container
 from qf_lib.backtesting.events.time_event.before_market_open_event import BeforeMarketOpenEvent
 from qf_lib.backtesting.events.time_event.scheduler import Scheduler
 from qf_lib.backtesting.order.orderfactory import OrderFactory

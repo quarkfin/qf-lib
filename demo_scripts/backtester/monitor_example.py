@@ -1,13 +1,15 @@
 import time
 from datetime import timedelta
 from random import randint
+
 import matplotlib.pyplot as plt
+
 plt.ion()  # required for dynamic chart
 
 # order of the imports is important. BacktestMonitor has to be imported before anything else form qf_lib
 from qf_lib.backtesting.monitoring.backtest_monitor import BacktestMonitor
 from qf_lib.common.utils.excel.excel_exporter import ExcelExporter
-from qf_common.config import container
+from qf_common.config.ioc import container
 from qf_lib.backtesting.backtest_result.backtest_result import BacktestResult
 from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.transaction import Transaction

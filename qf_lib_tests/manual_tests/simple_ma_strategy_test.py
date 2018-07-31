@@ -11,7 +11,7 @@ from qf_lib.backtesting.contract_to_ticker_conversion.bloomberg_mapper import Du
 from qf_lib.backtesting.order.execution_style import MarketOrder
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.excel.excel_exporter import ExcelExporter
-from qf_common.config import container
+from qf_common.config.ioc import container
 from qf_lib.backtesting.events.time_event.before_market_open_event import BeforeMarketOpenEvent
 from qf_lib.backtesting.trading_session.backtest_trading_session import BacktestTradingSession
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
