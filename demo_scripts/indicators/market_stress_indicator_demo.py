@@ -36,7 +36,8 @@ def main():
     fig_size = (10, 5)
 
     # stress_indicator_tms = cached_value(_get_indicator, indicator_cache_path)  # type: QFSeries
-    chart = create_line_chart([stress_indicator_tms], ['Stress Indicator'], "Stress Indicator US")
+    title = "Stress Indicator US {}Y rolling".format(years_rolling)
+    chart = create_line_chart([stress_indicator_tms], ['Stress Indicator'], title)
     chart.plot(figsize=fig_size)
 
     no_none_indicator_tms = stress_indicator_tms.dropna()
