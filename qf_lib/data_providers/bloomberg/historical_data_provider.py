@@ -1,7 +1,9 @@
 from datetime import datetime
 from typing import Any, Sequence
 
+import numpy as np
 import pandas as pd
+import xarray as xr
 
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.tickers.tickers import BloombergTicker
@@ -28,15 +30,15 @@ class HistoricalDataProvider(object):
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
     def get(
-        self, tickers: Sequence[str], fields: Sequence[str], start_date: datetime, end_date: datetime,
-        frequency: Frequency, currency: str, override_name: str, override_value: Any
-    ) -> pd.Panel:
+            self, tickers: Sequence[str], fields: Sequence[str], start_date: datetime, end_date: datetime,
+            frequency: Frequency, currency: str, override_name: str, override_value: Any
+    ) -> xr.DataArray:
         """
         Gets historical data from Bloomberg.
 
         Returns
         -------
-        pd.Panel with 3 dimensions: date, ticker, field
+        DataArray with 3 dimensions: date, ticker, field
         """
         ref_data_service = self._session.getService(REF_DATA_SERVICE_URI)
         request = ref_data_service.createRequest("HistoricalDataRequest")
@@ -51,7 +53,7 @@ class HistoricalDataProvider(object):
             self._set_override(request, override_name, override_value)
 
         self._session.sendRequest(request)
-        data_panel = self._receive_historical_response(fields)
+        data_panel = self._receive_historical_response(tickers, fields)
         return data_panel
 
     @classmethod
@@ -80,62 +82,91 @@ class HistoricalDataProvider(object):
     @staticmethod
     def _get_float_or_nan(element, field_name):
         if element.hasElement(field_name):
-            return element.getElementAsFloat(field_name)
+            result = element.getElementAsFloat(field_name)
+            if result == '#N/A History':
+                result = float('nan')
         else:
-            return float("nan")
+            result = float("nan")
 
-    def _receive_historical_response(self, fields):
+        return result
+
+    def _receive_historical_response(self, requested_tickers, requested_fields):
         response_events = get_response_events(self._session)
 
-        tickers_to_data_dict = {}
+        tickers_dates_fields_data_dict = dict()
 
         for event in response_events:
             check_event_for_errors(event)
             security_data = extract_security_data(event)
 
+            security_name = security_data.getElementAsString(SECURITY)
+            ticker = BloombergTicker.from_string(security_name)
+
             try:
                 check_security_data_for_errors(security_data)
+
+                field_data_array = security_data.getElement(FIELD_DATA)
+                field_data_list = \
+                    [field_data_array.getValueAsElement(i) for i in range(field_data_array.numValues())]
+                dates = [pd.to_datetime(x.getElementAsDatetime(DATE)) for x in field_data_list]
+
+                data = np.empty((len(dates), len(requested_fields)))
+                data[:] = np.nan
+
+                dates_fields_values = xr.DataArray(
+                    data, coords={'dates': dates, 'fields': requested_fields}, dims=('dates', 'fields')
+                )
+
+                for field_name in requested_fields:
+                    dates_fields_values.loc[:, field_name] = [
+                        self._get_float_or_nan(data_of_date_elem, field_name) for data_of_date_elem in field_data_list
+                    ]
+
+                tickers_dates_fields_data_dict[ticker] = dates_fields_values
+
             except BloombergError:
-                security_name = security_data.getElementAsString(SECURITY)
-                ticker = BloombergTicker.from_string(security_name)
-                tickers_to_data_dict[ticker] = pd.DataFrame()
                 self.logger.exception("Error in the received historical response")
 
-            security_name = security_data.getElementAsString(SECURITY)
-            field_data_array = security_data.getElement(FIELD_DATA)
-            field_data_list = \
-                [field_data_array.getValueAsElement(i) for i in range(0, field_data_array.numValues())]
-            out_dates = [x.getElementAsDatetime(DATE) for x in field_data_list]
-
-            single_ticker_data = pd.DataFrame(index=out_dates, columns=fields)
-
-            for fieldName in fields:
-                single_ticker_data[fieldName] = [self._get_float_or_nan(x, fieldName) for x in field_data_list]
-
-            single_ticker_data.replace('#N/A History', pd.np.nan, inplace=True)
-            single_ticker_data.index = pd.to_datetime(single_ticker_data.index)
-
-            ticker = BloombergTicker.from_string(security_name)
-            tickers_to_data_dict[ticker] = single_ticker_data
-
-        return self._tickers_dict_to_panel(tickers_to_data_dict)
+        return self._tickers_dict_to_data_array(tickers_dates_fields_data_dict, requested_tickers, requested_fields)
 
     @staticmethod
-    def _tickers_dict_to_panel(tickers_to_data_dict: dict) -> pd.Panel:
+    def _tickers_dict_to_data_array(tickers_dates_fields_data_dict, requested_tickers, requested_fields
+                                    ) -> xr.DataArray:
         """
-        Converts a dictionary tickers->DateFrame to Panel.
+        Converts a dictionary tickers->DateFrame to xarray.DataArray.
 
         Parameters
         ----------
-        tickers_to_data_dict: dict[str, pd.DataFrame]
+        tickers_dates_fields_data_dict: ticker -> date -> field -> number mapping
 
         Returns
         -------
-        pandas.Panel  [date, ticker, field]
+        DataArray  [date, ticker, field]
         """
-        tickers_panel = pd.Panel.from_dict(data=tickers_to_data_dict)
+        # return empty xr.DataArray if there is no data to be converted
+        if not tickers_dates_fields_data_dict:
+            data = np.empty((0, len(requested_tickers), len(requested_fields)))
+            data[:] = np.nan
+            return xr.DataArray(
+                data, coords={'dates': [], 'tickers': requested_tickers, 'fields': requested_fields},
+                dims=('dates', 'tickers', 'fields')
+            )
 
-        # recombines dimensions, so that the first one is date
-        # major is ticker
-        # minor is field
-        return tickers_panel.transpose(1, 0, 2)
+        tickers, data_arrays = zip(
+            *((ticker, data_array) for ticker, data_array in tickers_dates_fields_data_dict.items())
+        )
+
+        tickers_index = pd.Index(tickers, name='tickers')
+        result = xr.concat(data_arrays, dim=tickers_index)  # type: xr.DataArray
+        result = result.transpose('dates', 'tickers', 'fields')
+
+        return result
+
+    @staticmethod
+    def _get_subdictionary(dictionary, key):
+        subdictionary = dictionary.get(key, None)
+        if subdictionary is None:
+            subdictionary = dict()
+            dictionary[key] = subdictionary
+
+        return subdictionary

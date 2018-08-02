@@ -29,10 +29,6 @@ class QFDataFrame(pd.DataFrame, TimeIndexedContainer):
         return QFDataFrame
 
     @property
-    def _constructor_expanddim(self):
-        return pd.Panel
-
-    @property
     def num_of_columns(self):
         return len(self.columns)
 

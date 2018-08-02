@@ -1,5 +1,3 @@
-import pandas as pd
-
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 
 
@@ -13,7 +11,3 @@ class LogReturnsDataFrame(QFDataFrame):
     @property
     def _constructor(self):
         return LogReturnsDataFrame
-
-    @property
-    def _constructor_expanddim(self):
-        return pd.Panel

@@ -1,5 +1,3 @@
-import pandas as pd
-
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 
 
@@ -13,10 +11,6 @@ class SimpleReturnsDataFrame(QFDataFrame):
     @property
     def _constructor(self):
         return SimpleReturnsDataFrame
-
-    @property
-    def _constructor_expanddim(self):
-        return pd.Panel
 
     def aggregate_by_year(self):
         # TODO make get_aggregate_returns accept DataFrames and remove this function
