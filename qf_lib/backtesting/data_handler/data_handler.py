@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Union, Sequence, Type
 
 import pandas as pd
+import xarray as xr
 
 from qf_lib.backtesting.events.time_event.market_close_event import MarketCloseEvent
 from qf_lib.backtesting.events.time_event.market_open_event import MarketOpenEvent
@@ -31,6 +32,7 @@ class DataHandler(DataProvider):
     no data from the future (relative to a "current" time of a backtester) is being accessed, that is: that there
     is no look-ahead bias.
     """
+
     def __init__(self, price_data_provider: DataProvider, timer: Timer):
         self._initial_data_provider = price_data_provider
         self.price_data_provider = price_data_provider
@@ -54,7 +56,7 @@ class DataHandler(DataProvider):
 
     def historical_price(self, tickers: Union[Ticker, Sequence[Ticker]],
                          fields: Union[PriceField, Sequence[PriceField]], nr_of_bars: int) \
-            -> Union[PricesSeries, PricesDataFrame, pd.Panel]:
+            -> Union[PricesSeries, PricesDataFrame, xr.DataArray]:
         """
         Returns the latest available data samples corresponding to the nr_of_bars.
 
@@ -74,16 +76,21 @@ class DataHandler(DataProvider):
 
         container = self.price_data_provider.get_price(tickers, fields, start_date, latest_available_market_close)
 
-        if container.shape[0] < nr_of_bars:
+        num_of_dates_available = container.shape[0]
+        if num_of_dates_available < nr_of_bars:
             if isinstance(tickers, Ticker):
                 tickers_as_strings = tickers.as_string()
             else:
-                tickers_as_strings = ", ".join(x.as_string() for x in tickers)
+                tickers_as_strings = ", ".join(ticker.as_string() for ticker in tickers)
             raise ValueError("Not enough data points for \ntickers: {} \ndate: {}."
-                             "\n{} Data points requested, \n[] Data points available."
-                             .format(tickers_as_strings, latest_available_market_close, nr_of_bars, container.shape[0]))
-
-        return container.tail(nr_of_bars)
+                             "\n{} Data points requested, \n{} Data points available."
+                             .format(tickers_as_strings, latest_available_market_close, nr_of_bars,
+                                     num_of_dates_available)
+                             )
+        if isinstance(container, xr.DataArray):
+            return container.isel(dates=slice(-nr_of_bars, None))
+        else:
+            return container.tail(nr_of_bars)
 
     def get_price(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
                   start_date: datetime, end_date: datetime = None):
@@ -102,7 +109,7 @@ class DataHandler(DataProvider):
 
     def get_history(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[str, Sequence[str]],
                     start_date: datetime, end_date: datetime = None, **kwargs) \
-            -> Union[QFSeries, QFDataFrame, pd.Panel]:
+            -> Union[QFSeries, QFDataFrame, xr.DataArray]:
         """
         Runs DataProvider.get_history(...) but before makes sure that the query doesn't concern data from
         the future.
@@ -159,7 +166,7 @@ class DataHandler(DataProvider):
             end_date_without_look_ahead = latest_available_market_close
         return end_date_without_look_ahead
 
-    def _get_single_date_price(self, tickers: Union[Ticker, Sequence[Ticker]], nans_allowed: bool)\
+    def _get_single_date_price(self, tickers: Union[Ticker, Sequence[Ticker]], nans_allowed: bool) \
             -> Union[float, pd.Series]:
         tickers, was_single_ticker_provided = convert_to_list(tickers, Ticker)
 
@@ -175,9 +182,9 @@ class DataHandler(DataProvider):
 
         price_fields = [PriceField.Open, PriceField.Close]
 
-        prices_panel = self.price_data_provider.get_price(tickers, price_fields, start_date, current_date)
+        prices_data_array = self.price_data_provider.get_price(tickers, price_fields, start_date, current_date)
 
-        prices_df = self._panel_to_dataframe(prices_panel)
+        prices_df = self._data_array_to_dataframe(prices_data_array)
         prices_df = prices_df.loc[:current_datetime]
 
         try:
@@ -193,7 +200,7 @@ class DataHandler(DataProvider):
 
             if not last_available_close_prices.empty:
                 unavailable_prices_tickers = prices_series.isnull()
-                prices_series.loc[unavailable_prices_tickers] =\
+                prices_series.loc[unavailable_prices_tickers] = \
                     last_available_close_prices.loc[unavailable_prices_tickers]
 
             prices_series.name = "Last available asset prices"
@@ -204,24 +211,27 @@ class DataHandler(DataProvider):
         else:
             return prices_series
 
-    def _panel_to_dataframe(self, prices_panel: pd.Panel):
+    def _data_array_to_dataframe(self, prices_data_array: pd.Panel):
         """
-        Converts a Panel into a DataFrame by removing the "Price Field" axis.
+        Converts a xr.DataArray into a DataFrame by removing the "Price Field" axis.
 
         In order to remove it open and close prices get different time component in their corresponding datetimes
         (open prices will get the time of `MarketOpenEvent` and close prices will get the time of `MarketCloseEvent`).
         """
+        original_dates = prices_data_array.dates.to_index()
+
         market_open_datetimes = [
-            price_datetime + MarketOpenEvent.trigger_time() for price_datetime in prices_panel.items
+            price_datetime + MarketOpenEvent.trigger_time() for price_datetime in original_dates
         ]
         market_close_datetimes = [
-            price_datetime + MarketCloseEvent.trigger_time() for price_datetime in prices_panel.items
+            price_datetime + MarketCloseEvent.trigger_time() for price_datetime in original_dates
         ]
-        dates = market_open_datetimes + market_close_datetimes
 
-        prices_df = PricesDataFrame(index=dates, columns=prices_panel.major_axis)
-        prices_df.loc[market_open_datetimes, :] = prices_panel.loc[:, :, PriceField.Open].T.values
-        prices_df.loc[market_close_datetimes, :] = prices_panel.loc[:, :, PriceField.Close].T.values
+        new_dates = market_open_datetimes + market_close_datetimes
+
+        prices_df = PricesDataFrame(index=new_dates, columns=prices_data_array.tickers)
+        prices_df.loc[market_open_datetimes, :] = prices_data_array.loc[:, :, PriceField.Open].values
+        prices_df.loc[market_close_datetimes, :] = prices_data_array.loc[:, :, PriceField.Close].values
 
         prices_df.sort_index(inplace=True)
 

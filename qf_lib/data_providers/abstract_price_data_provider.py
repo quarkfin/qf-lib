@@ -3,7 +3,6 @@ from datetime import datetime
 from typing import Union, Sequence, Dict
 
 import pandas as pd
-from xarray import DataArray
 
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
@@ -46,12 +45,8 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
                 container.rename(columns=renaming_dict, inplace=True)
             else:
                 # Many tickers and many fields - replace minor axis in Panel
-                if isinstance(container, DataArray):
-                    price_fields = [str_to_field_dict[field_str] for field_str in container['fields'].values]
-                    container['fields'] = price_fields
-                else:
-                    renaming_dict = {field_str: str_to_field_dict[field_str] for field_str in container.minor_axis}
-                    container.rename(minor_axis=renaming_dict, inplace=True)
+                price_fields = [str_to_field_dict[field_str] for field_str in container['fields'].values]
+                container['fields'] = price_fields
 
         return container
 
