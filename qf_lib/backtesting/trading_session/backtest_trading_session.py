@@ -30,7 +30,7 @@ class BacktestTradingSession(object):
 
     def __init__(self, backtest_name: str, settings: Settings, data_provider: DataProvider,
                  contract_ticker_mapper: ContractTickerMapper, pdf_exporter: PDFExporter,
-                 excel_exporter: ExcelExporter, start_date, end_date, initial_cash, is_optimized: False):
+                 excel_exporter: ExcelExporter, start_date, end_date, initial_cash, is_lightweight: False):
         """
         Set up the backtest variables according to what has been passed in.
         """
@@ -66,7 +66,7 @@ class BacktestTradingSession(object):
         backtest_result = BacktestResult(portfolio=portfolio, backtest_name=backtest_name,
                                          start_date=start_date, end_date=end_date)
 
-        if is_optimized:
+        if is_lightweight:
             monitor = LightBacktestMonitor(backtest_result, settings, pdf_exporter, excel_exporter)
         else:
             monitor = BacktestMonitor(backtest_result, settings, pdf_exporter, excel_exporter)

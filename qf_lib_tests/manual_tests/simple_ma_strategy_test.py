@@ -71,9 +71,9 @@ class SimpleMAStrategy(object):
 
 
 def main():
-    is_optimized = True
+    is_lightweight = True
 
-    if is_optimized:
+    if is_lightweight:
         logging_level = logging.WARNING
     else:
         logging_level = logging.INFO
@@ -90,7 +90,7 @@ def main():
         start_date=str_to_date("2010-01-01"),
         end_date=str_to_date("2010-03-31"),
         initial_cash=1000000,
-        is_optimized=is_optimized
+        is_lightweight=is_lightweight
     )
 
     SimpleMAStrategy(ts)
