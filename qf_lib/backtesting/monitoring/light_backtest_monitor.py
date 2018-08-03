@@ -30,23 +30,9 @@ class LightBacktestMonitor(BacktestMonitor):
         Update line chart with current timeseries, buy only once in self._nr_of_days
         """
         self._ctr += 1
+
         if self._ctr % self._nr_of_days == 0:
-            portfolio_tms = self.backtest_result.portfolio.get_portfolio_timeseries()
-            self._ax.grid()
-
-            # Set the data on x and y
-            self._line.set_xdata(portfolio_tms.index)
-            self._line.set_ydata(portfolio_tms.values)
-
-            # Need both of these in order to rescale
-            self._ax.relim()
-            self._ax.autoscale_view()
-
-            # We need to draw and flush
-            self._figure.canvas.draw()
-            self._figure.canvas.flush_events()
-
-            self._ax.grid()  # we need two grid() calls in order to keep the grid on the chart
+            BacktestMonitor.end_of_day_update(self, timestamp)
 
     def record_trade(self, transaction: Transaction):
         """ Do not record trades to save execution time, for more details use BacktestMonitor"""
