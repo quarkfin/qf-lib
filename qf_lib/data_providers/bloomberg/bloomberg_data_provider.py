@@ -3,6 +3,7 @@ from typing import Union, Sequence, Dict
 
 import blpapi
 import pandas as pd
+import xarray as xr
 
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
@@ -130,6 +131,10 @@ class BloombergDataProvider(AbstractPriceDataProvider):
 
         squeezed_result = squeeze_data_array(data_array, got_single_date, got_single_ticker, got_single_field)
         casted_result = cast_data_array_to_proper_type(squeezed_result)
+
+        # remove this conversion after switching to pd.Panels everywhere
+        if isinstance(casted_result, xr.DataArray):
+            casted_result = casted_result.to_pandas()
 
         return casted_result
 

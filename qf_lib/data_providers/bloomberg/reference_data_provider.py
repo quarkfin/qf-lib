@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 
 from qf_lib.common.tickers.tickers import BloombergTicker
@@ -44,6 +45,8 @@ class ReferenceDataProvider(object):
                         value = field_data_array.getElementAsFloat(field_name)
                     except blpapi.exception.InvalidConversionException:
                         value = field_data_array.getElementAsString(field_name)
+                    except blpapi.exception.NotFoundException:
+                        value = np.nan
 
                     tickers_fields_container.loc[ticker, field_name] = value
 

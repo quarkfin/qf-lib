@@ -56,7 +56,7 @@ class DataHandler(DataProvider):
 
     def historical_price(self, tickers: Union[Ticker, Sequence[Ticker]],
                          fields: Union[PriceField, Sequence[PriceField]], nr_of_bars: int) \
-            -> Union[PricesSeries, PricesDataFrame, xr.DataArray]:
+            -> Union[PricesSeries, PricesDataFrame, pd.Panel]:
         """
         Returns the latest available data samples corresponding to the nr_of_bars.
 
@@ -109,7 +109,7 @@ class DataHandler(DataProvider):
 
     def get_history(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[str, Sequence[str]],
                     start_date: datetime, end_date: datetime = None, **kwargs) \
-            -> Union[QFSeries, QFDataFrame, xr.DataArray]:
+            -> Union[QFSeries, QFDataFrame, pd.Panel]:
         """
         Runs DataProvider.get_history(...) but before makes sure that the query doesn't concern data from
         the future.
@@ -166,7 +166,7 @@ class DataHandler(DataProvider):
             end_date_without_look_ahead = latest_available_market_close
         return end_date_without_look_ahead
 
-    def _get_single_date_price(self, tickers: Union[Ticker, Sequence[Ticker]], nans_allowed: bool) \
+    def _get_single_date_price(self, tickers: Union[Ticker, Sequence[Ticker]], nans_allowed: bool)\
             -> Union[float, pd.Series]:
         tickers, was_single_ticker_provided = convert_to_list(tickers, Ticker)
 
@@ -182,9 +182,13 @@ class DataHandler(DataProvider):
 
         price_fields = [PriceField.Open, PriceField.Close]
 
-        prices_data_array = self.price_data_provider.get_price(tickers, price_fields, start_date, current_date)
+        prices_panel = self.price_data_provider.get_price(tickers, price_fields, start_date, current_date)
+        prices_df = self._panel_to_dataframe(prices_panel)
 
-        prices_df = self._data_array_to_dataframe(prices_data_array)
+        # TODO uncomment after switching to xarray.DataArray from pandas.Panel
+        # prices_data_array = self.price_data_provider.get_price(tickers, price_fields, start_date, current_date)
+        # prices_df = self._data_array_to_dataframe(prices_data_array)
+
         prices_df = prices_df.loc[:current_datetime]
 
         try:
@@ -211,6 +215,30 @@ class DataHandler(DataProvider):
         else:
             return prices_series
 
+    def _panel_to_dataframe(self, prices_panel: pd.Panel):
+        """
+        Converts a Panel into a DataFrame by removing the "Price Field" axis.
+
+        In order to remove it open and close prices get different time component in their corresponding datetimes
+        (open prices will get the time of `MarketOpenEvent` and close prices will get the time of `MarketCloseEvent`).
+
+        TODO remove it after switching to xarray.DataArray from pd.Panel
+        """
+        market_open_datetimes = [
+            price_datetime + MarketOpenEvent.trigger_time() for price_datetime in prices_panel.items
+        ]
+        market_close_datetimes = [
+            price_datetime + MarketCloseEvent.trigger_time() for price_datetime in prices_panel.items
+        ]
+        dates = market_open_datetimes + market_close_datetimes
+
+        prices_df = PricesDataFrame(index=dates, columns=prices_panel.major_axis)
+        prices_df.loc[market_open_datetimes, :] = prices_panel.loc[:, :, PriceField.Open].T.values
+        prices_df.loc[market_close_datetimes, :] = prices_panel.loc[:, :, PriceField.Close].T.values
+
+        prices_df.sort_index(inplace=True)
+        return prices_df
+
     def _data_array_to_dataframe(self, prices_data_array: pd.Panel):
         """
         Converts a xr.DataArray into a DataFrame by removing the "Price Field" axis.
@@ -234,7 +262,6 @@ class DataHandler(DataProvider):
         prices_df.loc[market_close_datetimes, :] = prices_data_array.loc[:, :, PriceField.Close].values
 
         prices_df.sort_index(inplace=True)
-
         return prices_df
 
     def supported_ticker_types(self):

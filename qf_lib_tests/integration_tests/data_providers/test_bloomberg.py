@@ -2,7 +2,6 @@ import unittest
 
 import pandas as pd
 from os.path import join
-from xarray import DataArray
 
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
@@ -66,11 +65,11 @@ class TestBloomberg(unittest.TestCase):
         data = self.bbg_provider.get_price(tickers=self.INVALID_TICKERS, fields=self.MANY_PRICE_FIELDS,
                                            start_date=self.START_DATE, end_date=self.END_DATE)
 
-        self.assertEqual(type(data), DataArray)
+        self.assertEqual(type(data), pd.Panel)
         self.assertEqual(data.shape, (self.NUM_OF_DATES, len(self.INVALID_TICKERS), len(self.MANY_PRICE_FIELDS)))
-        self.assertIsInstance(data.dates.to_index(), pd.DatetimeIndex)
-        self.assertEqual(list(data.tickers.values), self.INVALID_TICKERS)
-        self.assertEqual(list(data.fields.values), self.MANY_PRICE_FIELDS)
+        self.assertIsInstance(data.items, pd.DatetimeIndex)
+        self.assertEqual(list(data.major_axis), self.INVALID_TICKERS)
+        self.assertEqual(list(data.minor_axis), self.MANY_PRICE_FIELDS)
 
     # =========================== Test get_price method ==========================================================
 
@@ -115,11 +114,11 @@ class TestBloomberg(unittest.TestCase):
         data = self.bbg_provider.get_price(tickers=self.MANY_TICKERS, fields=self.MANY_PRICE_FIELDS,
                                            start_date=self.START_DATE, end_date=self.END_DATE)
 
-        self.assertEqual(type(data), DataArray)
+        self.assertEqual(type(data), pd.Panel)
         self.assertEqual(data.shape, (self.NUM_OF_DATES, len(self.MANY_TICKERS), len(self.MANY_PRICE_FIELDS)))
-        self.assertIsInstance(data.dates.to_index(), pd.DatetimeIndex)
-        self.assertEqual(list(data.tickers), self.MANY_TICKERS)
-        self.assertEqual(list(data.fields), self.MANY_PRICE_FIELDS)
+        self.assertIsInstance(data.items, pd.DatetimeIndex)
+        self.assertEqual(list(data.major_axis), self.MANY_TICKERS)
+        self.assertEqual(list(data.minor_axis), self.MANY_PRICE_FIELDS)
 
     # =========================== Test get_history method ==========================================================
 
@@ -166,18 +165,18 @@ class TestBloomberg(unittest.TestCase):
         data = self.bbg_provider.get_history(tickers=self.MANY_TICKERS, fields=self.MANY_FIELDS,
                                              start_date=self.START_DATE, end_date=self.END_DATE,
                                              frequency=Frequency.DAILY, currency='PLN')
-        self.assertEqual(type(data), DataArray)
+        self.assertEqual(type(data), pd.Panel)
         self.assertEqual(data.shape, (self.NUM_OF_DATES, len(self.MANY_TICKERS), len(self.MANY_FIELDS)))
-        self.assertIsInstance(data.dates.to_index(), pd.DatetimeIndex)
-        self.assertEqual(list(data.tickers), self.MANY_TICKERS)
-        self.assertEqual(list(data.fields), self.MANY_FIELDS)
+        self.assertIsInstance(data.items, pd.DatetimeIndex)
+        self.assertEqual(list(data.major_axis), self.MANY_TICKERS)
+        self.assertEqual(list(data.minor_axis), self.MANY_FIELDS)
 
     def test_historical_single_ticker_single_field_list1(self):
         # single ticker, single field; end_date by default now, frequency by default DAILY, currency by default None
         data = self.bbg_provider.get_history(tickers=[self.SINGLE_TICKER], fields=[self.SINGLE_FIELD],
                                              start_date=self.START_DATE, end_date=self.END_DATE)
 
-        self.assertIsInstance(data, DataArray)
+        self.assertIsInstance(data, pd.Panel)
         self.assertEqual(data.shape, (self.NUM_OF_DATES, 1, 1))
 
     def test_historical_single_ticker_single_field_list2(self):
@@ -237,16 +236,17 @@ class TestBloomberg(unittest.TestCase):
         start_date = str_to_date('2015-10-31')
         end_date = str_to_date('2016-03-31')
         ticker = BloombergTicker('DGNOXTCH Index')
-
         data = self.bbg_provider.get_history(tickers=ticker, fields='ACTUAL_RELEASE',
                                              start_date=start_date, end_date=end_date)
-        data_model = [0.5, 0, -1, 1.7, -1.3, -0.2]
-        self.assertSequenceEqual(seq1=data_model, seq2=data.tolist())
 
         override_data = self.bbg_provider.get_history(tickers=ticker, fields='ACTUAL_RELEASE',
                                                       start_date=start_date, end_date=end_date,
                                                       override_name='RELEASE_STAGE_OVERRIDE', override_value='P')
+
+        data_model = [0.5, 0, -1, 1.7, -1.3, -0.2]
         override_data_model = [0.5, -0.1, -1.2, 1.8, -1, -0.2]
+
+        self.assertSequenceEqual(seq1=data_model, seq2=data.tolist())
         self.assertSequenceEqual(seq1=override_data_model, seq2=override_data.tolist())
 
 

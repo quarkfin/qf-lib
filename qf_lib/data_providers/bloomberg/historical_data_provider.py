@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Sequence
+from typing import Any, Sequence, Dict
 
 import numpy as np
 import pandas as pd
@@ -14,6 +14,7 @@ from qf_lib.data_providers.bloomberg.exceptions import BloombergError
 from qf_lib.data_providers.bloomberg.helpers import set_tickers, set_fields, convert_to_bloomberg_date, \
     convert_to_bloomberg_freq, get_response_events, check_event_for_errors, check_security_data_for_errors, \
     extract_security_data
+from qf_lib.data_providers.helpers import tickers_dict_to_data_array
 
 
 class HistoricalDataProvider(object):
@@ -93,7 +94,8 @@ class HistoricalDataProvider(object):
     def _receive_historical_response(self, requested_tickers, requested_fields):
         response_events = get_response_events(self._session)
 
-        tickers_dates_fields_data_dict = dict()
+        # mapping: ticker -> DataArray[dates, fields]
+        tickers_data_dict = dict()  # type: Dict[BloombergTicker, xr.DataArray]
 
         for event in response_events:
             check_event_for_errors(event)
@@ -122,45 +124,12 @@ class HistoricalDataProvider(object):
                         self._get_float_or_nan(data_of_date_elem, field_name) for data_of_date_elem in field_data_list
                     ]
 
-                tickers_dates_fields_data_dict[ticker] = dates_fields_values
+                tickers_data_dict[ticker] = dates_fields_values
 
             except BloombergError:
                 self.logger.exception("Error in the received historical response")
 
-        return self._tickers_dict_to_data_array(tickers_dates_fields_data_dict, requested_tickers, requested_fields)
-
-    @staticmethod
-    def _tickers_dict_to_data_array(tickers_dates_fields_data_dict, requested_tickers, requested_fields
-                                    ) -> xr.DataArray:
-        """
-        Converts a dictionary tickers->DateFrame to xarray.DataArray.
-
-        Parameters
-        ----------
-        tickers_dates_fields_data_dict: ticker -> date -> field -> number mapping
-
-        Returns
-        -------
-        DataArray  [date, ticker, field]
-        """
-        # return empty xr.DataArray if there is no data to be converted
-        if not tickers_dates_fields_data_dict:
-            data = np.empty((0, len(requested_tickers), len(requested_fields)))
-            data[:] = np.nan
-            return xr.DataArray(
-                data, coords={'dates': [], 'tickers': requested_tickers, 'fields': requested_fields},
-                dims=('dates', 'tickers', 'fields')
-            )
-
-        tickers, data_arrays = zip(
-            *((ticker, data_array) for ticker, data_array in tickers_dates_fields_data_dict.items())
-        )
-
-        tickers_index = pd.Index(tickers, name='tickers')
-        result = xr.concat(data_arrays, dim=tickers_index)  # type: xr.DataArray
-        result = result.transpose('dates', 'tickers', 'fields')
-
-        return result
+        return tickers_dict_to_data_array(tickers_data_dict, requested_tickers, requested_fields)
 
     @staticmethod
     def _get_subdictionary(dictionary, key):

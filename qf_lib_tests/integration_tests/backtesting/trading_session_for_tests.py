@@ -111,7 +111,6 @@ class TestingTradingSession(object):
             notifiers.all_event_notifier,
             notifiers.empty_queue_event_notifier,
             notifiers.end_trading_event_notifier,
-            notifiers.signal_event_notifier,
             notifiers.scheduler
         ])
         return events_manager
