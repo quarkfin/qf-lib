@@ -126,6 +126,7 @@ class Portfolio(object):
 
             # only the part that goes in the opposite direction is considered as a trade
             quantity = min([abs(transaction.quantity), abs(position.quantity())])
+            quantity *= sign(transaction.quantity)  # sign of the transaction should be preserved
 
             entry_price = position.avg_cost_per_share()
             exit_price = transaction.average_price_including_commission()
