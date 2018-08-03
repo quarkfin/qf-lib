@@ -7,6 +7,7 @@ from qf_lib.backtesting.events.time_flow_controller import BacktestTimeFlowContr
 from qf_lib.backtesting.execution_handler.commission_models.fixed_commission_model import FixedCommissionModel
 from qf_lib.backtesting.execution_handler.simulated_execution_handler import SimulatedExecutionHandler
 from qf_lib.backtesting.monitoring.backtest_monitor import BacktestMonitor
+from qf_lib.backtesting.monitoring.light_backtest_monitor import LightBacktestMonitor
 from qf_lib.backtesting.order.orderfactory import OrderFactory
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.backtesting.portfolio.portfolio_handler import PortfolioHandler
@@ -29,7 +30,7 @@ class BacktestTradingSession(object):
 
     def __init__(self, backtest_name: str, settings: Settings, data_provider: DataProvider,
                  contract_ticker_mapper: ContractTickerMapper, pdf_exporter: PDFExporter,
-                 excel_exporter: ExcelExporter, start_date, end_date, initial_cash):
+                 excel_exporter: ExcelExporter, start_date, end_date, initial_cash, is_optimized: False):
         """
         Set up the backtest variables according to what has been passed in.
         """
@@ -65,7 +66,11 @@ class BacktestTradingSession(object):
         backtest_result = BacktestResult(portfolio=portfolio, backtest_name=backtest_name,
                                          start_date=start_date, end_date=end_date)
 
-        monitor = BacktestMonitor(backtest_result, settings, pdf_exporter, excel_exporter)
+        if is_optimized:
+            monitor = LightBacktestMonitor(backtest_result, settings, pdf_exporter, excel_exporter)
+        else:
+            monitor = BacktestMonitor(backtest_result, settings, pdf_exporter, excel_exporter)
+
         commission_model = FixedCommissionModel(0.0)
 
         execution_handler = SimulatedExecutionHandler(

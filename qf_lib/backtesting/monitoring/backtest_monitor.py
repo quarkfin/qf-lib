@@ -1,9 +1,11 @@
 # it is important to import the matplotlib first and then switch the interactive/dynamic mode on.
-import matplotlib.pyplot as plt
-from qf_lib.common.utils.excel.excel_exporter import ExcelExporter
+from io import TextIOWrapper
 
+import matplotlib.pyplot as plt
 plt.ion()  # required for dynamic chart
+
 import csv
+from qf_lib.common.utils.excel.excel_exporter import ExcelExporter
 from qf_lib.backtesting.transaction import Transaction
 from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.get_sources_root import get_src_root
@@ -45,13 +47,16 @@ class BacktestMonitor(AbstractMonitor):
         self._ax.set_title("Progress of the backtest - {}".format(backtest_result.backtest_name))
         self._figure.autofmt_xdate(rotation=20)
         self._file_name_template = datetime.now().strftime("%Y_%m_%d-%H%M {}".format(backtest_result.backtest_name))
-        self._trades_file_path = self._init_csv_file(self._file_name_template)
+
+        self._csv_file = self._init_csv_file(self._file_name_template)
+        self._csv_writer = csv.writer(self._csv_file)
 
     def end_of_trading_update(self, _: datetime=None):
         """
         Generates a tearsheet PDF with the statistics of the backtest and saves it on the disk
         Saves the timeseries of the portfolio in the excel file
         """
+        # export a pdf with charts
         portfolio_tms = self.backtest_result.portfolio.get_portfolio_timeseries()
         portfolio_tms.name = self.backtest_result.backtest_name
         tearsheet = TearsheetWithoutBenchmark(
@@ -59,10 +64,14 @@ class BacktestMonitor(AbstractMonitor):
         tearsheet.build_document()
         tearsheet.save()
 
+        # export a timeseries into an xlsx file
         xlsx_filename = "{}.xlsx".format(self._file_name_template)
         relative_file_path = path.join("timeseries", xlsx_filename)
         self._excel_exporter.export_container(portfolio_tms, relative_file_path,
                                               starting_cell='A1', include_column_names=True)
+
+        if self._csv_file is not None:  # close the csv file
+            self._csv_file.close()
 
     def end_of_day_update(self, timestamp: datetime=None):
         """
@@ -97,7 +106,7 @@ class BacktestMonitor(AbstractMonitor):
         """
         self._save_trade_to_file(transaction)
 
-    def _init_csv_file(self, file_name_template: str) -> str:
+    def _init_csv_file(self, file_name_template: str) -> TextIOWrapper:
         """
         Creates a new csv file for every backtest run, writes the header and returns the path to the file.
         """
@@ -110,19 +119,18 @@ class BacktestMonitor(AbstractMonitor):
 
         # Write new file header
         fieldnames = ["Timestamp", "Contract", "Quantity", "Price", "Commission"]
-        with open(file_path, 'a', newline='') as csv_file:
-            writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
-            writer.writeheader()
 
-        return file_path
+        file_handler = open(file_path, 'a', newline='')
+        writer = csv.DictWriter(file_handler, fieldnames=fieldnames)
+        writer.writeheader()
+
+        return file_handler
 
     def _save_trade_to_file(self, transaction: Transaction):
         """
         Append all details about the Transaction to the CSV trade log.
         """
-        with open(self._trades_file_path, 'a', newline='') as csv_file:
-            writer = csv.writer(csv_file)
-            writer.writerow([
+        self._csv_writer.writerow([
                 transaction.time,
                 transaction.contract.symbol,
                 transaction.quantity,

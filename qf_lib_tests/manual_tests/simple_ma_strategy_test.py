@@ -71,10 +71,14 @@ class SimpleMAStrategy(object):
 
 
 def main():
-    setup_logging(
-        level=logging.INFO,
-        console_logging=True
-    )
+    is_optimized = True
+
+    if is_optimized:
+        logging_level = logging.WARNING
+    else:
+        logging_level = logging.INFO
+
+    setup_logging(level=logging_level, console_logging=True)
 
     ts = BacktestTradingSession(
         backtest_name='Simple_MA',
@@ -85,7 +89,8 @@ def main():
         excel_exporter=container.resolve(ExcelExporter),
         start_date=str_to_date("2010-01-01"),
         end_date=str_to_date("2010-03-31"),
-        initial_cash=1000000
+        initial_cash=1000000,
+        is_optimized=is_optimized
     )
 
     SimpleMAStrategy(ts)
