@@ -44,16 +44,13 @@ class BacktestPosition(Position):
         For SELL transaction: much we received for selling shares including commission (it will be a negative number)
         """
         self._check_if_open()
-        self._check_if_direction_does_not_change(transaction)
         assert transaction.contract == self._contract, "Contract of Transaction has to match the Contract of a Position"
         assert transaction.quantity != 0, "`Transaction.quantity` shouldn't be 0"
         assert transaction.price > 0.0, "Transaction.price must be positive. For short sales use a negative quantity"
 
-        if not self.transactions:   # the first transaction decides the direction of the position
-            self.direction = sign(transaction.quantity)
-
         self.transactions.append(transaction)
         self.number_of_shares += transaction.quantity
+        self.direction = sign(self.number_of_shares)
 
         if self.number_of_shares == 0:  # close the position if the number of shares drops to zero
             self.is_closed = True
@@ -84,8 +81,7 @@ class BacktestPosition(Position):
 
         result = 0.0
         for transaction in self.transactions:
-            result += (transaction.price * transaction.quantity)
-            result += transaction.commission
+            result += self._calculate_cost_of_transaction(transaction)
         return result
 
     def contract(self) -> Contract:
@@ -108,8 +104,7 @@ class BacktestPosition(Position):
             # take into account only BUY transaction if the position is long
             # take into account only SELL transaction if the position is short
             if sign(transaction.quantity) == self.direction:
-                cost += (transaction.price * transaction.quantity)
-                cost += transaction.commission
+                cost += self._calculate_cost_of_transaction(transaction)
                 shares += transaction.quantity
         if shares == 0:
             return 0
@@ -125,17 +120,50 @@ class BacktestPosition(Position):
         """
         Calculate the realized pln of the position.
         """
-        avg_cost_ps = self.avg_cost_per_share()
-        pnl = 0.0
+
+        quantity = 0   # how many shares we have in given point of time while looping through transactions
+        avg_buy_price = 0.0
+        avg_sell_price = 0.0
+        realized_pnl = 0.0
+
+        quantities_bought = []
+        quantities_sold = []
+        prices_bought = []
+        prices_sold = []
 
         for transaction in self.transactions:
-            # take into account only SELL transaction if the position is long
-            # take into account only BUY transaction if the position is short
-            if sign(transaction.quantity) != self.direction:
-                # reverse the sing as the transaction is always going in opposite direction to the position
-                quantity = -transaction.quantity
-                pnl += (transaction.price - avg_cost_ps) * quantity - transaction.commission
-        return pnl
+            shares_for_pnl_calc = min([abs(transaction.quantity), abs(quantity)])
+            shares_for_avg_price_calc = abs(transaction.quantity)
+
+            if sign(quantity) == 1 and sign(transaction.quantity) == -1:  # we sell while being long
+                pnl = (transaction.price - avg_buy_price) * shares_for_pnl_calc - transaction.commission
+                realized_pnl += pnl
+                shares_for_avg_price_calc -= shares_for_pnl_calc
+
+            if sign(quantity) == -1 and sign(transaction.quantity) == 1:  # we buy while being short
+                pnl = (avg_sell_price - transaction.price) * shares_for_pnl_calc - transaction.commission
+                realized_pnl += pnl
+                shares_for_avg_price_calc -= shares_for_pnl_calc
+
+            # save the quantities and prices of bought and sold shares so that they can e used for avg price calculation
+            quantity += transaction.quantity
+            if sign(transaction.quantity) == 1:  # we buy -> update the avg buy price
+                quantities_bought.append(shares_for_avg_price_calc)
+                prices_bought.append(transaction.average_price_including_commission())
+            if sign(transaction.quantity) == -1:  # we buy -> update the avg buy price
+                quantities_sold.append(shares_for_avg_price_calc)
+                prices_sold.append(transaction.average_price_including_commission())
+
+            # update the avg prices by calculating weighted average of all shares bought and sold
+            if sum(quantities_bought) > 0:
+                avg_buy_price = sum(price * quantity for price, quantity in zip(prices_bought, quantities_bought))
+                avg_buy_price /= sum(quantities_bought)
+
+            if sum(quantities_sold) > 0:
+                avg_sell_price = sum(price * quantity for price, quantity in zip(prices_sold, quantities_sold))
+                avg_sell_price /= sum(quantities_sold)
+
+        return realized_pnl
 
     @staticmethod
     def _calculate_cost_of_transaction(transaction: Transaction):
@@ -150,13 +178,3 @@ class BacktestPosition(Position):
     def _check_if_open(self):
         assert not self.is_closed, "The position has already been closed"
 
-    def _check_if_direction_does_not_change(self, transaction: Transaction):
-        """
-        Checks if the Position will still be of the same direction.
-        We do not allow changing the direction from Long to Short and from Short to Long
-        We should close the Position first and then open a new one in the opposite direction.
-        """
-        sign_after_transaction = sign(self.number_of_shares + transaction.quantity)
-        change = abs(sign_after_transaction - self.direction)
-        assert change < 2, "Transaction cannot change the direction of the position. " \
-                           "Close the position and open new one in the opposite direction."

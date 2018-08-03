@@ -97,11 +97,11 @@ class TestPosition(unittest.TestCase):
         position.transact_transaction(Transaction(self.time, self.contract, -20, 120, 0))
 
         self.assertEqual(position.contract(), self.contract)
-        self.assertEqual(position.number_of_shares, 0)
+        self.assertEqual(position.quantity(), 0)
         self.assertEqual(position.current_price, 110)
         self.assertEqual(position.market_value, 0)
         self.assertAlmostEqual(position.cost_basis(), 0, places=6)
-        self.assertEqual(position.avg_cost_per_share(), 100)
+        self.assertEqual(position.avg_cost_per_share(), 0)
         self.assertAlmostEqual(position.unrealised_pnl(), 0, places=6)
         self.assertEqual(position.realized_pnl(), 20*20)
 
@@ -113,7 +113,7 @@ class TestPosition(unittest.TestCase):
         position.transact_transaction(Transaction(self.time, self.contract, -10, 100, 0))
         self.assertEqual(position.direction, 1)
         position.transact_transaction(Transaction(self.time, self.contract, -10, 100, 0))
-        self.assertEqual(position.direction, 1)
+        self.assertEqual(position.direction, 0)
 
         position = BacktestPosition(self.contract)
         position.transact_transaction(Transaction(self.time, self.contract, -20, 100, 0))
@@ -121,8 +121,9 @@ class TestPosition(unittest.TestCase):
 
         position = BacktestPosition(self.contract)
         position.transact_transaction(Transaction(self.time, self.contract, 20, 100, 0))
-        with self.assertRaises(AssertionError):
-            position.transact_transaction(Transaction(self.time, self.contract, -21, 100, 0))
+        self.assertEqual(position.direction, 1)
+        position.transact_transaction(Transaction(self.time, self.contract, -21, 100, 0))
+        self.assertEqual(position.direction, -1)
 
     def test_closed_position(self):
         position = BacktestPosition(self.contract)
@@ -166,6 +167,28 @@ class TestPosition(unittest.TestCase):
         position.transact_transaction(Transaction(self.time, self.contract, -10, 110, 20))
         self.assertEqual(position.realized_pnl(), 260)
 
+        position = BacktestPosition(self.contract)
+        position.transact_transaction(Transaction(self.time, self.contract, 20, 100, 0))
+        position.transact_transaction(Transaction(self.time, self.contract, -20, 120, 0))
+        self.assertEqual(position.realized_pnl(), 400)
+
+        position = BacktestPosition(self.contract)
+        position.transact_transaction(Transaction(self.time, self.contract, 20, 100, 0))
+        position.transact_transaction(Transaction(self.time, self.contract, -20, 120, 10))
+        self.assertEqual(position.realized_pnl(), 390)
+
+        position = BacktestPosition(self.contract)
+        position.transact_transaction(Transaction(self.time, self.contract, 20, 100, 0))
+        position.transact_transaction(Transaction(self.time, self.contract, -30, 120, 10))
+        self.assertEqual(position.realized_pnl(), 390)
+
+        position = BacktestPosition(self.contract)
+        position.transact_transaction(Transaction(self.time, self.contract, 12, 100, 0))
+        position.transact_transaction(Transaction(self.time, self.contract, 17, 99, 0))
+        position.transact_transaction(Transaction(self.time, self.contract, -9, 101, 0))
+        position.transact_transaction(Transaction(self.time, self.contract, -4, 105, 0))
+        position.transact_transaction(Transaction(self.time, self.contract, 3, 103, 0))
+        self.assertAlmostEqual(position.realized_pnl(), 36.62, places=2)
 
 if __name__ == "__main__":
     unittest.main()

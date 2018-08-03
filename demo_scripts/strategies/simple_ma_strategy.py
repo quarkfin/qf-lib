@@ -20,9 +20,6 @@ from qf_lib.common.utils.logging.logging_config import setup_logging
 from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
 from qf_lib.settings import Settings
 
-long_ma_tms = PricesSeries()
-short_ma_tms = PricesSeries()
-
 
 class SimpleMAStrategy(object):
     """
@@ -55,11 +52,9 @@ class SimpleMAStrategy(object):
 
         long_ma_series = self.data_handler.historical_price(self.ticker, PriceField.Close, long_ma_len)
         long_ma_price = long_ma_series.mean()
-        long_ma_tms[self.timer.now()] = long_ma_price
 
         short_ma_series = long_ma_series.tail(short_ma_len)
         short_ma_price = short_ma_series.mean()
-        short_ma_tms[self.timer.now()] = short_ma_price
 
         contract = self.contract_ticker_mapper.ticker_to_contract(self.ticker)
 
@@ -96,16 +91,6 @@ def main():
     SimpleMAStrategy(ts)
 
     ts.start_trading()
-    print("Long MA")
-    print(long_ma_tms.to_string())
-    print("Short MA")
-    print(short_ma_tms.to_string())
-
-    print("Expected End Value = {}".format(1005386.29))
-    actual_end_value = ts.portfolio.get_portfolio_timeseries()[-1]
-    print("Actual End Value   = {}".format(actual_end_value))
-    print("DIFF               = {}".format(1005386.29 - actual_end_value))
-
 
 if __name__ == "__main__":
     main()
