@@ -102,7 +102,6 @@ def tickers_dict_to_data_array(tickers_data_dict, requested_tickers, requested_f
     # return empty xr.DataArray if there is no data to be converted
     if not tickers_data_dict:
         data = np.empty((0, len(requested_tickers), len(requested_fields)))
-        data[:] = np.nan
         return xr.DataArray(
             data, coords={'dates': [], 'tickers': requested_tickers, 'fields': requested_fields},
             dims=('dates', 'tickers', 'fields')
