@@ -141,7 +141,7 @@ def tickers_dict_to_data_array(tickers_data_dict, requested_tickers, requested_f
 
     Returns
     -------
-    DataArray  [date, ticker, field]
+    QFDataArray
     """
     # return empty xr.DataArray if there is no data to be converted
     if not tickers_data_dict:
