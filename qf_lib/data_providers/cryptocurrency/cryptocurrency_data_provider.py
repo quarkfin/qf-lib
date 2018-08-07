@@ -43,11 +43,6 @@ class CryptoCurrencyDataProvider(AbstractPriceDataProvider):
         with Session() as session:
             for ticker in tickers:
                 single_ticker_data = self._get_single_ticker(ticker, fields, start_date, end_date, session)
-                single_ticker_data.index.name = 'dates'
-                single_ticker_data = single_ticker_data.to_xarray()
-                single_ticker_data = single_ticker_data.to_array(dim='fields', name=ticker)
-                single_ticker_data = single_ticker_data.transpose('dates', 'fields')
-
                 tickers_data_dict[ticker] = single_ticker_data
 
         if fields is None:

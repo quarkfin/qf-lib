@@ -144,10 +144,7 @@ class QuandlDataProvider(AbstractPriceDataProvider):
             for ticker_str, ticker_df in ticker_grouping:
                 ticker = QuandlTicker(ticker=ticker_str, database_name=db_name, database_type=QuandlDBType.Table)
                 dates_fields_values_df = self._format_single_ticker_table(ticker_df, start_date, end_date)
-                dates_fields_values_df.index.name = 'dates'
-                result_dict[ticker] = dates_fields_values_df.to_xarray()\
-                                                            .to_array(dim='fields', name=ticker)\
-                                                            .transpose('dates', 'fields')
+                result_dict[ticker] = dates_fields_values_df
 
         return result_dict
 
@@ -178,23 +175,20 @@ class QuandlDataProvider(AbstractPriceDataProvider):
 
         ticker_grouping = data.groupby(extract_ticker_name, axis=1)
         ticker_to_df = {}  # type: Dict[str, pd.DataFrame]  # string -> DataFrame[dates, fields]
-        for ticker, ticker_data in ticker_grouping:
-            tickers_and_fields = (column_name.split(' - ') for column_name in ticker_data.columns)
+        for ticker, ticker_data_df in ticker_grouping:
+            tickers_and_fields = (column_name.split(' - ') for column_name in ticker_data_df.columns)
             field_names = [field for (ticker, field) in tickers_and_fields]
-            ticker_data.columns = field_names
-            ticker_data.index.name = 'dates'
+            ticker_data_df.columns = field_names
 
             if fields is not None:
                 # select only required fields
-                ticker_data = self._select_only_required_fields(ticker, ticker_data, fields)
+                ticker_data_df = self._select_only_required_fields(ticker, ticker_data_df, fields)
 
                 # if there was no data for the given ticker, skip the ticker
-                if ticker_data is None:
+                if ticker_data_df is None:
                     continue
 
-            ticker_to_df[ticker] = ticker_data.to_xarray()\
-                                              .to_array(dim='fields', name=ticker)\
-                                              .transpose('dates', 'fields')
+            ticker_to_df[ticker] = ticker_data_df
 
         return ticker_to_df
 

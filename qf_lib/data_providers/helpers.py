@@ -77,7 +77,7 @@ def normalize_data_array(
     """
     # to keep the order of tickers and fields we reindex the data_array
     data_array = data_array.reindex(tickers=tickers, fields=fields)
-    data_array = data_array.sortby('dates')
+    data_array = data_array.sortby(QFDataArray.DATES)
 
     squeezed_result = squeeze_data_array(data_array, got_single_date, got_single_ticker, got_single_field)
     casted_result = cast_data_array_to_proper_type(squeezed_result, use_prices_types)
@@ -135,7 +135,7 @@ def tickers_dict_to_data_array(tickers_data_dict, requested_tickers, requested_f
 
     Parameters
     ----------
-    tickers_data_dict: ticker -> DataArray[dates, fields]
+    tickers_data_dict: ticker -> DataFrame[dates, fields]
     requested_tickers
     requested_fields
 
@@ -148,9 +148,16 @@ def tickers_dict_to_data_array(tickers_data_dict, requested_tickers, requested_f
         data = np.empty((0, len(requested_tickers), len(requested_fields)))
         return QFDataArray.create(data, dates=[], tickers=requested_tickers, fields=requested_fields)
 
-    tickers, data_arrays = zip(
-        *((ticker, data_array) for ticker, data_array in tickers_data_dict.items())
-    )
+    tickers = []
+    data_arrays = []
+    for ticker, df in tickers_data_dict.items():
+        df.index.name = QFDataArray.DATES
+        data_array = df.to_xarray()
+        data_array = data_array.to_array(dim=QFDataArray.FIELDS, name=ticker)
+        data_array = data_array.transpose(QFDataArray.DATES, QFDataArray.FIELDS)
+
+        tickers.append(ticker)
+        data_arrays.append(data_array)
 
     tickers_index = pd.Index(tickers, name=QFDataArray.TICKERS)
     result = QFDataArray.concat(data_arrays, dim=tickers_index)
@@ -161,7 +168,7 @@ def tickers_dict_to_data_array(tickers_data_dict, requested_tickers, requested_f
 def get_fields_from_tickers_to_data_dict(tickers_data_dict):
     fields = set()
     for dates_fields_df in tickers_data_dict.values():
-        fields.update(dates_fields_df.fields.values)
+        fields.update(dates_fields_df.columns.values)
 
     fields = list(fields)
     return fields

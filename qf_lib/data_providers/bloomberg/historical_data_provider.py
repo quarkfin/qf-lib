@@ -3,7 +3,6 @@ from typing import Any, Sequence, Dict
 
 import numpy as np
 import pandas as pd
-import xarray as xr
 
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.tickers.tickers import BloombergTicker
@@ -92,7 +91,7 @@ class HistoricalDataProvider(object):
         response_events = get_response_events(self._session)
 
         # mapping: ticker -> DataArray[dates, fields]
-        tickers_data_dict = dict()  # type: Dict[BloombergTicker, xr.DataArray]
+        tickers_data_dict = dict()  # type: Dict[BloombergTicker, pd.DataFrame]
 
         for event in response_events:
             check_event_for_errors(event)
@@ -112,10 +111,7 @@ class HistoricalDataProvider(object):
                 data = np.empty((len(dates), len(requested_fields)))
                 data[:] = np.nan
 
-                dates_fields_values = xr.DataArray(
-                    data, coords={QFDataArray.DATES: dates, QFDataArray.FIELDS: requested_fields},
-                    dims=(QFDataArray.DATES, QFDataArray.FIELDS)
-                )
+                dates_fields_values = pd.DataFrame(data, index=dates, columns=requested_fields)
 
                 for field_name in requested_fields:
                     dates_fields_values.loc[:, field_name] = [
