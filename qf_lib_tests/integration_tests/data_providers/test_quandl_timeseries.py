@@ -129,7 +129,7 @@ class TestQuandlTimeseries(unittest.TestCase):
 
         self.assertIsInstance(data, QFDataFrame)
         self.assertEqual(data.shape, (self.WSE_NUM_OF_DATES, len(self.WSE_OUTPUT_FIELDS)))
-        self.assertEqual(list(data.columns), self.WSE_OUTPUT_FIELDS)
+        self.assertEqual(set(data.columns), set(self.WSE_OUTPUT_FIELDS))
 
     def test_historical_single_ticker_single_field(self):
         # single ticker, single field; end_date by default now, frequency by default DAILY, currency by default None
@@ -155,7 +155,7 @@ class TestQuandlTimeseries(unittest.TestCase):
         self.assertIsInstance(data, QFDataFrame)
         self.assertTrue(data.shape[0] > self.WSE_NUM_OF_DATES)
         self.assertEqual(data.shape[1], len(self.WSE_OUTPUT_FIELDS))
-        self.assertEqual(list(data.columns), self.WSE_OUTPUT_FIELDS)
+        self.assertEqual(set(data.columns), set(self.WSE_OUTPUT_FIELDS))
 
     def test_historical_single_ticker_no_dates(self):
         # get all fields
@@ -164,7 +164,7 @@ class TestQuandlTimeseries(unittest.TestCase):
         self.assertIsInstance(data, QFDataFrame)
         self.assertTrue(data.shape[0] > self.WSE_NUM_OF_DATES)
         self.assertEqual(data.shape[1], len(self.WSE_OUTPUT_FIELDS))
-        self.assertEqual(list(data.columns), self.WSE_OUTPUT_FIELDS)
+        self.assertEqual(set(data.columns), set(self.WSE_OUTPUT_FIELDS))
 
     # ======================== Test Multiple Tickers
 
@@ -175,7 +175,7 @@ class TestQuandlTimeseries(unittest.TestCase):
         self.assertEqual(type(data), pd.Panel)
         self.assertEqual(data.shape, (self.WIKI_NUM_OF_DATES, len(self.MANY_TICKERS), len(self.WIKI_OUTPUT_FIELDS)))
         self.assertEqual(list(data.major_axis), self.MANY_TICKERS)
-        self.assertEqual(list(data.minor_axis), self.WIKI_OUTPUT_FIELDS)
+        self.assertEqual(set(data.minor_axis), set(self.WIKI_OUTPUT_FIELDS))
 
     def test_historical_multiple_tickers_single_field(self):
         data = self.quandl_provider.get_history(tickers=self.MANY_TICKERS, fields=self.SINGLE_FIELD,

@@ -48,7 +48,7 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
                 # Many tickers and many fields - replace minor axis in Panel
                 # remove the condition after switching to xarray.DataArray (instead of pandas.Panel)
                 if isinstance(container, xr.DataArray):
-                    price_fields = [str_to_field_dict[field_str] for field_str in container['fields'].values]
+                    price_fields = [str_to_field_dict[field_str] for field_str in container.fields.values]
                     container['fields'] = price_fields
                 else:
                     renaming_dict = {field_str: str_to_field_dict[field_str] for field_str in container.minor_axis}

@@ -78,6 +78,18 @@ class TestQuandlTable(unittest.TestCase):
         self.assertEqual(data.shape, (self.NUM_OF_DATES, len(self.MANY_PRICE_FIELDS)))
         self.assertEqual(list(data.columns), self.MANY_PRICE_FIELDS)
 
+    def test_price_single_ticker_all_available_fields(self):
+        # single ticker, many fields; can be the same as for single field???
+        data = self.quandl_provider.get_history(tickers=self.SINGLE_TICKER, fields=None,
+                                                start_date=self.START_DATE, end_date=self.END_DATE)
+
+        self.assertEqual(type(data), QFDataFrame)
+        self.assertEqual(data.shape[0], self.NUM_OF_DATES)
+
+        # assumption: when we request all available fields, there should be at least 4 of them: Open, High, Low, Close.
+        # can be more (e.g. Volume)
+        self.assertTrue(len(data.columns) >= 4)
+
     def test_price_multiple_tickers_single_field(self):
         data = self.quandl_provider.get_price(tickers=self.MANY_TICKERS, fields=self.SINGLE_PRICE_FIELD,
                                               start_date=self.START_DATE, end_date=self.END_DATE)

@@ -3,7 +3,6 @@ from typing import Union, Sequence, Dict
 
 import blpapi
 import pandas as pd
-import xarray as xr
 
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
@@ -16,8 +15,7 @@ from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceData
 from qf_lib.data_providers.bloomberg.bloomberg_names import REF_DATA_SERVICE_URI
 from qf_lib.data_providers.bloomberg.historical_data_provider import HistoricalDataProvider
 from qf_lib.data_providers.bloomberg.reference_data_provider import ReferenceDataProvider, BloombergError
-from qf_lib.data_providers.helpers import cast_result_to_proper_type, cast_data_array_to_proper_type, \
-    squeeze_data_array
+from qf_lib.data_providers.helpers import cast_result_to_proper_type, normalize_data_array
 from qf_lib.settings import Settings
 
 
@@ -125,18 +123,11 @@ class BloombergDataProvider(AbstractPriceDataProvider):
         data_array = self._historical_data_provider.get(
             tickers_str, fields, start_date, end_date, frequency, currency, override_name, override_value)
 
-        # to keep the order of tickers and fields we reindex the data_array
-        data_array = data_array.reindex(tickers=tickers, fields=fields)
-        data_array = data_array.sortby('dates')
+        normalized_result = normalize_data_array(
+            data_array, tickers, fields, got_single_date, got_single_ticker, got_single_field
+        )
 
-        squeezed_result = squeeze_data_array(data_array, got_single_date, got_single_ticker, got_single_field)
-        casted_result = cast_data_array_to_proper_type(squeezed_result)
-
-        # remove this conversion after switching to xarray.DataArray from pd.Panels everywhere
-        if isinstance(casted_result, xr.DataArray):
-            casted_result = casted_result.to_pandas()
-
-        return casted_result
+        return normalized_result
 
     def supported_ticker_types(self):
         return {BloombergTicker}

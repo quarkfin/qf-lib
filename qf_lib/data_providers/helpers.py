@@ -45,6 +45,28 @@ def cast_result_to_proper_type(result):
     return casted_result
 
 
+def normalize_data_array(data_array, tickers, fields, got_single_date, got_single_ticker, got_single_field):
+    """
+    Post-processes the result of some DataProviders so that it satisfies the format of a result expected
+    from DataProviders:
+    - proper return type (pd.Series, pd.DataFrame or xr.DataArray),
+    - proper shape of the result (squeezed dimensions for which a single non-list value was provided, e.g. "OPEN"),
+    - dimensions: "tickers" and "fields" contain all required labels and the labels are in required order.
+    """
+    # to keep the order of tickers and fields we reindex the data_array
+    data_array = data_array.reindex(tickers=tickers, fields=fields)
+    data_array = data_array.sortby('dates')
+
+    squeezed_result = squeeze_data_array(data_array, got_single_date, got_single_ticker, got_single_field)
+    casted_result = cast_data_array_to_proper_type(squeezed_result)
+
+    # remove this conversion after switching to xarray.DataArray from pd.Panels everywhere
+    if isinstance(casted_result, xr.DataArray):
+        casted_result = casted_result.to_pandas()
+
+    return casted_result
+
+
 def squeeze_data_array(original_data_panel, got_single_date, got_single_ticker, got_single_field):
     original_shape = original_data_panel.shape
 

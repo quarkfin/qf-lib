@@ -1,4 +1,5 @@
 from datetime import datetime
+from datetime import datetime
 from itertools import groupby
 from typing import Union, Sequence, Dict
 
@@ -14,7 +15,8 @@ from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
-from qf_lib.data_providers.helpers import squeeze_panel, cast_result_to_proper_type
+from qf_lib.data_providers.helpers import tickers_dict_to_data_array, \
+    normalize_data_array
 from qf_lib.settings import Settings
 
 
@@ -40,11 +42,12 @@ class QuandlDataProvider(AbstractPriceDataProvider):
         names (fields) are different across databases.
         """
         tickers, got_single_ticker = convert_to_list(tickers, QuandlTicker)
+        got_single_date = self._is_single_date(start_date, end_date)
 
         if fields is not None:
             fields, got_single_field = convert_to_list(fields, (PriceField, str))
         else:
-            got_single_field = False
+            got_single_field = False  # all existing fields will be present in the result
 
         db_type = tickers[0].database_type
         if db_type == QuandlDBType.Table:
@@ -54,11 +57,24 @@ class QuandlDataProvider(AbstractPriceDataProvider):
         else:
             raise LookupError("Quandl Database type: {} is not supported.".format(db_type))
 
-        panel = self._dict_to_panel_or_df(result_dict, tickers, fields)
-        got_single_date = self._is_single_date(start_date, end_date)
-        result = squeeze_panel(panel, got_single_date, got_single_ticker, got_single_field)
-        result = cast_result_to_proper_type(result)
-        return result
+        if fields is None:
+            fields = self._get_fields_from_result(result_dict)
+
+        result_data_array = tickers_dict_to_data_array(result_dict, tickers, fields)
+
+        normalized_result = normalize_data_array(
+            result_data_array, tickers, fields, got_single_date, got_single_ticker, got_single_field
+        )
+
+        return normalized_result
+
+    def _get_fields_from_result(self, result_dict):
+        fields = set()
+        for dates_fields_values in result_dict.values():
+            fields.update(dates_fields_values.fields.values)
+
+        fields = list(fields)
+        return fields
 
     def supported_ticker_types(self):
         return {QuandlTicker}
@@ -113,7 +129,7 @@ class QuandlDataProvider(AbstractPriceDataProvider):
 
         field_options = {}
         if fields is not None:
-            columns = ['ticker', 'date'] + fields
+            columns = ['ticker', 'date'] + list(fields)
             field_options['qopts'] = {'columns': columns}
 
         result_dict = {}
@@ -128,7 +144,11 @@ class QuandlDataProvider(AbstractPriceDataProvider):
             ticker_grouping = df.groupby('ticker')
             for ticker_str, ticker_df in ticker_grouping:
                 ticker = QuandlTicker(ticker=ticker_str, database_name=db_name, database_type=QuandlDBType.Table)
-                result_dict[ticker] = self._format_single_ticker_table(ticker_df, start_date, end_date)
+                dates_fields_values_df = self._format_single_ticker_table(ticker_df, start_date, end_date)
+                dates_fields_values_df.index.name = 'dates'
+                result_dict[ticker] = dates_fields_values_df.to_xarray()\
+                                                            .to_array(dim='fields', name=ticker)\
+                                                            .transpose('dates', 'fields')
 
         return result_dict
 
@@ -137,6 +157,9 @@ class QuandlDataProvider(AbstractPriceDataProvider):
         """
         NOTE: Only use one Quandl Database at the time. Do not mix multiple databases.
         """
+        databases = {ticker.database_name for ticker in tickers}
+        if len(databases) > 1:
+            raise ValueError("Mixed databases in one request are not supported yet")
 
         tickers = list(tickers)  # allows iterating the sequence more then once
         tickers_str = [t.as_string() for t in tickers]
@@ -147,37 +170,54 @@ class QuandlDataProvider(AbstractPriceDataProvider):
         if end_date is not None:
             kwargs['end_date'] = date_to_str(end_date)
 
-        data = quandl.get(tickers_str, **kwargs)
+        data = quandl.get(tickers_str, **kwargs)  # type: pd.DataFrame
 
-        result_dict = {}
-        if fields is not None:
-            # we only pick provided fields to dict: ticker_str -> DataFrame
-            for ticker in tickers:
-                ticker_df = QFDataFrame()
-                for field in fields:
-                    column_name = ticker.field_to_column_name(field)
-                    if column_name in data.columns:
-                        ticker_df[field] = data[column_name]
-                    else:
-                        self.logger.warning("Column '{}' has not been found in the Quandl response".format(column_name))
+        def extract_ticker_name(column_name):
+            ticker_str, _ = column_name.split(' - ')
+            ticker = QuandlTicker.from_string(ticker_str)
+            return ticker
 
-                result_dict[ticker] = ticker_df
+        ticker_grouping = data.groupby(extract_ticker_name, axis=1)
+        ticker_to_df = {}  # type: Dict[str, pd.DataFrame]  # string -> DataFrame[dates, fields]
+        for ticker, ticker_data in ticker_grouping:
+            tickers_and_fields = (column_name.split(' - ') for column_name in ticker_data.columns)
+            field_names = [field for (ticker, field) in tickers_and_fields]
+            ticker_data.columns = field_names
+            ticker_data.index.name = 'dates'
+
+            if fields is not None:
+                # select only required fields
+                ticker_data = self._select_only_required_fields(ticker, ticker_data, fields)
+
+                # if there was no data for the given ticker, skip the ticker
+                if ticker_data is None:
+                    continue
+
+            ticker_to_df[ticker] = ticker_data.to_xarray()\
+                                              .to_array(dim='fields', name=ticker)\
+                                              .transpose('dates', 'fields')
+
+        return ticker_to_df
+
+    def _select_only_required_fields(self, ticker, ticker_data, fields):
+        requested_fields_set = set(fields)
+        got_fields_set = set(ticker_data.columns)
+        missing_fields = requested_fields_set - got_fields_set
+
+        if missing_fields:
+            missing_columns = [ticker.field_to_column_name(field) for field in missing_fields]
+            self.logger.warning(
+                "Columns {} have not been found in the Quandl response".format(missing_columns))
+
+        fields_to_select = requested_fields_set.intersection(got_fields_set)
+
+        # if there are no fields which should be selected, return None
+        if not fields_to_select:
+            result = None
         else:
-            # we map all column names to dict: ticker_str -> DataFrame
-            for column_name in data.columns:
-                ticker_str, field_str = column_name.split(' - ')
-                ticker = QuandlTicker.from_string(ticker_str)
-                if ticker in result_dict:
-                    # add column to the existing data frame
-                    df = result_dict[ticker]
-                    df[field_str] = data[column_name]
-                else:
-                    # add new data frame to the result dict
-                    df = QFDataFrame()
-                    df[field_str] = data[column_name]
-                    result_dict[ticker] = df
+            result = ticker_data.loc[:, fields_to_select]
 
-        return result_dict
+        return result
 
     @staticmethod
     def _format_single_ticker_table(table: pd.DataFrame, start_date: datetime, end_date: datetime) -> pd.DataFrame:
@@ -189,32 +229,3 @@ class QuandlDataProvider(AbstractPriceDataProvider):
         table = table.loc[start_date:end_date]
 
         return table
-
-    @staticmethod
-    def _dict_to_panel_or_df(tickers_to_data_dict: dict, tickers: Sequence[QuandlTicker], fields) -> pd.Panel:
-        """
-        Converts a dictionary tickers->DateFrame to Panel.
-
-        Parameters
-        ----------
-        tickers_to_data_dict: dict[str, pd.DataFrame]
-
-        Returns
-        -------
-        pandas.Panel  [date, ticker, field] or
-        QFDataFrame [date, tickers] if single field was provided
-
-        """
-        panel = pd.Panel.from_dict(data=tickers_to_data_dict)
-
-        # recombines dimensions, so that the first one is date, major is ticker, minor is field
-        panel = panel.transpose(1, 0, 2)
-
-        # to keep the order of tickers and fields we reindex the panel
-        if fields is not None:
-            fields = pd.np.array(fields, ndmin=1)  # to handle single and many fields.
-            panel = panel.reindex(major_axis=tickers, minor_axis=fields)
-        else:
-            panel = panel.reindex(major_axis=tickers)
-
-        return panel
