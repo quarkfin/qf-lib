@@ -77,8 +77,8 @@ class MaxDiversificationPortfolio(Portfolio):
         epsilon = 1e-06
         weights_sum = weights.sum()
         if abs(weights_sum - 1) > epsilon:
-            logging.warning("Warning: sum of all weights is not equal to 1. sum(weights) = {:f}".format(weights_sum))
-            logging.info('Adjusting weights...')
+            self.logger.warning("Warning: sum of all weights is not equal to 1. sum(weights) = {:f}".format(weights_sum))
+            self.logger.info('Adjusting weights...')
             weights = weights / weights_sum
 
         weights_values = weights.values

@@ -3,7 +3,6 @@ from typing import Dict, Optional, Sequence, Union
 
 import pandas as pd
 from bs4 import BeautifulSoup as BS
-from bs4 import Tag
 from requests import Session
 
 from qf_lib.common.enums.price_field import PriceField
@@ -13,7 +12,8 @@ from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
-from qf_lib.data_providers.helpers import squeeze_panel, cast_result_to_proper_type
+from qf_lib.data_providers.helpers import normalize_data_array, \
+    tickers_dict_to_data_array, get_fields_from_tickers_to_data_dict
 
 
 class CryptoCurrencyDataProvider(AbstractPriceDataProvider):
@@ -21,31 +21,41 @@ class CryptoCurrencyDataProvider(AbstractPriceDataProvider):
     Constructs a new ``CryptoCurrencyDataProvider`` instance
     """
 
+    DATE_COLUMN = 'Date'
+
     def __init__(self):
         self.logger = qf_logger.getChild(self.__class__.__name__)
-        self.earliest_api_date = "20130428"
+        self.earliest_api_date = datetime(2013, 4, 28)
 
     def get_history(self, tickers: Union[CcyTicker, Sequence[CcyTicker]],
                     fields: Union[None, str, Sequence[str]] = None,
                     start_date: datetime = None, end_date: datetime = None, **kwargs) \
             -> Union[QFSeries, QFDataFrame, pd.Panel]:
-        """
-        When fields is None, all available fields will be returned
-        """
         tickers, got_single_ticker = convert_to_list(tickers, CcyTicker)
-        fields, got_single_field = convert_to_list(fields, (PriceField, str))
+        got_single_date = (start_date == end_date)
 
-        result_dict = dict()
+        if fields is not None:
+            fields, got_single_field = convert_to_list(fields, (PriceField, str))
+        else:
+            got_single_field = False  # all existing fields will be present in the result
+
+        tickers_data_dict = {}
         with Session() as session:
             for ticker in tickers:
-                result_dict[ticker] = self._get_single_ticker(
-                    ticker, fields, start_date, end_date, session)
+                single_ticker_data = self._get_single_ticker(ticker, fields, start_date, end_date, session)
+                single_ticker_data.index.name = 'dates'
+                single_ticker_data = single_ticker_data.to_xarray()
+                single_ticker_data = single_ticker_data.to_array(dim='fields', name=ticker)
+                single_ticker_data = single_ticker_data.transpose('dates', 'fields')
 
-        panel = self._dict_to_panel_or_df(result_dict, tickers, fields)
-        got_single_date = self._is_single_date(start_date, end_date)
-        result = squeeze_panel(panel, got_single_date, got_single_ticker, got_single_field)
-        result = cast_result_to_proper_type(result)
-        result = result.sort_index()
+                tickers_data_dict[ticker] = single_ticker_data
+
+        if fields is None:
+            fields = get_fields_from_tickers_to_data_dict(tickers_data_dict)
+
+        result_data_array = tickers_dict_to_data_array(tickers_data_dict, tickers, fields)
+        result = normalize_data_array(result_data_array, tickers, fields,
+                                      got_single_date, got_single_ticker, got_single_field)
         return result
 
     def supported_ticker_types(self):
@@ -65,83 +75,99 @@ class CryptoCurrencyDataProvider(AbstractPriceDataProvider):
         """
         Contacts the API and gets the price data for a single ticker
         """
-
         if end_date is None:
             end_date = date.today()
-        end_date = end_date.strftime("%Y%m%d")
 
-        if start_date is not None:
-            start_date = start_date.strftime("%Y%m%d")
-            if start_date < self.earliest_api_date:
-                self.logger.warning(
-                    "This date is earlier than the earliest records on the API. Using the earliest possible date "
-                    "instead (2013-04-28)"
-                )
-        else:
+        if start_date is None:
             start_date = self.earliest_api_date
+        elif start_date < self.earliest_api_date:
+            self.logger.warning(
+                "This date is earlier than the earliest records on the API. Using the earliest possible date "
+                "instead (2013-04-28)"
+            )
 
-        request = session.get("http://coinmarketcap.com/currencies/" +
-                              ticker.as_string() + "/historical-data/?start=" + start_date + "&end=" + end_date)
+        data_url = "http://coinmarketcap.com/currencies/{ticker_str}/historical-data/?" \
+                   "start={start_date_str}&end={end_date_str}".format(
+                        ticker_str=ticker.as_string(),
+                        start_date_str=start_date.strftime("%Y%m%d"),
+                        end_date_str=end_date.strftime("%Y%m%d")
+                   )
+
+        request = session.get(data_url)
 
         if request.status_code is not 200:
             if request.status_code == 404:
-                self.logger.error(
-                    "The ticker {} does not exist on the API".format(ticker.as_string()))
+                self.logger.error("The ticker {} does not exist on the API".format(ticker.as_string()))
             else:
-                raise ConnectionError(
-                    "Something went wrong connecting to the API. Try again later."
-                )
-            return
+                raise ConnectionError("Something went wrong connecting to the API. Try again later.")
 
+            return None
+        else:
+            result_df = self._parse_request(request, fields)
+            return result_df
+
+    def _parse_request(self, request, fields):
         table = BS(request.content, 'lxml').table
-
         if table is None:
             raise AttributeError(
                 "No data was found for the ticker. This could be an error on the API, or they may have changed their "
                 "layout format."
             )
-
         headersHTML = table.findAll('th')
-        headers = list()
-        for headerHTML in headersHTML:
-            headers.append(headerHTML.string)
 
-        dates = list()
-        data = list()
+        column_names = [header.string.replace('*', '') for header in headersHTML]
+        idx_of_date_column = column_names.index(self.DATE_COLUMN)
 
-        rows = table.findAll('tr')
-        for row in rows[1:]:
-            value_dict = self._parse_values(
-                row.findAll('td'), headers, fields=fields)
-            dates.append(value_dict['Date'])
-            del value_dict['Date']
-            data.append(value_dict)
+        relevant_fields_set = set(fields).union({self.DATE_COLUMN})
+        relevant_fields_indices = []
+        field_names = []
+        for idx, col_name in enumerate(column_names):
+            if col_name in relevant_fields_set:
+                relevant_fields_indices.append(idx)
 
-        return pd.DataFrame(data, dates)
+                if idx != idx_of_date_column:
+                    field_names.append(col_name)
+
+        dates = []
+        data = []
+
+        data_rows = table.findAll('tr')
+        for row in data_rows[1:]:
+            rows_date, numeric_values = self._parse_data_row(row, relevant_fields_indices, idx_of_date_column)
+            dates.append(rows_date)
+            data.append(numeric_values)
+
+        return pd.DataFrame(data, index=dates, columns=field_names)
+
+    def _parse_data_row(self, row, relevant_fields_indices, idx_of_date_column):
+        td_elems = row.findAll('td')
+
+        rows_date = None
+        numeric_values = []
+
+        for i, elem in enumerate(td_elems):
+            if i not in relevant_fields_indices:
+                continue
+            elif i == idx_of_date_column:
+                parsed_date = datetime.strptime(elem.string, '%b %d, %Y')
+                rows_date = parsed_date
+            else:
+                value = self._parse_numeric_value(elem.string)
+                numeric_values.append(value)
+
+        return rows_date, numeric_values
 
     @classmethod
-    def _parse_values(cls, values: Sequence[Tag], headers: Sequence[str], fields: Sequence[str] = None):
-        """
-        Parses the value from a string to the correct type and filters the values to those requested
-        """
-        result = dict()
-        for index, value in enumerate(values):
-            if index == 0:
-                value = datetime.strptime(value.string, '%b %d, %Y')
-            else:
-                if value != '-':
-                    try:
-                        value = float((value.string.replace(',', '')))
-                    except ValueError:
-                        value = None
-                else:
-                    value = None
+    def _parse_numeric_value(cls, value: str) -> Optional[float]:
+        if value == '-':
+            value = None
+        else:
+            try:
+                value = float((value.replace(',', '')))
+            except ValueError:
+                value = None
 
-            for field in fields:
-                if headers[index] == field or headers[index] == 'Date':
-                    result[headers[index]] = value
-
-        return result
+        return value
 
     @staticmethod
     def _format_single_ticker_table(table: pd.DataFrame, start_date: datetime, end_date: datetime) -> pd.DataFrame:

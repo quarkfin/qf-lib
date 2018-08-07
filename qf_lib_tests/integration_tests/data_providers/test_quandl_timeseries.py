@@ -55,6 +55,14 @@ class TestQuandlTimeseries(unittest.TestCase):
         self.assertEqual(len(data), 0)
         self.assertEqual(data.name, self.INVALID_TICKER.as_string())
 
+    def test_historical_single_invalid_ticker_no_field(self):
+        # single ticker, single field; end_date by default now, frequency by default DAILY, currency by default None
+        data = self.quandl_provider.get_history(tickers=self.INVALID_TICKER,
+                                                start_date=self.START_DATE, end_date=self.END_DATE)
+
+        self.assertIsInstance(data, QFDataFrame)
+        self.assertEqual(len(data), 0)
+
     def test_price_single_invalid_ticker_many_fields(self):
         # single ticker, single field; end_date by default now, frequency by default DAILY, currency by default None
         data = self.quandl_provider.get_price(tickers=self.INVALID_TICKER, fields=self.MANY_PRICE_FIELDS,

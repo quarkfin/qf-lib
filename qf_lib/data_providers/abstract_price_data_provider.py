@@ -3,12 +3,12 @@ from datetime import datetime
 from typing import Union, Sequence, Dict
 
 import pandas as pd
-import xarray as xr
 
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.containers.dataframe.cast_dataframe import cast_dataframe
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
+from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.cast_series import cast_series
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.data_providers.price_data_provider import DataProvider
@@ -47,9 +47,9 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
             else:
                 # Many tickers and many fields - replace minor axis in Panel
                 # remove the condition after switching to xarray.DataArray (instead of pandas.Panel)
-                if isinstance(container, xr.DataArray):
+                if isinstance(container, QFDataArray):
                     price_fields = [str_to_field_dict[field_str] for field_str in container.fields.values]
-                    container['fields'] = price_fields
+                    container.fields = price_fields
                 else:
                     renaming_dict = {field_str: str_to_field_dict[field_str] for field_str in container.minor_axis}
                     container.rename(minor_axis=renaming_dict, inplace=True)

@@ -8,6 +8,7 @@ import xarray as xr
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
+from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.data_providers.bloomberg.bloomberg_names import REF_DATA_SERVICE_URI, CURRENCY, START_DATE, END_DATE, \
     PERIODICITY_SELECTION, PERIODICITY_ADJUSTMENT, SECURITY, FIELD_DATA, DATE
 from qf_lib.data_providers.bloomberg.exceptions import BloombergError
@@ -33,13 +34,9 @@ class HistoricalDataProvider(object):
     def get(
             self, tickers: Sequence[str], fields: Sequence[str], start_date: datetime, end_date: datetime,
             frequency: Frequency, currency: str, override_name: str, override_value: Any
-    ) -> xr.DataArray:
+    ) -> QFDataArray:
         """
         Gets historical data from Bloomberg.
-
-        Returns
-        -------
-        DataArray with 3 dimensions: date, ticker, field
         """
         ref_data_service = self._session.getService(REF_DATA_SERVICE_URI)
         request = ref_data_service.createRequest("HistoricalDataRequest")
@@ -54,8 +51,8 @@ class HistoricalDataProvider(object):
             self._set_override(request, override_name, override_value)
 
         self._session.sendRequest(request)
-        data_panel = self._receive_historical_response(tickers, fields)
-        return data_panel
+        qf_data_array = self._receive_historical_response(tickers, fields)
+        return qf_data_array
 
     @classmethod
     def _set_currency(cls, currency, request):
@@ -116,7 +113,8 @@ class HistoricalDataProvider(object):
                 data[:] = np.nan
 
                 dates_fields_values = xr.DataArray(
-                    data, coords={'dates': dates, 'fields': requested_fields}, dims=('dates', 'fields')
+                    data, coords={QFDataArray.DATES: dates, QFDataArray.FIELDS: requested_fields},
+                    dims=(QFDataArray.DATES, QFDataArray.FIELDS)
                 )
 
                 for field_name in requested_fields:

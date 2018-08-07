@@ -16,7 +16,7 @@ from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 from qf_lib.data_providers.helpers import tickers_dict_to_data_array, \
-    normalize_data_array
+    normalize_data_array, get_fields_from_tickers_to_data_dict
 from qf_lib.settings import Settings
 
 
@@ -36,7 +36,6 @@ class QuandlDataProvider(AbstractPriceDataProvider):
                     start_date: datetime=None, end_date: datetime=None, **kwargs) \
             -> Union[QFSeries, QFDataFrame, pd.Panel]:
         """
-        When fields is None, all available fields will be returned
         NOTE: Only use one Quandl Database at the time.
         Do not mix multiple databases in one query - this is the natural limitation coming from the fact that column
         names (fields) are different across databases.
@@ -58,7 +57,7 @@ class QuandlDataProvider(AbstractPriceDataProvider):
             raise LookupError("Quandl Database type: {} is not supported.".format(db_type))
 
         if fields is None:
-            fields = self._get_fields_from_result(result_dict)
+            fields = get_fields_from_tickers_to_data_dict(result_dict)
 
         result_data_array = tickers_dict_to_data_array(result_dict, tickers, fields)
 

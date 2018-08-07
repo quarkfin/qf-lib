@@ -12,13 +12,14 @@ class TestIndexGrouping(TestCase):
         pass
 
     def test_get_grouping_for_frequency(self):
-        index = pd.date_range(start='2000-12-20', end='2018-01-03', freq='D')
+        index = pd.date_range(start='2014-12-20', end='2015-01-07', freq='D')
         data = index.year
         series = pd.Series(data, index)
 
         grouping = get_grouping_for_frequency(Frequency.WEEKLY)
         actual_result = series.groupby(grouping)
-        print(actual_result)
+
+        # TODO make an assertion (what is the expected result)
 
 
 if __name__ == '__main__':

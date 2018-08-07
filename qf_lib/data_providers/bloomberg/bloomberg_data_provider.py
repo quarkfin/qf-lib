@@ -107,6 +107,8 @@ class BloombergDataProvider(AbstractPriceDataProvider):
             start_date: datetime, end_date: datetime=None, frequency: Frequency=Frequency.DAILY, currency: str=None,
             override_name: str=None, override_value: str=None)\
             -> Union[QFSeries, QFDataFrame, pd.Panel]:
+        if fields is None:
+            raise ValueError("Fields being None is not supported by {}".format(self.__class__.__name__))
 
         self._connect_if_needed()
         self._assert_is_connected()

@@ -53,7 +53,7 @@ class DataProvider(object, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def get_history(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[str, Sequence[str]],
+    def get_history(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[None, str, Sequence[str]],
                     start_date: datetime, end_date: datetime = None, **kwargs) \
             -> Union[QFSeries, QFDataFrame, pd.Panel]:
         """
@@ -72,7 +72,8 @@ class DataProvider(object, metaclass=ABCMeta):
         tickers
             tickers for securities which should be retrieved
         fields
-            fields of securities which should be retrieved
+            fields of securities which should be retrieved. If None, all available fields will be returned
+            (only supported by few DataProviders)
         start_date
             date representing the beginning of historical period from which data should be retrieved
         end_date

@@ -2,7 +2,6 @@ from datetime import datetime
 from typing import Union, Sequence, Type
 
 import pandas as pd
-import xarray as xr
 
 from qf_lib.backtesting.events.time_event.market_close_event import MarketCloseEvent
 from qf_lib.backtesting.events.time_event.market_open_event import MarketOpenEvent
@@ -14,6 +13,7 @@ from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
+from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.cast_series import cast_series
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
@@ -87,7 +87,7 @@ class DataHandler(DataProvider):
                              .format(tickers_as_strings, latest_available_market_close, nr_of_bars,
                                      num_of_dates_available)
                              )
-        if isinstance(container, xr.DataArray):
+        if isinstance(container, QFDataArray):
             return container.isel(dates=slice(-nr_of_bars, None))
         else:
             return container.tail(nr_of_bars)
@@ -239,9 +239,9 @@ class DataHandler(DataProvider):
         prices_df.sort_index(inplace=True)
         return prices_df
 
-    def _data_array_to_dataframe(self, prices_data_array: pd.Panel):
+    def _data_array_to_dataframe(self, prices_data_array: QFDataArray):
         """
-        Converts a xr.DataArray into a DataFrame by removing the "Price Field" axis.
+        Converts a QFDataArray into a DataFrame by removing the "Price Field" axis.
 
         In order to remove it open and close prices get different time component in their corresponding datetimes
         (open prices will get the time of `MarketOpenEvent` and close prices will get the time of `MarketCloseEvent`).
