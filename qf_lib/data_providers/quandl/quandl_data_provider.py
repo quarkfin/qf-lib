@@ -16,7 +16,7 @@ from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.helpers import tickers_dict_to_data_array, \
-    normalize_data_array, get_fields_from_tickers_to_data_dict
+    normalize_data_array, get_fields_from_tickers_data_dict
 from qf_lib.data_providers.price_data_provider import DataProvider
 from qf_lib.settings import Settings
 
@@ -72,7 +72,7 @@ class QuandlDataProvider(DataProvider):
             result_dict.update(partial_result_dict)
 
         if fields is None:
-            fields = get_fields_from_tickers_to_data_dict(result_dict)
+            fields = get_fields_from_tickers_data_dict(result_dict)
 
         result_data_array = tickers_dict_to_data_array(result_dict, tickers, fields)
 

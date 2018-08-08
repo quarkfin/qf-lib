@@ -4,12 +4,13 @@ import warnings
 from datetime import datetime
 from typing import Union, Sequence, Dict, Optional
 
-from pandas import PeriodIndex, Panel, DataFrame
+from pandas import PeriodIndex, DataFrame
 
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import HaverTicker
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
+from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 from qf_lib.settings import Settings
@@ -40,7 +41,7 @@ class HaverDataProvider(AbstractPriceDataProvider):
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
     def get_history(self, tickers: Union[HaverTicker, Sequence[HaverTicker]], fields=None, start_date: datetime=None,
-                    end_date: datetime=None, **kwargs) -> Union[QFSeries, QFDataFrame, Panel]:
+                    end_date: datetime=None, **kwargs) -> Union[QFSeries, QFDataFrame, QFDataArray]:
         """
         fields:
             field should None as each ticker corresponds to one timeseries and there is no such thing as a field in

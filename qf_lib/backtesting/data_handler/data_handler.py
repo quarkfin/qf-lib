@@ -90,7 +90,7 @@ class DataHandler(DataProvider):
         return container.isel(dates=slice(-nr_of_bars, None))
 
     def get_price(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
-                  start_date: datetime, end_date: datetime = None):
+                  start_date: datetime, end_date: datetime = None)-> Union[PricesSeries, PricesDataFrame, QFDataArray]:
         """
         Runs DataProvider.get_price(...) but before makes sure that the query doesn't concern data from
         the future.
@@ -106,7 +106,7 @@ class DataHandler(DataProvider):
 
     def get_history(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[str, Sequence[str]],
                     start_date: datetime, end_date: datetime = None, **kwargs) \
-            -> Union[QFSeries, QFDataFrame, pd.Panel]:
+            -> Union[QFSeries, QFDataFrame, QFDataArray]:
         """
         Runs DataProvider.get_history(...) but before makes sure that the query doesn't concern data from
         the future.
@@ -181,10 +181,6 @@ class DataHandler(DataProvider):
 
         prices_data_array = self.price_data_provider.get_price(tickers, price_fields, start_date, current_date)
         prices_df = self._data_array_to_dataframe(prices_data_array)
-
-        # TODO uncomment after switching to xarray.DataArray from pandas.Panel
-        # prices_data_array = self.price_data_provider.get_price(tickers, price_fields, start_date, current_date)
-        # prices_df = self._data_array_to_dataframe(prices_data_array)
 
         prices_df = prices_df.loc[:current_datetime]
 

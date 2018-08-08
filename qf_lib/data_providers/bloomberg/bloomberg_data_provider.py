@@ -2,7 +2,6 @@ from datetime import datetime
 from typing import Union, Sequence, Dict
 
 import blpapi
-import pandas as pd
 
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
@@ -10,6 +9,7 @@ from qf_lib.common.tickers.tickers import BloombergTicker, tickers_as_strings
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
+from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 from qf_lib.data_providers.bloomberg.bloomberg_names import REF_DATA_SERVICE_URI
@@ -106,7 +106,7 @@ class BloombergDataProvider(AbstractPriceDataProvider):
         self, tickers: Union[BloombergTicker, Sequence[BloombergTicker]], fields: Union[str, Sequence[str]],
             start_date: datetime, end_date: datetime=None, frequency: Frequency=Frequency.DAILY, currency: str=None,
             override_name: str=None, override_value: str=None)\
-            -> Union[QFSeries, QFDataFrame, pd.Panel]:
+            -> Union[QFSeries, QFDataFrame, QFDataArray]:
         if fields is None:
             raise ValueError("Fields being None is not supported by {}".format(self.__class__.__name__))
 

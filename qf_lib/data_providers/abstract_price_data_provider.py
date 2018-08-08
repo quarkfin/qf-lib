@@ -2,8 +2,6 @@ from abc import abstractmethod, ABCMeta
 from datetime import datetime
 from typing import Union, Sequence, Dict
 
-import pandas as pd
-
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.containers.dataframe.cast_dataframe import cast_dataframe
@@ -23,7 +21,7 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
 
     def get_price(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
                   start_date: datetime, end_date: datetime=None) \
-            -> Union[None, PricesSeries, PricesDataFrame, pd.Panel]:
+            -> Union[None, PricesSeries, PricesDataFrame, QFDataArray]:
         if start_date == end_date:
             raise NotImplementedError("Single date queries are not supported yet")
 
@@ -45,14 +43,8 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
                 renaming_dict = {field_str: str_to_field_dict[field_str] for field_str in container.columns}
                 container.rename(columns=renaming_dict, inplace=True)
             else:
-                # Many tickers and many fields - replace minor axis in Panel
-                # remove the condition after switching to xarray.DataArray (instead of pandas.Panel)
-                if isinstance(container, QFDataArray):
-                    price_fields = [str_to_field_dict[field_str] for field_str in container.fields.values]
-                    container.fields = price_fields
-                else:
-                    renaming_dict = {field_str: str_to_field_dict[field_str] for field_str in container.minor_axis}
-                    container.rename(minor_axis=renaming_dict, inplace=True)
+                price_fields = [str_to_field_dict[field_str] for field_str in container.fields.values]
+                container.fields = price_fields
 
         return container
 

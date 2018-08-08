@@ -2,8 +2,6 @@ import warnings
 from datetime import datetime
 from typing import Union, Sequence, Set, Type
 
-import pandas as pd
-
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
@@ -69,7 +67,7 @@ class PrefetchingDataProvider(DataProvider):
     def get_history(self, tickers: Union[Ticker, Sequence[Ticker]],
                     fields: Union[str, Sequence[str]],
                     start_date: datetime, end_date: datetime = None, **kwargs
-                    ) -> Union[QFSeries, QFDataFrame, pd.Panel]:
+                    ) -> Union[QFSeries, QFDataFrame, QFDataArray]:
         warnings.warn("get_history() using the cached data is not supported yet. Normal request is being sent instead")
         return self.data_provider.get_history(tickers, fields, start_date, end_date, **kwargs)
 

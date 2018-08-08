@@ -10,10 +10,11 @@ from qf_lib.common.tickers.tickers import CcyTicker
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
+from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 from qf_lib.data_providers.helpers import normalize_data_array, \
-    tickers_dict_to_data_array, get_fields_from_tickers_to_data_dict
+    tickers_dict_to_data_array, get_fields_from_tickers_data_dict
 
 
 class CryptoCurrencyDataProvider(AbstractPriceDataProvider):
@@ -30,7 +31,7 @@ class CryptoCurrencyDataProvider(AbstractPriceDataProvider):
     def get_history(self, tickers: Union[CcyTicker, Sequence[CcyTicker]],
                     fields: Union[None, str, Sequence[str]] = None,
                     start_date: datetime = None, end_date: datetime = None, **kwargs) \
-            -> Union[QFSeries, QFDataFrame, pd.Panel]:
+            -> Union[QFSeries, QFDataFrame, QFDataArray]:
         tickers, got_single_ticker = convert_to_list(tickers, CcyTicker)
         got_single_date = (start_date == end_date)
 
@@ -46,7 +47,7 @@ class CryptoCurrencyDataProvider(AbstractPriceDataProvider):
                 tickers_data_dict[ticker] = single_ticker_data
 
         if fields is None:
-            fields = get_fields_from_tickers_to_data_dict(tickers_data_dict)
+            fields = get_fields_from_tickers_data_dict(tickers_data_dict)
 
         result_data_array = tickers_dict_to_data_array(tickers_data_dict, tickers, fields)
         result = normalize_data_array(result_data_array, tickers, fields,
@@ -174,33 +175,3 @@ class CryptoCurrencyDataProvider(AbstractPriceDataProvider):
         table = table.loc[start_date:end_date]
 
         return table
-
-    @staticmethod
-    def _dict_to_panel_or_df(tickers_to_data_dict: dict, tickers: Sequence[CcyTicker], fields) -> pd.Panel:
-        """
-        Converts a dictionary tickers->DateFrame to Panel.
-
-        Parameters
-        ----------
-        tickers_to_data_dict: dict[str, pd.DataFrame]
-
-        Returns
-        -------
-        pandas.Panel  [date, ticker, field] or
-        QFDataFrame [date, tickers] if single field was provided
-
-        """
-        panel = pd.Panel.from_dict(data=tickers_to_data_dict)
-
-        # recombines dimensions, so that the first one is date, major is ticker, minor is field
-        panel = panel.transpose(1, 0, 2)
-
-        # to keep the order of tickers and fields we reindex the panel
-        if fields is not None:
-            # to handle single and many fields.
-            fields = pd.np.array(fields, ndmin=1)
-            panel = panel.reindex(major_axis=tickers, minor_axis=fields)
-        else:
-            panel = panel.reindex(major_axis=tickers)
-
-        return panel

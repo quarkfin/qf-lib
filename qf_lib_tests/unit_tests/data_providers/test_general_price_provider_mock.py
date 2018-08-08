@@ -7,6 +7,7 @@ from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import QuandlTicker, BloombergTicker, HaverTicker, CcyTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
+from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
 
 
@@ -27,6 +28,7 @@ class TestGeneralPriceProviderMock(unittest.TestCase):
                    CcyTicker("Etherium"), CcyTicker("NEM")]
 
     SINGLE_PRICE_FIELD = PriceField.Close
+    PRICE_FIELDS = [SINGLE_PRICE_FIELD]
 
     NUM_OF_DATES = 12
 
@@ -39,42 +41,59 @@ class TestGeneralPriceProviderMock(unittest.TestCase):
         ])
 
         data = [
-            [263.7628, None,   111.02, 321.8249],
-            [263.9803, 106.39, 121.29, 322.0949],
-            [264.1640, 106.36, 121.22, 322.3203],
-            [264.0932, 106.25, 121.05, 322.4172],
-            [263.9816, 106.12, 120.95, 322.1411],
-            [263.9816, 106.24, 121.05, None],
-            [264.4529, 106.28, 121.13, None],
-            [264.5108, 106.40, 121.07, 322.3553],
-            [264.8223, 106.50, 121.10, 322.7489],
-            [264.4531, 106.23, 121.31, 322.9710],
-            [264.4690, 106.16, 121.14, 323.0688],
-            [None,     106.06, 121.01, 323.1553]
+            [[263.7628], [None],   [111.02], [321.8249]],
+            [[263.9803], [106.39], [121.29], [322.0949]],
+            [[264.1640], [106.36], [121.22], [322.3203]],
+            [[264.0932], [106.25], [121.05], [322.4172]],
+            [[263.9816], [106.12], [120.95], [322.1411]],
+            [[263.9816], [106.24], [121.05], [None]],
+            [[264.4529], [106.28], [121.13], [None]],
+            [[264.5108], [106.40], [121.07], [322.3553]],
+            [[264.8223], [106.50], [121.10], [322.7489]],
+            [[264.4531], [106.23], [121.31], [322.9710]],
+            [[264.4690], [106.16], [121.14], [323.0688]],
+            [[None],     [106.06], [121.01], [323.1553]]
         ]
 
         bloomberg = mock(strict=True)
-        when(bloomberg).get_price(self.BBG_TICKERS, self.SINGLE_PRICE_FIELD, self.START_DATE, self.END_DATE)\
-            .thenReturn(PricesDataFrame(index=datetime_index, columns=self.BBG_TICKERS, data=data))
+        when(bloomberg)\
+            .get_price(self.BBG_TICKERS, self.PRICE_FIELDS, self.START_DATE, self.END_DATE)\
+            .thenReturn(
+                QFDataArray.create(dates=datetime_index, tickers=self.BBG_TICKERS, fields=self.PRICE_FIELDS, data=data)
+            )
         when(bloomberg).supported_ticker_types().thenReturn({BloombergTicker})
 
         quandl = mock(strict=True)
-        when(quandl).get_price(self.QUANDL_TICKERS, self.SINGLE_PRICE_FIELD, self.START_DATE, self.END_DATE)\
-            .thenReturn(PricesDataFrame(index=datetime_index, columns=self.QUANDL_TICKERS, data=data))
+        when(quandl)\
+            .get_price(self.QUANDL_TICKERS, self.PRICE_FIELDS, self.START_DATE, self.END_DATE)\
+            .thenReturn(
+                QFDataArray.create(
+                    dates=datetime_index, tickers=self.QUANDL_TICKERS, fields=self.PRICE_FIELDS, data=data
+                )
+            )
         when(quandl).supported_ticker_types().thenReturn({QuandlTicker})
 
         haver = mock(strict=True)
-        when(haver).get_price(self.HAVER_TICKERS, self.SINGLE_PRICE_FIELD, self.START_DATE, self.END_DATE) \
-            .thenReturn(PricesDataFrame(index=datetime_index, columns=self.HAVER_TICKERS, data=data))
+        when(haver)\
+            .get_price(self.HAVER_TICKERS, self.PRICE_FIELDS, self.START_DATE, self.END_DATE) \
+            .thenReturn(
+                QFDataArray.create(
+                    dates=datetime_index, tickers=self.HAVER_TICKERS, fields=self.PRICE_FIELDS, data=data
+                )
+            )
         when(haver).supported_ticker_types().thenReturn({HaverTicker})
 
         ccy = mock(strict=True)
-        when(ccy).get_price(self.CCY_TICKERS, self.SINGLE_PRICE_FIELD, self.START_DATE, self.END_DATE) \
-            .thenReturn(PricesDataFrame(index=datetime_index, columns=self.CCY_TICKERS, data=data))
+        when(ccy)\
+            .get_price(self.CCY_TICKERS, self.PRICE_FIELDS, self.START_DATE, self.END_DATE) \
+            .thenReturn(
+                QFDataArray.create(
+                    dates=datetime_index, tickers=self.CCY_TICKERS, fields=self.PRICE_FIELDS, data=data
+                )
+            )
         when(ccy).supported_ticker_types().thenReturn({CcyTicker})
 
-        self.price_provider = GeneralPriceProvider(
-            bloomberg, quandl, haver, ccy)
+        self.price_provider = GeneralPriceProvider(bloomberg, quandl, haver, ccy)
 
     # =========================== Test get_price method ==========================================================
 
@@ -82,9 +101,8 @@ class TestGeneralPriceProviderMock(unittest.TestCase):
         data = self.price_provider.get_price(tickers=self.QUANDL_TICKERS, fields=self.SINGLE_PRICE_FIELD,
                                              start_date=self.START_DATE, end_date=self.END_DATE)
 
-        self.assertEqual(type(data), PricesDataFrame)
-        self.assertEqual(
-            data.shape, (self.NUM_OF_DATES, len(self.QUANDL_TICKERS)))
+        self.assertEqual(PricesDataFrame, type(data))
+        self.assertEqual((self.NUM_OF_DATES, len(self.QUANDL_TICKERS)), data.shape)
         self.assertEqual(list(data.columns), self.QUANDL_TICKERS)
 
     def test_price_multiple_providers_single_field(self):

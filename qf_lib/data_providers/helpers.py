@@ -49,19 +49,25 @@ def normalize_data_array(
     return casted_result
 
 
-def squeeze_data_array(original_data_panel, got_single_date, got_single_ticker, got_single_field):
-    original_shape = original_data_panel.shape
+def squeeze_data_array(original_data_array, got_single_date, got_single_ticker, got_single_field):
+    original_shape = original_data_array.shape
 
-    # slice(None) corresponds to ':' in iloc[:] notation
-    dates_indices = 0 if got_single_date else slice(None)
-    tickers_indices = 0 if got_single_ticker else slice(None)
-    fields_indices = 0 if got_single_field else slice(None)
+    dimensions_to_squeeze = []
+    if got_single_date:
+        dimensions_to_squeeze.append(QFDataArray.DATES)
+    if got_single_ticker:
+        dimensions_to_squeeze.append(QFDataArray.TICKERS)
+    if got_single_field:
+        dimensions_to_squeeze.append(QFDataArray.FIELDS)
 
-    container = original_data_panel[dates_indices, tickers_indices, fields_indices]
+    if dimensions_to_squeeze:
+        container = original_data_array.squeeze(dimensions_to_squeeze)
+    else:
+        container = original_data_array
 
     # if single ticker was provided, name the series or data frame by the ticker
     if original_shape[1] == 1 and original_shape[2] == 1:
-        ticker = original_data_panel.tickers[0].item()
+        ticker = original_data_array.tickers[0].item()
         container.name = ticker.as_string()
 
     return container
@@ -136,7 +142,7 @@ def tickers_dict_to_data_array(tickers_data_dict, requested_tickers, requested_f
     return result
 
 
-def get_fields_from_tickers_to_data_dict(tickers_data_dict):
+def get_fields_from_tickers_data_dict(tickers_data_dict):
     fields = set()
     for dates_fields_df in tickers_data_dict.values():
         fields.update(dates_fields_df.columns.values)

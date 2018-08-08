@@ -3,7 +3,7 @@ from datetime import datetime
 from unittest import TestCase
 
 from mockito import mock, when, ANY
-from pandas import Series, Panel, date_range
+from pandas import Series, date_range
 
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.common.enums.price_field import PriceField
@@ -11,6 +11,7 @@ from qf_lib.common.tickers.tickers import QuandlTicker
 from qf_lib.common.utils.dateutils.date_format import DateFormat
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.dateutils.timer import SettableTimer
+from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
 from qf_lib.testing_tools.containers_comparison import assert_series_equal
 
@@ -99,10 +100,10 @@ class TestLastAvailablePricesFromDataHandler(TestCase):
 
 
 def _create_price_provider_mock(tickers, price_fields):
-    mock_data_panel = Panel(
-        items=date_range(start='2009-12-28', end='2009-12-30', freq='D'),
-        major_axis=tickers,
-        minor_axis=price_fields,
+    mock_data_array = QFDataArray.create(
+        dates=date_range(start='2009-12-28', end='2009-12-30', freq='D'),
+        tickers=tickers,
+        fields=price_fields,
         data=[
             # 2009-12-28
             [
@@ -128,7 +129,7 @@ def _create_price_provider_mock(tickers, price_fields):
     price_data_provider_mock = mock(strict=True)  # type: GeneralPriceProvider
     when(price_data_provider_mock).get_price(
         tickers, price_fields, ANY(datetime), ANY(datetime)
-    ).thenReturn(mock_data_panel)
+    ).thenReturn(mock_data_array)
 
     return price_data_provider_mock
 
