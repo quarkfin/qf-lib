@@ -21,6 +21,14 @@ class QFDataArray(xr.DataArray):
         """
         Helper method for creating a QFDataArray. __init__() methods can't be used for that, because its signature
         must be the same as the signature of xr.DataArray.__init__().
+        
+        Example: 
+        a = QFDataArray.create(dates=pd.date_range('2017-01-01', periods=3), tickers=['a', 'b'], fields=['field'],
+                       data=[
+                           [[1.0], [2.0]],
+                           [[3.0], [4.0]],
+                           [[5.0], [6.0]]
+                       ])
 
         Parameters
         ----------
