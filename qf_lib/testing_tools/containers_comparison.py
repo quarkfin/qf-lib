@@ -103,7 +103,7 @@ def assert_series_equal(expected_series: pd.Series, actual_series: pd.Series,
     if check_dtype:
         _assert_same_data_type(expected_series, actual_series)
 
-    _assert_same_index(expected_series, actual_series, check_index_type, check_names)
+    _assert_same_index(expected_series.index, actual_series.index, check_index_type, check_names)
 
     if check_names:
         _assert_same_series_names(expected_series, actual_series)
@@ -156,7 +156,8 @@ def assert_dataframes_equal(expected_frame: pd.DataFrame, actual_frame: pd.DataF
     if check_dtype:
         _assert_same_data_type(expected_frame, actual_frame)
 
-    _assert_same_index(expected_frame, actual_frame, check_index_type, check_names)
+    _assert_same_index(expected_frame.index, actual_frame.index, check_index_type, check_names)
+    _assert_same_index(expected_frame.columns, actual_frame.columns, check_index_type, check_names)
 
     if check_column_type:
         _assert_same_column_type(expected_frame, actual_frame)
@@ -190,19 +191,16 @@ def _assert_same_data_type(expected_container, actual_container):
                              .format(str(expected_container.dtype), str(actual_container.dtype)))
 
 
-def _assert_same_index(expected_container, actual_container, check_index_type, check_names):
+def _assert_same_index(expected_index, actual_index, check_index_type, check_names):
     if check_index_type:
-        _assert_same_index_type(expected_container, actual_container)
-
-    expected_index = expected_container.index
-    actual_index = actual_container.index
+        _assert_same_index_type(expected_index, actual_index)
 
     if check_names:
         expected_index_name = expected_index.name
         actual_index_name = actual_index.name
         if expected_index_name != actual_index_name:
             raise AssertionError("Incorrect index name. Expected {:s}, actual: {:s}".format(
-                expected_index_name, actual_index_name))
+                str(expected_index_name), str(actual_index_name)))
 
     assert_same_axis_values(expected_index, actual_index)
 
@@ -222,9 +220,9 @@ def assert_same_axis_values(expected_index, actual_index):
         raise AssertionError("\n".join(messages))
 
 
-def _assert_same_index_type(expected_series, actual_series):
-    expected_index_type = type(expected_series.index)
-    actual_index_type = type(actual_series.index)
+def _assert_same_index_type(expected_index, actual_index):
+    expected_index_type = type(expected_index)
+    actual_index_type = type(actual_index)
     if actual_index_type != expected_index_type:
         raise AssertionError("Container has an incorrect index type. Expected: {:s}, actual: {:s}"
                              .format(str(expected_index_type), str(actual_index_type)))

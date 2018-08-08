@@ -15,7 +15,7 @@ from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceData
 from qf_lib.data_providers.bloomberg.bloomberg_names import REF_DATA_SERVICE_URI
 from qf_lib.data_providers.bloomberg.historical_data_provider import HistoricalDataProvider
 from qf_lib.data_providers.bloomberg.reference_data_provider import ReferenceDataProvider, BloombergError
-from qf_lib.data_providers.helpers import cast_result_to_proper_type, normalize_data_array
+from qf_lib.data_providers.helpers import normalize_data_array, cast_dataframe_to_proper_type
 from qf_lib.settings import Settings
 
 
@@ -98,7 +98,7 @@ class BloombergDataProvider(AbstractPriceDataProvider):
         fields_indices = 0 if got_single_field else slice(None)
         squeezed_result = data_frame.iloc[tickers_indices, fields_indices]
 
-        casted_result = cast_result_to_proper_type(squeezed_result)
+        casted_result = cast_dataframe_to_proper_type(squeezed_result)
 
         return casted_result
 

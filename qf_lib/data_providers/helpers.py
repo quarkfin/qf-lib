@@ -1,8 +1,6 @@
 from typing import Union
 
-import numpy as np
 import pandas as pd
-from xarray import DataArray
 
 from qf_lib.containers.dataframe.cast_dataframe import cast_dataframe
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
@@ -13,43 +11,9 @@ from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 
 
-def squeeze_panel(original_data_panel, got_single_date, got_single_ticker, got_single_field):
-    original_shape = original_data_panel.shape
-
-    # slice(None) corresponds to ':' in iloc[:] notation
-    dates_indices = 0 if got_single_date else slice(None)
-    tickers_indices = 0 if got_single_ticker else slice(None)
-    fields_indices = 0 if got_single_field else slice(None)
-
-    container = original_data_panel.iloc[dates_indices, tickers_indices, fields_indices]
-
-    # correction of containers axis order (if last or penultimate axis is being removed, than the data frame needs
-    # to be transposed to keep the axis order: dates, tickers, fields)
-    if len(container.shape) == 2 and (original_shape[1] == 1 or original_shape[2] == 1):
-        container = container.transpose()
-
-    # if single ticker was provided, name the series or data frame by the ticker
-    if original_shape[1] == 1 and original_shape[2] == 1:
-        container.name = original_data_panel.major_axis[0].as_string()
-
-    return container
-
-
-def cast_result_to_proper_type(result):
-    num_of_dimensions = len(result.axes)
-    if num_of_dimensions == 1:
-        casted_result = cast_series(result, QFSeries)
-    elif num_of_dimensions == 2:
-        casted_result = cast_dataframe(result, QFDataFrame)
-    else:
-        casted_result = result
-
-    return casted_result
-
-
 def normalize_data_array(
     data_array, tickers, fields, got_single_date, got_single_ticker, got_single_field, use_prices_types=False
-) -> Union[QFSeries, QFDataFrame, pd.Panel, PricesSeries, PricesDataFrame]:
+) -> Union[QFSeries, QFDataFrame, QFDataArray, PricesSeries, PricesDataFrame]:
     """
     Post-processes the result of some DataProviders so that it satisfies the format of a result expected
     from DataProviders:
@@ -81,10 +45,6 @@ def normalize_data_array(
 
     squeezed_result = squeeze_data_array(data_array, got_single_date, got_single_ticker, got_single_field)
     casted_result = cast_data_array_to_proper_type(squeezed_result, use_prices_types)
-
-    # remove this conversion after switching to xarray.DataArray from pd.Panels everywhere
-    if isinstance(casted_result, QFDataArray):
-        casted_result = casted_result.to_pandas()
 
     return casted_result
 
@@ -129,6 +89,18 @@ def cast_data_array_to_proper_type(result: QFDataArray, use_prices_types=False):
     return casted_result
 
 
+def cast_dataframe_to_proper_type(result):
+    num_of_dimensions = len(result.axes)
+    if num_of_dimensions == 1:
+        casted_result = cast_series(result, QFSeries)
+    elif num_of_dimensions == 2:
+        casted_result = cast_dataframe(result, QFDataFrame)
+    else:
+        casted_result = result
+
+    return casted_result
+
+
 def tickers_dict_to_data_array(tickers_data_dict, requested_tickers, requested_fields) -> QFDataArray:
     """
     Converts a dictionary tickers->DateFrame to QFDataArray.
@@ -145,8 +117,7 @@ def tickers_dict_to_data_array(tickers_data_dict, requested_tickers, requested_f
     """
     # return empty xr.DataArray if there is no data to be converted
     if not tickers_data_dict:
-        data = np.empty((0, len(requested_tickers), len(requested_fields)))
-        return QFDataArray.create(data, dates=[], tickers=requested_tickers, fields=requested_fields)
+        return QFDataArray.create(dates=[], tickers=requested_tickers, fields=requested_fields)
 
     tickers = []
     data_arrays = []

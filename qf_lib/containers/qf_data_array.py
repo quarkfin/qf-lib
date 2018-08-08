@@ -1,3 +1,4 @@
+import numpy as np
 import xarray as xr
 
 
@@ -16,7 +17,7 @@ class QFDataArray(xr.DataArray):
             super().__setattr__(name, value)
 
     @classmethod
-    def create(cls, data, dates, tickers, fields, name=None):
+    def create(cls, dates, tickers, fields, data=None, name=None):
         """
         Helper method for creating a QFDataArray. __init__() methods can't be used for that, because its signature
         must be the same as the signature of xr.DataArray.__init__().
@@ -40,6 +41,12 @@ class QFDataArray(xr.DataArray):
         """
         coordinates = {cls.DATES: dates, cls.TICKERS: tickers, cls.FIELDS: fields}
         dimensions = (cls.DATES, cls.TICKERS, cls.FIELDS)
+
+        # if no data is provided, the empty array will be created
+        if data is None:
+            data = np.empty((len(dates), len(tickers), len(fields)))
+            data[:] = np.nan
+
         return QFDataArray(data, coordinates, dimensions, name)
 
     @classmethod
@@ -57,8 +64,8 @@ class QFDataArray(xr.DataArray):
         QFDataArray
         """
         xr_data_array = xr_data_array.transpose(cls.DATES, cls.TICKERS, cls.FIELDS)
-        qf_data_array = QFDataArray.create(xr_data_array.data, xr_data_array.dates, xr_data_array.tickers,
-                                           xr_data_array.fields, xr_data_array.name)
+        qf_data_array = QFDataArray.create(xr_data_array.dates, xr_data_array.tickers, xr_data_array.fields,
+                                           xr_data_array.data, xr_data_array.name)
         return qf_data_array
 
     @classmethod

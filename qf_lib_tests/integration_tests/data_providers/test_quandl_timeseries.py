@@ -8,6 +8,7 @@ from qf_lib.common.tickers.tickers import QuandlTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
+from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.quandl.quandl_data_provider import QuandlDataProvider
@@ -85,11 +86,11 @@ class TestQuandlTimeseries(unittest.TestCase):
         data = self.quandl_provider.get_price(tickers=self.INVALID_TICKERS, fields=self.MANY_PRICE_FIELDS,
                                               start_date=self.START_DATE, end_date=self.END_DATE)
 
-        self.assertEqual(type(data), pd.Panel)
+        self.assertEqual(type(data), QFDataArray)
         self.assertEqual(data.shape, (self.WSE_NUM_OF_DATES, len(self.INVALID_TICKERS), len(self.MANY_PRICE_FIELDS)))
-        self.assertIsInstance(data.items, pd.DatetimeIndex)
-        self.assertEqual(list(data.major_axis), self.INVALID_TICKERS)
-        self.assertEqual(list(data.minor_axis), self.MANY_PRICE_FIELDS)
+        self.assertIsInstance(data.dates.to_index(), pd.DatetimeIndex)
+        self.assertEqual(list(data.tickers), self.INVALID_TICKERS)
+        self.assertEqual(list(data.fields), self.MANY_PRICE_FIELDS)
 
     # =========================== Test get_price method ==========================================================
 
@@ -121,11 +122,11 @@ class TestQuandlTimeseries(unittest.TestCase):
         data = self.quandl_provider.get_price(tickers=self.MANY_TICKERS, fields=self.MANY_PRICE_FIELDS,
                                               start_date=self.START_DATE, end_date=self.END_DATE)
 
-        self.assertEqual(type(data), pd.Panel)
+        self.assertEqual(type(data), QFDataArray)
         self.assertEqual(data.shape, (self.WIKI_NUM_OF_DATES, len(self.MANY_TICKERS), len(self.MANY_PRICE_FIELDS)))
-        self.assertIsInstance(data.items, pd.DatetimeIndex)
-        self.assertEqual(list(data.major_axis), self.MANY_TICKERS)
-        self.assertEqual(list(data.minor_axis), self.MANY_PRICE_FIELDS)
+        self.assertIsInstance(data.dates.to_index(), pd.DatetimeIndex)
+        self.assertEqual(list(data.tickers), self.MANY_TICKERS)
+        self.assertEqual(list(data.fields), self.MANY_PRICE_FIELDS)
 
     # =========================== Test get_history method ==========================================================
 
@@ -180,10 +181,10 @@ class TestQuandlTimeseries(unittest.TestCase):
         data = self.quandl_provider.get_history(tickers=self.MANY_TICKERS,
                                                 start_date=self.START_DATE, end_date=self.END_DATE)
 
-        self.assertEqual(type(data), pd.Panel)
+        self.assertEqual(type(data), QFDataArray)
         self.assertEqual(data.shape, (self.WIKI_NUM_OF_DATES, len(self.MANY_TICKERS), len(self.WIKI_OUTPUT_FIELDS)))
-        self.assertEqual(list(data.major_axis), self.MANY_TICKERS)
-        self.assertEqual(set(data.minor_axis), set(self.WIKI_OUTPUT_FIELDS))
+        self.assertEqual(list(data.tickers), self.MANY_TICKERS)
+        self.assertEqual(set(data.fields.values), set(self.WIKI_OUTPUT_FIELDS))
 
     def test_historical_multiple_tickers_single_field(self):
         data = self.quandl_provider.get_history(tickers=self.MANY_TICKERS, fields=self.SINGLE_FIELD,
@@ -197,10 +198,10 @@ class TestQuandlTimeseries(unittest.TestCase):
         data = self.quandl_provider.get_history(tickers=self.MANY_TICKERS, fields=self.MANY_FIELDS,
                                                 start_date=self.START_DATE, end_date=self.END_DATE)
 
-        self.assertEqual(type(data), pd.Panel)
+        self.assertEqual(type(data), QFDataArray)
         self.assertEqual(data.shape, (self.WIKI_NUM_OF_DATES, len(self.MANY_TICKERS), len(self.MANY_FIELDS)))
-        self.assertEqual(list(data.major_axis), self.MANY_TICKERS)
-        self.assertEqual(list(data.minor_axis), self.MANY_FIELDS)
+        self.assertEqual(list(data.tickers), self.MANY_TICKERS)
+        self.assertEqual(list(data.fields), self.MANY_FIELDS)
 
 
 if __name__ == '__main__':

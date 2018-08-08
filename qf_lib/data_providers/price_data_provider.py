@@ -2,12 +2,11 @@ from abc import ABCMeta, abstractmethod
 from datetime import datetime
 from typing import Union, Sequence, Type, Set
 
-import pandas as pd
-
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
+from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 
@@ -20,7 +19,7 @@ class DataProvider(object, metaclass=ABCMeta):
     @abstractmethod
     def get_price(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
                   start_date: datetime, end_date: datetime=None) \
-            -> Union[None, PricesSeries, PricesDataFrame, pd.Panel]:
+            -> Union[None, PricesSeries, PricesDataFrame, QFDataArray]:
         """
         Gets adjusted historical Prices (OPEN HIGH LOW CLOSE) and VOLUME
 
@@ -55,7 +54,7 @@ class DataProvider(object, metaclass=ABCMeta):
     @abstractmethod
     def get_history(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[None, str, Sequence[str]],
                     start_date: datetime, end_date: datetime = None, **kwargs) \
-            -> Union[QFSeries, QFDataFrame, pd.Panel]:
+            -> Union[QFSeries, QFDataFrame, QFDataArray]:
         """
         Gets historical attributes(fields) of different securities(tickers).
 
