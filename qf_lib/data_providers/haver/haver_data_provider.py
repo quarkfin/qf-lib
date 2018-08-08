@@ -47,7 +47,7 @@ class HaverDataProvider(AbstractPriceDataProvider):
             field should None as each ticker corresponds to one timeseries and there is no such thing as a field in
             the Haver DB.
 
-        this method will never return a panel.
+        this method will never return a QFDataArray.
         """
         if fields is not None:
             self.logger.warning("Data field is provided but it will nor be used")

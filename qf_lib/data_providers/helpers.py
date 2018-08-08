@@ -17,7 +17,7 @@ def normalize_data_array(
     """
     Post-processes the result of some DataProviders so that it satisfies the format of a result expected
     from DataProviders:
-    - proper return type (QFSeries, QFDataFrame or pandas.Panel) or (PricesSeries, PricesDataFrame or pandas.Panel),
+    - proper return type (QFSeries/PricesSeries, QFDataFrame/PricesDataFrame, QFDataArray),
     - proper shape of the result (squeezed dimensions for which a single non-list value was provided, e.g. "OPEN"),
     - dimensions: "tickers" and "fields" contain all required labels and the labels are in required order.
 
@@ -36,8 +36,8 @@ def normalize_data_array(
     got_single_field
         True if a single (scalar value) field was requested (e.g. "OPEN"); False otherwise
     use_prices_types
-        if True then proper return types are: PricesSeries, PricesDataFrame or pandas.Panel;
-        otherwise return types are: QFSeries, QFDataFrame or pandas.Panel
+        if True then proper return types are: PricesSeries, PricesDataFrame or QFDataArray;
+        otherwise return types are: QFSeries, QFDataFrame or QFDataArray
     """
     # to keep the order of tickers and fields we reindex the data_array
     data_array = data_array.reindex(tickers=tickers, fields=fields)

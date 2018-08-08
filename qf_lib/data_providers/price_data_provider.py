@@ -38,13 +38,13 @@ class DataProvider(object, metaclass=ABCMeta):
         Returns
         -------
         historical_data:
-            If possible the result will be squeezed so that instead of returning panel,
+            If possible the result will be squeezed so that instead of returning QFDataArray (3-D structure),
             data of lower dimensionality will be returned.
 
-            pandas.Panel with 3 dimensions: date, ticker, field
-            QFDataFrame  with 2 dimensions: date, ticker or field (depending if many tickers or fields were provided)
-                it is also possible to get 2 dimensions ticker and field if single date was provided.
-            QFSeries     with 1 dimensions: date
+            QFDataArray with 3 dimensions: dates, tickers, fields
+            PricesDataFrame with 2 dimensions: dates, tickers or fields (depending if many tickers or fields were
+                provided). It is also possible to get 2 dimensions ticker and field if single date was provided.
+            PricesSeries with 1 dimension: dates
 
             All the containers will be indexed with PriceField whenever possible
             (for example: instead of 'Close' column in the PricesDataFrame there will be PriceField.Close)
@@ -84,16 +84,16 @@ class DataProvider(object, metaclass=ABCMeta):
         Returns
         -------
         historical_data
-            If possible the result will be squeezed, so that instead of returning panel,
+            If possible the result will be squeezed, so that instead of returning QFDataArray,
             data of lower dimensionality will be returned.
 
-            pandas.Panel with 3 dimensions: date, ticker, field
+            QFDataArray with 3 dimensions: date, ticker, field
             QFDataFrame  with 2 dimensions: date, ticker or field (depending if many tickers or fields were provided)
                 it is also possible to get 2 dimensions ticker and field if single date was provided.
             QFSeries     with 1 dimensions: date
 
             If no data is available in the database or an non existing ticker was provided an empty structure
-            (QFSeries, QFDataFrame or pd.Panel) will be returned returned.
+            (QFSeries, QFDataFrame or QFDataArray) will be returned returned.
         """
         pass
 
