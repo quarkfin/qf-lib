@@ -73,12 +73,7 @@ class SimpleMAStrategy(object):
 def main():
     is_lightweight = True
 
-    if is_lightweight:
-        logging_level = logging.WARNING
-    else:
-        logging_level = logging.INFO
-
-    setup_logging(level=logging_level, console_logging=True)
+    setup_logging(level=logging.INFO, console_logging=True)
 
     ts = BacktestTradingSession(
         backtest_name='Simple_MA',
@@ -88,7 +83,7 @@ def main():
         pdf_exporter=container.resolve(PDFExporter),
         excel_exporter=container.resolve(ExcelExporter),
         start_date=str_to_date("2010-01-01"),
-        end_date=str_to_date("2010-03-31"),
+        end_date=str_to_date("2011-01-01"),
         initial_cash=1000000,
         is_lightweight=is_lightweight
     )
@@ -98,12 +93,13 @@ def main():
     ts.start_trading()
 
     actual_end_value = ts.portfolio.get_portfolio_timeseries()[-1]
-    expected_value = 1005386.29
+    expected_value = 898294.64
 
     print("Expected End Value = {}".format(expected_value))
     print("Actual End Value   = {}".format(actual_end_value))
     print("DIFF               = {}".format(expected_value - actual_end_value))
 
+    # TODO: This assertions does not work
     test = TestCase()
     test.assertAlmostEqual(actual_end_value, actual_end_value, places=2)
 
