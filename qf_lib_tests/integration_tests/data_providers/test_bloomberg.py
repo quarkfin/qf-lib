@@ -9,6 +9,7 @@ from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
+from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.bloomberg import BloombergDataProvider
@@ -65,11 +66,11 @@ class TestBloomberg(unittest.TestCase):
         data = self.bbg_provider.get_price(tickers=self.INVALID_TICKERS, fields=self.MANY_PRICE_FIELDS,
                                            start_date=self.START_DATE, end_date=self.END_DATE)
 
-        self.assertEqual(type(data), pd.Panel)
+        self.assertEqual(type(data), QFDataArray)
         self.assertEqual(data.shape, (self.NUM_OF_DATES, len(self.INVALID_TICKERS), len(self.MANY_PRICE_FIELDS)))
-        self.assertIsInstance(data.items, pd.DatetimeIndex)
-        self.assertEqual(list(data.major_axis), self.INVALID_TICKERS)
-        self.assertEqual(list(data.minor_axis), self.MANY_PRICE_FIELDS)
+        self.assertIsInstance(data.dates.to_index(), pd.DatetimeIndex)
+        self.assertEqual(list(data.tickers), self.INVALID_TICKERS)
+        self.assertEqual(list(data.fields), self.MANY_PRICE_FIELDS)
 
     # =========================== Test get_price method ==========================================================
 
@@ -114,11 +115,11 @@ class TestBloomberg(unittest.TestCase):
         data = self.bbg_provider.get_price(tickers=self.MANY_TICKERS, fields=self.MANY_PRICE_FIELDS,
                                            start_date=self.START_DATE, end_date=self.END_DATE)
 
-        self.assertEqual(type(data), pd.Panel)
+        self.assertEqual(type(data), QFDataArray)
         self.assertEqual(data.shape, (self.NUM_OF_DATES, len(self.MANY_TICKERS), len(self.MANY_PRICE_FIELDS)))
-        self.assertIsInstance(data.items, pd.DatetimeIndex)
-        self.assertEqual(list(data.major_axis), self.MANY_TICKERS)
-        self.assertEqual(list(data.minor_axis), self.MANY_PRICE_FIELDS)
+        self.assertIsInstance(data.dates.to_index(), pd.DatetimeIndex)
+        self.assertEqual(list(data.tickers), self.MANY_TICKERS)
+        self.assertEqual(list(data.fields), self.MANY_PRICE_FIELDS)
 
     # =========================== Test get_history method ==========================================================
 
@@ -165,18 +166,18 @@ class TestBloomberg(unittest.TestCase):
         data = self.bbg_provider.get_history(tickers=self.MANY_TICKERS, fields=self.MANY_FIELDS,
                                              start_date=self.START_DATE, end_date=self.END_DATE,
                                              frequency=Frequency.DAILY, currency='PLN')
-        self.assertEqual(type(data), pd.Panel)
+        self.assertEqual(type(data), QFDataArray)
         self.assertEqual(data.shape, (self.NUM_OF_DATES, len(self.MANY_TICKERS), len(self.MANY_FIELDS)))
-        self.assertIsInstance(data.items, pd.DatetimeIndex)
-        self.assertEqual(list(data.major_axis), self.MANY_TICKERS)
-        self.assertEqual(list(data.minor_axis), self.MANY_FIELDS)
+        self.assertIsInstance(data.dates.to_index(), pd.DatetimeIndex)
+        self.assertEqual(list(data.tickers), self.MANY_TICKERS)
+        self.assertEqual(list(data.fields), self.MANY_FIELDS)
 
     def test_historical_single_ticker_single_field_list1(self):
         # single ticker, single field; end_date by default now, frequency by default DAILY, currency by default None
         data = self.bbg_provider.get_history(tickers=[self.SINGLE_TICKER], fields=[self.SINGLE_FIELD],
                                              start_date=self.START_DATE, end_date=self.END_DATE)
 
-        self.assertIsInstance(data, pd.Panel)
+        self.assertIsInstance(data, QFDataArray)
         self.assertEqual(data.shape, (self.NUM_OF_DATES, 1, 1))
 
     def test_historical_single_ticker_single_field_list2(self):
