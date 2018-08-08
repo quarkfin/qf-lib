@@ -59,9 +59,9 @@ class SimpleMAStrategy(object):
         contract = self.contract_ticker_mapper.ticker_to_contract(self.ticker)
 
         if short_ma_price >= long_ma_price:
-            order = self.order_factory.order_target_percent({contract: 1.0}, MarketOrder())
+            order = self.order_factory.target_percent_orders({contract: 1.0}, MarketOrder())
         else:
-            order = self.order_factory.order_target_percent({contract: 0.0}, MarketOrder())
+            order = self.order_factory.target_percent_orders({contract: 0.0}, MarketOrder())
 
         sized_orders = self.position_sizer.size_orders(order)
         refined_orders = self.risk_manager.refine_orders(sized_orders)
@@ -99,10 +99,8 @@ def main():
     print("Actual End Value   = {}".format(actual_end_value))
     print("DIFF               = {}".format(expected_value - actual_end_value))
 
-    # TODO: This assertions does not work
     test = TestCase()
-    test.assertAlmostEqual(actual_end_value, actual_end_value, places=2)
-
+    test.assertAlmostEqual(expected_value, actual_end_value, places=2)
 
 if __name__ == "__main__":
     main()

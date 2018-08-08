@@ -66,7 +66,7 @@ class TestOrderFactory(unittest.TestCase):
         time_in_force = 'GTC'
         quantity = floor(percentage * self.current_portfolio_value / self.share_price)  # type: int
 
-        orders = self.order_factory.percent_order({self.contract: percentage}, execution_style, time_in_force)
+        orders = self.order_factory.percent_orders({self.contract: percentage}, execution_style, time_in_force)
         self.assertEqual(orders[0], Order(self.contract, quantity, execution_style, time_in_force))
 
     def test_order_target_value(self):
@@ -74,7 +74,7 @@ class TestOrderFactory(unittest.TestCase):
         time_in_force = 'GTC'
         quantity = 4
 
-        orders = self.order_factory.target_value_order({self.contract: 140.0}, execution_style, time_in_force)
+        orders = self.order_factory.target_value_orders({self.contract: 140.0}, execution_style, time_in_force)
         self.assertEqual(orders[0], Order(self.contract, quantity, execution_style, time_in_force))
 
     def test_order_target_percent(self):
@@ -82,8 +82,36 @@ class TestOrderFactory(unittest.TestCase):
         execution_style = StopOrder(4.20)
         time_in_force = 'GTC'
 
-        orders = self.order_factory.order_target_percent({self.contract: 0.5}, execution_style, time_in_force)
+        orders = self.order_factory.target_percent_orders({self.contract: 0.5}, execution_style, time_in_force)
         self.assertEqual(orders[0], Order(self.contract, quantity, execution_style, time_in_force))
+
+    # Tests for tolerances
+
+    def test_order_target_tolerance(self):
+        quantity = 5
+        execution_style = MarketOrder()
+        time_in_force = 'DAY'
+        tolerance = {self.contract: 3}
+
+        orders = self.order_factory.target_orders({self.contract: quantity}, execution_style, time_in_force, tolerance)
+        self.assertEqual(orders[0], Order(self.contract, quantity, execution_style, time_in_force))
+
+    def test_order_target_value_tolerance(self):
+        execution_style = MarketOrder()
+        time_in_force = 'GTC'
+        quantity = 4
+
+        orders = self.order_factory.target_value_orders({self.contract: 140.0}, execution_style, time_in_force)
+        self.assertEqual(orders[0], Order(self.contract, quantity, execution_style, time_in_force))
+
+    def test_order_target_percent_tolerance(self):
+        quantity = 40
+        execution_style = MarketOrder()
+        time_in_force = 'GTC'
+
+        orders = self.order_factory.target_percent_orders({self.contract: 0.5}, execution_style, time_in_force)
+        self.assertEqual(orders[0], Order(self.contract, quantity, execution_style, time_in_force))
+
 
 
 if __name__ == "__main__":

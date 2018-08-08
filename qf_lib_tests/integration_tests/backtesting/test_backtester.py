@@ -49,7 +49,7 @@ class BuyAndHoldStrategy(object):
 
     def calculate_signals(self):
         if not self.invested:
-            orders = self.order_factory.percent_order({self.MICROSOFT_CONTRACT: 1.0}, MarketOrder(), "GTC")
+            orders = self.order_factory.percent_orders({self.MICROSOFT_CONTRACT: 1.0}, MarketOrder(), "GTC")
             self.broker.place_orders(orders)
             self.invested = True
 

@@ -50,8 +50,8 @@ class BuyAndHoldStrategy(object):
 
     def calculate_signals(self):
         if not self.invested:
-            initial_orders = self.order_factory.percent_order({self.MICROSOFT_CONTRACT: 1.0}, MarketOrder(),
-                                                              time_in_force='DAY')
+            initial_orders = self.order_factory.percent_orders({self.MICROSOFT_CONTRACT: 1.0}, MarketOrder(),
+                                                               time_in_force='DAY')
             sized_orders = self.position_sizer.size_orders(initial_orders)
             refined_orders = self.risk_manager.refine_orders(sized_orders)
 
