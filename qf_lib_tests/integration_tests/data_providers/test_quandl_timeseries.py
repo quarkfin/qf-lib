@@ -4,6 +4,7 @@ import pandas as pd
 from os.path import join
 
 from qf_lib.common.enums.price_field import PriceField
+from qf_lib.common.enums.quandl_db_type import QuandlDBType
 from qf_lib.common.tickers.tickers import QuandlTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
@@ -33,6 +34,10 @@ class TestQuandlTimeseries(unittest.TestCase):
                     QuandlTicker('AAPL', 'WIKI'),
                     QuandlTicker('EA', 'WIKI'),
                     QuandlTicker('IBM', 'WIKI')]
+
+    MIXED_DB_TICKERS = MANY_TICKERS + [QuandlTicker('IBM', 'WIKI/PRICES', QuandlDBType.Table),
+                                       QuandlTicker('PKOBP', 'WSE')]
+
     WIKI_NUM_OF_DATES = 273
     WIKI_OUTPUT_FIELDS = ['Open', 'High', 'Low', 'Close', 'Volume', 'Ex-Dividend', 'Split Ratio', 'Adj. Open',
                           'Adj. High', 'Adj. Low', 'Adj. Close', 'Adj. Volume']
@@ -113,9 +118,10 @@ class TestQuandlTimeseries(unittest.TestCase):
     def test_price_multiple_tickers_single_field(self):
         data = self.quandl_provider.get_price(tickers=self.MANY_TICKERS, fields=self.SINGLE_PRICE_FIELD,
                                               start_date=self.START_DATE, end_date=self.END_DATE)
-        self.assertEqual(type(data), PricesDataFrame)
-        self.assertEqual(data.shape, (self.WIKI_NUM_OF_DATES, len(self.MANY_TICKERS)))
-        self.assertEqual(list(data.columns), self.MANY_TICKERS)
+
+        self.assertEqual(PricesDataFrame, type(data))
+        self.assertEqual((self.WIKI_NUM_OF_DATES, len(self.MANY_TICKERS)), data.shape)
+        self.assertEqual(self.MANY_TICKERS, list(data.columns))
 
     def test_price_multiple_tickers_multiple_fields(self):
         # testing for single date (start_date and end_date are the same)
@@ -126,6 +132,16 @@ class TestQuandlTimeseries(unittest.TestCase):
         self.assertEqual(data.shape, (self.WIKI_NUM_OF_DATES, len(self.MANY_TICKERS), len(self.MANY_PRICE_FIELDS)))
         self.assertIsInstance(data.dates.to_index(), pd.DatetimeIndex)
         self.assertEqual(list(data.tickers), self.MANY_TICKERS)
+        self.assertEqual(list(data.fields), self.MANY_PRICE_FIELDS)
+
+    def test_price_mixed_databases(self):
+        data = self.quandl_provider.get_price(tickers=self.MIXED_DB_TICKERS, fields=self.MANY_PRICE_FIELDS,
+                                              start_date=self.START_DATE, end_date=self.END_DATE)
+        self.assertEqual(type(data), QFDataArray)
+        exected_number_of_dates = 280
+        self.assertEqual(data.shape, (exected_number_of_dates, len(self.MIXED_DB_TICKERS), len(self.MANY_PRICE_FIELDS)))
+        self.assertIsInstance(data.dates.to_index(), pd.DatetimeIndex)
+        self.assertEqual(list(data.tickers), self.MIXED_DB_TICKERS)
         self.assertEqual(list(data.fields), self.MANY_PRICE_FIELDS)
 
     # =========================== Test get_history method ==========================================================
