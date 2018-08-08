@@ -124,7 +124,7 @@ class TimeseriesAnalysis(object):
         asset_names
             names of assets corresponding to objects in ta_collection
 
-        Prints a string with all the measures in a form of table of the following format:
+        returns a string with all the measures in a form of table of the following format:
                           Asset1    Asset2  ...
             Nice_name1    value11   value21 ... unit1
             Nice_name2    value12   value22 ... unit2
@@ -142,7 +142,7 @@ class TimeseriesAnalysis(object):
         # create a header for the table
         if asset_names is None:
             try:
-                asset_names = [ta.returns_tms.name for ta in ta_collection]
+                asset_names = [ta.returns_tms.name for ta in ta_list]
             except AttributeError:
                 pass  # no header will be printed if series are without names
         result = ''

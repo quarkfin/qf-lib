@@ -40,7 +40,7 @@ class OrderFactory(object):
         return order_list
 
     def target_orders(self, target_quantities: Mapping[Contract, int], execution_style: ExecutionStyle,
-                      time_in_force: str="DAY") -> Sequence[Order]:
+                      time_in_force: str="DAY", tolerance_quantities: Mapping[Contract, int]=None) -> Sequence[Order]:
         """
         Creates a list of Orders from a dictionary of desired target number of shares (number of shares which should be
         present in the portfolio after executing the Order).
@@ -58,19 +58,44 @@ class OrderFactory(object):
             execution style of an order (e.g. MarketOrder, StopOrder, etc.)
         time_in_force
             e.g. 'DAY' (Order valid for one trading session), 'GTC' (good till cancelled)
+        tolerance_quantities
+            tell the us what it a tolerance to the target_quantities (in both directions) for each contract.
+            The tolerance is expressed in shares.
+            For example: assume that currently the portfolio contains 100 shares of asset A.
+            then calling target_orders({A: 101}, ..., tolerance_quantities={A: 2}) will not generate any trades as
+            the tolerance of 2 allows the allocation to be 100. while target value is 101.
+
+            Another example:
+            assume that currently the portfolio contains 100 shares of asset A.
+            then calling target_value_order({A: 102}, ..., tolerance_quantities={A: 2}) will generate a BUY order
+            for 2 shares
+
+            if abs(target - actual) >= tolerance
+                buy or sell assets to match the target
+            It is important to keep the '>=' condition instead of '>" to make all methods work in the same way
+
+            If tolerance for a specific contract is not provided it is assumed to be 0
         """
+        # Dict of Contract -> Quantities of shares to buy/sell
         quantities = dict()
+
+        if tolerance_quantities is None:
+            tolerance_quantities = {}
 
         contract_to_positions = {position.contract(): position for position in self.broker.get_positions()}
 
         for contract, target_quantity in target_quantities.items():
             position = contract_to_positions.get(contract, None)
+            tolerance_quantity = tolerance_quantities.get(contract, 0)
+
             current_quantity = 0
             if position is not None:
                 current_quantity = position.quantity()
 
             quantity = target_quantity - current_quantity
-            quantities[contract] = quantity
+
+            if abs(quantity) >= tolerance_quantity and quantity != 0:  # tolerance_quantity can be 0
+                quantities[contract] = quantity
 
         return self.orders(quantities, execution_style, time_in_force)
 
@@ -90,11 +115,11 @@ class OrderFactory(object):
         time_in_force
             e.g. 'DAY' (Order valid for one trading session), 'GTC' (good till cancelled)
         """
-        quantities = self._calculate_shares_amounts(values)
+        quantities, _ = self._calculate_target_shares_and_tolerances(values)
         return self.orders(quantities, execution_style, time_in_force)
 
-    def percent_order(self, percentages: Mapping[Contract, float], execution_style: ExecutionStyle,
-                      time_in_force: str="DAY") -> Sequence[Order]:
+    def percent_orders(self, percentages: Mapping[Contract, float], execution_style: ExecutionStyle,
+                       time_in_force: str="DAY") -> Sequence[Order]:
         """
         Creates a list of Orders by specifying the percentage of the current portfolio value which should be spent
         on each asset.
@@ -114,8 +139,8 @@ class OrderFactory(object):
 
         return self.value_orders(values, execution_style, time_in_force)
 
-    def target_value_order(self, target_values: Mapping[Contract, float], execution_style: ExecutionStyle,
-                           time_in_force: str="DAY") -> Sequence[Order]:
+    def target_value_orders(self, target_values: Mapping[Contract, float], execution_style: ExecutionStyle,
+                            time_in_force: str="DAY", tolerance_value=0.0) -> Sequence[Order]:
         """
         Creates a list of Orders by specifying how much should be allocated in each asset after the Orders
         have been executed.
@@ -133,12 +158,29 @@ class OrderFactory(object):
             execution style of an order (e.g. MarketOrder, StopOrder, etc.)
         time_in_force
             e.g. 'DAY' (Order valid for one trading session), 'GTC' (good till cancelled)
-        """
-        target_quantities = self._calculate_shares_amounts(target_values)
-        return self.target_orders(target_quantities, execution_style, time_in_force)
+        tolerance_value
+            tell the us what it a tolerance to the target_values (in both directions).
+            The tolerance is expressed in currency units.
+            For example: assume that currently the portfolio contains asset A with allocation 10 000$.
+            then calling target_value_order({A: 10 500}, ..., tolerance=1 000) will not generate any trades as
+            the tolerance of 1 000 allows the allocation to be 10 000$. while target value is 10 500.
 
-    def order_target_percent(self, target_percentages: Mapping[Contract, float], execution_style: ExecutionStyle,
-                             time_in_force: str="DAY") -> Sequence[Order]:
+            Another example:
+            For example: assume that currently the portfolio contains asset A with allocation 10 000$.
+            then calling target_value_order({A: 13 000}, ..., tolerance=1 000) will generate a BUY order
+            corresponding to 3000$ of shares The tolerance of 1 000 does not allow a difference of 3000$
+
+            if abs(target - actual) >= tolerance
+                buy or sell assets to match the target
+            It is important to keep the '>=' condition instead of '>" to make all methods work in the same way
+        """
+        target_quantities, tolerance_quantities = \
+            self._calculate_target_shares_and_tolerances(target_values, tolerance_value)
+
+        return self.target_orders(target_quantities, execution_style, time_in_force, tolerance_quantities)
+
+    def target_percent_orders(self, target_percentages: Mapping[Contract, float], execution_style: ExecutionStyle,
+                              time_in_force: str="DAY", tolerance_percent=0.0) -> Sequence[Order]:
         """
         Creates an Order adjusting a position to a value equal to the given percentage of the portfolio.
 
@@ -151,17 +193,41 @@ class OrderFactory(object):
             execution style of an order (e.g. MarketOrder, StopOrder, etc.)
         time_in_force
             e.g. 'DAY' (Order valid for one trading session), 'GTC' (good till cancelled)
+        tolerance_percent
+            tell the us what it a tolerance to the target_percentages (in both directions).
+            The tolerance is expressed in percentage points (0.02 corresponds to 2pp of diff)
+            For example: assume that currently the portfolio contains asset A with allocation weight of 0.24.
+            then calling order_target_percent({A: 0.25}, ..., tolerance=0.02) will not generate any trades as
+            the tolerance of 0.02 allows the allocation to be 0.24 while target percentage is 0.25.
+
+            Another example:
+            assume that currently the portfolio contains asset A with allocation weight of 0.24.
+            then calling order_target_percent({A: 0.30}, ..., tolerance=0.01) will generate a BUY order corresponding to
+            0.30 - 0.24 = 0.06 of the portfolio value. The tolerance of 0.01 does not allow a difference of 0.06
+
+            if abs(target - actual) >= tolerance
+                buy or sell assets to match the target
+            It is important to keep the '>=' condition instead of '>" to make all methods work in the same way
         """
         portfolio_value = self.broker.get_portfolio_value()
         target_values = {
             contract: portfolio_value * target_percent for contract, target_percent in target_percentages.items()
         }
-        return self.target_value_order(target_values, execution_style, time_in_force)
+        tolerance_value = tolerance_percent * portfolio_value
 
-    def _calculate_shares_amounts(self, contract_to_amount_of_money: Mapping[Contract, float])\
-            -> Mapping[Contract, int]:
+        return self.target_value_orders(target_values, execution_style, time_in_force, tolerance_value)
+
+    def _calculate_target_shares_and_tolerances(
+            self, contract_to_amount_of_money: Mapping[Contract, float], tolerance_value=0.0)\
+            -> (Mapping[Contract, int], Mapping[Contract, int]):
         """
-        Calculates how many shares can be bought for the given amount of money (value).
+        Returns
+        ----------
+        target_quantities
+            Tells how many shares of each asset we should have in order to match the target
+
+        tolerance_quantities
+            Tells what is the tolerance (in number of shares) for each asset
         """
         tickers_to_contract_and_amount_of_money = self._make_tickers_to_contract_and_amount_of_money(
             contract_to_amount_of_money)
@@ -169,13 +235,22 @@ class OrderFactory(object):
         tickers = list(tickers_to_contract_and_amount_of_money.keys())
         current_prices = self.data_handler.get_last_available_price(tickers)
 
-        quantities = dict()  # type: Dict[Contract, int]
+        # Contract -> target number of shares
+        target_quantities = dict()     # type: Dict[Contract, int]
+
+        # Contract -> tolerance expressed as number of shares
+        tolerance_quantities = dict()  # type: Dict[Contract, int]
+
         for ticker, (contract, amount_of_money) in tickers_to_contract_and_amount_of_money.items():
             current_price = current_prices.loc[ticker]
-            quantity = math.floor(amount_of_money / current_price)  # type: int
-            quantities[contract] = quantity
 
-        return quantities
+            target_quantity = math.floor(amount_of_money / current_price)  # type: int
+            target_quantities[contract] = target_quantity
+
+            tolerance_quantity = math.floor(tolerance_value / current_price)  # type: int
+            tolerance_quantities[contract] = tolerance_quantity
+
+        return target_quantities, tolerance_quantities
 
     def _make_tickers_to_contract_and_amount_of_money(self, contract_to_amount_of_money):
         tickers_to_contract_and_amount_of_money = dict()

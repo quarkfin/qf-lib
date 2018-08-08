@@ -70,6 +70,9 @@ class BacktestMonitor(AbstractMonitor):
         self._excel_exporter.export_container(portfolio_tms, relative_file_path,
                                               starting_cell='A1', include_column_names=True)
 
+        self._close_csv_file()
+
+    def _close_csv_file(self):
         if self._csv_file is not None:  # close the csv file
             self._csv_file.close()
 
