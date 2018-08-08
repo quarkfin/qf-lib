@@ -33,7 +33,7 @@ class CryptoCurrencyDataProvider(AbstractPriceDataProvider):
                     start_date: datetime = None, end_date: datetime = None, **kwargs) \
             -> Union[QFSeries, QFDataFrame, QFDataArray]:
         tickers, got_single_ticker = convert_to_list(tickers, CcyTicker)
-        got_single_date = (start_date == end_date)
+        got_single_date = start_date is not None and (start_date == end_date)
 
         if fields is not None:
             fields, got_single_field = convert_to_list(fields, (PriceField, str))

@@ -40,7 +40,7 @@ class PrefetchingDataProvider(DataProvider):
 
         tickers, got_single_ticker = convert_to_list(tickers, Ticker)
         fields, got_single_field = convert_to_list(fields, PriceField)
-        got_single_date = (start_date == end_date)
+        got_single_date = start_date is not None and (start_date == end_date)
 
         self._check_if_cached_data_available(tickers, fields, start_date, end_date)
 

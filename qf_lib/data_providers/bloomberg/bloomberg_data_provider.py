@@ -113,7 +113,7 @@ class BloombergDataProvider(AbstractPriceDataProvider):
         self._connect_if_needed()
         self._assert_is_connected()
 
-        got_single_date = (start_date == end_date)
+        got_single_date = start_date is not None and (start_date == end_date)
 
         tickers, got_single_ticker = convert_to_list(tickers, BloombergTicker)
         fields, got_single_field = convert_to_list(fields, (PriceField, str))
