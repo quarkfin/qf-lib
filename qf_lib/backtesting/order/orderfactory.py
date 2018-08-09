@@ -70,9 +70,8 @@ class OrderFactory(object):
             then calling target_value_order({A: 102}, ..., tolerance_quantities={A: 2}) will generate a BUY order
             for 2 shares
 
-            if abs(target - actual) >= tolerance
+            if abs(target - actual) > tolerance
                 buy or sell assets to match the target
-            It is important to keep the '>=' condition instead of '>" to make all methods work in the same way
 
             If tolerance for a specific contract is not provided it is assumed to be 0
         """
@@ -94,7 +93,7 @@ class OrderFactory(object):
 
             quantity = target_quantity - current_quantity
 
-            if abs(quantity) >= tolerance_quantity and quantity != 0:  # tolerance_quantity can be 0
+            if abs(quantity) > tolerance_quantity and quantity != 0:  # tolerance_quantity can be 0
                 quantities[contract] = quantity
 
         return self.orders(quantities, execution_style, time_in_force)
@@ -170,9 +169,12 @@ class OrderFactory(object):
             then calling target_value_order({A: 13 000}, ..., tolerance=1 000) will generate a BUY order
             corresponding to 3000$ of shares The tolerance of 1 000 does not allow a difference of 3000$
 
-            if abs(target - actual) >= tolerance
+            if abs(target - actual) > tolerance
                 buy or sell assets to match the target
-            It is important to keep the '>=' condition instead of '>" to make all methods work in the same way
+
+            Note: the currency unit value will be converted to nr of shares. It might cause an anomaly where for example
+            difference is 1005$ and tolerance is 1000 and shares will not be traded because after
+            converting the numbers to shares they give equal number
         """
         target_quantities, tolerance_quantities = \
             self._calculate_target_shares_and_tolerances(target_values, tolerance_value)
@@ -205,9 +207,12 @@ class OrderFactory(object):
             then calling order_target_percent({A: 0.30}, ..., tolerance=0.01) will generate a BUY order corresponding to
             0.30 - 0.24 = 0.06 of the portfolio value. The tolerance of 0.01 does not allow a difference of 0.06
 
-            if abs(target - actual) >= tolerance
+            if abs(target - actual) > tolerance
                 buy or sell assets to match the target
-            It is important to keep the '>=' condition instead of '>" to make all methods work in the same way
+
+            Note: percentages will be converted to nr of shares. It might cause an anomaly where for example
+            difference is 0.123pp and tolerance is 0.120pp and shares will not be traded because after
+            converting the numbers to shares they give equal number
         """
         portfolio_value = self.broker.get_portfolio_value()
         target_values = {
