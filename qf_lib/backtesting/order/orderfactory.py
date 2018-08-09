@@ -171,10 +171,6 @@ class OrderFactory(object):
 
             if abs(target - actual) > tolerance
                 buy or sell assets to match the target
-
-            Note: the currency unit value will be converted to nr of shares. It might cause an anomaly where for example
-            difference is 1005$ and tolerance is 1000 and shares will not be traded because after
-            converting the numbers to shares they give equal number
         """
         target_quantities, tolerance_quantities = \
             self._calculate_target_shares_and_tolerances(target_values, tolerance_value)
@@ -209,10 +205,6 @@ class OrderFactory(object):
 
             if abs(target - actual) > tolerance
                 buy or sell assets to match the target
-
-            Note: percentages will be converted to nr of shares. It might cause an anomaly where for example
-            difference is 0.123pp and tolerance is 0.120pp and shares will not be traded because after
-            converting the numbers to shares they give equal number
         """
         portfolio_value = self.broker.get_portfolio_value()
         target_values = {
