@@ -254,13 +254,9 @@ class TestOrderFactory(unittest.TestCase):
         tolerance = 10.99
         target_value = 111.0
 
-        # NOTE: this is the tricky case.
-        # tolerance of 10.99$ will be converted into tolerance in shares (1 share)
-        # the difference in shares will be 1 as well so no shares will be traded.
-        # TODO: this could be solved by writing separate implementation of target_value_orders instead of reusing
-        # target_orders
         orders = self.order_factory.target_value_orders({self.contract: target_value}, execution_style, tif, tolerance)
-        self.assertEqual(orders, [])
+        quantity = 1
+        self.assertEqual(orders[0], Order(self.contract, quantity, execution_style, tif))
 
     def test_order_target_percent_tolerance1(self):
         # there are 10 shares price per share is 10 so position value is 100, it corresponds to 10% of portfolio
