@@ -39,8 +39,8 @@ class OrderFactory(object):
 
         return order_list
 
-    def target_orders(self, target_quantities: Mapping[Contract, int], execution_style: ExecutionStyle,
-                      time_in_force: str="DAY", tolerance_quantities: Mapping[Contract, int]=None) -> Sequence[Order]:
+    def target_orders(self, target_quantities: Mapping[Contract, float], execution_style: ExecutionStyle,
+                      time_in_force: str="DAY", tolerance_quantities: Mapping[Contract, float]=None) -> Sequence[Order]:
         """
         Creates a list of Orders from a dictionary of desired target number of shares (number of shares which should be
         present in the portfolio after executing the Order).
@@ -53,7 +53,7 @@ class OrderFactory(object):
         ----------
         target_quantities
             mapping of a Contract to a target number of shares which should be present in the portfolio after the Order
-            is executed
+            is executed. After comparing with tolerance the math.floor of the quantity will be taken.
         execution_style
             execution style of an order (e.g. MarketOrder, StopOrder, etc.)
         time_in_force
@@ -67,8 +67,8 @@ class OrderFactory(object):
 
             Another example:
             assume that currently the portfolio contains 100 shares of asset A.
-            then calling target_value_order({A: 102}, ..., tolerance_quantities={A: 2}) will generate a BUY order
-            for 2 shares
+            then calling target_value_order({A: 103}, ..., tolerance_quantities={A: 2}) will generate a BUY order
+            for 3 shares
 
             if abs(target - actual) > tolerance
                 buy or sell assets to match the target
@@ -94,7 +94,7 @@ class OrderFactory(object):
             quantity = target_quantity - current_quantity
 
             if abs(quantity) > tolerance_quantity and quantity != 0:  # tolerance_quantity can be 0
-                quantities[contract] = quantity
+                quantities[contract] = math.floor(quantity)   # type: int
 
         return self.orders(quantities, execution_style, time_in_force)
 
@@ -224,7 +224,7 @@ class OrderFactory(object):
 
     def _calculate_target_shares_and_tolerances(
             self, contract_to_amount_of_money: Mapping[Contract, float], tolerance_value=0.0)\
-            -> (Mapping[Contract, int], Mapping[Contract, int]):
+            -> (Mapping[Contract, float], Mapping[Contract, float]):
         """
         Returns
         ----------
@@ -241,18 +241,18 @@ class OrderFactory(object):
         current_prices = self.data_handler.get_last_available_price(tickers)
 
         # Contract -> target number of shares
-        target_quantities = dict()     # type: Dict[Contract, int]
+        target_quantities = dict()     # type: Dict[Contract, float]
 
         # Contract -> tolerance expressed as number of shares
-        tolerance_quantities = dict()  # type: Dict[Contract, int]
+        tolerance_quantities = dict()  # type: Dict[Contract, float]
 
         for ticker, (contract, amount_of_money) in tickers_to_contract_and_amount_of_money.items():
             current_price = current_prices.loc[ticker]
 
-            target_quantity = math.floor(amount_of_money / current_price)  # type: int
+            target_quantity = amount_of_money / current_price     # type: float
             target_quantities[contract] = target_quantity
 
-            tolerance_quantity = math.floor(tolerance_value / current_price)  # type: int
+            tolerance_quantity = tolerance_value / current_price  # type: float
             tolerance_quantities[contract] = tolerance_quantity
 
         return target_quantities, tolerance_quantities
