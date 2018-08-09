@@ -37,9 +37,14 @@ class Order(object):
         if not isinstance(other, Order):
             return False
 
-        if other.id == self.id:
+        # one order has id and another hasn't
+        if (self.id is None) != (other.id is None):
+            return False
+
+        if self.id is not None and other.id == self.id:
             return True
 
+        # when both ids are none -> compare the values
         return (self.contract, self.quantity, self.tif, self.execution_style, self.order_state) == \
                (other.contract, other.quantity, other.tif, other.execution_style, other.order_state)
 
