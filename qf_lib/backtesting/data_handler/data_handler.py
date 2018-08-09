@@ -87,7 +87,11 @@ class DataHandler(DataProvider):
                              .format(tickers_as_strings, latest_available_market_close, nr_of_bars,
                                      num_of_dates_available)
                              )
-        return container.isel(dates=slice(-nr_of_bars, None))
+
+        if isinstance(container, QFDataArray):
+            return container.isel(dates=slice(-nr_of_bars, None))
+        else:
+            return container.tail(nr_of_bars)  # type: Union[PricesSeries, PricesDataFrame]
 
     def get_price(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
                   start_date: datetime, end_date: datetime = None)-> Union[PricesSeries, PricesDataFrame, QFDataArray]:

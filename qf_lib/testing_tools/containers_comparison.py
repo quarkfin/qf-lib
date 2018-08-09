@@ -103,7 +103,7 @@ def assert_series_equal(expected_series: pd.Series, actual_series: pd.Series,
     if check_dtype:
         _assert_same_data_type(expected_series, actual_series)
 
-    _assert_same_index(expected_series.index, actual_series.index, check_index_type, check_names)
+    assert_same_index(expected_series.index, actual_series.index, check_index_type, check_names)
 
     if check_names:
         _assert_same_series_names(expected_series, actual_series)
@@ -156,8 +156,8 @@ def assert_dataframes_equal(expected_frame: pd.DataFrame, actual_frame: pd.DataF
     if check_dtype:
         _assert_same_data_type(expected_frame, actual_frame)
 
-    _assert_same_index(expected_frame.index, actual_frame.index, check_index_type, check_names)
-    _assert_same_index(expected_frame.columns, actual_frame.columns, check_index_type, check_names)
+    assert_same_index(expected_frame.index, actual_frame.index, check_index_type, check_names)
+    assert_same_index(expected_frame.columns, actual_frame.columns, check_index_type, check_names)
 
     if check_column_type:
         _assert_same_column_type(expected_frame, actual_frame)
@@ -191,7 +191,7 @@ def _assert_same_data_type(expected_container, actual_container):
                              .format(str(expected_container.dtype), str(actual_container.dtype)))
 
 
-def _assert_same_index(expected_index, actual_index, check_index_type, check_names):
+def assert_same_index(expected_index, actual_index, check_index_type, check_names):
     if check_index_type:
         _assert_same_index_type(expected_index, actual_index)
 

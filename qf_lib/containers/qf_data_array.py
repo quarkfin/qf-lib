@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 import numpy as np
 import xarray as xr
 
@@ -6,6 +8,18 @@ class QFDataArray(xr.DataArray):
     DATES = "dates"
     TICKERS = "tickers"
     FIELDS = "fields"
+
+    def __init__(self, data, coords=None, dims=None, name=None,
+                 attrs=None, encoding=None, fastpath=False):
+        """
+        Use the class method `create()` for creating QFDataArrays.
+        DON"T CREATE QFDataArrays using __init__() method (don't create it like this: QFDataArray()).
+        The __init__ method should be used only by xr.DataArray internal methods.
+        """
+        if not fastpath:
+            self._check_if_dimensions_are_correct(coords, dims)
+
+        super().__init__(data, coords, dims, name, attrs, encoding, fastpath)
 
     def __setattr__(self, name, value):
         # Makes it possible to set indices in this way: qf_data_array.fields = ["OPEN", "CLOSE"].
@@ -22,13 +36,16 @@ class QFDataArray(xr.DataArray):
         Helper method for creating a QFDataArray. __init__() methods can't be used for that, because its signature
         must be the same as the signature of xr.DataArray.__init__().
         
-        Example: 
-        a = QFDataArray.create(dates=pd.date_range('2017-01-01', periods=3), tickers=['a', 'b'], fields=['field'],
-                       data=[
-                           [[1.0], [2.0]],
-                           [[3.0], [4.0]],
-                           [[5.0], [6.0]]
-                       ])
+        Example:
+        a = QFDataArray.create(
+            dates=pd.date_range('2017-01-01', periods=3),
+            tickers=['a', 'b'],
+            fields=['field'],
+            data=[
+                 [[1.0], [2.0]],
+                 [[3.0], [4.0]],
+                 [[5.0], [6.0]]
+            ])
 
         Parameters
         ----------
@@ -92,3 +109,14 @@ class QFDataArray(xr.DataArray):
         result = QFDataArray.from_xr_data_array(result)
 
         return result
+
+    def _check_if_dimensions_are_correct(self, coords, dims):
+        expected_dimensions = (self.DATES, self.TICKERS, self.FIELDS)
+        if dims is not None:
+            actual_dimensions = tuple(dims)
+        elif coords is not None and isinstance(coords, OrderedDict):
+            actual_dimensions = tuple(coords.keys())
+        else:
+            actual_dimensions = None
+        if actual_dimensions != expected_dimensions:
+            raise ValueError("Dimensions must be equal to: {}".format(expected_dimensions))

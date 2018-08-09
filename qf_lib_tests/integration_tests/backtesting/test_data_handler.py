@@ -10,11 +10,12 @@ from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.date_format import DateFormat
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.dateutils.timer import SettableTimer
-from qf_lib.containers.series.prices_series import PricesSeries
+from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
+from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.data_providers.bloomberg import BloombergDataProvider
 from qf_lib.get_sources_root import get_src_root
 from qf_lib.settings import Settings
-from qf_lib.testing_tools.containers_comparison import assert_series_equal
+from qf_lib.testing_tools.containers_comparison import assert_series_equal, assert_same_index
 
 settings = Settings(join(get_src_root(), 'qf_lib_tests', 'unit_tests', 'config', 'test_settings.json'))
 bbg_provider = BloombergDataProvider(settings)
@@ -35,10 +36,6 @@ class TestDataHandler(TestCase):
 
     def setUp(self):
         self.price_data_provider = bbg_provider
-        self.assets_prices_df = PricesSeries(
-            index=pd.date_range(self.start_date, self.end_date),
-            name=self.spx_index_ticker
-        )
 
         self.timer = SettableTimer()
         self.data_handler = DataHandler(self.price_data_provider, self.timer)
@@ -48,32 +45,32 @@ class TestDataHandler(TestCase):
         prices_tms = self.data_handler.get_price(self.spx_index_ticker, PriceField.Close,
                                                  self.start_date, self.end_date)
 
-        self.assertEqual(prices_tms.index[0].to_pydatetime(), self.start_date)
-        self.assertEqual(prices_tms.index[-1].to_pydatetime(), self.end_date)
+        self.assertEqual(self.start_date, prices_tms.index[0].to_pydatetime())
+        self.assertEqual(self.end_date, prices_tms.index[-1].to_pydatetime())
 
     def test_get_price_when_end_date_is_today_after_market_close(self):
         self.timer.set_current_time(str_to_date("2018-01-31 21:00:00.000000", DateFormat.FULL_ISO))
         prices_tms = self.data_handler.get_price(self.spx_index_ticker, PriceField.Close,
                                                  self.start_date, self.end_date)
 
-        self.assertEqual(prices_tms.index[0].to_pydatetime(), self.start_date)
-        self.assertEqual(prices_tms.index[-1].to_pydatetime(), self.end_date)
+        self.assertEqual(self.start_date, prices_tms.index[0].to_pydatetime())
+        self.assertEqual(self.end_date, prices_tms.index[-1].to_pydatetime())
 
     def test_get_price_when_end_date_is_today_before_market_close(self):
         self.timer.set_current_time(str_to_date("2018-01-31 12:00:00.000000", DateFormat.FULL_ISO))
         prices_tms = self.data_handler.get_price(self.spx_index_ticker, PriceField.Close,
                                                  self.start_date, self.end_date)
 
-        self.assertEqual(prices_tms.index[0].to_pydatetime(), self.start_date)
-        self.assertEqual(prices_tms.index[-1].to_pydatetime(), self.end_date_trimmed)
+        self.assertEqual(self.start_date, prices_tms.index[0].to_pydatetime())
+        self.assertEqual(self.end_date_trimmed, prices_tms.index[-1].to_pydatetime())
 
     def test_get_price_when_end_date_is_tomorrow(self):
         self.timer.set_current_time(str_to_date("2018-01-30 18:00:00.000000", DateFormat.FULL_ISO))
         prices_tms = self.data_handler.get_price(self.spx_index_ticker, PriceField.Close, self.start_date,
                                                  self.end_date_trimmed)
 
-        self.assertEqual(prices_tms.index[0].to_pydatetime(), self.start_date)
-        self.assertEqual(prices_tms.index[-1].to_pydatetime(), self.end_date_trimmed)
+        self.assertEqual(self.start_date, prices_tms.index[0].to_pydatetime())
+        self.assertEqual(self.end_date_trimmed, prices_tms.index[-1].to_pydatetime())
 
     def test_get_last_price_single_ticker(self):
         # just test if getting single ticker value works, when a single ticker (not wrapped in a list) is passed
@@ -85,78 +82,105 @@ class TestDataHandler(TestCase):
         self.timer.set_current_time(str_to_date("2018-01-31 12:00:00.000000", DateFormat.FULL_ISO))
         during_the_day_last_prices = self.data_handler.get_last_available_price([self.spx_index_ticker])
 
-        self.assertEqual(during_the_day_last_prices.index[0], self.spx_index_ticker)
-        self.assertEqual(during_the_day_last_prices[0], single_price)
+        self.assertEqual(self.spx_index_ticker, during_the_day_last_prices.index[0])
+        self.assertEqual(single_price, during_the_day_last_prices[0])
 
         # after the trading session
         self.timer.set_current_time(str_to_date("2018-01-31 20:00:00.000000", DateFormat.FULL_ISO))
         after_close_last_prices = self.data_handler.get_last_available_price([self.spx_index_ticker])
 
-        self.assertEqual(after_close_last_prices.index[0], self.spx_index_ticker)
-        self.assertNotEqual(after_close_last_prices[0], during_the_day_last_prices[0])
+        self.assertEqual(self.spx_index_ticker, after_close_last_prices.index[0])
+        self.assertNotEqual(during_the_day_last_prices[0], after_close_last_prices[0])
 
         # before the trading session
         self.timer.set_current_time(str_to_date("2018-01-31 07:00:00.000000", DateFormat.FULL_ISO))
         before_close_last_prices = self.data_handler.get_last_available_price([self.spx_index_ticker])
 
-        self.assertEqual(before_close_last_prices.index[0], self.spx_index_ticker)
-        self.assertNotEqual(before_close_last_prices[0], during_the_day_last_prices[0])
-        self.assertNotEqual(before_close_last_prices[0], after_close_last_prices[0])
+        self.assertEqual(self.spx_index_ticker, before_close_last_prices.index[0])
+        self.assertNotEqual(during_the_day_last_prices[0], before_close_last_prices[0])
+        self.assertNotEqual(after_close_last_prices[0], before_close_last_prices[0])
 
     def test_get_last_price_with_multiple_tickers_when_current_data_is_unavailable(self):
         self.timer.set_current_time(str_to_date("2018-01-01 12:00:00.000000", DateFormat.FULL_ISO))
         last_prices = self.data_handler.get_last_available_price([self.spx_index_ticker, self.google_ticker])
 
-        self.assertEqual(last_prices.index[0], self.spx_index_ticker)
-        self.assertEqual(last_prices.index[1], self.google_ticker)
+        self.assertEqual(self.spx_index_ticker, last_prices.index[0])
+        self.assertEqual(self.google_ticker, last_prices.index[1])
 
     def test_get_last_price_with_empty_tickers_list(self):
         self.timer.set_current_time(str_to_date("2018-01-31 12:00:00.000000", DateFormat.FULL_ISO))
         last_prices = self.data_handler.get_last_available_price([])
-        assert_series_equal(last_prices, pd.Series())
+        assert_series_equal(pd.Series(), last_prices)
 
     def test_get_history_when_end_date_is_in_the_past(self):
         self.timer.set_current_time(str_to_date("2018-02-12 00:00:00.000000", DateFormat.FULL_ISO))
         prices_tms = self.data_handler.get_history(self.spx_index_ticker, 'PX_TO_BOOK_RATIO',
                                                    self.start_date, self.end_date)
 
-        self.assertEqual(prices_tms.index[0].to_pydatetime(), self.start_date)
-        self.assertEqual(prices_tms.index[-1].to_pydatetime(), self.end_date)
+        self.assertEqual(self.start_date, prices_tms.index[0].to_pydatetime())
+        self.assertEqual(self.end_date, prices_tms.index[-1].to_pydatetime())
 
     def test_get_history_when_end_date_is_today_after_market_close(self):
         self.timer.set_current_time(str_to_date("2018-01-31 21:00:00.000000", DateFormat.FULL_ISO))
         prices_tms = self.data_handler.get_history(self.spx_index_ticker, 'PX_TO_BOOK_RATIO',
                                                    self.start_date, self.end_date)
 
-        self.assertEqual(prices_tms.index[0].to_pydatetime(), self.start_date)
-        self.assertEqual(prices_tms.index[-1].to_pydatetime(), self.end_date)
+        self.assertEqual(self.start_date, prices_tms.index[0].to_pydatetime())
+        self.assertEqual(self.end_date, prices_tms.index[-1].to_pydatetime())
 
     def test_get_history_when_end_date_is_today_before_market_close(self):
         self.timer.set_current_time(str_to_date("2018-01-31 12:00:00.000000", DateFormat.FULL_ISO))
         prices_tms = self.data_handler.get_history(self.spx_index_ticker, 'PX_TO_BOOK_RATIO',
                                                    self.start_date, self.end_date)
 
-        self.assertEqual(prices_tms.index[0].to_pydatetime(), self.start_date)
-        self.assertEqual(prices_tms.index[-1].to_pydatetime(), self.end_date_trimmed)
+        self.assertEqual(self.start_date, prices_tms.index[0].to_pydatetime())
+        self.assertEqual(self.end_date_trimmed, prices_tms.index[-1].to_pydatetime())
 
     def test_get_history_when_end_date_is_tomorrow(self):
         self.timer.set_current_time(str_to_date("2018-01-30 18:00:00.000000", DateFormat.FULL_ISO))
         prices_tms = self.data_handler.get_history(self.spx_index_ticker, 'PX_TO_BOOK_RATIO',
                                                    self.start_date, self.end_date_trimmed)
 
-        self.assertEqual(prices_tms.index[0].to_pydatetime(), self.start_date)
-        self.assertEqual(prices_tms.index[-1].to_pydatetime(), self.end_date_trimmed)
+        self.assertEqual(self.start_date, prices_tms.index[0].to_pydatetime())
+        self.assertEqual(self.end_date_trimmed, prices_tms.index[-1].to_pydatetime())
 
     def test_get_history_with_multiple_tickers(self):
         self.timer.set_current_time(str_to_date("2018-01-31 12:00:00.000000", DateFormat.FULL_ISO))
         resilt_df = self.data_handler.get_history([self.microsoft_ticker, self.google_ticker], 'PX_TO_BOOK_RATIO',
                                                   self.start_date, self.end_date_trimmed)
 
-        self.assertEqual(resilt_df.columns[0], self.microsoft_ticker)
-        self.assertEqual(resilt_df.columns[1], self.google_ticker)
-        self.assertEqual(resilt_df.index[0].to_pydatetime(), self.start_date)
-        self.assertEqual(resilt_df.index[-1].to_pydatetime(), self.end_date_trimmed)
+        self.assertEqual(self.microsoft_ticker, resilt_df.columns[0])
+        self.assertEqual(self.google_ticker, resilt_df.columns[1])
+        self.assertEqual(self.start_date, resilt_df.index[0].to_pydatetime())
+        self.assertEqual(self.end_date_trimmed, resilt_df.index[-1].to_pydatetime())
         self.assertEqual(resilt_df.shape, (20, 2))
+
+    def test_historical_price_many_tickers_many_fields(self):
+        self.timer.set_current_time(str_to_date("2018-01-31 12:00:00.000000", DateFormat.FULL_ISO))
+        result_array = self.data_handler.historical_price([self.microsoft_ticker], [PriceField.Open, PriceField.Close],
+                                                          nr_of_bars=5)
+
+        self.assertEquals(QFDataArray, type(result_array))
+        self.assertEquals((5, 1, 2), result_array.shape)
+
+        expected_dates_str = ["2018-01-24", "2018-01-25", "2018-01-26", "2018-01-29", "2018-01-30"]
+        expected_dates = [str_to_date(date_str) for date_str in expected_dates_str]
+        assert_same_index(pd.DatetimeIndex(expected_dates, name=QFDataArray.DATES), result_array.dates.to_index(),
+                          check_index_type=True, check_names=True)
+
+    def test_historical_price_many_tickers_one_field(self):
+        self.timer.set_current_time(str_to_date("2018-01-04 12:00:00.000000", DateFormat.FULL_ISO))
+        result_df = self.data_handler.historical_price([self.microsoft_ticker], PriceField.Open, nr_of_bars=5)
+
+        self.assertEquals(PricesDataFrame, type(result_df))
+
+        expected_dates_idx = pd.DatetimeIndex(
+            ['2017-12-27', '2017-12-28', '2017-12-29', '2018-01-02', '2018-01-03'], name=QFDataArray.DATES
+        )
+        assert_same_index(expected_dates_idx, result_df.index, check_index_type=True, check_names=True)
+
+        expected_tickers_idx = pd.Index([self.microsoft_ticker], name=QFDataArray.TICKERS)
+        assert_same_index(expected_tickers_idx, result_df.columns, check_index_type=True, check_names=True)
 
 
 if __name__ == '__main__':
