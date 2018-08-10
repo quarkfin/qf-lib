@@ -37,7 +37,7 @@ class Order(object):
         if not isinstance(other, Order):
             return False
 
-        # one order has id and another hasn't
+        # one Order has id and another hasn't
         if (self.id is None) != (other.id is None):
             return False
 

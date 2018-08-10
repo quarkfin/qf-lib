@@ -58,8 +58,8 @@ class OrderFactory(object):
             execution style of an order (e.g. MarketOrder, StopOrder, etc.)
         time_in_force
             e.g. 'DAY' (Order valid for one trading session), 'GTC' (good till cancelled)
-        tolerance_quantities
-            tell the us what it a tolerance to the target_quantities (in both directions) for each contract.
+        tolerance_quantities 
+            tells what is a tolerance for the target_quantities (in both directions) for each Contract.
             The tolerance is expressed in shares.
             For example: assume that currently the portfolio contains 100 shares of asset A.
             then calling target_orders({A: 101}, ..., tolerance_quantities={A: 2}) will not generate any trades as
@@ -158,7 +158,7 @@ class OrderFactory(object):
         time_in_force
             e.g. 'DAY' (Order valid for one trading session), 'GTC' (good till cancelled)
         tolerance_value
-            tell the us what it a tolerance to the target_values (in both directions).
+            tells the us what is a tolerance to the target_values (in both directions).
             The tolerance is expressed in currency units.
             For example: assume that currently the portfolio contains asset A with allocation 10 000$.
             then calling target_value_order({A: 10 500}, ..., tolerance=1 000) will not generate any trades as
@@ -192,7 +192,7 @@ class OrderFactory(object):
         time_in_force
             e.g. 'DAY' (Order valid for one trading session), 'GTC' (good till cancelled)
         tolerance_percent
-            tell the us what it a tolerance to the target_percentages (in both directions).
+            tells the us what is a tolerance to the target_percentages (in both directions).
             The tolerance is expressed in percentage points (0.02 corresponds to 2pp of diff)
             For example: assume that currently the portfolio contains asset A with allocation weight of 0.24.
             then calling order_target_percent({A: 0.25}, ..., tolerance=0.02) will not generate any trades as
