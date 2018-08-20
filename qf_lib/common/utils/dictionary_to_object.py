@@ -6,13 +6,13 @@ def dict_to_object(d):
 def _dict_to_obj(d, obj_type):
     obj = obj_type()
     seqs = tuple, list, set, frozenset
-    for i, j in d.items():
-        if isinstance(j, dict):
-            setattr(obj, i, _dict_to_obj(j, obj_type))
-        elif isinstance(j, seqs):
-            setattr(obj, i,
-                    type(j)(_dict_to_obj(sj, obj_type) if isinstance(sj, dict) else sj for sj in j))
+    for attr_name, attr_value in d.items():
+        if isinstance(attr_value, dict):
+            setattr(obj, attr_name, _dict_to_obj(attr_value, obj_type))
+        elif isinstance(attr_value, seqs):
+            setattr(obj, attr_name,
+                    type(attr_value)(_dict_to_obj(sj, obj_type) if isinstance(sj, dict) else sj for sj in attr_value))
         else:
-            setattr(obj, i, j)
+            setattr(obj, attr_name, attr_value)
 
     return obj
