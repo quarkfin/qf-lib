@@ -1,18 +1,27 @@
-def dict_to_object(d):
-    obj_type = type('ObjectFromDict', (object,), d)
-    return _dict_to_obj(d, obj_type)
+class JsonToObjectConverter(object):
+    @classmethod
+    def dict_to_object(cls, dictionary):
+        obj_type = type('ObjectFromDict', (object,), dictionary)
+        obj = obj_type()
+        for attr_name, attr_value in dictionary.items():
+            setattr(obj, attr_name, cls._to_obj_if_necessary(attr_value))
 
+        return obj
 
-def _dict_to_obj(d, obj_type):
-    obj = obj_type()
-    seqs = tuple, list, set, frozenset
-    for attr_name, attr_value in d.items():
-        if isinstance(attr_value, dict):
-            setattr(obj, attr_name, _dict_to_obj(attr_value, obj_type))
-        elif isinstance(attr_value, seqs):
-            setattr(obj, attr_name,
-                    type(attr_value)(_dict_to_obj(sj, obj_type) if isinstance(sj, dict) else sj for sj in attr_value))
+    @classmethod
+    def sequence_to_obj(cls, sequence):
+        result = (cls._to_obj_if_necessary(elem) for elem in sequence)
+        return result
+
+    @classmethod
+    def _to_obj_if_necessary(cls, value):
+        import collections
+
+        if isinstance(value, collections.Mapping):
+            result = cls.dict_to_object(value)
+        elif isinstance(value, collections.Sequence) and not isinstance(value, str):
+            result = cls.sequence_to_obj(value)
         else:
-            setattr(obj, attr_name, attr_value)
+            result = value
 
-    return obj
+        return result
