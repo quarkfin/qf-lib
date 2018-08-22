@@ -92,7 +92,8 @@ class TearsheetWithoutBenchmark(AbstractTearsheet):
 
         chart.add_decorator(AxesFormatterDecorator(y_major=PercentageFormatter(".0f")))
 
-        position_decorator = AxesPositionDecorator(self.full_image_axis_position)
+        left, bottom, width, height = self.full_image_axis_position
+        position_decorator = AxesPositionDecorator(left, bottom, width, height)
         chart.add_decorator(position_decorator)
 
         title_decorator = TitleDecorator("Rolling Statistics [6 Months]".format(days_rolling), key="title")
