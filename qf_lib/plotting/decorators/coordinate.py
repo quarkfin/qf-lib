@@ -11,7 +11,8 @@ class Coordinate(object):
 
     def get_transformation(self, chart: "Chart") -> mtransform.Transform:
         """
-            Returns the proper transformation which transforms coordinate from the absolute system to a given one.
+        Returns the proper transformation which transforms coordinate from the absolute system to a specific one
+        (depends on the implementation).
         """
         raise NotImplementedError()
 
