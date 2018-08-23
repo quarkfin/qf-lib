@@ -10,11 +10,9 @@ from typing import List, Any, Union
 import matplotlib as mpl
 import matplotlib.artist as artist
 import matplotlib.pyplot as plt
-import numpy as np
 from PIL import Image
 
 from qf_lib.common.enums.orientation import Orientation
-from qf_lib.common.enums.plotting_mode import PlottingMode
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.plotting.decorators.data_element_decorator import DataElementDecorator
 from qf_lib.plotting.decorators.legend_decorator import ChartDecorator
@@ -105,7 +103,7 @@ class Chart(object):
         """
         raise NotImplementedError
 
-    def render_as_base64_image(self, mode: PlottingMode, figsize=None, dpi=250, optimise=False) -> str:
+    def render_as_base64_image(self, figsize=None, dpi=250, optimise=False) -> str:
         """
         Plots the chart and returns the base64 image.
         """
@@ -332,7 +330,7 @@ class Chart(object):
         for decorator in regular_decorators + legend_decorators:
             decorator.decorate(self)
 
-        # Set x-axis limits. These also have to be set after decorators are applied.
+        # Set x-axis limits. These have to be set after decorators are applied.
         self.axes.set_xlim(self._start_x, self._end_x)
 
         # Ensure that axes line up. This has to be performed after decorators are applied, not in _adjust_style!
