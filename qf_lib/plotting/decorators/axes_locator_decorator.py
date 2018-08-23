@@ -11,6 +11,9 @@ class AxesLocatorDecorator(ChartDecorator):
 
         See here for a list of valid axes locators: http://matplotlib.org/api/ticker_api.html#tick-locating
         """
+        # NOTE: for now there is no point in implementing the support for secondary axes because the ticks' positions
+        # for secondary axes are changed anyway (to ensure that the grid lines of both axes are aligned).
+        # You can find this applied after all the decorators have been already applied.
         super().__init__(key)
         self._x_major = x_major
         self._x_minor = x_minor

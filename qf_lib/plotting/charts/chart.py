@@ -11,6 +11,7 @@ import matplotlib as mpl
 import matplotlib.artist as artist
 import matplotlib.pyplot as plt
 from PIL import Image
+from matplotlib.ticker import FixedLocator
 
 from qf_lib.common.enums.orientation import Orientation
 from qf_lib.containers.series.qf_series import QFSeries
@@ -333,20 +334,24 @@ class Chart(object):
         # Set x-axis limits. These have to be set after decorators are applied.
         self.axes.set_xlim(self._start_x, self._end_x)
 
-        # Ensure that axes line up. This has to be performed after decorators are applied, not in _adjust_style!
         if self._secondary_axes is not None:
-            y_bounds = self._ax.get_ybound()
-            self._ax.set_yticks(np.linspace(y_bounds[0], y_bounds[1], 5))
-            y_bounds = self._secondary_axes.get_ybound()
-            self._secondary_axes.set_yticks(
-                np.linspace(y_bounds[0], y_bounds[1], 5))
-            # Make the secondary axes black.
-            self._secondary_axes.tick_params("both", colors="k")
-            # This is slightly hackish but it works. It makes the secondary axes bold.
-            for tick in self._secondary_axes.yaxis.majorTicks:
-                tick.label._fontproperties._weight = 800
-                tick.label1._fontproperties._weight = 800
-                tick.label2._fontproperties._weight = 800
+            self._align_gridlines()
+
+    def _align_gridlines(self):
+        ax = self._ax
+        ax2 = self._secondary_axes
+
+        y1_min, y1_max = ax.get_ylim()
+        y2_min, y2_max = ax2.get_ylim()
+
+        y1_range = y1_max - y1_min
+        y2_range = y2_max - y2_min
+
+        y_ticks = ax.get_yticks()
+
+        new_y2_ticks = y2_min + (y_ticks - y1_min) / y1_range * y2_range
+
+        ax2.yaxis.set_major_locator(FixedLocator(new_y2_ticks))
 
     def _trim_data(self, data):
         if self._start_x is not None:
