@@ -159,6 +159,36 @@ class DataHandler(DataProvider):
         """
         return self._get_single_date_price(tickers, nans_allowed=True)
 
+    def get_last_available_bar(self, tickers: Union[Ticker, Sequence[Ticker]]) -> Union[pd.Series, pd.DataFrame]:
+        """
+        Gets the last available bar(s) for given Ticker(s).
+        """
+        if not tickers:
+            return pd.Series()
+
+        tickers, was_single_ticker_provided = convert_to_list(tickers, Ticker)
+
+        current_datetime = self.timer.now()
+        current_date = self._zero_out_time_component(current_datetime)
+
+        start_date = current_date - RelativeDelta(days=7)
+        if self.time_helper.datetime_of_latest_market_event(MarketCloseEvent) >= current_datetime:
+            end_date = current_date
+        else:
+            end_date = current_date - RelativeDelta(days=1)
+
+        fields = PriceField.ohlcv()
+        prices_data_array = self.get_price(
+            tickers=tickers, fields=fields, start_date=start_date, end_date=end_date
+        )  # type: QFDataArray
+
+        last_available_bars = prices_data_array.asof(end_date)
+
+        if was_single_ticker_provided:
+            last_available_bars = last_available_bars.iloc[0, :]
+
+        return last_available_bars
+
     def _get_end_date_without_look_ahead(self, end_date):
         latest_available_market_close = self.time_helper.datetime_of_latest_market_event(MarketCloseEvent)
         if end_date is not None:
@@ -176,9 +206,8 @@ class DataHandler(DataProvider):
             return pd.Series()
 
         current_datetime = self.timer.now()
+        current_date = self._zero_out_time_component(current_datetime)
 
-        # below the time component is zeroed-out because the most of data providers expect it to be so
-        current_date = datetime(current_datetime.year, current_datetime.month, current_datetime.day)
         start_date = current_date - RelativeDelta(days=7)
 
         price_fields = [PriceField.Open, PriceField.Close]
@@ -211,6 +240,11 @@ class DataHandler(DataProvider):
             return prices_series[0]
         else:
             return prices_series
+
+    def _zero_out_time_component(self, current_datetime):
+        # below the time component is zeroed-out because most of data providers expect it to be so
+        current_date = datetime(current_datetime.year, current_datetime.month, current_datetime.day)
+        return current_date
 
     def _data_array_to_dataframe(self, prices_data_array: QFDataArray):
         """
