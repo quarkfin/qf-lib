@@ -1,7 +1,13 @@
 from collections import OrderedDict
+from datetime import datetime
+from typing import Sequence, Union
 
 import numpy as np
+import pandas as pd
 import xarray as xr
+
+from qf_lib.common.enums.price_field import PriceField
+from qf_lib.common.tickers.tickers import Ticker
 
 
 class QFDataArray(xr.DataArray):
@@ -31,7 +37,10 @@ class QFDataArray(xr.DataArray):
             super().__setattr__(name, value)
 
     @classmethod
-    def create(cls, dates, tickers, fields, data=None, name=None):
+    def create(cls, dates: Union[Sequence[datetime], pd.DatetimeIndex],
+               tickers: Union[Sequence[str], Sequence[Ticker]],
+               fields: Union[Sequence[PriceField], Sequence[str]],
+               data=None, name=None) -> "QFDataArray":
         """
         Helper method for creating a QFDataArray. __init__() methods can't be used for that, because its signature
         must be the same as the signature of xr.DataArray.__init__().
@@ -108,6 +117,26 @@ class QFDataArray(xr.DataArray):
         )  # type: xr.DataArray
         result = QFDataArray.from_xr_data_array(result)
 
+        return result
+
+    def asof(self, dates: Union[datetime, Sequence[datetime]]) -> "pd.DataFrame":
+        tickers = self.tickers.values
+        fields = self.fields.values
+
+        if isinstance(dates, datetime):
+            dates = [dates] * len(tickers)
+        elif len(dates) != len(tickers):
+            raise ValueError("Number of dates must be equal to the number of tickers")
+
+        asof_values = np.empty((len(tickers), len(fields)))
+
+        for i, (ticker, date) in enumerate(zip(tickers, dates)):
+            ticker_data = self.loc[:, ticker, :]
+            ticker_df = ticker_data.to_pandas()  # type: pd.DataFrame
+            data_asof = ticker_df.asof(date)
+            asof_values[i, :] = data_asof
+
+        result = pd.DataFrame(data=asof_values, index=self.tickers.to_index(), columns=self.fields.to_index())
         return result
 
     def _check_if_dimensions_are_correct(self, coords, dims):
