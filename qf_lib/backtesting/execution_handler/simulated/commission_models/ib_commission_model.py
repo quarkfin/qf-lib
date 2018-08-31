@@ -1,4 +1,4 @@
-from qf_lib.backtesting.execution_handler.commission_models.commission_model import CommissionModel
+from qf_lib.backtesting.execution_handler.simulated.commission_models.commission_model import CommissionModel
 
 
 class IBCommissionModel(CommissionModel):

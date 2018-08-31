@@ -1,11 +1,12 @@
+from geneva_analytics.web_api.backend.models import StrategyRun
 from qf_lib.backtesting.backtest_result.backtest_result import BacktestResult
 from qf_lib.backtesting.broker.backtest_broker import BacktestBroker
 from qf_lib.backtesting.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.events.event_manager import EventManager
 from qf_lib.backtesting.events.time_flow_controller import BacktestTimeFlowController
-from qf_lib.backtesting.execution_handler.commission_models.fixed_commission_model import FixedCommissionModel
-from qf_lib.backtesting.execution_handler.simulated_execution_handler import SimulatedExecutionHandler
+from qf_lib.backtesting.execution_handler.simulated.commission_models.fixed_commission_model import FixedCommissionModel
+from qf_lib.backtesting.execution_handler.simulated.simulated_execution_handler import SimulatedExecutionHandler
 from qf_lib.backtesting.monitoring.web_monitor import WebMonitor
 from qf_lib.backtesting.order.orderfactory import OrderFactory
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
@@ -17,7 +18,6 @@ from qf_lib.common.utils.dateutils.date_to_string import date_to_str
 from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.data_providers.price_data_provider import DataProvider
-from geneva_analytics.web_api.backend.models import StrategyRun
 
 
 class WebTradingSession(object):

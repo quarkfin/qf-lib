@@ -33,7 +33,7 @@ class ExecutionHandler(metaclass=abc.ABCMeta):
         raise NotImplementedError("Should implement accept_orders()")
 
     @abc.abstractmethod
-    def cancel_order(self, order_id: int):
+    def cancel_order(self, order_id: int) -> None:
         """
         Cancels the order with a given ID.
 
@@ -53,7 +53,7 @@ class ExecutionHandler(metaclass=abc.ABCMeta):
         raise NotImplementedError("Should implement get_open_orders()")
 
     @abc.abstractmethod
-    def cancel_all_open_orders(self):
+    def cancel_all_open_orders(self) -> None:
         """
         Cancel all open Orders.
         """
