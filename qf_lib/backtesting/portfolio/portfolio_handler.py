@@ -1,11 +1,8 @@
 from qf_lib.backtesting.events.time_event.after_market_close_event import AfterMarketCloseEvent
 from qf_lib.backtesting.events.time_event.scheduler import Scheduler
 from qf_lib.backtesting.events.time_event.time_event import TimeEvent
-from qf_lib.backtesting.execution_handler.execution_handler import ExecutionHandler
 from qf_lib.backtesting.monitoring.abstract_monitor import AbstractMonitor
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
-from qf_lib.backtesting.position_sizer.position_sizer import PositionSizer
-from qf_lib.backtesting.risk_manager.risk_manager import RiskManager
 
 
 class PortfolioHandler(object):
@@ -20,13 +17,7 @@ class PortfolioHandler(object):
     Orders to remain in line with risk parameters.
     """
 
-    def __init__(self, execution_handler: ExecutionHandler, portfolio: Portfolio,
-                 position_sizer: PositionSizer, risk_manager: RiskManager,
-                 monitor: AbstractMonitor, scheduler: Scheduler):
-        # TODO update input arguments
-        self.execution_handler = execution_handler
-        self.position_sizer = position_sizer
-        self.risk_manager = risk_manager
+    def __init__(self, portfolio: Portfolio, monitor: AbstractMonitor, scheduler: Scheduler):
         self.portfolio = portfolio
         self.monitor = monitor
 

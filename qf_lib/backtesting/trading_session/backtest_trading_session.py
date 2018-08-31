@@ -83,9 +83,7 @@ class BacktestTradingSession(object):
         time_flow_controller = BacktestTimeFlowController(
             notifiers.scheduler, events_manager, timer, notifiers.empty_queue_event_notifier, end_date
         )
-        portfolio_handler = PortfolioHandler(
-            execution_handler, portfolio, position_sizer, risk_manager, monitor, notifiers.scheduler
-        )
+        portfolio_handler = PortfolioHandler(portfolio, monitor, notifiers.scheduler)
 
         self.logger.info(
             "\n".join([
