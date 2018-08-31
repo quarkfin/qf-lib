@@ -9,7 +9,6 @@ from qf_lib.backtesting.contract_to_ticker_conversion.base import ContractTicker
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.execution_handler.simulated.commission_models.commission_model import CommissionModel
 from qf_lib.backtesting.execution_handler.simulated.order_states import OrderState
-from qf_lib.backtesting.execution_handler.simulated.specialized_orders_executor import SpecializedOrdersExecutor
 from qf_lib.backtesting.monitoring.abstract_monitor import AbstractMonitor
 from qf_lib.backtesting.order.execution_style import StopOrder
 from qf_lib.backtesting.order.order import Order
@@ -20,13 +19,10 @@ from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.timer import Timer
 
 
-class StopOrdersExecutor(SpecializedOrdersExecutor):
+class StopOrdersExecutor(object):
 
     def __init__(self, contracts_to_tickers_mapper: ContractTickerMapper, data_handler: DataHandler, order_id_generator,
                  commission_model: CommissionModel, monitor: AbstractMonitor, portfolio: Portfolio, timer: Timer):
-        super().__init__(order_id_generator)
-
-        self._logger = logging.getLogger(self.__class__.__name__)
         self._contracts_to_tickers_mapper = contracts_to_tickers_mapper
         self._data_handler = data_handler
         self._order_id_generator = order_id_generator
@@ -38,7 +34,9 @@ class StopOrdersExecutor(SpecializedOrdersExecutor):
         # mappings: order_id -> (order, ticker, price_when_order_accepted)
         self._buy_stop_orders_data = {}  # type: Dict[int, Tuple[Order, Ticker]
         self._sell_stop_orders_data = {}  # type: Dict[int, Tuple[Order, Ticker]
-        
+
+        self._logger = logging.getLogger(self.__class__.__name__)
+
     def accept_orders(self, orders: Sequence[Order]) -> List[int]:
         # order, ticker, price_when_accepted
         tickers = [
@@ -52,7 +50,7 @@ class StopOrdersExecutor(SpecializedOrdersExecutor):
             execution_style = order.execution_style  # type: StopOrder
             stop_price = execution_style.stop_price
 
-            order_id = self._get_next_order_id()
+            order_id = next(self._order_id_generator)
 
             if order.quantity < 0:
                 if stop_price < current_price:

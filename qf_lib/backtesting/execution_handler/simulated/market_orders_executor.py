@@ -6,7 +6,6 @@ from qf_lib.backtesting.contract_to_ticker_conversion.base import ContractTicker
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.execution_handler.simulated.commission_models.commission_model import CommissionModel
 from qf_lib.backtesting.execution_handler.simulated.order_states import OrderState
-from qf_lib.backtesting.execution_handler.simulated.specialized_orders_executor import SpecializedOrdersExecutor
 from qf_lib.backtesting.monitoring.abstract_monitor import AbstractMonitor
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
@@ -14,27 +13,26 @@ from qf_lib.backtesting.transaction import Transaction
 from qf_lib.common.utils.dateutils.timer import Timer
 
 
-class MarketOrdersExecutor(SpecializedOrdersExecutor):
+class MarketOrdersExecutor(object):
     def __init__(self, contracts_to_tickers_mapper: ContractTickerMapper, data_handler: DataHandler,
                  commission_model: CommissionModel, monitor: AbstractMonitor, portfolio: Portfolio, timer: Timer,
                  order_id_generator):
-        super().__init__(order_id_generator)
+        self._contracts_to_tickers_mapper = contracts_to_tickers_mapper
+        self._data_handler = data_handler
+        self._commission_model = commission_model
+        self._monitor = monitor
+        self._portfolio = portfolio
+        self._timer = timer
+        self._order_id_generator = order_id_generator
 
-        self.contracts_to_tickers_mapper = contracts_to_tickers_mapper
-        self.data_handler = data_handler
-        self.commission_model = commission_model
-        self.monitor = monitor
-        self.portfolio = portfolio
-        self.timer = timer
+        self._awaiting_orders = {}  # type: Dict[int, Order]  # order_id -> Order
 
-        self._awaiting_orders = {}  # type: Dict[int, Order]
-
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self._logger = logging.getLogger(self.__class__.__name__)
 
     def accept_orders(self, orders: Sequence[Order]) -> List[int]:
         order_id_list = []
         for order in orders:
-            order.id = self._get_next_order_id()
+            order.id = next(self._order_id_generator)
             order.order_state = OrderState.AWAITING
 
             order_id_list.append(order.id)
@@ -64,9 +62,9 @@ class MarketOrdersExecutor(SpecializedOrdersExecutor):
         if not market_orders_list:
             return
 
-        tickers = [self.contracts_to_tickers_mapper.contract_to_ticker(order.contract) for order in market_orders_list]
+        tickers = [self._contracts_to_tickers_mapper.contract_to_ticker(order.contract) for order in market_orders_list]
 
-        current_prices_series = self.data_handler.get_current_price(tickers)
+        current_prices_series = self._data_handler.get_current_price(tickers)
         unexecuted_orders_dict = {}  # type: Dict[int, Order]
 
         for order, ticker in zip(market_orders_list, tickers):
@@ -83,18 +81,18 @@ class MarketOrdersExecutor(SpecializedOrdersExecutor):
         """
         Simulates execution of a single Order by converting the Order into Transaction.
         """
-        timestamp = self.timer.now()
+        timestamp = self._timer.now()
         contract = order.contract
         quantity = order.quantity
 
         fill_price = self._calculate_fill_price(order, security_price)
-        commission = self.commission_model.calculate_commission(quantity, fill_price)
+        commission = self._commission_model.calculate_commission(quantity, fill_price)
 
         transaction = Transaction(timestamp, contract, quantity, fill_price, commission)
-        self.monitor.record_trade(transaction)
-        self.portfolio.transact_transaction(transaction)
+        self._monitor.record_trade(transaction)
+        self._portfolio.transact_transaction(transaction)
 
-        self.logger.info("Order executed. Transaction has been created:\n{:s}".format(str(transaction)))
+        self._logger.info("Order executed. Transaction has been created:\n{:s}".format(str(transaction)))
 
     @classmethod
     def _calculate_fill_price(cls, _: Order, security_price: float) -> float:
