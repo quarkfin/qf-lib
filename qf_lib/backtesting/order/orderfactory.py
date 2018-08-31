@@ -115,7 +115,9 @@ class OrderFactory(object):
             e.g. 'DAY' (Order valid for one trading session), 'GTC' (good till cancelled)
         """
         quantities, _ = self._calculate_target_shares_and_tolerances(values)
-        return self.orders(quantities, execution_style, time_in_force)
+
+        int_quantities = {contract: math.floor(quantity) for contract, quantity in quantities.items()}
+        return self.orders(int_quantities, execution_style, time_in_force)
 
     def percent_orders(self, percentages: Mapping[Contract, float], execution_style: ExecutionStyle,
                        time_in_force: str="DAY") -> Sequence[Order]:
