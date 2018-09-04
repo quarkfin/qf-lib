@@ -267,6 +267,7 @@ class QuandlDataProvider(DataProvider):
         # create index from column and remove redundant info
         table.set_index(keys='date', inplace=True)
         table = table.drop('ticker', axis=1)  # type: pd.DataFrame
+        table = table.sort_index()
 
         # cut the dates if necessary
         table = table.loc[start_date:end_date]
