@@ -17,7 +17,7 @@ from qf_lib.get_sources_root import get_src_root
 from qf_lib.settings import Settings
 
 
-# @unittest.skip("Never really used, and causes the GitLab Runner to crash. Also these tests alone take about 60s")
+@unittest.skip("Never really used, and causes the GitLab Runner to crash. Also these tests alone take about 60s")
 class TestQuandlTable(unittest.TestCase):
     START_DATE = str_to_date('2014-01-01')
     END_DATE = str_to_date('2015-02-02')
