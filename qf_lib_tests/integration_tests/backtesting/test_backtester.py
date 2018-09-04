@@ -5,6 +5,7 @@ import matplotlib
 from os.path import join
 
 from qf_lib.backtesting.broker.broker import Broker
+from qf_lib.backtesting.order.time_in_force import TimeInForce
 
 matplotlib.use("Agg")
 
@@ -49,7 +50,8 @@ class BuyAndHoldStrategy(object):
 
     def calculate_signals(self):
         if not self.invested:
-            orders = self.order_factory.percent_orders({self.MICROSOFT_CONTRACT: 1.0}, MarketOrder(), "GTC")
+            orders = self.order_factory.percent_orders({self.MICROSOFT_CONTRACT: 1.0}, MarketOrder(),
+                                                       TimeInForce.GOOD_TILL_CANCEL)
             self.broker.place_orders(orders)
             self.invested = True
 

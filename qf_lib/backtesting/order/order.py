@@ -1,5 +1,6 @@
 from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.order.execution_style import ExecutionStyle
+from qf_lib.backtesting.order.time_in_force import TimeInForce
 
 
 class Order(object):
@@ -9,14 +10,14 @@ class Order(object):
     """
 
     def __init__(self, contract: Contract, quantity: int, execution_style: ExecutionStyle,
-                 tif: str, order_state: str=''):
+                 time_in_force: TimeInForce, order_state: str=''):
         """
         This __init__ shouldn't be used anywhere beyond this module. User OrderFactory for creating Order objects.
         """
         self.id = None  # type:int
         self.contract = contract
         self.quantity = quantity
-        self.tif = tif
+        self.time_in_force = time_in_force
         self.execution_style = execution_style
         self.order_state = order_state
 
@@ -28,7 +29,8 @@ class Order(object):
                '\ttif: {}\n' \
                '\texecution_style: {}\n' \
                '\torder_state: {}\n'.format(
-                    self.id, str(self.contract), self.quantity, self.tif, self.execution_style, self.order_state)
+                    self.id, str(self.contract), self.quantity, str(self.time_in_force), self.execution_style, self.order_state
+                )
 
     def __eq__(self, other):
         if self is other:
@@ -45,8 +47,8 @@ class Order(object):
             return True
 
         # when both ids are none -> compare the values
-        return (self.contract, self.quantity, self.tif, self.execution_style, self.order_state) == \
-               (other.contract, other.quantity, other.tif, other.execution_style, other.order_state)
+        return (self.contract, self.quantity, self.time_in_force, self.execution_style, self.order_state) == \
+               (other.contract, other.quantity, other.time_in_force, other.execution_style, other.order_state)
 
     def __hash__(self):
-        return hash((self.contract, self.quantity, self.tif, self.execution_style, self.order_state))
+        return hash((self.contract, self.quantity, self.time_in_force, self.execution_style, self.order_state))
