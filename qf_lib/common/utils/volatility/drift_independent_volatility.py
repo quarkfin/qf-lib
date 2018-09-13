@@ -1,6 +1,8 @@
 import numpy as np
 
+from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
+from qf_lib.common.utils.miscellaneous.annualise_with_sqrt import annualise_with_sqrt
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
 
@@ -8,7 +10,7 @@ from qf_lib.containers.series.qf_series import QFSeries
 class DriftIndependentVolatility(object):
 
     @staticmethod
-    def get_volatility(ohlc: QFDataFrame, alpha: float=None) -> QFSeries:
+    def get_volatility(ohlc: QFDataFrame, frequency: Frequency=None, annualise: bool=True, alpha: float=None) -> float:
         """
 
         Implementation of the algorithm described in 'Drift Independent Volatility Estimation Based on High, Low,
@@ -23,26 +25,39 @@ class DriftIndependentVolatility(object):
         ----------
         ohlc:
             QFDataFrame consisting of four QFPricesSeries: open, high, low, close
+        frequency:
+            the frequency of samples in the returns series; it is only obligatory to specify frequency if the annualise
+            parameter is set to True, which is a default value
+        annualise:
+            True if the volatility values should be annualised; False otherwise. If it is set to True, then it is obligatory
+            to specify a frequency of the returns series.
         alpha:
             expectation of u(u-c)+d(d-c) squared, values in range of (1.331, 1.5);
             authors of the algorithm suggest 1.34 in practice
 
         Returns
         -------
-        Drift Independent Volatility (annualized) in type QFSeries
+        Drift Independent Volatility in type float
 
         """
+        assert ohlc.num_of_rows > 3
+        assert not annualise or frequency is not None
+
         var_RS = DriftIndependentVolatility._rogers_satchell_variance(ohlc)
         var_O = DriftIndependentVolatility._open_variance(ohlc)
         var_C = DriftIndependentVolatility._close_variance(ohlc)
         k = DriftIndependentVolatility._k_factor(ohlc, alpha)
 
-        var = (var_O + k*var_C + (1-k)*var_RS) * 252
-        vol = np.sqrt(var)
-        return vol
+        variance = var_O + k*var_C + (1-k)*var_RS
+        volatility = np.sqrt(variance)
+
+        if annualise:
+            volatility = annualise_with_sqrt(volatility, frequency)
+
+        return volatility
 
     @staticmethod
-    def _rogers_satchell_variance(ohlc: QFDataFrame) -> QFSeries:
+    def _rogers_satchell_variance(ohlc: QFDataFrame) -> float:
         """
         Variance estimator using the high, low, close prices found by Rogers and Satchell (1991) and Rogers, Satchell
         and Yoon (1994)
@@ -57,7 +72,7 @@ class DriftIndependentVolatility(object):
         return var_RS
 
     @staticmethod
-    def _open_variance(ohlc: QFDataFrame) -> QFSeries:
+    def _open_variance(ohlc: QFDataFrame) -> float:
         """
         Open price variance
         described in equation (8)
@@ -69,7 +84,7 @@ class DriftIndependentVolatility(object):
         return var_O
 
     @staticmethod
-    def _close_variance(ohlc: QFDataFrame) -> QFSeries:
+    def _close_variance(ohlc: QFDataFrame) -> float:
         """
         Close price variance
         described in equation (8)
