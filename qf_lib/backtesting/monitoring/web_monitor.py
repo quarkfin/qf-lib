@@ -1,14 +1,12 @@
 from datetime import datetime
-from os import makedirs, path
 
+from geneva_analytics.data_providers.timeseries_data_provider import TimeseriesDataProvider
+from geneva_analytics.web_api.backend.models import StrategyRun
 from geneva_analytics.web_api.backend.src.dao.portfolio_dao import PortfolioDAO
 from geneva_analytics.web_api.backend.src.dao.strategy_run_dao import StrategyRunDAO
 from qf_lib.backtesting.backtest_result.backtest_result import BacktestResult
 from qf_lib.backtesting.monitoring.abstract_monitor import AbstractMonitor
 from qf_lib.backtesting.transaction import Transaction
-from qf_lib.settings import Settings
-from geneva_analytics.data_providers.timeseries_data_provider import TimeseriesDataProvider
-from geneva_analytics.web_api.backend.models import StrategyRun
 from qf_lib.common.enums.frequency import Frequency
 
 

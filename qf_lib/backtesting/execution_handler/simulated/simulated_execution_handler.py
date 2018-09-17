@@ -37,7 +37,6 @@ class SimulatedExecutionHandler(ExecutionHandler):
         self.event_manager = event_manager
         self.data_handler = data_handler
         self.timer = timer
-        self.monitor = monitor
         self.commission_model = commission_model
         self.contracts_to_tickers_mapper = contracts_to_tickers_mapper
         self.portfolio = portfolio
@@ -65,13 +64,13 @@ class SimulatedExecutionHandler(ExecutionHandler):
 
         for order_style_type, orders_list in groupby(orders, lambda x: type(x.execution_style)):
             if order_style_type == MarketOrder:
-                market_order_id_list = self._market_orders_executor.accept_orders(orders_list)
-                order_id_list += market_order_id_list
+                partial_order_id_list = self._market_orders_executor.accept_orders(orders_list)
             elif order_style_type == StopOrder:
-                stop_order_id_list = self._stop_orders_executor.accept_orders(orders_list)
-                order_id_list += stop_order_id_list
+                partial_order_id_list = self._stop_orders_executor.accept_orders(orders_list)
             else:
                 raise ValueError("Unsupported ExecutionStyle: {}".format(order_style_type))
+
+            order_id_list += partial_order_id_list
 
         return order_id_list
 
