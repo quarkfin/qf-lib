@@ -4,7 +4,6 @@ from typing import Tuple
 from jinja2 import Template
 
 from qf_lib.common.enums.grid_proportion import GridProportion
-from qf_lib.common.enums.plotting_mode import PlottingMode
 from qf_lib.common.utils.document_exporting import templates
 from qf_lib.common.utils.document_exporting.document import Document
 from qf_lib.common.utils.document_exporting.element import Element
@@ -13,7 +12,7 @@ from qf_lib.plotting.charts.chart import Chart
 
 
 class ChartElement(Element):
-    def __init__(self, chart: Chart, mode: PlottingMode=PlottingMode.PDF, figsize: Tuple[float, float]=None, dpi=250,
+    def __init__(self, chart: Chart, figsize: Tuple[float, float]=None, dpi=250,
                  optimise=False, grid_proportion=GridProportion.Eight, comment: str=""):
         """
         Constructs a new chart element that can be rendered in a PDF or on a website.
@@ -22,8 +21,6 @@ class ChartElement(Element):
         ----------
         chart
             The chart to wrap inside this element.
-        mode
-            Either ``PDF`` or ``Web``, determines where this chart element will be rendered.
         figsize
             Determines the size ratio of the chart. This is a width, height tuple specified in inches. For example:
             (13, 5) for a wide and short chart size.
@@ -43,7 +40,6 @@ class ChartElement(Element):
         super().__init__(grid_proportion)
         self._chart = chart
         self._filename = "{}.png".format(uuid.uuid4())
-        self.mode = mode
         self.figsize = figsize
         self.dpi = dpi
         self.optimise = optimise
@@ -65,7 +61,7 @@ class ChartElement(Element):
         """
         try:
             result = "data:image/png;base64," + self._chart.render_as_base64_image(
-                self.mode, self.figsize, self.dpi, self.optimise)
+                self.figsize, self.dpi, self.optimise)
         except Exception as ex:
             self.logger.exception('Chart generation error:')
             result = "error: Chart generation error: " + str(ex)
@@ -79,8 +75,7 @@ class ChartElement(Element):
         memory, then encoded to base64 and embedded in the HTML
         """
         try:
-            base64 = self._chart.render_as_base64_image(
-                self.mode, self.figsize, self.dpi, self.optimise)
+            base64 = self._chart.render_as_base64_image(self.figsize, self.dpi, self.optimise)
 
             env = templates.environment
             template = env.get_template("chart.html")

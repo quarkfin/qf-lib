@@ -1,9 +1,9 @@
 from abc import abstractmethod, ABCMeta
 from datetime import datetime
-from os.path import join
 from typing import List
 
 import matplotlib as plt
+from os.path import join
 
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.plotting_mode import PlottingMode
@@ -101,7 +101,8 @@ class AbstractTearsheet(metaclass=ABCMeta):
 
         chart.add_decorator(legend)
 
-        position_decorator = AxesPositionDecorator(self.full_image_axis_position)
+        left, bottom, width, height = self.full_image_axis_position
+        position_decorator = AxesPositionDecorator(left, bottom, width, height)
         chart.add_decorator(position_decorator)
 
         title_decorator = TitleDecorator("Strategy Performance", key="title")

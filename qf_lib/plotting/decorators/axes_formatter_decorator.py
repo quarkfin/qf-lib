@@ -8,7 +8,7 @@ from qf_lib.plotting.decorators.chart_decorator import ChartDecorator
 
 class AxesFormatterDecorator(ChartDecorator):
     def __init__(self, x_major: Formatter=None, x_minor: Formatter=None, y_major: Formatter=None,
-                 y_minor: Formatter=None, key=None):
+                 y_minor: Formatter=None, use_secondary_axes=False, key=None):
         """
         Creates a new Axes Formatter decorator that changes the way tickers in the x/y-axis are displayed.
 
@@ -19,16 +19,22 @@ class AxesFormatterDecorator(ChartDecorator):
         self._x_minor = x_minor
         self._y_major = y_major
         self._y_minor = y_minor
+        self._use_secondary_axes = use_secondary_axes
 
     def decorate(self, chart: "Chart"):
+        if self._use_secondary_axes:
+            ax = chart.secondary_axes
+        else:
+            ax = chart.axes
+
         if self._x_major is not None:
-            chart.axes.xaxis.set_major_formatter(self._x_major)
+            ax.xaxis.set_major_formatter(self._x_major)
         if self._x_minor is not None:
-            chart.axes.xaxis.set_minor_formatter(self._x_minor)
+            ax.xaxis.set_minor_formatter(self._x_minor)
         if self._y_major is not None:
-            chart.axes.yaxis.set_major_formatter(self._y_major)
+            ax.yaxis.set_major_formatter(self._y_major)
         if self._y_minor is not None:
-            chart.axes.yaxis.set_minor_formatter(self._y_minor)
+            ax.yaxis.set_minor_formatter(self._y_minor)
 
 
 class PercentageFormatter(Formatter):
