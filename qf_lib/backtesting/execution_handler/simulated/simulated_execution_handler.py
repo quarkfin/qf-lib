@@ -30,6 +30,7 @@ class SimulatedExecutionHandler(ExecutionHandler):
                  scheduler: Scheduler, monitor: AbstractMonitor, commission_model: CommissionModel,
                  contracts_to_tickers_mapper: ContractTickerMapper, portfolio: Portfolio) -> None:
         scheduler.subscribe(MarketOpenEvent, self)
+        scheduler.subscribe(MarketCloseEvent, self)
 
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
