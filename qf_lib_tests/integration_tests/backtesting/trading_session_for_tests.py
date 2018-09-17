@@ -53,7 +53,7 @@ class TestingTradingSession(object):
         backtest_result = BacktestResult(portfolio=portfolio, backtest_name="Testing the Backtester",
                                          start_date=start_date, end_date=end_date)
 
-        monitor = DummyMonitor(backtest_result)
+        monitor = DummyMonitor()
         commission_model = FixedCommissionModel(0.0)
 
         execution_handler = SimulatedExecutionHandler(
