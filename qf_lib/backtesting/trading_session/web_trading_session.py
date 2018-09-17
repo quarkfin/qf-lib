@@ -68,7 +68,7 @@ class WebTradingSession(object):
         commission_model = FixedCommissionModel(0.0)
 
         execution_handler = SimulatedExecutionHandler(
-            events_manager, data_handler, timer, notifiers.scheduler, monitor, commission_model,
+            data_handler, timer, notifiers.scheduler, monitor, commission_model,
             contract_ticker_mapper, portfolio)
 
         broker = BacktestBroker(portfolio, execution_handler)

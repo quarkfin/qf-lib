@@ -3,7 +3,6 @@ from typing import List, Sequence
 
 from qf_lib.backtesting.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
-from qf_lib.backtesting.events.event_manager import EventManager
 from qf_lib.backtesting.events.time_event.market_close_event import MarketCloseEvent
 from qf_lib.backtesting.events.time_event.market_open_event import MarketOpenEvent
 from qf_lib.backtesting.events.time_event.scheduler import Scheduler
@@ -27,14 +26,13 @@ class SimulatedExecutionHandler(ExecutionHandler):
     StopOrders are executed at the MarketClose (if applicable) with the Low price.
     """
 
-    def __init__(self, event_manager: EventManager, data_handler: DataHandler, timer: Timer,
+    def __init__(self, data_handler: DataHandler, timer: Timer,
                  scheduler: Scheduler, monitor: AbstractMonitor, commission_model: CommissionModel,
                  contracts_to_tickers_mapper: ContractTickerMapper, portfolio: Portfolio) -> None:
         scheduler.subscribe(MarketOpenEvent, self)
 
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
-        self.event_manager = event_manager
         self.data_handler = data_handler
         self.timer = timer
         self.commission_model = commission_model
