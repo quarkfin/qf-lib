@@ -1,6 +1,7 @@
 from numpy import sqrt
 
 from qf_lib.common.enums.frequency import Frequency
+from qf_lib.common.utils.miscellaneous.annualise_with_sqrt import annualise_with_sqrt
 from qf_lib.containers.series.qf_series import QFSeries
 
 
@@ -30,6 +31,6 @@ def get_volatility(qf_series: QFSeries, frequency: Frequency=None, annualise: bo
     volatility = returns_tms.std()
 
     if annualise:
-        volatility = volatility * sqrt(frequency.occurrences_in_year)
+        volatility = annualise_with_sqrt(volatility, frequency)
 
     return volatility
