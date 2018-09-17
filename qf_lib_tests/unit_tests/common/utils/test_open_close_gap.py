@@ -5,7 +5,6 @@ from pandas import date_range
 
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
-from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.testing_tools.containers_comparison import assert_lists_equal
 from scripts.analysis.ensamble_avg_vs_time_avg.open_close_gap import open_close_gap
 
@@ -13,11 +12,8 @@ from scripts.analysis.ensamble_avg_vs_time_avg.open_close_gap import open_close_
 class TestOpenCloseGapUtils(TestCase):
     def setUp(self):
         self.tms = date_range('1991-05-14', periods=6, freq='D')
-        o = [100, 100, 100, 101, 101, 102]
-        c = [100, 100, 100, 101, 101, 102]
-
-        open = PricesSeries(data=o, index=self.tms, name=PriceField.Open)
-        close = PricesSeries(data=c, index=self.tms, name=PriceField.Close)
+        open = [100, 100, 100, 101, 101, 102]
+        close = [100, 100, 100, 101, 101, 102]
 
         data_2d = array([open, close]).transpose()
         self.prices_df = PricesDataFrame(data=data_2d, index=self.tms, columns=[PriceField.Open, PriceField.Close])
