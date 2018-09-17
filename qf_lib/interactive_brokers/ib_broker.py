@@ -8,6 +8,7 @@ from ibapi.order import Order as IBOrder
 from qf_lib.backtesting.broker.broker import Broker
 from qf_lib.backtesting.order.execution_style import MarketOrder, StopOrder
 from qf_lib.backtesting.order.order import Order
+from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.backtesting.portfolio.position import Position
 from qf_lib.common.exceptions.broker_exceptions import BrokerException, OrderCancellingException
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
@@ -93,7 +94,7 @@ class IBBroker(Broker):
                 self.logger.error('===> {}'.format(error_msg))
                 raise OrderCancellingException(error_msg)
 
-    def get_open_orders(self)-> List[Order]:
+    def get_open_orders(self) -> List[Order]:
         with self.lock:
             self.wrapper.reset_order_list()
             self.client.reqOpenOrders()
@@ -142,7 +143,7 @@ class IBBroker(Broker):
         ib_contract.exchange = contract.exchange
         return ib_contract
 
-    def _to_ib_order(self, order):
+    def _to_ib_order(self, order: Order):
         ib_order = IBOrder()
 
         if order.quantity > 0:
@@ -155,8 +156,21 @@ class IBBroker(Broker):
         execution_style = order.execution_style
         self._set_execution_style(ib_order, execution_style)
 
-        ib_order.tif = order.tif
+        time_in_force = order.time_in_force
+        tif_str = self._map_to_tif_str(time_in_force)
+        ib_order.tif = tif_str
+
         return ib_order
+
+    def _map_to_tif_str(self, time_in_force):
+        if time_in_force == TimeInForce.GOOD_TILL_CANCEL:
+            tif_str = "GTC"
+        elif time_in_force == TimeInForce.DAY:
+            tif_str = "DAY"
+        else:
+            raise ValueError("Not supported TimeInForce {tif:s}".format(tif=str(time_in_force)))
+
+        return tif_str
 
     def _set_execution_style(self, ib_order, execution_style):
         if isinstance(execution_style, MarketOrder):

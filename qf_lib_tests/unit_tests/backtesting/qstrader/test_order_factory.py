@@ -10,6 +10,7 @@ from qf_lib.backtesting.contract_to_ticker_conversion.bloomberg_mapper import \
 from qf_lib.backtesting.order.execution_style import MarketOrder, StopOrder
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.orderfactory import OrderFactory
+from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.common.tickers.tickers import BloombergTicker
 
 
@@ -38,7 +39,7 @@ class TestOrderFactory(unittest.TestCase):
     def test_order(self):
         quantity = 5
         execution_style = MarketOrder()
-        time_in_force = 'GTC'
+        time_in_force = TimeInForce.GOOD_TILL_CANCEL
 
         orders = self.order_factory.orders({self.contract: quantity}, execution_style, time_in_force)
         self.assertEqual(orders[0], Order(self.contract, quantity, execution_style, time_in_force))
@@ -46,7 +47,7 @@ class TestOrderFactory(unittest.TestCase):
     def test_order_target(self):
         quantity = -5
         execution_style = StopOrder(4.20)
-        time_in_force = 'DAY'
+        time_in_force = TimeInForce.DAY
 
         orders = self.order_factory.target_orders({self.contract: 5}, execution_style, time_in_force)
         self.assertEqual(orders[0], Order(self.contract, quantity, execution_style, time_in_force))
@@ -55,7 +56,7 @@ class TestOrderFactory(unittest.TestCase):
         value = 100.0
         quantity = floor(100.0/self.share_price)  # type: int
         execution_style = StopOrder(4.20)
-        time_in_force = 'DAY'
+        time_in_force = TimeInForce.DAY
 
         orders = self.order_factory.value_orders({self.contract: value}, execution_style, time_in_force)
         self.assertEqual(orders[0], Order(self.contract, quantity, execution_style, time_in_force))
@@ -63,7 +64,7 @@ class TestOrderFactory(unittest.TestCase):
     def test_order_percent(self):
         percentage = 0.5
         execution_style = StopOrder(4.20)
-        time_in_force = 'GTC'
+        time_in_force = TimeInForce.GOOD_TILL_CANCEL
         quantity = floor(percentage * self.current_portfolio_value / self.share_price)  # type: int
 
         orders = self.order_factory.percent_orders({self.contract: percentage}, execution_style, time_in_force)
@@ -71,7 +72,7 @@ class TestOrderFactory(unittest.TestCase):
 
     def test_order_target_value(self):
         execution_style = StopOrder(4.20)
-        time_in_force = 'GTC'
+        time_in_force = TimeInForce.GOOD_TILL_CANCEL
         quantity = 4
 
         orders = self.order_factory.target_value_orders({self.contract: 140.0}, execution_style, time_in_force)
@@ -80,7 +81,7 @@ class TestOrderFactory(unittest.TestCase):
     def test_order_target_percent(self):
         quantity = 40
         execution_style = StopOrder(4.20)
-        time_in_force = 'GTC'
+        time_in_force = TimeInForce.GOOD_TILL_CANCEL
 
         orders = self.order_factory.target_percent_orders({self.contract: 0.5}, execution_style, time_in_force)
         self.assertEqual(orders[0], Order(self.contract, quantity, execution_style, time_in_force))
@@ -91,7 +92,7 @@ class TestOrderFactory(unittest.TestCase):
         # there already are 10 shares in the portfolio
         quantity = 11
         execution_style = MarketOrder()
-        time_in_force = 'DAY'
+        time_in_force = TimeInForce.DAY
         tolerance = {self.contract: 2}
 
         # tolerance is 2 and the difference is 1 -> we should not trade
@@ -102,7 +103,7 @@ class TestOrderFactory(unittest.TestCase):
         # there already are 10 shares in the portfolio
         quantity = 100
         execution_style = MarketOrder()
-        time_in_force = 'DAY'
+        time_in_force = TimeInForce.DAY
         tolerance = {self.contract: 91}
 
         # tolerance is 90 and the difference is 90 -> we should not trade
@@ -113,7 +114,7 @@ class TestOrderFactory(unittest.TestCase):
         # there already are 10 shares
         quantity = 12
         execution_style = MarketOrder()
-        time_in_force = 'DAY'
+        time_in_force = TimeInForce.DAY
         tolerance = {self.contract: 2}
 
         # tolerance is 2 and the difference is 2 -> we should not trade
@@ -124,7 +125,7 @@ class TestOrderFactory(unittest.TestCase):
         # there already are 10 shares
         quantity = 15
         execution_style = MarketOrder()
-        time_in_force = 'DAY'
+        time_in_force = TimeInForce.DAY
         tolerance = {self.contract: 2}
 
         # tolerance is 2 and the difference is 2 -> we should buy new shares
@@ -136,7 +137,7 @@ class TestOrderFactory(unittest.TestCase):
         # there already are 10 shares
         quantity = 150
         execution_style = MarketOrder()
-        time_in_force = 'DAY'
+        time_in_force = TimeInForce.DAY
         tolerance = {self.contract: 139}
 
         # tolerance is 139 and the difference is 140 -> we should buy new shares
@@ -149,7 +150,7 @@ class TestOrderFactory(unittest.TestCase):
     def test_order_target_value_tolerance1(self):
         # there already are 10 shares price per share is 10 so position value is 100
         execution_style = MarketOrder()
-        tif = 'DAY'
+        tif = TimeInForce.DAY
         tolerance = 5.0
         target_value = 113.0
 
@@ -161,7 +162,7 @@ class TestOrderFactory(unittest.TestCase):
     def test_order_target_value_tolerance2(self):
         # there already are 10 shares price per share is 10 so position value is 100
         execution_style = MarketOrder()
-        tif = 'DAY'
+        tif = TimeInForce.DAY
         tolerance = 5.0
         target_value = 219.0
 
@@ -173,7 +174,7 @@ class TestOrderFactory(unittest.TestCase):
     def test_order_target_value_tolerance3(self):
         # there already are 10 shares price per share is 10 so position value is 100
         execution_style = MarketOrder()
-        tif = 'DAY'
+        tif = TimeInForce.DAY
         tolerance = 11.0
         target_value = 110.0
 
@@ -184,7 +185,7 @@ class TestOrderFactory(unittest.TestCase):
     def test_order_target_value_tolerance4(self):
         # there already are 10 shares price per share is 10 so position value is 100
         execution_style = MarketOrder()
-        tif = 'DAY'
+        tif = TimeInForce.DAY
         tolerance = 11.0
         target_value = 110.999
 
@@ -195,7 +196,7 @@ class TestOrderFactory(unittest.TestCase):
     def test_order_target_value_tolerance5(self):
         # there already are 10 shares price per share is 10 so position value is 100
         execution_style = MarketOrder()
-        tif = 'DAY'
+        tif = TimeInForce.DAY
         tolerance = 10.0
         target_value = 90.1
 
@@ -206,7 +207,7 @@ class TestOrderFactory(unittest.TestCase):
     def test_order_target_value_tolerance6(self):
         # there already are 10 shares price per share is 10 so position value is 100
         execution_style = MarketOrder()
-        tif = 'DAY'
+        tif = TimeInForce.DAY
         tolerance = 10.0
         target_value = 89.9
 
@@ -217,7 +218,7 @@ class TestOrderFactory(unittest.TestCase):
     def test_order_target_value_tolerance7(self):
         # there already are 10 shares price per share is 10 so position value is 100
         execution_style = MarketOrder()
-        tif = 'DAY'
+        tif = TimeInForce.DAY
         tolerance = 9
         target_value = 90.9
 
@@ -228,7 +229,7 @@ class TestOrderFactory(unittest.TestCase):
     def test_order_target_value_tolerance8(self):
         # there already are 10 shares price per share is 10 so position value is 100
         execution_style = MarketOrder()
-        tif = 'DAY'
+        tif = TimeInForce.DAY
         tolerance = 10.0
         target_value = 45.0
 
@@ -239,7 +240,7 @@ class TestOrderFactory(unittest.TestCase):
     def test_order_target_value_tolerance9(self):
         # there already are 10 shares price per share is 10 so position value is 100
         execution_style = MarketOrder()
-        tif = 'DAY'
+        tif = TimeInForce.DAY
         tolerance = 10.0
         target_value = 9.0
 
@@ -250,7 +251,7 @@ class TestOrderFactory(unittest.TestCase):
     def test_order_target_value_tolerance10(self):
         # there already are 10 shares price per share is 10 so position value is 100
         execution_style = MarketOrder()
-        tif = 'DAY'
+        tif = TimeInForce.DAY
         tolerance = 10.99
         target_value = 111.0
 
@@ -261,7 +262,7 @@ class TestOrderFactory(unittest.TestCase):
     def test_order_target_percent_tolerance1(self):
         # there are 10 shares price per share is 10 so position value is 100, it corresponds to 10% of portfolio
         ex_style = MarketOrder()
-        tif = 'DAY'
+        tif = TimeInForce.DAY
         tolerance = 0.01
         target_value = 0.12
 
@@ -272,7 +273,7 @@ class TestOrderFactory(unittest.TestCase):
     def test_order_target_percent_tolerance2(self):
         # there are 10 shares price per share is 10 so position value is 100, it corresponds to 10% of portfolio
         ex_style = MarketOrder()
-        tif = 'DAY'
+        tif = TimeInForce.DAY
         tolerance = 0.01
         target_value = 0.11
 
@@ -282,7 +283,7 @@ class TestOrderFactory(unittest.TestCase):
     def test_order_target_percent_tolerance3(self):
         # there are 10 shares price per share is 10 so position value is 100, it corresponds to 10% of portfolio
         ex_style = MarketOrder()
-        tif = 'DAY'
+        tif = TimeInForce.DAY
         tolerance = 0.01
         target_value = 0.09
 
@@ -292,7 +293,7 @@ class TestOrderFactory(unittest.TestCase):
     def test_order_target_percent_tolerance4(self):
         # there are 10 shares price per share is 10 so position value is 100, it corresponds to 10% of portfolio
         ex_style = MarketOrder()
-        tif = 'DAY'
+        tif = TimeInForce.DAY
         tolerance = 0.01
         target_value = 0.08
 
@@ -303,7 +304,7 @@ class TestOrderFactory(unittest.TestCase):
     def test_order_target_percent_tolerance5(self):
         # there are 10 shares price per share is 10 so position value is 100, it corresponds to 10% of portfolio
         ex_style = MarketOrder()
-        tif = 'DAY'
+        tif = TimeInForce.DAY
         tolerance = 0.005
         target_value = 0.09
 
@@ -314,7 +315,7 @@ class TestOrderFactory(unittest.TestCase):
     def test_order_target_percent_tolerance6(self):
         # there are 10 shares price per share is 10 so position value is 100, it corresponds to 10% of portfolio
         ex_style = MarketOrder()
-        tif = 'DAY'
+        tif = TimeInForce.DAY
         tolerance = 0.02
         target_value = 0.5
 

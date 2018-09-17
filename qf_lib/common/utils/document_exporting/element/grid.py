@@ -88,7 +88,7 @@ class GridElement(Element):
         -------
         The ChartElement instance that was constructed for this chart.
         """
-        result = ChartElement(chart, self.mode, self.figsize, self.dpi, self.optimise, grid_proportion)
+        result = ChartElement(chart, self.figsize, self.dpi, self.optimise, grid_proportion)
         self._elements.append(result)
         return result
 
