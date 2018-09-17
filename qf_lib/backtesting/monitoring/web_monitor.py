@@ -43,8 +43,8 @@ class WebMonitor(AbstractMonitor):
         """
         pass
 
-    def record_trade(self, transaction: Transaction):
+    def record_transaction(self, transaction: Transaction):
         """
-        WebMonitor doesn't have to do anything with recording trades
+        WebMonitor doesn't have to do anything with recording Transactions
         """
         pass

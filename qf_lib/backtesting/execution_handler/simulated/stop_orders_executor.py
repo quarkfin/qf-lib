@@ -149,7 +149,7 @@ class StopOrdersExecutor(object):
         commission = self._commission_model.calculate_commission(quantity, fill_price)
 
         transaction = Transaction(timestamp, contract, quantity, fill_price, commission)
-        self._monitor.record_trade(transaction)
+        self._monitor.record_transaction(transaction)
 
         self._logger.info("Order executed. Transaction has been created:\n{:s}".format(str(transaction)))
         self._portfolio.transact_transaction(transaction)

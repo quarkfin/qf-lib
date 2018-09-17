@@ -58,7 +58,7 @@ for i in range(50):
     portfolio.portfolio_values.append(past_value + rand)
 
     monitor.end_of_day_update(date)
-    monitor.record_trade(transaction)
+    monitor.record_transaction(transaction)
     time.sleep(0.1)
 
 monitor.end_of_trading_update()

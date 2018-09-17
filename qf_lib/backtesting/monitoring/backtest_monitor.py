@@ -2,6 +2,7 @@
 from io import TextIOWrapper
 
 import matplotlib.pyplot as plt
+
 plt.ion()  # required for dynamic chart
 
 import csv
@@ -103,7 +104,7 @@ class BacktestMonitor(AbstractMonitor):
         """
         pass
 
-    def record_trade(self, transaction: Transaction):
+    def record_transaction(self, transaction: Transaction):
         """
         Print the trade to the CSV file and on the console
         """

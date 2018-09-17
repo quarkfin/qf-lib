@@ -55,8 +55,6 @@ class LightBacktestMonitor(BacktestMonitor):
         ta = TimeseriesAnalysis(portfolio_tms, frequency=Frequency.DAILY)
         print(TimeseriesAnalysis.values_in_table(ta))
 
-
-
-    def record_trade(self, transaction: Transaction):
+    def record_transaction(self, transaction: Transaction):
         """ Do not record trades to save execution time, for more details use BacktestMonitor"""
         pass

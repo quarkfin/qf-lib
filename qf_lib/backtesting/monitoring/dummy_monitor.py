@@ -19,5 +19,5 @@ class DummyMonitor(AbstractMonitor):
     def real_time_update(self, timestamp: datetime):
         pass
 
-    def record_trade(self, transaction: Transaction):
+    def record_transaction(self, transaction: Transaction):
         pass
