@@ -161,7 +161,7 @@ class DataHandler(DataProvider):
 
     def get_bar_for_today(self, tickers: Union[Ticker, Sequence[Ticker]]) -> Union[pd.Series, pd.DataFrame]:
         """
-        Gets the bar(s) for given Ticker(s) for today. If it's not available yet, None is returned.
+        Gets the bar(s) for given Ticker(s) for today. If the bar is not available yet, None is returned.
         """
         if not tickers:
             return pd.Series()
@@ -175,9 +175,8 @@ class DataHandler(DataProvider):
         if self.time_helper.datetime_of_latest_market_event(MarketCloseEvent) < current_datetime:
             last_available_bars = pd.DataFrame(index=tickers, columns=PriceField.ohlcv())
         else:
-            fields = PriceField.ohlcv()
             prices_data_array = self.get_price(
-                tickers=tickers, fields=fields, start_date=start_date, end_date=current_date
+                tickers=tickers, fields=PriceField.ohlcv(), start_date=start_date, end_date=current_date
             )  # type: QFDataArray
 
             last_available_bars = prices_data_array.loc[current_date, :, :].to_pandas()

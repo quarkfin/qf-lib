@@ -35,7 +35,6 @@ class SimulatedExecutionHandler(ExecutionHandler):
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
         self.data_handler = data_handler
-        self.timer = timer
         self.commission_model = commission_model
         self.contracts_to_tickers_mapper = contracts_to_tickers_mapper
         self.portfolio = portfolio
@@ -62,6 +61,7 @@ class SimulatedExecutionHandler(ExecutionHandler):
         order_id_list = []
 
         for order_style_type, orders_list in groupby(orders, lambda x: type(x.execution_style)):
+            orders_list = list(orders_list)
             if order_style_type == MarketOrder:
                 partial_order_id_list = self._market_orders_executor.accept_orders(orders_list)
             elif order_style_type == StopOrder:

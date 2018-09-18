@@ -32,8 +32,8 @@ class StopOrdersExecutor(object):
         self._portfolio = portfolio
 
         # mappings: order_id -> (order, ticker, price_when_order_accepted)
-        self._buy_stop_orders_data = {}  # type: Dict[int, Tuple[Order, Ticker]
-        self._sell_stop_orders_data = {}  # type: Dict[int, Tuple[Order, Ticker]
+        self._buy_stop_orders_data_dict = {}  # type: Dict[int, Tuple[Order, Ticker]
+        self._sell_stop_orders_data_dict = {}  # type: Dict[int, Tuple[Order, Ticker]
 
         self._logger = logging.getLogger(self.__class__.__name__)
 
@@ -54,7 +54,7 @@ class StopOrdersExecutor(object):
 
             if order.quantity < 0:
                 if stop_price < current_price:
-                    self._sell_stop_orders_data[order_id] = (order, ticker)
+                    self._sell_stop_orders_data_dict[order_id] = (order, ticker)
                 else:
                     raise ValueError(
                         "Incorrect stop price ({stop_price:5.2f}). "
@@ -64,7 +64,7 @@ class StopOrdersExecutor(object):
                         ))
             else:
                 if stop_price > current_price:
-                    self._buy_stop_orders_data[order_id] = (order, ticker)
+                    self._buy_stop_orders_data_dict[order_id] = (order, ticker)
                 else:
                     raise ValueError(
                         "Incorrect stop price ({stop_price:5.2f}). "
@@ -73,29 +73,31 @@ class StopOrdersExecutor(object):
                             stop_price=stop_price, current_price=current_price
                         ))
 
-            order.id = self._get_next_order_id()
+            order.id = next(self._order_id_generator)
             order.order_state = OrderState.AWAITING
             order_id_list.append(order_id)
 
         return order_id_list
 
     def cancel_all_open_orders(self):
-        self._buy_stop_orders_data.clear()
-        self._sell_stop_orders_data.clear()
+        self._buy_stop_orders_data_dict.clear()
+        self._sell_stop_orders_data_dict.clear()
 
     def cancel_order(self, order_id: int) -> Optional[Order]:
-        cancelled_order, _ = self._buy_stop_orders_data.pop(order_id, (None, None))
+        cancelled_order, _ = self._buy_stop_orders_data_dict.pop(order_id, (None, None))
         if cancelled_order is not None:
             return cancelled_order
 
-        cancelled_order, _ = self._sell_stop_orders_data.pop(order_id, (None, None))
+        cancelled_order, _ = self._sell_stop_orders_data_dict.pop(order_id, (None, None))
         if cancelled_order is not None:
             return cancelled_order
 
         return None
 
     def get_open_orders(self) -> List[Order]:
-        all_open_orders_data = chain(self._buy_stop_orders_data.values(), self._sell_stop_orders_data.values())
+        all_open_orders_data = chain(
+            self._buy_stop_orders_data_dict.values(), self._sell_stop_orders_data_dict.values()
+        )
         open_orders = [order for order, _ in all_open_orders_data]
         
         return open_orders
@@ -104,10 +106,12 @@ class StopOrdersExecutor(object):
         """
         Converts Orders into Transactions. Returns dictionary of unexecuted Orders (order_id -> Order)
         """
-        if not self._buy_stop_orders_data and not self._sell_stop_orders_data:
+        if not self._buy_stop_orders_data_dict and not self._sell_stop_orders_data_dict:
             return
 
-        all_open_orders_data = chain(self._buy_stop_orders_data.values(), self._sell_stop_orders_data.values())
+        buy_stop_orders_data = self._buy_stop_orders_data_dict.values()
+        sell_stop_orders_data = self._sell_stop_orders_data_dict.values()
+        all_open_orders_data = chain(buy_stop_orders_data, sell_stop_orders_data)
         tickers = [ticker for _, ticker in all_open_orders_data]
 
         current_bars_df = self._data_handler.get_bar_for_today(tickers)  # type: pd.DataFrame  # [tickers, fields]
@@ -115,16 +119,16 @@ class StopOrdersExecutor(object):
         unexecuted_sell_stop_orders_data_dict = {}
         unexecuted_buy_stop_orders_data_dict = {}
 
-        for order, ticker in self._sell_stop_orders_data:
+        for order, ticker in sell_stop_orders_data:
             low_price = current_bars_df.loc[ticker, PriceField.Low]
             stop_price = order.execution_style.stop_price
 
-            if not math.isnan(low_price) and low_price < stop_price:
+            if not math.isnan(low_price) and low_price <= stop_price:
                 self._execute_order(order)
             else:
                 unexecuted_sell_stop_orders_data_dict[order.id] = (order, ticker)
 
-        for order, ticker in self._buy_stop_orders_data:
+        for order, ticker in buy_stop_orders_data:
             high_price = current_bars_df.loc[ticker, PriceField.High]
             stop_price = order.execution_style.stop_price
 
@@ -133,8 +137,8 @@ class StopOrdersExecutor(object):
             else:
                 unexecuted_buy_stop_orders_data_dict[order.id] = (order, ticker)
 
-        self._sell_stop_orders_data = unexecuted_sell_stop_orders_data_dict
-        self._buy_stop_orders_data = unexecuted_buy_stop_orders_data_dict
+        self._sell_stop_orders_data_dict = unexecuted_sell_stop_orders_data_dict
+        self._buy_stop_orders_data_dict = unexecuted_buy_stop_orders_data_dict
 
     def _execute_order(self, order: Order):
         """

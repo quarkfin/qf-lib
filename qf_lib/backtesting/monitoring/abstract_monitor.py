@@ -38,7 +38,7 @@ class AbstractMonitor(metaclass=ABCMeta):
         raise NotImplementedError("Should implement end_of_trading_update()")
 
     @abstractmethod
-    def record_transaction(self, fills: Transaction):
+    def record_transaction(self, transaction: Transaction):
         """
         This method is called every time ExecutionHandler creates a new Transaction
         """
