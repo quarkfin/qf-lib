@@ -93,30 +93,30 @@ class Test_DataHandler_BarForToday(TestCase):
         self.fields_index = pd.Index(self.price_fields, name='fields')
 
     def test_after_market_close_when_bar_is_available_for_every_ticker(self):
-        self._assert_last_bars_are_correct("2009-12-28 16:00:00.000000", [
+        self._assert_bars_for_today_is_correct("2009-12-28 16:00:00.000000", [
             [25.0, 25.1, 25.2, 26.0, 25.3],  # MSFT 2009-12-28
             [27.0, 27.1, 27.2, 28.0, 27.3]   # APPL 2009-12-28
         ])
 
     def test_on_open_when_only_data_from_yesterday_available(self):
-        self._assert_last_bars_are_correct("2009-12-29 09:30:00.000000", [
+        self._assert_bars_for_today_is_correct("2009-12-29 09:30:00.000000", [
             [None, None, None, None, None],  # MSFT 2009-12-28
             [None, None, None, None, None]   # APPL 2009-12-28
         ])
 
     def test_in_the_middle_of_a_trading_session(self):
-        self._assert_last_bars_are_correct("2009-12-29 12:30:00.000000", [
+        self._assert_bars_for_today_is_correct("2009-12-29 12:30:00.000000", [
             [None, None, None, None, None],  # MSFT 2009-12-28
             [None, None, None, None, None]   # APPL 2009-12-28
         ])
 
     def test_at_market_close_when_data_available_for_the_second_ticker_only(self):
-        self._assert_last_bars_are_correct("2009-12-29 16:00:00.000000", [
+        self._assert_bars_for_today_is_correct("2009-12-29 16:00:00.000000", [
             [None, None, None, None, None],  # MSFT 2009-12-28
             [29.0, 29.1, 29.2, 30.0, 29.3]   # APPL 2009-12-29
         ])
 
-    def _assert_last_bars_are_correct(self, curr_time_str, expected_values):
+    def _assert_bars_for_today_is_correct(self, curr_time_str, expected_values):
         current_time = str_to_date(curr_time_str, DateFormat.FULL_ISO)
         self.timer.set_current_time(current_time)
         expected_dataframe = pd.DataFrame(data=expected_values, index=self.tickers_index, columns=self.fields_index)
