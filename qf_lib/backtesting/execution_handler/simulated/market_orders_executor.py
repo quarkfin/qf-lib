@@ -5,7 +5,6 @@ from typing import Dict, List, Sequence, Optional
 from qf_lib.backtesting.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.execution_handler.simulated.commission_models.commission_model import CommissionModel
-from qf_lib.backtesting.execution_handler.simulated.order_states import OrderState
 from qf_lib.backtesting.monitoring.abstract_monitor import AbstractMonitor
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
@@ -33,7 +32,6 @@ class MarketOrdersExecutor(object):
         order_id_list = []
         for order in orders:
             order.id = next(self._order_id_generator)
-            order.order_state = OrderState.AWAITING
 
             order_id_list.append(order.id)
             self._awaiting_orders[order.id] = order

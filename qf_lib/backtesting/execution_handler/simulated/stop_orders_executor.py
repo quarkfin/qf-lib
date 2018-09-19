@@ -8,7 +8,6 @@ import pandas as pd
 from qf_lib.backtesting.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.execution_handler.simulated.commission_models.commission_model import CommissionModel
-from qf_lib.backtesting.execution_handler.simulated.order_states import OrderState
 from qf_lib.backtesting.monitoring.abstract_monitor import AbstractMonitor
 from qf_lib.backtesting.order.execution_style import StopOrder
 from qf_lib.backtesting.order.order import Order
@@ -73,8 +72,7 @@ class StopOrdersExecutor(object):
                             stop_price=stop_price, current_price=current_price
                         ))
 
-            order.id = next(self._order_id_generator)
-            order.order_state = OrderState.AWAITING
+            order.id = order_id
             order_id_list.append(order_id)
 
         return order_id_list

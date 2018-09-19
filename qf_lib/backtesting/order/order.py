@@ -10,7 +10,7 @@ class Order(object):
     """
 
     def __init__(self, contract: Contract, quantity: int, execution_style: ExecutionStyle,
-                 time_in_force: TimeInForce, order_state: str=''):
+                 time_in_force: TimeInForce):
         """
         This __init__ shouldn't be used anywhere beyond this module. User OrderFactory for creating Order objects.
         """
@@ -19,7 +19,6 @@ class Order(object):
         self.quantity = quantity
         self.time_in_force = time_in_force
         self.execution_style = execution_style
-        self.order_state = order_state
 
     def __str__(self):
         return 'Order:\n' \
@@ -27,9 +26,8 @@ class Order(object):
                '\tcontract: {}\n' \
                '\tquantity: {}\n' \
                '\ttif: {}\n' \
-               '\texecution_style: {}\n' \
-               '\torder_state: {}\n'.format(
-                    self.id, str(self.contract), self.quantity, str(self.time_in_force), self.execution_style, self.order_state
+               '\texecution_style: {}\n'.format(
+                    self.id, str(self.contract), self.quantity, str(self.time_in_force), self.execution_style
                 )
 
     def __eq__(self, other):
@@ -47,8 +45,8 @@ class Order(object):
             return True
 
         # when both ids are none -> compare the values
-        return (self.contract, self.quantity, self.time_in_force, self.execution_style, self.order_state) == \
-               (other.contract, other.quantity, other.time_in_force, other.execution_style, other.order_state)
+        return (self.contract, self.quantity, self.time_in_force, self.execution_style) == \
+               (other.contract, other.quantity, other.time_in_force, other.execution_style)
 
     def __hash__(self):
-        return hash((self.contract, self.quantity, self.time_in_force, self.execution_style, self.order_state))
+        return hash((self.contract, self.quantity, self.time_in_force, self.execution_style))
