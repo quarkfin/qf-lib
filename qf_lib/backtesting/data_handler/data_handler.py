@@ -162,6 +162,16 @@ class DataHandler(DataProvider):
     def get_bar_for_today(self, tickers: Union[Ticker, Sequence[Ticker]]) -> Union[pd.Series, pd.DataFrame]:
         """
         Gets the bar(s) for given Ticker(s) for today. If the bar is not available yet, None is returned.
+
+        If the request for single Ticker was made, then the result is a pandas.Series indexed with PriceFields (OHLCV).
+        If the request for multiple Tickers was made, then the result has Tickers as an index and PriceFields
+        as columns.
+
+        Normally, on working days the method will return non-empty bars in the time between (inclusive) MarketCloseEvent
+        and midnight (exclusive).
+
+        On non-working days or on working days in the time between midnight (inclusive) and MarketClose (exclusive),
+        e.g. 12:00, the returned bars will contain Nones as values.
         """
         if not tickers:
             return pd.Series()
