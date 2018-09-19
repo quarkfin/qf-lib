@@ -38,9 +38,6 @@ class _MonitorMock(AbstractMonitor):
     def record_transaction(self, transaction: Transaction):
         self.transactions.append(transaction)
 
-    def get_recorded_transactions(self):
-        return list(self.transactions)
-
 
 class TestStopLossExecutionStyle(TestCase):
     MSFT_TICKER_STR = "MSFT US Equity"
