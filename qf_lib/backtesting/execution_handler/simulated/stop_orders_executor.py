@@ -30,7 +30,7 @@ class StopOrdersExecutor(object):
         self._monitor = monitor
         self._portfolio = portfolio
 
-        # mappings: order_id -> (order, ticker, price_when_order_accepted)
+        # mappings: order_id -> (order, ticker)
         self._buy_stop_orders_data_dict = {}  # type: Dict[int, Tuple[Order, Ticker]
         self._sell_stop_orders_data_dict = {}  # type: Dict[int, Tuple[Order, Ticker]
 
