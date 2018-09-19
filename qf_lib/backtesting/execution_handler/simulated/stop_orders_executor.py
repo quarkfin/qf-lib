@@ -95,7 +95,9 @@ class StopOrdersExecutor(object):
     def get_open_orders(self) -> List[Order]:
         all_open_orders_data = chain(
             self._buy_stop_orders_data_dict.values(), self._sell_stop_orders_data_dict.values()
-        )
+        )  # type: Sequence[Tuple[Order, Ticker]]
+
+        # all_open_orders is a list containing tuples (order, ticker), where ticker corresponds to order.contract
         open_orders = [order for order, _ in all_open_orders_data]
         
         return open_orders
