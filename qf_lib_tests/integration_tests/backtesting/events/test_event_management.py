@@ -72,7 +72,7 @@ class TestEventManagement(TestCase):
 
     def test_event_management(self):
         timer = SettableTimer(initial_time=str_to_date("2018-04-10 00:00:00.000000", DateFormat.FULL_ISO))
-        end_date = str_to_date("2018-04-11")
+        end_date = str_to_date("2018-04-10")
 
         notifiers = Notifiers(timer)
 
@@ -98,7 +98,7 @@ class TestEventManagement(TestCase):
             (EmptyQueueEvent, str_to_date("2018-04-10 16:00:00.000000", DateFormat.FULL_ISO)),
             (AfterMarketCloseEvent, str_to_date("2018-04-10 18:00:00.000000", DateFormat.FULL_ISO)),
             (EmptyQueueEvent, str_to_date("2018-04-10 18:00:00.000000", DateFormat.FULL_ISO)),
-            (EndTradingEvent, str_to_date("2018-04-11 00:00:00.000000", DateFormat.FULL_ISO)),
+            (EndTradingEvent, str_to_date("2018-04-10 23:59:59.999999", DateFormat.FULL_ISO)),
         ]
 
         actual_events = [(type(event), event.time) for event in listener.registered_events]
