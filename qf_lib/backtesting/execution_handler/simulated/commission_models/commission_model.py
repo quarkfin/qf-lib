@@ -5,5 +5,5 @@ from qf_lib.backtesting.order.order import Order
 
 class CommissionModel(object, metaclass=ABCMeta):
     @abstractmethod
-    def calculate_commission(self, order: Order, fill_price: float):
+    def calculate_commission(self, order: Order, fill_price: float) -> float:
         pass

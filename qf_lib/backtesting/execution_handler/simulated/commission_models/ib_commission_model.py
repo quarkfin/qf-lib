@@ -10,7 +10,7 @@ class IBCommissionModel(CommissionModel):
     https://www.interactivebrokers.co.uk/en/index.php?f=1590&p=stocks1
     """
 
-    def calculate_commission(self, order: Order, fill_price: float):
+    def calculate_commission(self, order: Order, fill_price: float) -> float:
         quantity = order.quantity
         commission = min(
             0.5 * fill_price * quantity,
