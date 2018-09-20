@@ -115,7 +115,6 @@ class BacktestTradingSession(object):
         self.time_flow_controller = time_flow_controller
         self.broker = broker
 
-
     @staticmethod
     def _create_event_manager(timer, notifiers: Notifiers):
         events_manager = EventManager(timer)

@@ -40,19 +40,22 @@ class BacktestTimeFlowController(TimeFlowController):
         super().__init__(event_manager, empty_queue_event_notifier)
         self.scheduler = scheduler
         self.settable_timer = settable_timer
-        self.backtest_end_date = backtest_end_date
+        self.backtest_end_datetime = self._end_of_the_day(backtest_end_date)
 
     def generate_time_event(self):
         time_event = self.scheduler.get_next_time_event()
         next_time_of_event = time_event.time
 
-        if next_time_of_event > self.backtest_end_date:
-            self.event_manager.publish(EndTradingEvent(self.backtest_end_date))
+        if next_time_of_event > self.backtest_end_datetime:
+            self.event_manager.publish(EndTradingEvent(self.backtest_end_datetime))
         else:
             # because it's a backtest we don't really need to wait until the time of next TimeEvent; we can simply
             # fast-forward the timer to that time
             self.settable_timer.set_current_time(next_time_of_event)
             self.event_manager.publish(time_event)
+
+    def _end_of_the_day(self, end_date: datetime):
+        return datetime(end_date.year, end_date.month, end_date.day, 23, 59, 59, 999999)
 
 
 class LiveSessionTimeFlowController(TimeFlowController):
