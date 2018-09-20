@@ -42,10 +42,12 @@ class StopOrdersExecutor(object):
             self._contracts_to_tickers_mapper.contract_to_ticker(order.contract) for order in orders
         ]
 
-        prices_at_acceptance_time = self._data_handler.get_last_available_price(tickers)
+        unique_tickers_list = list(set(tickers))
+        prices_at_acceptance_time = self._data_handler.get_last_available_price(unique_tickers_list)
 
         order_id_list = []
-        for order, ticker, current_price in zip(orders, tickers, list(prices_at_acceptance_time.values)):
+        for order, ticker in zip(orders, tickers):
+            current_price = prices_at_acceptance_time[ticker]
             execution_style = order.execution_style  # type: StopOrder
             stop_price = execution_style.stop_price
 
@@ -114,7 +116,10 @@ class StopOrdersExecutor(object):
         all_open_orders_data = chain(buy_stop_orders_data, sell_stop_orders_data)
         tickers = [ticker for _, ticker in all_open_orders_data]
 
-        current_bars_df = self._data_handler.get_bar_for_today(tickers)  # type: pd.DataFrame  # [tickers, fields]
+        unique_tickers = list(set(tickers))
+        current_bars_df = self._data_handler.get_bar_for_today(
+            unique_tickers
+        )  # type: pd.DataFrame  # DataFrame(index=tickers, columns=fields)
 
         unexecuted_sell_stop_orders_data_dict = {}
         unexecuted_buy_stop_orders_data_dict = {}

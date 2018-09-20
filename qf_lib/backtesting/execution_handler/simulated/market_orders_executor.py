@@ -62,7 +62,8 @@ class MarketOrdersExecutor(object):
 
         tickers = [self._contracts_to_tickers_mapper.contract_to_ticker(order.contract) for order in market_orders_list]
 
-        current_prices_series = self._data_handler.get_current_price(tickers)
+        unique_tickers = list(set(tickers))
+        current_prices_series = self._data_handler.get_current_price(unique_tickers)
         unexecuted_orders_dict = {}  # type: Dict[int, Order]
 
         for order, ticker in zip(market_orders_list, tickers):

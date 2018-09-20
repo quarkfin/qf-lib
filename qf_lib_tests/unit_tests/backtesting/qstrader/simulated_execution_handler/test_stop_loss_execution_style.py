@@ -64,16 +64,19 @@ class TestStopLossExecutionStyle(TestCase):
                                                       self.portfolio)
 
         self._set_current_msft_price(100.0)
-        self.stop_loss_order = Order(self.msft_contract, quantity=-1, execution_style=StopOrder(95.00),
-                                     time_in_force=TimeInForce.DAY)
-        self.exec_hanlder.accept_orders([self.stop_loss_order])
+        self.stop_loss_order_1 = Order(self.msft_contract, quantity=-1, execution_style=StopOrder(95.00),
+                                       time_in_force=TimeInForce.GOOD_TILL_CANCEL)
+        self.stop_loss_order_2 = Order(self.msft_contract, quantity=-1, execution_style=StopOrder(90.00),
+                                       time_in_force=TimeInForce.GOOD_TILL_CANCEL)
 
-    def test_no_market_orders_executed_because_non_were_made(self):
+        self.exec_hanlder.accept_orders([self.stop_loss_order_1, self.stop_loss_order_2])
+
+    def test_no_orders_executed_on_market_open(self):
         self.exec_hanlder.on_market_open(...)
         verifyZeroInteractions(self.portfolio, self.spied_monitor)
 
         actual_orders = self.exec_hanlder.get_open_orders()
-        expected_orders = [self.stop_loss_order]
+        expected_orders = [self.stop_loss_order_1, self.stop_loss_order_2]
         assert_lists_equal(expected_orders, actual_orders)
 
     def test_order_not_executed_when_stop_price_not_hit(self):
@@ -82,7 +85,7 @@ class TestStopLossExecutionStyle(TestCase):
         verifyZeroInteractions(self.portfolio, self.spied_monitor)
 
         actual_orders = self.exec_hanlder.get_open_orders()
-        exoected_orders = [self.stop_loss_order]
+        exoected_orders = [self.stop_loss_order_1, self.stop_loss_order_2]
         assert_lists_equal(exoected_orders, actual_orders)
 
     def test_order_not_executed_when_bar_for_today_is_incomplete(self):
@@ -91,14 +94,14 @@ class TestStopLossExecutionStyle(TestCase):
         verifyZeroInteractions(self.portfolio, self.spied_monitor)
 
         actual_orders = self.exec_hanlder.get_open_orders()
-        exoected_orders = [self.stop_loss_order]
+        exoected_orders = [self.stop_loss_order_1, self.stop_loss_order_2]
         assert_lists_equal(exoected_orders, actual_orders)
 
-    def test_order_executed_when_stop_price_hit(self):
+    def test_one_order_executed_when_one_stop_price_hit(self):
         self._set_bar_for_today(open=100.0, high=110.0, low=94.0, close=105.0, volume=100000000.0)
         self.exec_hanlder.on_market_close(...)
 
-        assert_lists_equal([], self.exec_hanlder.get_open_orders())
+        assert_lists_equal([self.stop_loss_order_2], self.exec_hanlder.get_open_orders())
         verify(self.spied_monitor, times=1).record_transaction(...)
         verify(self.portfolio, times=1).transact_transaction(...)
 
@@ -107,12 +110,34 @@ class TestStopLossExecutionStyle(TestCase):
 
         self.assertEquals(self.msft_contract, actual_transaction.contract)
         self.assertEquals(-1, actual_transaction.quantity)
-        self.assertEquals(self.stop_loss_order.execution_style.stop_price, actual_transaction.price)
+        self.assertEquals(self.stop_loss_order_1.execution_style.stop_price, actual_transaction.price)
         self.assertEquals(0.0, actual_transaction.commission)
+
+    def test_both_orders_executed_when_both_stop_prices_hit(self):
+        self._set_bar_for_today(open=100.0, high=110.0, low=90.0, close=105.0, volume=100000000.0)
+        self.exec_hanlder.on_market_close(...)
+
+        assert_lists_equal([], self.exec_hanlder.get_open_orders())
+        verify(self.spied_monitor, times=2).record_transaction(...)
+        verify(self.portfolio, times=2).transact_transaction(...)
+
+        self.assertEquals(2, len(self.monitor.transactions))
+
+        actual_transaction_1 = self.monitor.transactions[0]
+        self.assertEquals(self.msft_contract, actual_transaction_1.contract)
+        self.assertEquals(-1, actual_transaction_1.quantity)
+        self.assertEquals(self.stop_loss_order_1.execution_style.stop_price, actual_transaction_1.price)
+        self.assertEquals(0.0, actual_transaction_1.commission)
+
+        actual_transaction_2 = self.monitor.transactions[1]
+        self.assertEquals(self.msft_contract, actual_transaction_2.contract)
+        self.assertEquals(-1, actual_transaction_2.quantity)
+        self.assertEquals(self.stop_loss_order_2.execution_style.stop_price, actual_transaction_2.price)
+        self.assertEquals(0.0, actual_transaction_2.commission)
 
     def _set_current_msft_price(self, price):
         when(self.data_handler).get_last_available_price([self.msft_ticker]).thenReturn(
-            pd.Series(data=[price], index=pd.DatetimeIndex([self.start_date]))
+            pd.Series(data=[price], index=pd.Index([self.msft_ticker]), name=self.start_date)
         )
 
     def _set_bar_for_today(self, open, high, low, close, volume):
