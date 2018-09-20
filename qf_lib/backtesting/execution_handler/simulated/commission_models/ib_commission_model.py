@@ -1,4 +1,5 @@
 from qf_lib.backtesting.execution_handler.simulated.commission_models.commission_model import CommissionModel
+from qf_lib.backtesting.order.order import Order
 
 
 class IBCommissionModel(CommissionModel):
@@ -9,7 +10,8 @@ class IBCommissionModel(CommissionModel):
     https://www.interactivebrokers.co.uk/en/index.php?f=1590&p=stocks1
     """
 
-    def calculate_commission(self, quantity, fill_price):
+    def calculate_commission(self, order: Order, fill_price: float):
+        quantity = order.quantity
         commission = min(
             0.5 * fill_price * quantity,
             max(1.0, 0.005 * quantity)

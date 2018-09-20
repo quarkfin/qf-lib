@@ -85,7 +85,7 @@ class MarketOrdersExecutor(object):
         quantity = order.quantity
 
         fill_price = self._calculate_fill_price(order, security_price)
-        commission = self._commission_model.calculate_commission(quantity, fill_price)
+        commission = self._commission_model.calculate_commission(order, fill_price)
 
         transaction = Transaction(timestamp, contract, quantity, fill_price, commission)
         self._monitor.record_transaction(transaction)

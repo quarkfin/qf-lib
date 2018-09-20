@@ -1,4 +1,5 @@
 from qf_lib.backtesting.execution_handler.simulated.commission_models.commission_model import CommissionModel
+from qf_lib.backtesting.order.order import Order
 
 
 class FixedCommissionModel(CommissionModel):
@@ -15,5 +16,5 @@ class FixedCommissionModel(CommissionModel):
         """
         self.commission = commission
 
-    def calculate_commission(self, quantity, fill_price):
+    def calculate_commission(self, order: Order, fill_price: float):
         return self.commission
