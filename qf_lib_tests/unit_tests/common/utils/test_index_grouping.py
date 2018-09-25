@@ -4,22 +4,82 @@ from unittest import TestCase
 import pandas as pd
 
 from qf_lib.common.enums.frequency import Frequency
+from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.returns.index_grouping import get_grouping_for_frequency
 
 
 class TestIndexGrouping(TestCase):
     def setUp(self):
-        pass
+        self.index = pd.bdate_range(start='2014-12-15', end='2016-01-07')
+        self.series = pd.Series(index=self.index, data=self.index)
 
-    def test_get_grouping_for_frequency(self):
-        index = pd.date_range(start='2014-12-20', end='2015-01-07', freq='D')
-        data = index.year
-        series = pd.Series(data, index)
+    def test_daily_grouping(self):
+        daily_grouping = get_grouping_for_frequency(Frequency.DAILY)
+        actual_result = list(self.series.groupby(daily_grouping))
 
-        grouping = get_grouping_for_frequency(Frequency.WEEKLY)
-        actual_result = series.groupby(grouping)
+        day_ids, _ = zip(*actual_result)
+        self.assertEquals(len(self.index), len(day_ids))
 
-        # TODO make an assertion (what is the expected result)
+    def test_weekly_grouping(self):
+        weekly_grouping = get_grouping_for_frequency(Frequency.WEEKLY)
+        actual_result = list(self.series.groupby(weekly_grouping))
+
+        # first week should contain everything up to 2014-12-28 and should belong to the last week of the 2014
+        week_id, series = actual_result[0]
+        self.assertEquals((2014, 51), week_id)
+        self.assertEquals(series.min(), str_to_date("2014-12-15"))
+        self.assertEquals(series.max(), str_to_date("2014-12-19"))
+
+        week_id, series = actual_result[1]
+        self.assertEquals((2014, 52), week_id)
+        self.assertEquals(series.min(), str_to_date("2014-12-22"))
+        self.assertEquals(series.max(), str_to_date("2014-12-26"))
+
+        # dates from range 2014-12-29 to 2015-01-04 should be in the same week
+        week_id, series = actual_result[2]
+        self.assertEquals((2015, 1), week_id)
+        self.assertEquals(series.min(), str_to_date("2014-12-29"))
+        self.assertEquals(series.max(), str_to_date("2015-01-02"))
+
+    def test_monthly_grouping(self):
+        monthly_grouping = get_grouping_for_frequency(Frequency.MONTHLY)
+        actual_result = list(self.series.groupby(monthly_grouping))
+
+        month_id, series = actual_result[0]
+        self.assertEquals(month_id, (2014, 12))
+        self.assertEquals(series.min(), str_to_date("2014-12-15"))
+        self.assertEquals(series.max(), str_to_date("2014-12-31"))
+
+        month_id, series = actual_result[1]
+        self.assertEquals(month_id, (2015, 1))
+        self.assertEquals(series.min(), str_to_date("2015-01-01"))
+        self.assertEquals(series.max(), str_to_date("2015-01-30"))
+
+        month_id, series = actual_result[-1]
+        self.assertEquals(month_id, (2016, 1))
+        self.assertEquals(series.min(), str_to_date("2016-01-01"))
+        self.assertEquals(series.max(), str_to_date("2016-01-07"))
+
+        self.assertEquals(14, len(actual_result))
+
+    def test_yearly_grouping(self):
+        yearly_grouping = get_grouping_for_frequency(Frequency.YEARLY)
+        actual_result = list(self.series.groupby(yearly_grouping))
+
+        year, series = actual_result[0]
+        self.assertEquals(year, 2014)
+        self.assertEquals(series.min(), str_to_date("2014-12-15"))
+        self.assertEquals(series.max(), str_to_date("2014-12-31"))
+
+        year, series = actual_result[1]
+        self.assertEquals(year, 2015)
+        self.assertEquals(series.min(), str_to_date("2015-01-01"))
+        self.assertEquals(series.max(), str_to_date("2015-12-31"))
+
+        year, series = actual_result[2]
+        self.assertEquals(year, 2016)
+        self.assertEquals(series.min(), str_to_date("2016-01-01"))
+        self.assertEquals(series.max(), str_to_date("2016-01-07"))
 
 
 if __name__ == '__main__':
