@@ -105,13 +105,13 @@ class TestStopLossExecutionStyle(TestCase):
         verify(self.spied_monitor, times=1).record_transaction(...)
         verify(self.portfolio, times=1).transact_transaction(...)
 
-        self.assertEquals(1, len(self.monitor.transactions))
+        self.assertEqual(1, len(self.monitor.transactions))
         actual_transaction = self.monitor.transactions[0]
 
-        self.assertEquals(self.msft_contract, actual_transaction.contract)
-        self.assertEquals(-1, actual_transaction.quantity)
-        self.assertEquals(self.stop_loss_order_1.execution_style.stop_price, actual_transaction.price)
-        self.assertEquals(0.0, actual_transaction.commission)
+        self.assertEqual(self.msft_contract, actual_transaction.contract)
+        self.assertEqual(-1, actual_transaction.quantity)
+        self.assertEqual(self.stop_loss_order_1.execution_style.stop_price, actual_transaction.price)
+        self.assertEqual(0.0, actual_transaction.commission)
 
     def test_both_orders_executed_when_both_stop_prices_hit(self):
         self._set_bar_for_today(open=100.0, high=110.0, low=90.0, close=105.0, volume=100000000.0)
@@ -121,19 +121,19 @@ class TestStopLossExecutionStyle(TestCase):
         verify(self.spied_monitor, times=2).record_transaction(...)
         verify(self.portfolio, times=2).transact_transaction(...)
 
-        self.assertEquals(2, len(self.monitor.transactions))
+        self.assertEqual(2, len(self.monitor.transactions))
 
         actual_transaction_1 = self.monitor.transactions[0]
-        self.assertEquals(self.msft_contract, actual_transaction_1.contract)
-        self.assertEquals(-1, actual_transaction_1.quantity)
-        self.assertEquals(self.stop_loss_order_1.execution_style.stop_price, actual_transaction_1.price)
-        self.assertEquals(0.0, actual_transaction_1.commission)
+        self.assertEqual(self.msft_contract, actual_transaction_1.contract)
+        self.assertEqual(-1, actual_transaction_1.quantity)
+        self.assertEqual(self.stop_loss_order_1.execution_style.stop_price, actual_transaction_1.price)
+        self.assertEqual(0.0, actual_transaction_1.commission)
 
         actual_transaction_2 = self.monitor.transactions[1]
-        self.assertEquals(self.msft_contract, actual_transaction_2.contract)
-        self.assertEquals(-1, actual_transaction_2.quantity)
-        self.assertEquals(self.stop_loss_order_2.execution_style.stop_price, actual_transaction_2.price)
-        self.assertEquals(0.0, actual_transaction_2.commission)
+        self.assertEqual(self.msft_contract, actual_transaction_2.contract)
+        self.assertEqual(-1, actual_transaction_2.quantity)
+        self.assertEqual(self.stop_loss_order_2.execution_style.stop_price, actual_transaction_2.price)
+        self.assertEqual(0.0, actual_transaction_2.commission)
 
     def _set_current_msft_price(self, price):
         when(self.data_handler).get_last_available_price([self.msft_ticker]).thenReturn(
