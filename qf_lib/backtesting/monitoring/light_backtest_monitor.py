@@ -1,18 +1,19 @@
 # it is important to import the matplotlib first and then switch the interactive/dynamic mode on.
 import matplotlib.pyplot as plt
-
-from qf_lib.common.enums.frequency import Frequency
-from qf_lib.timeseries_analysis.timeseries_analysis import TimeseriesAnalysis
-
 plt.ion()  # required for dynamic chart
 
+from qf_lib.common.tearsheets.tearsheet_without_benchmark import TearsheetWithoutBenchmark
+from qf_lib.common.enums.frequency import Frequency
+from qf_lib.timeseries_analysis.timeseries_analysis import TimeseriesAnalysis
 from qf_lib.backtesting.monitoring.backtest_monitor import BacktestMonitor
 from qf_lib.common.utils.excel.excel_exporter import ExcelExporter
 from qf_lib.backtesting.transaction import Transaction
 from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.settings import Settings
-from datetime import datetime
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.backtesting.backtest_result.backtest_result import BacktestResult
+
+from datetime import datetime
 from os import path
 
 
@@ -29,6 +30,7 @@ class LightBacktestMonitor(BacktestMonitor):
 
         self._nr_of_days = 10
         self._ctr = 0
+        self.logger = qf_logger.getChild(self.__class__.__name__)
 
     def end_of_day_update(self, timestamp: datetime=None):
         """
@@ -41,19 +43,37 @@ class LightBacktestMonitor(BacktestMonitor):
 
     def end_of_trading_update(self, _: datetime=None):
         """
-        Saves the timeseries of the portfolio in the excel file
+        Saves the results of the backtest
         """
+
+        try:  # export a PDF with charts
+            portfolio_tms = self.backtest_result.portfolio.get_portfolio_timeseries()
+            portfolio_tms.name = self.backtest_result.backtest_name
+            tearsheet = TearsheetWithoutBenchmark(
+                self._settings, self._pdf_exporter, portfolio_tms, title=portfolio_tms.name)
+            tearsheet.build_document()
+            tearsheet.save()
+        except Exception as ex:
+            self.logger.error("Error while exporting to PDF: " + str(ex))
+
         portfolio_tms = self.backtest_result.portfolio.get_portfolio_timeseries()
         portfolio_tms.name = self.backtest_result.backtest_name
 
-        xlsx_filename = "{}.xlsx".format(self._file_name_template)
-        relative_file_path = path.join("timeseries", xlsx_filename)
-        self._excel_exporter.export_container(portfolio_tms, relative_file_path,
-                                              starting_cell='A1', include_column_names=True)
-        self._close_csv_file()
+        try:  # export a timeseries to Excel
+            xlsx_filename = "{}.xlsx".format(self._file_name_template)
+            relative_file_path = path.join("timeseries", xlsx_filename)
+            self._excel_exporter.export_container(portfolio_tms, relative_file_path,
+                                                  starting_cell='A1', include_column_names=True)
+        except Exception as ex:
+            self.logger.error("Error while exporting to Excel: " + str(ex))
 
-        ta = TimeseriesAnalysis(portfolio_tms, frequency=Frequency.DAILY)
-        print(TimeseriesAnalysis.values_in_table(ta))
+        try:  # print stats to the console
+            ta = TimeseriesAnalysis(portfolio_tms, frequency=Frequency.DAILY)
+            print(TimeseriesAnalysis.values_in_table(ta))
+        except Exception as ex:
+            self.logger.error("Error while calculating TimeseriesAnalysis: " + str(ex))
+
+        self._close_csv_file()
 
     def record_transaction(self, transaction: Transaction):
         """ Do not record trades to save execution time, for more details use BacktestMonitor"""
