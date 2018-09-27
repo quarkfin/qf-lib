@@ -112,8 +112,15 @@ class Test_DataHandler_BarForToday(TestCase):
 
     def test_at_market_close_when_data_available_for_the_second_ticker_only(self):
         self._assert_bars_for_today_is_correct("2009-12-29 16:00:00.000000", [
-            [None, None, None, None, None],  # MSFT 2009-12-28
+            [None, None, None, None, None],  # MSFT 2009-12-29
             [29.0, 29.1, 29.2, 30.0, 29.3]   # APPL 2009-12-29
+        ])
+
+    def test_at_market_close_after_weekend(self):
+        # 2010-01-04
+        self._assert_bars_for_today_is_correct("2010-01-04 16:00:00.000000", [
+            [None, None, None, None, None],  # MSFT 2009-12-28
+            [None, None, None, None, None]   # APPL 2009-12-29
         ])
 
     def _assert_bars_for_today_is_correct(self, curr_time_str, expected_values):

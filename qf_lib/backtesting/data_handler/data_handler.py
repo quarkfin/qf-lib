@@ -189,7 +189,12 @@ class DataHandler(DataProvider):
                 tickers=tickers, fields=PriceField.ohlcv(), start_date=start_date, end_date=current_date
             )  # type: QFDataArray
 
-            last_available_bars = prices_data_array.loc[current_date, :, :].to_pandas()
+            if current_date in prices_data_array.dates.to_index():
+                # to_index used in the line above as a fix (xarray doesn't handle the "contains" check properly,
+                # It thinks that datetime(some_date) != numpy.datetime64(some_date) because of different types)
+                last_available_bars = prices_data_array.loc[current_date, :, :].to_pandas()
+            else:
+                return pd.DataFrame(index=tickers, columns=PriceField.ohlcv())
 
         if was_single_ticker_provided:
             last_available_bars = last_available_bars.iloc[0, :]
