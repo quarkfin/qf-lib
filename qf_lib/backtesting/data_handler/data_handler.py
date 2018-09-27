@@ -189,7 +189,10 @@ class DataHandler(DataProvider):
                 tickers=tickers, fields=PriceField.ohlcv(), start_date=start_date, end_date=current_date
             )  # type: QFDataArray
 
-            last_available_bars = prices_data_array.loc[current_date, :, :].to_pandas()
+            if current_date in prices_data_array.dates:
+                last_available_bars = prices_data_array.loc[current_date, :, :].to_pandas()
+            else:
+                return pd.DataFrame(index=tickers, columns=PriceField.ohlcv())
 
         if was_single_ticker_provided:
             last_available_bars = last_available_bars.iloc[0, :]
