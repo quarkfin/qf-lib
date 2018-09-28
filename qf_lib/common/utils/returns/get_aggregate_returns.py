@@ -30,6 +30,12 @@ def get_aggregate_returns(series: QFSeries, convert_to: Frequency, multi_index: 
     simple_rets = series.to_simple_returns()
     grouping = get_grouping_for_frequency(convert_to)
 
+    # fix for grouping with multi-index (whenever a tuple is identifying a group.
+    # Example: in weekly grouping a group could be identified by a tuple (2014, 52). Then the whole series would be
+    # identified by a multi-level index (dates, dates) which is forbidden (names of levels must be unique).
+    # Ideally each grouping would define names of the levels, e.g. (year, week) but I don't know
+    simple_rets.index.name = None
+
     aggregated_series = simple_rets.groupby(grouping).apply(lambda rets: rets.total_cumulative_return())
     aggregated_series = cast_series(aggregated_series, SimpleReturnsSeries)
 
