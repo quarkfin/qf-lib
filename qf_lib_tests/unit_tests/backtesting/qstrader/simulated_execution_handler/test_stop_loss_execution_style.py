@@ -65,9 +65,9 @@ class TestStopLossExecutionStyle(TestCase):
 
         self._set_current_msft_price(100.0)
         self.stop_loss_order_1 = Order(self.msft_contract, quantity=-1, execution_style=StopOrder(95.00),
-                                       time_in_force=TimeInForce.GOOD_TILL_CANCEL)
+                                       time_in_force=TimeInForce.GTC)
         self.stop_loss_order_2 = Order(self.msft_contract, quantity=-1, execution_style=StopOrder(90.00),
-                                       time_in_force=TimeInForce.GOOD_TILL_CANCEL)
+                                       time_in_force=TimeInForce.GTC)
 
         self.exec_hanlder.accept_orders([self.stop_loss_order_1, self.stop_loss_order_2])
 

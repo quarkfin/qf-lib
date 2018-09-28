@@ -10,7 +10,7 @@ class Order(object):
     """
 
     def __init__(self, contract: Contract, quantity: int, execution_style: ExecutionStyle,
-                 time_in_force: TimeInForce):
+                 time_in_force: TimeInForce, order_state=""):
         """
         This __init__ shouldn't be used anywhere beyond this module. User OrderFactory for creating Order objects.
         """
@@ -19,6 +19,7 @@ class Order(object):
         self.quantity = quantity
         self.time_in_force = time_in_force
         self.execution_style = execution_style
+        self.order_state = order_state
 
     def __str__(self):
         return 'Order:\n' \
@@ -26,8 +27,10 @@ class Order(object):
                '\tcontract: {}\n' \
                '\tquantity: {}\n' \
                '\ttif: {}\n' \
-               '\texecution_style: {}\n'.format(
-                    self.id, str(self.contract), self.quantity, str(self.time_in_force), self.execution_style
+               '\texecution_style: {}\n' \
+               '\torder_state: {}\n'.format(
+                    self.id, str(self.contract), self.quantity, str(self.time_in_force),
+                    self.execution_style, self.order_state
                 )
 
     def __eq__(self, other):

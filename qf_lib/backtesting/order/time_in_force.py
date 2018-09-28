@@ -2,7 +2,7 @@ from enum import Enum
 
 
 class TimeInForce(Enum):
-    GOOD_TILL_CANCEL = 1,
+    GTC = 1,
     """
     Order stays open until it is cancelled.
     """

@@ -28,7 +28,7 @@ class LightBacktestMonitor(BacktestMonitor):
                  pdf_exporter: PDFExporter, excel_exporter: ExcelExporter):
         super().__init__(backtest_result, settings, pdf_exporter, excel_exporter)
 
-        self._nr_of_days = 10
+        self._nr_of_days = 20
         self._ctr = 0
         self.logger = qf_logger.getChild(self.__class__.__name__)
 

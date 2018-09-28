@@ -51,7 +51,7 @@ class BuyAndHoldStrategy(object):
     def calculate_signals(self):
         if not self.invested:
             orders = self.order_factory.percent_orders({self.MICROSOFT_CONTRACT: 1.0}, MarketOrder(),
-                                                       TimeInForce.GOOD_TILL_CANCEL)
+                                                       TimeInForce.GTC)
             self.broker.place_orders(orders)
             self.invested = True
 

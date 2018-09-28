@@ -13,13 +13,14 @@ from qf_lib.backtesting.portfolio.position import Position
 from qf_lib.common.exceptions.broker_exceptions import BrokerException, OrderCancellingException
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.interactive_brokers.ib_wrapper import IBWrapper
+from qf_lib.backtesting.contract.contract import Contract
 
 
 class IBBroker(Broker):
     def __init__(self):
         self.logger = qf_logger.getChild(self.__class__.__name__)
         self.lock = Lock()
-        self.waiting_time = 5  # expressed in seconds
+        self.waiting_time = 10  # expressed in seconds
         self.action_event_lock = Event()
         self.wrapper = IBWrapper(self.action_event_lock)
         self.client = EClient(wrapper=self.wrapper)
@@ -136,7 +137,7 @@ class IBBroker(Broker):
         self.action_event_lock.clear()
         return wait_result
 
-    def _to_ib_contract(self, contract):
+    def _to_ib_contract(self, contract: Contract):
         ib_contract = IBContract()
         ib_contract.symbol = contract.symbol
         ib_contract.secType = contract.security_type
@@ -163,7 +164,7 @@ class IBBroker(Broker):
         return ib_order
 
     def _map_to_tif_str(self, time_in_force):
-        if time_in_force == TimeInForce.GOOD_TILL_CANCEL:
+        if time_in_force == TimeInForce.GTC:
             tif_str = "GTC"
         elif time_in_force == TimeInForce.DAY:
             tif_str = "DAY"

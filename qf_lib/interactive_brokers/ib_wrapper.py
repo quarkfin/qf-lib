@@ -11,6 +11,7 @@ from ibapi.wrapper import EWrapper
 from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.order.execution_style import StopOrder, MarketOrder
 from qf_lib.backtesting.order.order import Order
+from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.backtesting.portfolio.broker_positon import BrokerPosition
 from qf_lib.backtesting.portfolio.position import Position
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
@@ -97,26 +98,35 @@ class IBWrapper(EWrapper):
     def openOrder(self, orderId: OrderId, ib_contract: IBContract, ib_order: IBOrder, orderState: OrderState):
         contract = Contract(ib_contract.symbol, ib_contract.secType, ib_contract.exchange)
 
-        if ib_order.orderType == 'STP':
+        if ib_order.orderType.upper() == 'STP':
             execution_style = StopOrder(ib_order.auxPrice)
-        elif ib_order.orderType == 'MKT':
+        elif ib_order.orderType.upper() == 'MKT':
             execution_style = MarketOrder()
         else:
             error_message = "Order Type is not supported: {}".format(ib_order.orderType)
             self.logger.error(error_message)
             raise ValueError(error_message)
 
-        if ib_order.action == 'SELL':
+        if ib_order.action.upper() == 'SELL':
             quantity = -ib_order.totalQuantity
-        elif ib_order.action == 'BUY':
+        elif ib_order.action.upper() == 'BUY':
             quantity = ib_order.totalQuantity
         else:
             error_message = "Order Action is not supported: {}".format(ib_order.action)
             self.logger.error(error_message)
             raise ValueError(error_message)
 
-        order = Order(contract=contract, quantity=quantity, execution_style=execution_style, tif=ib_order.tif,
-                      order_state=orderState.status)
+        if ib_order.tif.upper() == 'DAY':
+            time_in_force = TimeInForce.DAY
+        elif ib_order.tif.upper() == 'GTC':
+            time_in_force = TimeInForce.GTC
+        else:
+            error_message = "Time in Force is not supported: {}".format(ib_order.tif)
+            self.logger.error(error_message)
+            raise ValueError(error_message)
+
+        order = Order(contract=contract, quantity=quantity, execution_style=execution_style,
+                      time_in_force=time_in_force, order_state=orderState.status)
 
         order.id = int(orderId)
         self.order_list.append(order)

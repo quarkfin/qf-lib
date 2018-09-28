@@ -39,7 +39,7 @@ class TestOrderFactory(unittest.TestCase):
     def test_order(self):
         quantity = 5
         execution_style = MarketOrder()
-        time_in_force = TimeInForce.GOOD_TILL_CANCEL
+        time_in_force = TimeInForce.GTC
 
         orders = self.order_factory.orders({self.contract: quantity}, execution_style, time_in_force)
         self.assertEqual(orders[0], Order(self.contract, quantity, execution_style, time_in_force))
@@ -64,7 +64,7 @@ class TestOrderFactory(unittest.TestCase):
     def test_order_percent(self):
         percentage = 0.5
         execution_style = StopOrder(4.20)
-        time_in_force = TimeInForce.GOOD_TILL_CANCEL
+        time_in_force = TimeInForce.GTC
         quantity = floor(percentage * self.current_portfolio_value / self.share_price)  # type: int
 
         orders = self.order_factory.percent_orders({self.contract: percentage}, execution_style, time_in_force)
@@ -72,7 +72,7 @@ class TestOrderFactory(unittest.TestCase):
 
     def test_order_target_value(self):
         execution_style = StopOrder(4.20)
-        time_in_force = TimeInForce.GOOD_TILL_CANCEL
+        time_in_force = TimeInForce.GTC
         quantity = 4
 
         orders = self.order_factory.target_value_orders({self.contract: 140.0}, execution_style, time_in_force)
@@ -81,7 +81,7 @@ class TestOrderFactory(unittest.TestCase):
     def test_order_target_percent(self):
         quantity = 40
         execution_style = StopOrder(4.20)
-        time_in_force = TimeInForce.GOOD_TILL_CANCEL
+        time_in_force = TimeInForce.GTC
 
         orders = self.order_factory.target_percent_orders({self.contract: 0.5}, execution_style, time_in_force)
         self.assertEqual(orders[0], Order(self.contract, quantity, execution_style, time_in_force))
