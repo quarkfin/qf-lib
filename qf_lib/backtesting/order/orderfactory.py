@@ -89,9 +89,10 @@ class OrderFactory(object):
             position = contract_to_positions.get(contract, None)
             tolerance_quantity = tolerance_quantities.get(contract, 0)
 
-            current_quantity = 0
             if position is not None:
                 current_quantity = position.quantity()
+            else:
+                current_quantity = 0
 
             quantity = target_quantity - current_quantity
 
@@ -199,12 +200,12 @@ class OrderFactory(object):
             tells the us what is a tolerance to the target_percentages (in both directions).
             The tolerance is expressed in percentage points (0.02 corresponds to 2pp of diff)
             For example: assume that currently the portfolio contains asset A with allocation weight of 0.24.
-            then calling order_target_percent({A: 0.25}, ..., tolerance=0.02) will not generate any trades as
+            then calling target_percent_orders({A: 0.25}, ..., tolerance=0.02) will not generate any trades as
             the tolerance of 0.02 allows the allocation to be 0.24 while target percentage is 0.25.
 
             Another example:
             assume that currently the portfolio contains asset A with allocation weight of 0.24.
-            then calling order_target_percent({A: 0.30}, ..., tolerance=0.01) will generate a BUY order corresponding to
+            then calling target_percent_orders({A: 0.30}, ..., tolerance=0.01) will generate a BUY order corresponding to
             0.30 - 0.24 = 0.06 of the portfolio value. The tolerance of 0.01 does not allow a difference of 0.06
 
             if abs(target - actual) > tolerance
