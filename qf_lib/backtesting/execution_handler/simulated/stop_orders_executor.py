@@ -1,6 +1,4 @@
 import logging
-import math
-from itertools import chain
 from typing import Dict, List, Sequence, Tuple, Optional
 
 import pandas as pd
@@ -31,8 +29,7 @@ class StopOrdersExecutor(object):
         self._portfolio = portfolio
 
         # mappings: order_id -> (order, ticker)
-        self._buy_stop_orders_data_dict = {}  # type: Dict[int, Tuple[Order, Ticker]
-        self._sell_stop_orders_data_dict = {}  # type: Dict[int, Tuple[Order, Ticker]
+        self._stop_orders_data_dict = {}  # type: Dict[int, Tuple[Order, Ticker]]
 
         self._logger = logging.getLogger(self.__class__.__name__)
 
@@ -55,7 +52,7 @@ class StopOrdersExecutor(object):
 
             if order.quantity < 0:
                 if stop_price < current_price:
-                    self._sell_stop_orders_data_dict[order_id] = (order, ticker)
+                    self._stop_orders_data_dict[order_id] = (order, ticker)
                 else:
                     raise ValueError(
                         "Incorrect stop price ({stop_price:5.2f}). "
@@ -65,7 +62,7 @@ class StopOrdersExecutor(object):
                         ))
             else:
                 if stop_price > current_price:
-                    self._buy_stop_orders_data_dict[order_id] = (order, ticker)
+                    self._stop_orders_data_dict[order_id] = (order, ticker)
                 else:
                     raise ValueError(
                         "Incorrect stop price ({stop_price:5.2f}). "
@@ -80,72 +77,83 @@ class StopOrdersExecutor(object):
         return order_id_list
 
     def cancel_all_open_orders(self):
-        self._buy_stop_orders_data_dict.clear()
-        self._sell_stop_orders_data_dict.clear()
+        self._stop_orders_data_dict.clear()
 
     def cancel_order(self, order_id: int) -> Optional[Order]:
-        cancelled_order, _ = self._buy_stop_orders_data_dict.pop(order_id, (None, None))
-        if cancelled_order is not None:
-            return cancelled_order
-
-        cancelled_order, _ = self._sell_stop_orders_data_dict.pop(order_id, (None, None))
-        if cancelled_order is not None:
-            return cancelled_order
-
-        return None
+        cancelled_order, _ = self._stop_orders_data_dict.pop(order_id, (None, None))
+        return cancelled_order
 
     def get_open_orders(self) -> List[Order]:
-        all_open_orders_data = chain(
-            self._buy_stop_orders_data_dict.values(), self._sell_stop_orders_data_dict.values()
-        )  # type: Sequence[Tuple[Order, Ticker]]
+        # a list containing tuples (order, ticker), where ticker corresponds to order.contract
+        all_open_orders_data = self._stop_orders_data_dict.values()  # type: Sequence[Tuple[Order, Ticker]]
 
-        # all_open_orders is a list containing tuples (order, ticker), where ticker corresponds to order.contract
         open_orders = [order for order, _ in all_open_orders_data]
-        
+
         return open_orders
 
     def execute_orders(self):
         """
         Converts Orders into Transactions. Returns dictionary of unexecuted Orders (order_id -> Order)
         """
-        if not self._buy_stop_orders_data_dict and not self._sell_stop_orders_data_dict:
+        if not self._stop_orders_data_dict:
             return
 
-        buy_stop_orders_data = self._buy_stop_orders_data_dict.values()
-        sell_stop_orders_data = self._sell_stop_orders_data_dict.values()
-        all_open_orders_data = chain(buy_stop_orders_data, sell_stop_orders_data)
-        tickers = [ticker for _, ticker in all_open_orders_data]
+        open_orders_data = self._stop_orders_data_dict.values()
+        tickers = [ticker for _, ticker in open_orders_data]
 
         unique_tickers = list(set(tickers))
         current_bars_df = self._data_handler.get_bar_for_today(
             unique_tickers
-        )  # type: pd.DataFrame  # DataFrame(index=tickers, columns=fields)
+        )  # type: pd.DataFrame  # index=tickers, columns=fields
 
-        unexecuted_sell_stop_orders_data_dict = {}
-        unexecuted_buy_stop_orders_data_dict = {}
+        unexecuted_stop_orders_data_dict = {}
 
-        for order, ticker in sell_stop_orders_data:
-            low_price = current_bars_df.loc[ticker, PriceField.Low]
-            stop_price = order.execution_style.stop_price
+        for order, ticker in open_orders_data:
+            current_bar = current_bars_df.loc[ticker, :]
 
-            if not math.isnan(low_price) and low_price <= stop_price:
-                self._execute_order(order)
+            theoretical_execution_price = self._calculate_theoretical_execution_price(current_bar, order)
+
+            if theoretical_execution_price is None:  # the Order cannot be executed
+                unexecuted_stop_orders_data_dict[order.id] = (order, ticker)
             else:
-                unexecuted_sell_stop_orders_data_dict[order.id] = (order, ticker)
+                self._execute_order(order, theoretical_execution_price)
 
-        for order, ticker in buy_stop_orders_data:
-            high_price = current_bars_df.loc[ticker, PriceField.High]
-            stop_price = order.execution_style.stop_price
+        self._stop_orders_data_dict = unexecuted_stop_orders_data_dict
 
-            if not math.isnan(high_price) and high_price > stop_price:
-                self._execute_order(order)
+    def _calculate_theoretical_execution_price(self, current_bar, order):
+        """
+        Returns the price which should be used for calculating the real fill price later on. It can return either:
+        OPEN, HIGH or LOW price. If the market opens at the price which triggers StopOrders instantly, the OPEN price
+        is returned. In other cases the method returns:
+        - HIGH price - if the Buy StopOrder's high price exceeded the StopOrder's trigger price,
+        - LOW price - if the Sell StopOrder's low price exceeded the StopOrder's trigger price.
+        """
+        if current_bar.isnull().values.any():  # there is no data for today for a given Ticker; skip it
+            return None
+
+        stop_price = order.execution_style.stop_price
+        open_price = current_bar.loc[PriceField.Open]
+        is_sell_stop = order.quantity < 0
+        theoretical_execution_price = None
+
+        if is_sell_stop:
+            if open_price <= stop_price:
+                theoretical_execution_price = open_price
             else:
-                unexecuted_buy_stop_orders_data_dict[order.id] = (order, ticker)
+                low_price = current_bar[PriceField.Low]
+                if low_price <= stop_price:
+                    theoretical_execution_price = stop_price
+        else:  # is buy stop
+            if open_price >= stop_price:
+                theoretical_execution_price = open_price
+            else:
+                high_price = current_bar[PriceField.High]
+                if high_price >= stop_price:
+                    theoretical_execution_price = stop_price
 
-        self._sell_stop_orders_data_dict = unexecuted_sell_stop_orders_data_dict
-        self._buy_stop_orders_data_dict = unexecuted_buy_stop_orders_data_dict
+        return theoretical_execution_price
 
-    def _execute_order(self, order: Order):
+    def _execute_order(self, order: Order, theoretical_fill_price):
         """
         Simulates execution of a single Order by converting the Order into Transaction.
         """
@@ -153,7 +161,7 @@ class StopOrdersExecutor(object):
         contract = order.contract
         quantity = order.quantity
 
-        fill_price = self._calculate_fill_price(order, order.execution_style.stop_price)
+        fill_price = self._calculate_fill_price(order, theoretical_fill_price)
 
         commission = self._commission_model.calculate_commission(order, fill_price)
 

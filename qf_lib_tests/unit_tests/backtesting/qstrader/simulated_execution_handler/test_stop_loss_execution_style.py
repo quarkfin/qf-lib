@@ -64,10 +64,12 @@ class TestStopLossExecutionStyle(TestCase):
                                                       self.portfolio)
 
         self._set_current_msft_price(100.0)
-        self.stop_loss_order_1 = Order(self.msft_contract, quantity=-1, execution_style=StopOrder(95.00),
+        self.stop_loss_order_1 = Order(self.msft_contract, quantity=-1, execution_style=StopOrder(95.0),
                                        time_in_force=TimeInForce.GTC)
-        self.stop_loss_order_2 = Order(self.msft_contract, quantity=-1, execution_style=StopOrder(90.00),
+        self.stop_loss_order_2 = Order(self.msft_contract, quantity=-1, execution_style=StopOrder(90.0),
                                        time_in_force=TimeInForce.GTC)
+        self.buy_stop_loss_order = Order(self.msft_contract, quantity=1, execution_style=StopOrder(120.0),
+                                         time_in_force=TimeInForce.GTC)
 
         self.exec_hanlder.accept_orders([self.stop_loss_order_1, self.stop_loss_order_2])
 
@@ -134,6 +136,45 @@ class TestStopLossExecutionStyle(TestCase):
         self.assertEqual(-1, actual_transaction_2.quantity)
         self.assertEqual(self.stop_loss_order_2.execution_style.stop_price, actual_transaction_2.price)
         self.assertEqual(0.0, actual_transaction_2.commission)
+
+    def test_market_opens_at_much_lower_price_than_it_closed_at_yesterday(self):
+        self._set_bar_for_today(open=70.0, high=100.0, low=68.0, close=90.0, volume=100000000.0)
+        self.exec_hanlder.on_market_close(...)
+
+        assert_lists_equal([], self.exec_hanlder.get_open_orders())
+        verify(self.spied_monitor, times=2).record_transaction(...)
+        verify(self.portfolio, times=2).transact_transaction(...)
+
+        self.assertEqual(2, len(self.monitor.transactions))
+
+        actual_transaction_1 = self.monitor.transactions[0]
+        self.assertEqual(self.msft_contract, actual_transaction_1.contract)
+        self.assertEqual(-1, actual_transaction_1.quantity)
+        self.assertEqual(70.0, actual_transaction_1.price)
+        self.assertEqual(0.0, actual_transaction_1.commission)
+
+        actual_transaction_2 = self.monitor.transactions[1]
+        self.assertEqual(self.msft_contract, actual_transaction_2.contract)
+        self.assertEqual(-1, actual_transaction_2.quantity)
+        self.assertEqual(70.0, actual_transaction_2.price)
+        self.assertEqual(0.0, actual_transaction_2.commission)
+
+    def test_market_opens_at_much_higher_price_than_it_closed_at_yesterday(self):
+        self.exec_hanlder.accept_orders([self.buy_stop_loss_order])
+        self._set_bar_for_today(open=120.0, high=130.0, low=68.0, close=90.0, volume=100000000.0)
+        self.exec_hanlder.on_market_close(...)
+
+        assert_lists_equal([], self.exec_hanlder.get_open_orders())
+        verify(self.spied_monitor, times=3).record_transaction(...)
+        verify(self.portfolio, times=3).transact_transaction(...)
+
+        self.assertEqual(3, len(self.monitor.transactions))
+
+        actual_transaction_3 = self.monitor.transactions[2]
+        self.assertEqual(self.msft_contract, actual_transaction_3.contract)
+        self.assertEqual(1, actual_transaction_3.quantity)
+        self.assertEqual(120.0, actual_transaction_3.price)
+        self.assertEqual(0.0, actual_transaction_3.commission)
 
     def _set_current_msft_price(self, price):
         when(self.data_handler).get_last_available_price([self.msft_ticker]).thenReturn(
