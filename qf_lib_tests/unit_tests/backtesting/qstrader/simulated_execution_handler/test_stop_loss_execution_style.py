@@ -68,8 +68,6 @@ class TestStopLossExecutionStyle(TestCase):
                                        time_in_force=TimeInForce.GTC)
         self.stop_loss_order_2 = Order(self.msft_contract, quantity=-1, execution_style=StopOrder(90.0),
                                        time_in_force=TimeInForce.GTC)
-        self.buy_stop_loss_order = Order(self.msft_contract, quantity=1, execution_style=StopOrder(120.0),
-                                         time_in_force=TimeInForce.GTC)
 
         self.exec_hanlder.accept_orders([self.stop_loss_order_1, self.stop_loss_order_2])
 
@@ -160,6 +158,9 @@ class TestStopLossExecutionStyle(TestCase):
         self.assertEqual(0.0, actual_transaction_2.commission)
 
     def test_market_opens_at_much_higher_price_than_it_closed_at_yesterday(self):
+        self.buy_stop_loss_order = Order(self.msft_contract, quantity=1, execution_style=StopOrder(120.0),
+                                         time_in_force=TimeInForce.GTC)
+
         self.exec_hanlder.accept_orders([self.buy_stop_loss_order])
         self._set_bar_for_today(open=120.0, high=130.0, low=68.0, close=90.0, volume=100000000.0)
         self.exec_hanlder.on_market_close(...)
