@@ -1,0 +1,22 @@
+table.grid td {
+  padding: 5px 10px;
+}
+
+table.grid {
+  border-collapse: collapse;
+  border: 0;
+  width: 100%;
+}
+
+table.grid tr {
+  width: 100%;
+}
+
+/* Force charts to occupy minimum amount of space */
+table.grid td {
+  width: 1px;
+}
+
+.grid td {
+  vertical-align: top;
+}

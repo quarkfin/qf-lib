@@ -1,0 +1,28 @@
+/* Defines the line below as bottom line of the frame */
+.page-header {
+  border-bottom: 5px solid grey;
+  margin-bottom: 15px;
+  height: 60px;
+  width: 100%;
+}
+
+/* Size of the logo and text margin */
+.page-header img {
+  height: 51px;
+  float: left;
+  margin-right: 8px;
+}
+
+/* Text */
+.page-header p, .page-header strong {
+  float: left;
+  font-size: 1.1em;
+  margin-top: -1px;
+  line-height: 14.7px;
+}
+
+/* By default the <strong> text will be bigger, make it the same size as the non <strong>*/
+.page-header strong{
+  font-size: 1em;
+  width: 100%;
+}

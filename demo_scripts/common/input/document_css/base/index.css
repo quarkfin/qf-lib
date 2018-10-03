@@ -1,0 +1,8 @@
+div.index ul {
+  list-style: none;
+  margin: 0;
+}
+
+div.index ul.present {
+  list-style: square;
+}
