@@ -123,10 +123,10 @@ class StopOrdersExecutor(object):
     def _calculate_theoretical_execution_price(self, current_bar, order):
         """
         Returns the price which should be used for calculating the real fill price later on. It can return either:
-        OPEN, HIGH or LOW price. If the market opens at the price which triggers StopOrders instantly, the OPEN price
-        is returned. In other cases the method returns:
-        - HIGH price - if the Buy StopOrder's high price exceeded the StopOrder's trigger price,
-        - LOW price - if the Sell StopOrder's low price exceeded the StopOrder's trigger price.
+        OPEN or stop price. If the market opens at the price which triggers StopOrders instantly, the OPEN price
+        is returned. Otherwise if the LOW price (for Sell Stop) or HIGH price (for Buy Stop) exceeds the stop price,
+        the stop price is returned. If none of the above conditions is met, None is returned (which means that
+        StopOrder shouldn't be executed at any price).
         """
         if current_bar.isnull().values.any():  # there is no data for today for a given Ticker; skip it
             return None
