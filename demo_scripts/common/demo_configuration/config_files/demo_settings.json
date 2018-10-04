@@ -5,7 +5,8 @@
   },
   "output_directory": "demo_scripts/output",
   "document_css_directory": "demo_scripts/common/input/document_css",
-  "logo_path": "../../input/images/cern_logo.png",
+  "logo_path": "demo_scripts/common/input/images/cern_logo.png",
   "company_name": "QF-Lib Demo",
-  "timezone": "Europe/Zurich"
+  "timezone": "Europe/Zurich",
+  "email_templates_directory": "demo_scripts/common/input/email_templates"
 }
