@@ -4,7 +4,7 @@ from random import randint
 
 import matplotlib.pyplot as plt
 
-from demo_scripts.common.demo_configuration.demo_ioc import container
+from demo_scripts.demo_configuration.demo_ioc import container
 
 plt.ion()  # required for dynamic chart
 
