@@ -1,13 +1,15 @@
 import abc
-from typing import Tuple
+from typing import Tuple, Sequence
 
 import numpy as np
 import pandas as pd
 
+from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.date_to_string import date_to_str
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.dataframe.simple_returns_dataframe import SimpleReturnsDataFrame
+from qf_lib.containers.dimension_names import TICKERS
 from qf_lib.containers.series.cast_series import cast_series
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
@@ -162,3 +164,16 @@ class Portfolio(metaclass=abc.ABCMeta):
         portfolio_rets_tms = SimpleReturnsSeries(data=portfolio_rets, index=allocations_df.index.copy())
 
         return portfolio_rets_tms
+
+    @classmethod
+    def one_over_n_weights(cls, tickers: Sequence[Ticker]) -> pd.Series:
+        """
+        Calculates the one-over-n weights for given tickers.
+        """
+        num_of_tickers = len(tickers)
+        weight_of_each_asset = 1/num_of_tickers
+
+        weights_values = [weight_of_each_asset]*num_of_tickers
+        weights = pd.Series(index=pd.Index(tickers, name=TICKERS), data=weights_values)
+
+        return weights

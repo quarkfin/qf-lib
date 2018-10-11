@@ -8,12 +8,10 @@ import xarray as xr
 
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
+from qf_lib.containers.dimension_names import FIELDS, TICKERS, DATES
 
 
 class QFDataArray(xr.DataArray):
-    DATES = "dates"
-    TICKERS = "tickers"
-    FIELDS = "fields"
 
     def __init__(self, data, coords=None, dims=None, name=None,
                  attrs=None, encoding=None, fastpath=False):
@@ -29,9 +27,9 @@ class QFDataArray(xr.DataArray):
 
     def __setattr__(self, name, value):
         # Makes it possible to set indices in this way: qf_data_array.fields = ["OPEN", "CLOSE"].
-        # Otherwise one would need to set them like this: qf_data_array[QFDataArray.FIELDS] = ["OPEN", "CLOSE"]
-        # if name == self.TICKERS or name == self.DATES or name == self.FIELDS:
-        if name in [self.FIELDS, self.TICKERS, self.DATES]:
+        # Otherwise one would need to set them like this: qf_data_array[FIELDS] = ["OPEN", "CLOSE"]
+        # if name == TICKERS or name == DATES or name == FIELDS:
+        if name in [FIELDS, TICKERS, DATES]:
             self.__setitem__(name, value)
         else:
             super().__setattr__(name, value)

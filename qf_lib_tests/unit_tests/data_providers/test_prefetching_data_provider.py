@@ -9,6 +9,7 @@ from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
+from qf_lib.containers.dimension_names import DATES, TICKERS, FIELDS
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.data_providers.prefetching_data_provider import PrefetchingDataProvider
 from qf_lib.data_providers.price_data_provider import DataProvider
@@ -25,10 +26,9 @@ class TestPrefetchingDataProvider(unittest.TestCase):
         self.cached_tickers = [self.msft_ticker, self.google_ticker]
         self.cached_fields = [PriceField.Open, PriceField.Close, PriceField.Volume]
 
-        self.cached_dates_idx = pd.date_range(self.start_date, self.end_date, name=QFDataArray.DATES)
-        self.cached_tickers_idx = pd.Index([self.msft_ticker, self.google_ticker], name=QFDataArray.TICKERS)
-        self.cached_fields_idx = pd.Index([PriceField.Open, PriceField.Close, PriceField.Volume],
-                                          name=QFDataArray.FIELDS)
+        self.cached_dates_idx = pd.date_range(self.start_date, self.end_date, name=DATES)
+        self.cached_tickers_idx = pd.Index([self.msft_ticker, self.google_ticker], name=TICKERS)
+        self.cached_fields_idx = pd.Index([PriceField.Open, PriceField.Close, PriceField.Volume], name=FIELDS)
 
         self.data_provider = self.mock_data_provider()
         self.prefetching_data_provider = PrefetchingDataProvider(
