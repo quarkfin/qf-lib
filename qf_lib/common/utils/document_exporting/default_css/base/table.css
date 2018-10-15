@@ -1,0 +1,43 @@
+table caption {
+  font-weight: bold;
+}
+
+/* For the table class */
+table.table {
+  text-align: left;
+  margin-top: 15px;
+  background-color: rgb(245, 245, 245);
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* Sets the styling for all table header elements */
+table.table th {
+  border-top: 2px solid #727272;
+  border-bottom: 1px solid #a3a3a3;
+  padding: 5px 15px;
+  background-color: transparent;
+  color: black;
+  text-align: center;
+}
+
+/* Adds the border to the bottom of tables */
+table.table tbody tr:last-of-type {
+  border-bottom: 2px solid #727272;
+}
+
+/* Sets the styling for all data cells in all tables */
+table.table td {
+  color: #1d1d1d;
+  padding: 5px 15px;
+  line-height: 0.5em;
+  border: none;
+  text-align: right;
+}
+
+/* Sets the styling for the first column in all tables */
+table.table td:nth-of-type(1) {
+  font-weight: bold;
+  width: 15%;
+  text-align: left !important;
+}
