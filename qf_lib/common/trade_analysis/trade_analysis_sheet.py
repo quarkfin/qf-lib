@@ -6,6 +6,7 @@ import matplotlib as plt
 from matplotlib.ticker import FormatStrFormatter, MaxNLocator
 
 from qf_lib.common.enums.plotting_mode import PlottingMode
+from qf_lib.common.enums.trade_field import TradeField
 from qf_lib.common.utils.dateutils.to_days import to_days
 from qf_lib.common.utils.document_exporting import Document, GridElement, ParagraphElement
 from qf_lib.common.utils.document_exporting.element.page_header import PageHeaderElement
@@ -38,7 +39,7 @@ class TradeAnalysisSheet(object):
         """
         trades_df
             indexed by consecutive numbers starting at 0.
-            contains columns as follows: [ xxx,xxx,xxx,...]
+            columns are indexed using TradeField values
         nr_of_assets_traded
             the model can be used to trade on many instruments at the same time.
             All aggregated trades will be in trades_df
@@ -48,7 +49,7 @@ class TradeAnalysisSheet(object):
         """
         self.trades_df = trades_df
         self.nr_of_assets_traded = nr_of_assets_traded
-        self.returns_of_trades = SimpleReturnsSeries(self.trades_df["Return"])
+        self.returns_of_trades = SimpleReturnsSeries(self.trades_df[TradeField.Return])
         self.title = title
 
         self.document = Document(title)
@@ -132,7 +133,7 @@ class TradeAnalysisSheet(object):
         number_of_trades = self.returns_of_trades.count()
         table.add_row(["Number of trades", number_of_trades])
 
-        period_length = self.trades_df["End_date"].iloc[-1] - self.trades_df["Start_date"].iloc[0]
+        period_length = self.trades_df[TradeField.EndDate].iloc[-1] - self.trades_df[TradeField.StartDate].iloc[0]
         period_length_in_years = to_days(period_length) / DAYS_PER_YEAR_AVG
         avg_number_of_trades = number_of_trades / period_length_in_years / self.nr_of_assets_traded
         table.add_row(["Avg number of trades per year per asset", avg_number_of_trades])
