@@ -5,6 +5,7 @@ from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.events.event_manager import EventManager
 from qf_lib.backtesting.events.time_flow_controller import BacktestTimeFlowController
 from qf_lib.backtesting.execution_handler.simulated.commission_models.fixed_commission_model import FixedCommissionModel
+from qf_lib.backtesting.execution_handler.simulated.commission_models.ib_commission_model import IBCommissionModel
 from qf_lib.backtesting.execution_handler.simulated.simulated_execution_handler import SimulatedExecutionHandler
 from qf_lib.backtesting.monitoring.backtest_monitor import BacktestMonitor
 from qf_lib.backtesting.monitoring.light_backtest_monitor import LightBacktestMonitor
@@ -71,7 +72,7 @@ class BacktestTradingSession(object):
         else:
             monitor = BacktestMonitor(backtest_result, settings, pdf_exporter, excel_exporter)
 
-        commission_model = FixedCommissionModel(0.0)
+        commission_model = IBCommissionModel()  # FixedCommissionModel(0.0)
 
         execution_handler = SimulatedExecutionHandler(
             data_handler, timer, notifiers.scheduler, monitor, commission_model,
