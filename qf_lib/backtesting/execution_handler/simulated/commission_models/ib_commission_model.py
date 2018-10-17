@@ -11,9 +11,10 @@ class IBCommissionModel(CommissionModel):
     """
 
     def calculate_commission(self, order: Order, fill_price: float) -> float:
-        quantity = order.quantity
+        quantity = abs(order.quantity)
+
         commission = min(
-            0.5 * fill_price * quantity,
+            0.01 * fill_price * quantity,
             max(1.0, 0.005 * quantity)
         )
         return commission
