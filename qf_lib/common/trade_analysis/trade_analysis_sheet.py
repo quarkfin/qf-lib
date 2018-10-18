@@ -75,7 +75,7 @@ class TradeAnalysisSheet(object):
 
         self.document.add_element(PageHeaderElement(logo_path, company_name, self.title))
 
-    def _add_histogram_and_cumulative(self,):
+    def _add_histogram_and_cumulative(self):
         grid = GridElement(mode=PlottingMode.PDF, figsize=self.half_image_size, dpi=self.dpi)
 
         perf_chart = self._get_perf_chart()

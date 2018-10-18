@@ -21,7 +21,7 @@ def get_data():
 
 
 this_dir_path = os.path.dirname(os.path.abspath(__file__))
-trades_df, nr_of_assets_traded = cached_value(get_data, os.path.join(this_dir_path, 'trade_analysis6.cache'))
+trades_df, nr_of_assets_traded = cached_value(get_data, os.path.join(this_dir_path, 'trade_analysis.cache'))
 
 
 settings = container.resolve(Settings)  # type: Settings
