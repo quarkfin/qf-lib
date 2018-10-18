@@ -48,11 +48,12 @@ class BacktestMonitor(AbstractMonitor):
         self._ax.set_title("Progress of the backtest - {}".format(backtest_result.backtest_name))
         self._figure.autofmt_xdate(rotation=20)
         self._file_name_template = datetime.now().strftime("%Y_%m_%d-%H%M {}".format(backtest_result.backtest_name))
+        self._report_dir = "backtesting"
 
         self._csv_file = self._init_csv_file(self._file_name_template)
         self._csv_writer = csv.writer(self._csv_file)
 
-    def end_of_trading_update(self, _: datetime=None):
+    def end_of_trading_update(self, _: datetime = None):
         """
         Generates a tearsheet PDF with the statistics of the backtest and saves it on the disk
         Saves the timeseries of the portfolio in the excel file
@@ -63,11 +64,11 @@ class BacktestMonitor(AbstractMonitor):
         tearsheet = TearsheetWithoutBenchmark(
             self._settings, self._pdf_exporter, portfolio_tms, title=portfolio_tms.name)
         tearsheet.build_document()
-        tearsheet.save()
+        tearsheet.save(self._report_dir)
 
         # export a timeseries into an xlsx file
         xlsx_filename = "{}.xlsx".format(self._file_name_template)
-        relative_file_path = path.join("timeseries", xlsx_filename)
+        relative_file_path = path.join(self._report_dir, "timeseries", xlsx_filename)
         self._excel_exporter.export_container(portfolio_tms, relative_file_path,
                                               starting_cell='A1', include_column_names=True)
 
@@ -77,7 +78,7 @@ class BacktestMonitor(AbstractMonitor):
         if self._csv_file is not None:  # close the csv file
             self._csv_file.close()
 
-    def end_of_day_update(self, timestamp: datetime=None):
+    def end_of_day_update(self, timestamp: datetime = None):
         """
         Update line chart with current timeseries
         """
@@ -98,7 +99,7 @@ class BacktestMonitor(AbstractMonitor):
 
         self._ax.grid()  # we need two grid() calls in order to keep the grid on the chart
 
-    def real_time_update(self, timestamp: datetime=None):
+    def real_time_update(self, timestamp: datetime = None):
         """
         This method will not be used by the historical backtest
         """
@@ -114,7 +115,7 @@ class BacktestMonitor(AbstractMonitor):
         """
         Creates a new csv file for every backtest run, writes the header and returns the path to the file.
         """
-        output_dir = path.join(get_src_root(), self._settings.output_directory, "trades")
+        output_dir = path.join(get_src_root(), self._settings.output_directory, self._report_dir, "trades")
         if not path.exists(output_dir):
             makedirs(output_dir)
 
@@ -135,9 +136,9 @@ class BacktestMonitor(AbstractMonitor):
         Append all details about the Transaction to the CSV trade log.
         """
         self._csv_writer.writerow([
-                transaction.time,
-                transaction.contract.symbol,
-                transaction.quantity,
-                transaction.price,
-                transaction.commission
-            ])
+            transaction.time,
+            transaction.contract.symbol,
+            transaction.quantity,
+            transaction.price,
+            transaction.commission
+        ])

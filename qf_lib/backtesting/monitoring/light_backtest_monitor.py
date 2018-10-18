@@ -52,7 +52,7 @@ class LightBacktestMonitor(BacktestMonitor):
             tearsheet = TearsheetWithoutBenchmark(
                 self._settings, self._pdf_exporter, portfolio_tms, title=portfolio_tms.name)
             tearsheet.build_document()
-            tearsheet.save()
+            tearsheet.save(self._report_dir)
         except Exception as ex:
             self.logger.error("Error while exporting to PDF: " + str(ex))
 
@@ -61,7 +61,7 @@ class LightBacktestMonitor(BacktestMonitor):
 
         try:  # export a timeseries to Excel
             xlsx_filename = "{}.xlsx".format(self._file_name_template)
-            relative_file_path = path.join("timeseries", xlsx_filename)
+            relative_file_path = path.join(self._report_dir, "timeseries", xlsx_filename)
             self._excel_exporter.export_container(portfolio_tms, relative_file_path,
                                                   starting_cell='A1', include_column_names=True)
         except Exception as ex:

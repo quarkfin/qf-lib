@@ -1,5 +1,6 @@
 from abc import abstractmethod, ABCMeta
 from datetime import datetime
+from os import path
 from typing import List
 
 import matplotlib as plt
@@ -170,8 +171,8 @@ class AbstractTearsheet(metaclass=ABCMeta):
             ta.populate_table(table)
         self.document.add_element(table)
 
-    def save(self):
-        output_sub_dir = "tearsheet"
+    def save(self, report_dir: str = ""):
+        output_sub_dir = path.join(report_dir, "tearsheet")
 
         # Set the style for the report
         plt.style.use(['tearsheet'])
