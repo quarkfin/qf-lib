@@ -7,8 +7,8 @@ class DummyQuandlContractTickerMapper(ContractTickerMapper):
     """
     Dummy QuandlTicker-Contract mapper.
     """
-    def contract_to_ticker(self, contract: Contract, database_name: str='WIKI') -> Ticker:
-        return QuandlTicker(ticker=contract.symbol, database_name=database_name)
+    def contract_to_ticker(self, contract: Contract) -> Ticker:
+        return QuandlTicker(ticker=contract.symbol, database_name='WIKI')
 
     def ticker_to_contract(self, ticker: Ticker) -> Contract:
         return Contract(symbol=ticker.ticker, security_type='STK', exchange='SIMULATED_EXCHANGE')
