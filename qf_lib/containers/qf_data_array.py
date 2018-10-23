@@ -8,12 +8,10 @@ import xarray as xr
 
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
+from qf_lib.containers.dimension_names import FIELDS, TICKERS, DATES
 
 
 class QFDataArray(xr.DataArray):
-    DATES = "dates"
-    TICKERS = "tickers"
-    FIELDS = "fields"
 
     def __init__(self, data, coords=None, dims=None, name=None,
                  attrs=None, encoding=None, fastpath=False):
@@ -29,9 +27,9 @@ class QFDataArray(xr.DataArray):
 
     def __setattr__(self, name, value):
         # Makes it possible to set indices in this way: qf_data_array.fields = ["OPEN", "CLOSE"].
-        # Otherwise one would need to set them like this: qf_data_array[QFDataArray.FIELDS] = ["OPEN", "CLOSE"]
-        # if name == self.TICKERS or name == self.DATES or name == self.FIELDS:
-        if name in [self.FIELDS, self.TICKERS, self.DATES]:
+        # Otherwise one would need to set them like this: qf_data_array[FIELDS] = ["OPEN", "CLOSE"]
+        # if name == TICKERS or name == DATES or name == FIELDS:
+        if name in [FIELDS, TICKERS, DATES]:
             self.__setitem__(name, value)
         else:
             super().__setattr__(name, value)
@@ -73,8 +71,8 @@ class QFDataArray(xr.DataArray):
         -------
         QFDataArray
         """
-        coordinates = {cls.DATES: dates, cls.TICKERS: tickers, cls.FIELDS: fields}
-        dimensions = (cls.DATES, cls.TICKERS, cls.FIELDS)
+        coordinates = {DATES: dates, TICKERS: tickers, FIELDS: fields}
+        dimensions = (DATES, TICKERS, FIELDS)
 
         # if no data is provided, the empty array will be created
         if data is None:
@@ -97,7 +95,7 @@ class QFDataArray(xr.DataArray):
         -------
         QFDataArray
         """
-        xr_data_array = xr_data_array.transpose(cls.DATES, cls.TICKERS, cls.FIELDS)
+        xr_data_array = xr_data_array.transpose(DATES, TICKERS, FIELDS)
         qf_data_array = QFDataArray.create(xr_data_array.dates, xr_data_array.tickers, xr_data_array.fields,
                                            xr_data_array.data, xr_data_array.name)
         return qf_data_array
@@ -140,7 +138,7 @@ class QFDataArray(xr.DataArray):
         return result
 
     def _check_if_dimensions_are_correct(self, coords, dims):
-        expected_dimensions = (self.DATES, self.TICKERS, self.FIELDS)
+        expected_dimensions = (DATES, TICKERS, FIELDS)
         if dims is not None:
             actual_dimensions = tuple(dims)
         elif coords is not None and isinstance(coords, OrderedDict):

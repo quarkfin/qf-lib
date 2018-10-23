@@ -7,6 +7,7 @@ from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
+from qf_lib.containers.dimension_names import TICKERS
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
@@ -82,7 +83,7 @@ class GeneralPriceProvider(DataProvider):
             if partial_result is not None:
                 partial_results.append(partial_result)
 
-        result = QFDataArray.concat(partial_results, dim=QFDataArray.TICKERS)
+        result = QFDataArray.concat(partial_results, dim=TICKERS)
         normalized_result = normalize_data_array(result, tickers, fields, got_single_date, got_single_ticker,
                                                  got_single_field, use_prices_types)
         return normalized_result

@@ -31,8 +31,8 @@ class BuyAndHoldStrategy(object):
     of a backtest.
     """
 
-    MICROSOFT_CONTRACT = Contract(symbol="MSFT US Equity", security_type='STK', exchange='NASDAQ')
-    MICROSOFT_TICKER = BloombergTicker("MSFT US Equity")
+    CONTRACT = Contract(symbol="SPY US Equity", security_type='STK', exchange='NASDAQ')
+    TICKER = BloombergTicker("SPY US Equity")
 
     def __init__(self, broker: Broker, order_factory: OrderFactory, position_sizer: PositionSizer,
                  risk_manager: RiskManager, scheduler: Scheduler):
@@ -50,8 +50,7 @@ class BuyAndHoldStrategy(object):
 
     def calculate_signals(self):
         if not self.invested:
-            initial_orders = self.order_factory.percent_orders({self.MICROSOFT_CONTRACT: 1.0}, MarketOrder(),
-                                                               time_in_force='DAY')
+            initial_orders = self.order_factory.percent_orders({self.CONTRACT: 1.0}, MarketOrder())
             sized_orders = self.position_sizer.size_orders(initial_orders)
             refined_orders = self.risk_manager.refine_orders(sized_orders)
 
@@ -68,20 +67,14 @@ def main():
     backtest_name = 'Buy and Hold'
 
     start_date = str_to_date("2010-01-01")
-    end_date = str_to_date("2010-02-06")
+    end_date = str_to_date("2018-01-01")
 
     data_provider = container.resolve(GeneralPriceProvider)  # type: GeneralPriceProvider
     settings = container.resolve(Settings)  # type: Settings
     pdf_exporter = container.resolve(PDFExporter)  # type: PDFExporter
     excel_exporter = container.resolve(ExcelExporter)  # type: ExcelExporter
 
-    msft_prices = data_provider.get_price(
-        BuyAndHoldStrategy.MICROSOFT_TICKER, fields=[PriceField.Open, PriceField.Close],
-        start_date=str_to_date("2009-12-28"), end_date=str_to_date("2010-02-06")
-    )
-
-    first_trade_date = msft_prices.loc[start_date:].first_valid_index()
-    initial_cash = msft_prices.loc[:, PriceField.Open].asof(first_trade_date)
+    initial_cash = 1000000
 
     ts = BacktestTradingSession(
         backtest_name=backtest_name,
@@ -92,7 +85,8 @@ def main():
         excel_exporter=excel_exporter,
         start_date=start_date,
         end_date=end_date,
-        initial_cash=initial_cash
+        initial_cash=initial_cash,
+        is_lightweight=True
     )
 
     BuyAndHoldStrategy(

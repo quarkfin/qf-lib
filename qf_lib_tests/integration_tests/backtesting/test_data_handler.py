@@ -1,8 +1,8 @@
 import unittest
+from os.path import join
 from unittest import TestCase
 
 import pandas as pd
-from os.path import join
 
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.common.enums.price_field import PriceField
@@ -11,6 +11,7 @@ from qf_lib.common.utils.dateutils.date_format import DateFormat
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
+from qf_lib.containers.dimension_names import DATES, TICKERS
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.data_providers.bloomberg import BloombergDataProvider
 from qf_lib.get_sources_root import get_src_root
@@ -165,7 +166,7 @@ class TestDataHandler(TestCase):
 
         expected_dates_str = ["2018-01-24", "2018-01-25", "2018-01-26", "2018-01-29", "2018-01-30"]
         expected_dates = [str_to_date(date_str) for date_str in expected_dates_str]
-        assert_same_index(pd.DatetimeIndex(expected_dates, name=QFDataArray.DATES), result_array.dates.to_index(),
+        assert_same_index(pd.DatetimeIndex(expected_dates, name=DATES), result_array.dates.to_index(),
                           check_index_type=True, check_names=True)
 
     def test_historical_price_many_tickers_one_field(self):
@@ -175,11 +176,11 @@ class TestDataHandler(TestCase):
         self.assertEquals(PricesDataFrame, type(result_df))
 
         expected_dates_idx = pd.DatetimeIndex(
-            ['2017-12-27', '2017-12-28', '2017-12-29', '2018-01-02', '2018-01-03'], name=QFDataArray.DATES
+            ['2017-12-27', '2017-12-28', '2017-12-29', '2018-01-02', '2018-01-03'], name=DATES
         )
         assert_same_index(expected_dates_idx, result_df.index, check_index_type=True, check_names=True)
 
-        expected_tickers_idx = pd.Index([self.microsoft_ticker], name=QFDataArray.TICKERS)
+        expected_tickers_idx = pd.Index([self.microsoft_ticker], name=TICKERS)
         assert_same_index(expected_tickers_idx, result_df.columns, check_index_type=True, check_names=True)
 
 

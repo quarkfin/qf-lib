@@ -1,7 +1,7 @@
 import os
+from os.path import join, abspath, dirname
 from typing import List
 
-from os.path import join
 from weasyprint import HTML, CSS
 
 from qf_lib.common.utils.document_exporting.document import Document
@@ -14,12 +14,21 @@ from qf_lib.settings import Settings
 class PDFExporter(DocumentExporter):
     """
     Stores elements such as the ParagraphElement and ChartElement in order to build a PDF based on them once they
-    have all been added.
+    have all been added. If there is a "document_css_directory" attribute set in the Settings, then CSS files from that
+    directory will be applied for styling the output page. Otherwise the default styling will be applied.
     """
+
+    DEFAULT_CSS_DIR_NAME = 'default_css'
+    BASE_CSS_DIR_NAME = "base"
 
     def __init__(self, settings: Settings):
         super().__init__(settings)
-        self._document_css_dir = join(get_src_root(), settings.document_css_directory)
+
+        if hasattr(settings, 'document_css_directory'):
+            self._document_css_dir = join(get_src_root(), settings.document_css_directory)
+        else:
+            this_dir_abs_path = abspath(dirname(__file__))
+            self._document_css_dir = join(this_dir_abs_path, self.DEFAULT_CSS_DIR_NAME)
 
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
@@ -67,9 +76,9 @@ class PDFExporter(DocumentExporter):
             output_dir = self.get_output_dir(export_dir)
 
             # Automatically include all the css files in the `document_css/base` directory
-            base_css = os.listdir(os.path.join(self._document_css_dir, "base"))
+            base_css = os.listdir(os.path.join(self._document_css_dir, self.BASE_CSS_DIR_NAME))
             for name in base_css:
-                path = os.path.join(self._document_css_dir, "base", name)
+                path = os.path.join(self._document_css_dir, self.BASE_CSS_DIR_NAME, name)
                 if os.path.isfile(path):
                     css_file_paths.append(CSS(path))
 

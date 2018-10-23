@@ -5,6 +5,7 @@ import pandas as pd
 from qf_lib.containers.dataframe.cast_dataframe import cast_dataframe
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
+from qf_lib.containers.dimension_names import DATES, TICKERS, FIELDS
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.cast_series import cast_series
 from qf_lib.containers.series.prices_series import PricesSeries
@@ -41,7 +42,7 @@ def normalize_data_array(
     """
     # to keep the order of tickers and fields we reindex the data_array
     data_array = data_array.reindex(tickers=tickers, fields=fields)
-    data_array = data_array.sortby(QFDataArray.DATES)
+    data_array = data_array.sortby(DATES)
 
     squeezed_result = squeeze_data_array(data_array, got_single_date, got_single_ticker, got_single_field)
     casted_result = cast_data_array_to_proper_type(squeezed_result, use_prices_types)
@@ -54,11 +55,11 @@ def squeeze_data_array(original_data_array, got_single_date, got_single_ticker, 
 
     dimensions_to_squeeze = []
     if got_single_date:
-        dimensions_to_squeeze.append(QFDataArray.DATES)
+        dimensions_to_squeeze.append(DATES)
     if got_single_ticker:
-        dimensions_to_squeeze.append(QFDataArray.TICKERS)
+        dimensions_to_squeeze.append(TICKERS)
     if got_single_field:
-        dimensions_to_squeeze.append(QFDataArray.FIELDS)
+        dimensions_to_squeeze.append(FIELDS)
 
     if dimensions_to_squeeze:
         container = original_data_array.squeeze(dimensions_to_squeeze)
@@ -128,15 +129,15 @@ def tickers_dict_to_data_array(tickers_data_dict, requested_tickers, requested_f
     tickers = []
     data_arrays = []
     for ticker, df in tickers_data_dict.items():
-        df.index.name = QFDataArray.DATES
+        df.index.name = DATES
         data_array = df.to_xarray()
-        data_array = data_array.to_array(dim=QFDataArray.FIELDS, name=ticker)
-        data_array = data_array.transpose(QFDataArray.DATES, QFDataArray.FIELDS)
+        data_array = data_array.to_array(dim=FIELDS, name=ticker)
+        data_array = data_array.transpose(DATES, FIELDS)
 
         tickers.append(ticker)
         data_arrays.append(data_array)
 
-    tickers_index = pd.Index(tickers, name=QFDataArray.TICKERS)
+    tickers_index = pd.Index(tickers, name=TICKERS)
     result = QFDataArray.concat(data_arrays, dim=tickers_index)
 
     return result

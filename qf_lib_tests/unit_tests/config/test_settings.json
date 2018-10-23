@@ -6,7 +6,6 @@
     "port": 8194
   },
   "input_directory": "input",
-  "document_css_directory": "input/document_css",
   "email_templates_directory": "input/email_templates",
   "logo_path": "input/images/cern_logo.png",
   "output_directory": "output",
