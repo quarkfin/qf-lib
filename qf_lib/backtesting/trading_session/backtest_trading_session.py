@@ -72,7 +72,7 @@ class BacktestTradingSession(object):
         else:
             monitor = BacktestMonitor(backtest_result, settings, pdf_exporter, excel_exporter)
 
-        commission_model = IBCommissionModel()  # FixedCommissionModel(0.0)
+        commission_model = FixedCommissionModel(0.0)  # IBCommissionModel()
 
         execution_handler = SimulatedExecutionHandler(
             data_handler, timer, notifiers.scheduler, monitor, commission_model,

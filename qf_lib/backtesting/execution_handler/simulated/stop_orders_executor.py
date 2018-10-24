@@ -128,7 +128,9 @@ class StopOrdersExecutor(object):
         the stop price is returned. If none of the above conditions is met, None is returned (which means that
         StopOrder shouldn't be executed at any price).
         """
-        if current_bar.isnull().values.any():  # there is no data for today for a given Ticker; skip it
+        # Make sure that at least all values except Volume are available. Volume is not available for currencies.
+        price_bar = current_bar.loc[[PriceField.Open, PriceField.High, PriceField.Low, PriceField.Close]]
+        if price_bar.isnull().values.any():  # there is no data for today for a given Ticker; skip it
             return None
 
         stop_price = order.execution_style.stop_price
