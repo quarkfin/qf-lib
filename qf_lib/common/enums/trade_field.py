@@ -10,8 +10,8 @@ class TradeField(Enum):
     StartDate = 1
     EndDate = 2
     Open = 3
-    High = 4
-    Low = 5
+    MaxGain = 4
+    MinGain = 5
     Close = 6
     Return = 7
     Exposure = 8
