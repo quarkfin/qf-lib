@@ -26,13 +26,13 @@ from qf_lib.settings import Settings
 
 class ParamsEvaluator(object):
 
-    def __init__(self, settings: Settings, pdf_exporter: PDFExporter, title: str = "Parameters"):
+    def __init__(self, settings: Settings, pdf_exporter: PDFExporter):
         """
         title
             title of the document, will be a part of the filename. Do not use special characters
         """
-        self.title = title
-        self.document = Document(title)
+        self.title = "sample_params_evaluation_title"
+        self.document = None
         # position is linked to the position of axis in tearsheet.mplstyle
         self.image_size = (8, 8)
         self.dpi = 400
@@ -41,14 +41,18 @@ class ParamsEvaluator(object):
         self.backtest_name = ""
 
     def build_document(self, backtest_result):
-        input_dict = backtest_result.params_trades_dict
-        self.backtest_name = backtest_result.backtest_name
+        self.title = backtest_result.backtest_name
+        self.document = Document(self.title)
 
-        if backtest_result.nr_of_params == 1:
+        input_dict = {}
+        for elem in backtest_result.elements_list:
+            input_dict[elem.model_parameters] = elem.trades_df
+
+        if backtest_result.num_of_model_params == 1:
             self._plot_line_chart(input_dict)
-        elif backtest_result.nr_of_params == 2:
+        elif backtest_result.num_of_model_params == 2:
             self._plot_single_heat_map(input_dict)
-        elif backtest_result.nr_of_params == 3:
+        elif backtest_result.num_of_model_params == 3:
             self._plot_multiple_heat_maps(input_dict)
         else:
             raise ValueError("Incorrect number of parameters. Supported: 1, 2 and 3")
@@ -56,7 +60,6 @@ class ParamsEvaluator(object):
     def _plot_line_chart(self, input_dict: Dict[tuple, QFDataFrame]):
 
         params = sorted(input_dict.keys())  # this will sort the tuples
-
         values = []
         for param in params:
             value = self._objective_function(input_dict[param])
@@ -83,6 +86,9 @@ class ParamsEvaluator(object):
             row, column = param_tuple
             value = self._objective_function(trades_df)
             result_df.loc[row, column] = value
+
+            result_df.sort_index(axis=0, inplace=True)
+            result_df.sort_index(axis=1, inplace=True)
 
         chart = HeatMapChart(data=result_df, color_map=plt.get_cmap("coolwarm"),
                              min_value=min(result_df.min()), max_value=max(result_df.max()))
