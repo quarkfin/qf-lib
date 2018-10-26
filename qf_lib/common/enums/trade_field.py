@@ -29,13 +29,13 @@ class TradeField(Enum):
     MaxGain = 4
     """
     Maximum difference between the value of the Trade and the price at which the Trade was entered.
-    Expressed in currency units (e.g. 1200.0).
+    Can be 0.0 if the Trade was only loosing a value. Expressed in currency units (e.g. 1200.0).
     """
 
-    MinGain = 5
+    MaxLoss = 5
     """
-    Minimum difference (can be negative) between the value of the Trade and the price at which the Trade was entered.
-    Expressed in currency units (e.g. -100.0).
+    Maximum negative difference between the value of the Trade and the price at which the Trade was entered.
+    It's always negative. Can be 0.0 if the Trade was only gaining a value. Expressed in currency units (e.g. -100.0).
     """
 
     Close = 6
