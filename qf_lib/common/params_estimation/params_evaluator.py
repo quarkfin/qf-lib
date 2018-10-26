@@ -1,4 +1,5 @@
 from datetime import datetime
+from itertools import groupby
 from typing import Dict, Callable, Any
 from os.path import join
 
@@ -121,8 +122,16 @@ class ParamsEvaluator(object):
 
         self.document.add_element(ChartElement(chart, figsize=self.image_size, dpi=self.dpi))
 
-    def _add_multiple_heat_maps(self, input_dict: Dict[tuple, QFDataFrame]):
-        raise NotImplementedError("Method not implemented for 3 parameters")
+    def _add_multiple_heat_maps(self, input_dict: Dict[tuple, QFDataFrame], ticker: Ticker=None):
+        # first sort by the third element of the parameters tuple
+        # it is necessary for groupby to work correctly
+        sorted_dict = sorted(input_dict.items(), key=lambda x: x[0][2])
+
+        for third_param, group in groupby(sorted_dict, lambda x: x[0][2]):
+            # group is a structure: (three_elem_tuple, data_frame) where all third elements of the tuple are the same
+            # we want extract the first 2 elements of the tuple to pass it to the _add_single_heat_map method
+            two_elem_tuple_to_df_dict = {three_elem_tuple[:2]: df for three_elem_tuple, df in group}
+            self._add_single_heat_map(two_elem_tuple_to_df_dict, ticker, third_param=third_param)
 
     def _get_chart_title(self, ticker):
         backtest_name = self.backtest_result.backtest_name
@@ -149,7 +158,7 @@ class ParamsEvaluator(object):
         number_of_instruments_traded = trades[TradeField.Ticker].unique().size
         returns = trades[TradeField.Return]
 
-        period_length = trades[TradeField.EndDate].iloc[-1] - trades[TradeField.StartDate].iloc[0]
+        period_length = self.backtest_result.end_date - self.backtest_result.start_date
         period_length_in_years = to_days(period_length) / DAYS_PER_YEAR_AVG
         avg_number_of_trades_1y = returns.count() / period_length_in_years / number_of_instruments_traded
 
