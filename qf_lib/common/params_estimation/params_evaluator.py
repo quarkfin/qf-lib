@@ -11,8 +11,10 @@ from get_sources_root import get_src_root
 from qf_lib.common.enums.axis import Axis
 from qf_lib.common.enums.trade_field import TradeField
 from qf_lib.common.tickers.tickers import Ticker
+from qf_lib.common.utils.dateutils.date_to_string import date_to_str
 from qf_lib.common.utils.dateutils.to_days import to_days
-from qf_lib.common.utils.document_exporting import Document, ChartElement
+from qf_lib.common.utils.document_exporting import Document, ChartElement, ParagraphElement, HeadingElement
+from qf_lib.common.utils.document_exporting.element.new_page import NewPageElement
 from qf_lib.common.utils.document_exporting.element.page_header import PageHeaderElement
 from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.common.utils.miscellaneous.constants import DAYS_PER_YEAR_AVG
@@ -47,6 +49,8 @@ class ParamsEvaluator(object):
         self.tickers_tested = backtest_result.tickers
 
         self._add_header()
+        self._add_description_of_backtest()
+
         input_dict = {}
         for elem in backtest_result.elements_list:
             input_dict[elem.model_parameters] = elem.trades_df
@@ -74,6 +78,23 @@ class ParamsEvaluator(object):
         logo_path = join(get_src_root(), self.settings.logo_path)
         company_name = self.settings.company_name
         self.document.add_element(PageHeaderElement(logo_path, company_name, self.backtest_result.backtest_name))
+
+    def _add_description_of_backtest(self):
+        self.document.add_element(ParagraphElement("\n"))
+        self.document.add_element(HeadingElement(1, "Model: {}".format(self.backtest_result.backtest_name)))
+        self.document.add_element(ParagraphElement("\n"))
+
+        self.document.add_element(HeadingElement(2, "Tickers tested in this study: "))
+        ticker_str = "\n".join([ticker.as_string() for ticker in self.tickers_tested])
+        self.document.add_element(ParagraphElement(ticker_str))
+        self.document.add_element(ParagraphElement("\n"))
+
+        self.document.add_element(HeadingElement(2, "Dates of the backtest"))
+        self.document.add_element(ParagraphElement("Backtest start date: {}"
+                                                   .format(date_to_str(self.backtest_result.start_date))))
+        self.document.add_element(ParagraphElement("Backtest end date: {}"
+                                                   .format(date_to_str(self.backtest_result.end_date))))
+        self.document.add_element(NewPageElement())
 
     def _add_line_chart(self, input_dict: Dict[tuple, QFDataFrame], ticker: Ticker=None):
         params = sorted(input_dict.keys())  # this will sort the tuples
@@ -178,3 +199,5 @@ class ParamsEvaluator(object):
             self.pdf_exporter.generate([self.document], output_sub_dir, filename)
         else:
             raise AssertionError("The documnent is not initialized. Build the document first")
+
+
