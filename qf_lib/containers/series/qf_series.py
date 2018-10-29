@@ -247,3 +247,9 @@ class QFSeries(pd.Series, TimeIndexedContainer):
         See the implementation of the Frequency.infer_freq function for more information.
         """
         return Frequency.infer_freq(self.index)
+
+    def total_cumulative_return(self) -> float:
+        """
+        Calculates the total cumulative return for the series.
+        """
+        raise NotImplementedError()
