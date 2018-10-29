@@ -148,6 +148,11 @@ class TestDataFrames(TestCase):
         expected_result = QFSeries(expected_values, expected_index)
         assert_series_equal(expected_result, actual_result, absolute_tolerance=1e-20)
 
+    def test_total_cumulative_return(self):
+        actual_result = self.test_prices_df.total_cumulative_return()
+        expected_result = pd.Series(index=self.test_prices_df.columns, data=[4.0, 4.0, 4.0, 4.0, 4.0])
+        assert_series_equal(expected_result, actual_result)
+
 
 if __name__ == '__main__':
     unittest.main()

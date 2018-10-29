@@ -177,6 +177,19 @@ class QFDataFrame(pd.DataFrame, TimeIndexedContainer):
         smoothed_df = cast_dataframe(smoothed_df, self._constructor)
         return smoothed_df
 
+    def total_cumulative_return(self) -> pd.Series:
+        """
+        Calculates total cumulative return for each column.
+
+        Returns
+        -------
+        pandas.Series containing total cumulative return for each column of the original DataFrame.
+        """
+        series_type = self._constructor_sliced
+        series = self.apply(series_type.total_cumulative_return, axis=0)
+
+        return series
+
     def _prepare_value_per_column_list(self, values):
         if isinstance(values, Sized):
             self._assert_is_valid_values_list(values)
