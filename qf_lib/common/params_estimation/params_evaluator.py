@@ -133,7 +133,7 @@ class ParamsEvaluator(object):
         chart.add_decorator(AxisTickLabelsDecorator(labels=list(result_df.columns), axis=Axis.X))
         chart.add_decorator(AxisTickLabelsDecorator(labels=list(reversed(result_df.index)), axis=Axis.Y))
         chart.add_decorator(ValuesAnnotations())
-        chart.add_decorator(AxesLabelDecorator(x_label="Parameter 1", y_label="Parameter 2"))
+        chart.add_decorator(AxesLabelDecorator(x_label="Parameter 2", y_label="Parameter 1"))
 
         if third_param is None:
             title = self._get_chart_title(ticker)
