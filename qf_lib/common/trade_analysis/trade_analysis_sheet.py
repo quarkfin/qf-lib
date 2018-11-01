@@ -13,6 +13,8 @@ from qf_lib.common.utils.document_exporting.element.page_header import PageHeade
 from qf_lib.common.utils.document_exporting.element.table import Table
 from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.common.utils.miscellaneous.constants import DAYS_PER_YEAR_AVG
+from qf_lib.common.utils.returns.annualise_total_return import annualise_total_return
+from qf_lib.common.utils.returns.max_drawdown import max_drawdown
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
 from qf_lib.get_sources_root import get_src_root
@@ -88,7 +90,7 @@ class TradeAnalysisSheet(object):
 
     def _get_perf_chart(self):
         strategy_tms = self.returns_of_trades.to_prices(1)
-        chart = LineChart(start_x=strategy_tms.index[0], end_x=strategy_tms.index[-1])
+        chart = LineChart()
         line_decorator = HorizontalLineDecorator(1, key="h_line", linewidth=1)
         chart.add_decorator(line_decorator)
 
@@ -101,9 +103,9 @@ class TradeAnalysisSheet(object):
 
     def _get_histogram_chart(self):
         colors = Chart.get_axes_colors()
-        chart = HistogramChart(self.returns_of_trades)
+        chart = HistogramChart(self.returns_of_trades * 100)  # expressed in %
         # Format the x-axis so that its labels are shown as a percentage.
-        x_axis_formatter = FormatStrFormatter("%.0f%%")
+        x_axis_formatter = FormatStrFormatter("%0.0f%%")
         axes_formatter_decorator = AxesFormatterDecorator(x_major=x_axis_formatter, key="axes_formatter")
         chart.add_decorator(axes_formatter_decorator)
         # Only show whole numbers on the y-axis.
@@ -156,8 +158,24 @@ class TradeAnalysisSheet(object):
         table.add_row(["Best trade [%]", best_return * 100])
         table.add_row(["Worst trade [%]", worst_return * 100])
 
+        max_dd = max_drawdown(self.returns_of_trades)
+        table.add_row(["Max drawdown [%]", max_dd * 100])
+
+        prices_tms = self.returns_of_trades.to_prices()
+        total_return = prices_tms.iloc[-1] / prices_tms.iloc[0] - 1
+        table.add_row(["Total return [%]", total_return * 100])
+
+        annualised_ret = annualise_total_return(total_return, period_length_in_years, SimpleReturnsSeries)
+        table.add_row(["Annualised return [%]", annualised_ret * 100])
+
+        avg_return = self.returns_of_trades.mean()
+        table.add_row(["Avg return of trade [%]", avg_return * 100])
+
+        std_of_returns = self.returns_of_trades.std()
+        table.add_row(["Std of return of trades [%]", std_of_returns * 100])
+
         # System Quality Number
-        sqn = self.returns_of_trades.mean() / self.returns_of_trades.std()
+        sqn = avg_return / std_of_returns
         table.add_row(["SQN", sqn])
         table.add_row(["SQN for 100 trades", sqn * 10])  # SQN * sqrt(100)
         table.add_row(["SQN * Sqrt(avg nr. of trades per year)", sqn * sqrt(avg_number_of_trades)])
