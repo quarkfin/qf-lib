@@ -8,6 +8,7 @@ from statsmodels.sandbox.stats.diagnostic import acorr_ljungbox, het_breuschpaga
 from statsmodels.stats.outliers_influence import OLSInfluence
 from statsmodels.stats.stattools import durbin_watson
 
+from qf_lib.analysis.timeseries_analysis.timeseries_analysis import TimeseriesAnalysis
 from qf_lib.common.timeseries_analysis.return_attribution_analysis import ReturnAttributionAnalysis
 from qf_lib.common.timeseries_analysis.risk_contribution_analysis import RiskContributionAnalysis
 from qf_lib.common.utils.factorization.data_models.data_model_input import DataModelInput
@@ -16,7 +17,6 @@ from qf_lib.containers.dataframe.cast_dataframe import cast_dataframe
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.cast_series import cast_series
 from qf_lib.containers.series.qf_series import QFSeries
-from qf_lib.timeseries_analysis.timeseries_analysis import TimeseriesAnalysis
 
 
 class DataModel(object):

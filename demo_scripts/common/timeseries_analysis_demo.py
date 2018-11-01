@@ -1,13 +1,13 @@
 import pandas as pd
 
 from qf_common.config.ioc import container
+from qf_lib.analysis.timeseries_analysis.timeseries_analysis import TimeseriesAnalysis
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import QuandlTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.document_exporting.element.table import Table
 from qf_lib.data_providers.quandl.quandl_data_provider import QuandlDataProvider
-from qf_lib.timeseries_analysis.timeseries_analysis import TimeseriesAnalysis
 
 pd.options.display.max_rows = 100000
 pd.options.display.max_columns = 100

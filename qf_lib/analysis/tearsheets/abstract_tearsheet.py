@@ -1,11 +1,12 @@
 from abc import abstractmethod, ABCMeta
 from datetime import datetime
 from os import path
+from os.path import join
 from typing import List
 
 import matplotlib as plt
-from os.path import join
 
+from qf_lib.analysis.timeseries_analysis.timeseries_analysis import TimeseriesAnalysis
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.plotting_mode import PlottingMode
 from qf_lib.common.utils.document_exporting import Document, ChartElement, GridElement
@@ -30,7 +31,6 @@ from qf_lib.plotting.helpers.create_return_quantiles import create_return_quanti
 from qf_lib.plotting.helpers.create_returns_bar_chart import create_returns_bar_chart
 from qf_lib.plotting.helpers.create_skewness_chart import create_skewness_chart
 from qf_lib.settings import Settings
-from qf_lib.timeseries_analysis.timeseries_analysis import TimeseriesAnalysis
 
 
 class AbstractTearsheet(metaclass=ABCMeta):

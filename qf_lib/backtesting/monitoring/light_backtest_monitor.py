@@ -4,7 +4,7 @@ plt.ion()  # required for dynamic chart
 
 from qf_lib.analysis.tearsheets.tearsheet_without_benchmark import TearsheetWithoutBenchmark
 from qf_lib.common.enums.frequency import Frequency
-from qf_lib.timeseries_analysis.timeseries_analysis import TimeseriesAnalysis
+from qf_lib.analysis.timeseries_analysis.timeseries_analysis import TimeseriesAnalysis
 from qf_lib.backtesting.monitoring.backtest_monitor import BacktestMonitor
 from qf_lib.common.utils.excel.excel_exporter import ExcelExporter
 from qf_lib.backtesting.transaction import Transaction

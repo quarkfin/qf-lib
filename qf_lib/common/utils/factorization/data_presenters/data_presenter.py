@@ -5,10 +5,14 @@ from typing import Mapping, Sequence
 import numpy as np
 import pandas as pd
 
+from qf_lib.analysis.timeseries_analysis.timeseries_analysis import TimeseriesAnalysis
 from qf_lib.common.enums.axis import Axis
 from qf_lib.common.enums.matplotlib_location import Location
 from qf_lib.common.enums.orientation import Orientation
 from qf_lib.common.utils.dateutils.date_format import DateFormat
+from qf_lib.common.utils.factorization.data_models.data_model import DataModel
+from qf_lib.common.utils.factorization.factors_identification.elastic_net_factors_identifier import \
+    ElasticNetFactorsIdentifier
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
 from qf_lib.plotting.charts.bar_chart import BarChart
@@ -28,10 +32,6 @@ from qf_lib.plotting.decorators.text_decorator import TextDecorator
 from qf_lib.plotting.decorators.title_decorator import TitleDecorator
 from qf_lib.plotting.decorators.vertical_span_decorator import VerticalSpanDecorator
 from qf_lib.plotting.helpers.index_translator import IndexTranslator
-from qf_lib.timeseries_analysis.timeseries_analysis import TimeseriesAnalysis
-from qf_lib.common.utils.factorization.data_models.data_model import DataModel
-from qf_lib.common.utils.factorization.factors_identification.elastic_net_factors_identifier import \
-    ElasticNetFactorsIdentifier
 
 
 class DataPresenter(object):
