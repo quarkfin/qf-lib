@@ -1,9 +1,11 @@
 import os
+
 import numpy as np
 from pandas import DataFrame
+
 from qf_common.config.ioc import container
+from qf_lib.analysis.trade_analysis.trade_analysis_sheet import TradeAnalysisSheet
 from qf_lib.common.enums.trade_field import TradeField
-from qf_lib.common.trade_analysis.trade_analysis_sheet import TradeAnalysisSheet
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.common.utils.miscellaneous.get_cached_value import cached_value
