@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from qf_lib.analysis.rolling_analysis.rolling_analysis import RollingAnalysisFactory
 from qf_lib.analysis.tearsheets.abstract_tearsheet import AbstractTearsheet
 from qf_lib.common.enums.grid_proportion import GridProportion
 from qf_lib.common.enums.plotting_mode import PlottingMode
@@ -9,7 +10,6 @@ from qf_lib.common.utils.document_exporting.element.table import Table
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.plotting.charts.regression_chart import RegressionChart
 from qf_lib.plotting.helpers.create_returns_distribution import create_returns_distribution
-from qf_lib.rolling_analysis.rolling_analysis import RollingAnalysisFactory
 from qf_lib.settings import Settings
 
 
