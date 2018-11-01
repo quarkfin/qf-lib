@@ -1,24 +1,22 @@
 from datetime import datetime
-from math import sqrt
 from os.path import join
+from typing import Sequence
 
 import matplotlib as plt
 
 from qf_lib.analysis.breakout_strength.trend_strength import trend_strength, down_trend_strength, up_trend_strength
 from qf_lib.common.enums.matplotlib_location import Location
 from qf_lib.common.enums.price_field import PriceField
-from qf_lib.common.enums.trade_field import TradeField
 from qf_lib.common.tickers.tickers import Ticker
-from qf_lib.common.utils.dateutils.to_days import to_days
-from qf_lib.common.utils.document_exporting import Document, ParagraphElement, ChartElement
+from qf_lib.common.utils.dateutils.date_to_string import date_to_str
+from qf_lib.common.utils.document_exporting import ParagraphElement, ChartElement, Document, HeadingElement
+from qf_lib.common.utils.document_exporting.element.new_page import NewPageElement
 from qf_lib.common.utils.document_exporting.element.page_header import PageHeaderElement
 from qf_lib.common.utils.document_exporting.element.table import Table
 from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
-from qf_lib.common.utils.miscellaneous.constants import DAYS_PER_YEAR_AVG
-from qf_lib.common.utils.returns.annualise_total_return import annualise_total_return
-from qf_lib.common.utils.returns.max_drawdown import max_drawdown
+from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
-from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
+from qf_lib.data_providers.price_data_provider import DataProvider
 from qf_lib.get_sources_root import get_src_root
 from qf_lib.plotting.charts.line_chart import LineChart
 from qf_lib.plotting.decorators.data_element_decorator import DataElementDecorator
@@ -33,7 +31,7 @@ class TrendStrengthSheet(object):
     Creates a PDF containing main statistics of strength of a day trend
     """
 
-    def __init__(self, settings: Settings, pdf_exporter: PDFExporter, title: str = "Trend Strength"):
+    def __init__(self, settings: Settings, pdf_exporter: PDFExporter, price_provider: DataProvider):
         """
         trades_df
             indexed by consecutive numbers starting at 0.
@@ -45,42 +43,65 @@ class TrendStrengthSheet(object):
         title
             title of the document, will be a part of the filename. Do not use special characters
         """
-        self.title = title
+        self.settings = settings
+        self.pdf_exporter = pdf_exporter
+        self.price_provider = price_provider
+
+        self.start_date = None
+        self.end_date = None
+        self.title = None
+        self.document = None
+        self.tickers = None
+        self.ticker_to_trend_dict = {}
+
         self.window_len = 128
-
-        self.document = Document(title)
-
         # position is linked to the position of axis in tearsheet.mplstyle
         self.image_size = (8, 2.4)
         self.dpi = 400
 
-        self.settings = settings
-        self.pdf_exporter = pdf_exporter
+    def build_document(self, tickers: Sequence[Ticker], start_date: datetime, end_date: datetime, title="Trend Strength"):
+        self.tickers = tickers
+        self.document = Document(title)
+        self.start_date = start_date
+        self.end_date = end_date
 
-    def build_document(self):
+        for ticker in self.tickers:
+            self._add_page(ticker)
+            print("Finished evaluating trend strength of:  {}".format(ticker.as_string()))
+
+        self._add_summary()
+
+    def _add_page(self, ticker: Ticker):
         self._add_header()
+        self.document.add_element(HeadingElement(2, ticker.as_string()))
 
-        self.document.add_element(ParagraphElement("\n"))
-        self._add_histogram_and_cumulative()
-        self._add_statistics_table()
+        price_df = self.price_provider.get_price(ticker, PriceField.ohlcv(), self.start_date, self.end_date)
+
+        self._insert_table_with_overall_measures(price_df, ticker)
+        self._add_price_chart(price_df)
+        self._add_trend_strength_chart(price_df)
+        self._add_up_and_down_trend_strength(price_df)
+        self.document.add_element(NewPageElement())  # add page break
 
     def _add_header(self):
         logo_path = join(get_src_root(), self.settings.logo_path)
         company_name = self.settings.company_name
-
         self.document.add_element(PageHeaderElement(logo_path, company_name, self.title))
 
-    def _insert_table_with_overall_measures(self, prices_df: QFDataFrame, ticker: Ticker):
+    def _insert_table_with_overall_measures(self, prices_df: PricesDataFrame, ticker: Ticker):
         table = Table(column_names=["Measure", "Value"], css_class="table stats-table")
 
         table.add_row(["Instrument", ticker.as_string()])
-        table.add_row(["Start date", ])
-        table.add_row(["End date", ])
+        series = prices_df[PriceField.Close]
+        table.add_row(["Start date", date_to_str(series.index[0])])
+        table.add_row(["End date", date_to_str(series.index[-1])])
 
-        table.add_row(["Overall strength of the day trends", trend_strength(prices_df)])
+        trend_strength_value = trend_strength(prices_df)
+        table.add_row(["Overall strength of the day trends", trend_strength_value])
+        self.ticker_to_trend_dict[ticker] = trend_strength_value
+
         table.add_row(["Up trends strength", up_trend_strength(prices_df)])
         table.add_row(["Down trends strength", down_trend_strength(prices_df)])
-
         self.document.add_element(table)
 
     def _add_price_chart(self, prices_df: QFDataFrame):
@@ -128,61 +149,16 @@ class TrendStrengthSheet(object):
         chart.add_decorator(title_decorator)
         self.document.add_element(ChartElement(chart, figsize=self.image_size, dpi=self.dpi))
 
-    def _add_statistics_table(self):
-        table = Table(column_names=["Measure", "Value"], css_class="table stats-table")
+    def _add_summary(self):
+        self.document.add_element(HeadingElement(2, "Summary"))
+        pairs_sorted_by_value = sorted(self.ticker_to_trend_dict.items(), key=lambda pair: pair[1])
 
-        number_of_trades = self.returns_of_trades.count()
-        table.add_row(["Number of trades", number_of_trades])
-
-        period_length = self.trades_df[TradeField.EndDate].iloc[-1] - self.trades_df[TradeField.StartDate].iloc[0]
-        period_length_in_years = to_days(period_length) / DAYS_PER_YEAR_AVG
-        avg_number_of_trades = number_of_trades / period_length_in_years / self.nr_of_assets_traded
-        table.add_row(["Avg number of trades per year per asset", avg_number_of_trades])
-
-        positive_trades = self.returns_of_trades[self.returns_of_trades > 0]
-        negative_trades = self.returns_of_trades[self.returns_of_trades < 0]
-
-        percentage_of_positive = positive_trades.count() / number_of_trades
-        percentage_of_negative = negative_trades.count() / number_of_trades
-        table.add_row(["% of positive trades", percentage_of_positive * 100])
-        table.add_row(["% of negative trades", percentage_of_negative * 100])
-
-        avg_positive = positive_trades.mean()
-        avg_negative = negative_trades.mean()
-        table.add_row(["Avg positive trade [%]", avg_positive * 100])
-        table.add_row(["Avg negative trade [%]", avg_negative * 100])
-
-        best_return = max(self.returns_of_trades)
-        worst_return = min(self.returns_of_trades)
-        table.add_row(["Best trade [%]", best_return * 100])
-        table.add_row(["Worst trade [%]", worst_return * 100])
-
-        max_dd = max_drawdown(self.returns_of_trades)
-        table.add_row(["Max drawdown [%]", max_dd * 100])
-
-        prices_tms = self.returns_of_trades.to_prices()
-        total_return = prices_tms.iloc[-1] / prices_tms.iloc[0] - 1
-        table.add_row(["Total return [%]", total_return * 100])
-
-        annualised_ret = annualise_total_return(total_return, period_length_in_years, SimpleReturnsSeries)
-        table.add_row(["Annualised return [%]", annualised_ret * 100])
-
-        avg_return = self.returns_of_trades.mean()
-        table.add_row(["Avg return of trade [%]", avg_return * 100])
-
-        std_of_returns = self.returns_of_trades.std()
-        table.add_row(["Std of return of trades [%]", std_of_returns * 100])
-
-        # System Quality Number
-        sqn = avg_return / std_of_returns
-        table.add_row(["SQN", sqn])
-        table.add_row(["SQN for 100 trades", sqn * 10])  # SQN * sqrt(100)
-        table.add_row(["SQN * Sqrt(avg nr. of trades per year)", sqn * sqrt(avg_number_of_trades)])
-
-        self.document.add_element(table)
+        for ticker, trend_strength_value in pairs_sorted_by_value:
+            paragraph_str = "{} - {:6.2f}".format(ticker.as_string(), trend_strength_value)
+            self.document.add_element(ParagraphElement(paragraph_str))
 
     def save(self):
-        output_sub_dir = "trades_analysis"
+        output_sub_dir = "trend_strength"
 
         # Set the style for the report
         plt.style.use(['tearsheet'])
@@ -190,3 +166,7 @@ class TrendStrengthSheet(object):
         filename = "%Y_%m_%d-%H%M {}.pdf".format(self.title)
         filename = datetime.now().strftime(filename)
         self.pdf_exporter.generate([self.document], output_sub_dir, filename)
+
+
+
+
