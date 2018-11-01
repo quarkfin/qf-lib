@@ -15,7 +15,7 @@ from datetime import datetime
 from os import path, makedirs
 from qf_lib.backtesting.backtest_result.backtest_result import BacktestResult
 from qf_lib.backtesting.monitoring.abstract_monitor import AbstractMonitor
-from qf_lib.common.tearsheets.tearsheet_without_benchmark import TearsheetWithoutBenchmark
+from qf_lib.analysis.tearsheets.tearsheet_without_benchmark import TearsheetWithoutBenchmark
 
 
 class BacktestMonitor(AbstractMonitor):

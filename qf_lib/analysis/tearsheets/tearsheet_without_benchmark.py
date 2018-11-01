@@ -1,8 +1,8 @@
 from datetime import datetime
 
+from qf_lib.analysis.tearsheets.abstract_tearsheet import AbstractTearsheet
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.plotting_mode import PlottingMode
-from qf_lib.common.tearsheets.abstract_tearsheet import AbstractTearsheet
 from qf_lib.common.utils.document_exporting import ParagraphElement, GridElement, ChartElement
 from qf_lib.common.utils.document_exporting.element.new_page import NewPageElement
 from qf_lib.common.utils.volatility.get_volatility import get_volatility

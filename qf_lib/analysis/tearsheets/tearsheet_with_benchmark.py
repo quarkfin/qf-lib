@@ -1,8 +1,8 @@
 from datetime import datetime
 
+from qf_lib.analysis.tearsheets.abstract_tearsheet import AbstractTearsheet
 from qf_lib.common.enums.grid_proportion import GridProportion
 from qf_lib.common.enums.plotting_mode import PlottingMode
-from qf_lib.common.tearsheets.abstract_tearsheet import AbstractTearsheet
 from qf_lib.common.utils.document_exporting import ParagraphElement, GridElement
 from qf_lib.common.utils.document_exporting.element.new_page import NewPageElement
 from qf_lib.common.utils.document_exporting.element.table import Table

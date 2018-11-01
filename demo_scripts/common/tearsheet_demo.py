@@ -1,9 +1,9 @@
 import os
 
 from qf_common.config.ioc import container
+from qf_lib.analysis.tearsheets.tearsheet_with_benchmark import TearsheetWithBenchmark
+from qf_lib.analysis.tearsheets.tearsheet_without_benchmark import TearsheetWithoutBenchmark
 from qf_lib.common.enums.price_field import PriceField
-from qf_lib.common.tearsheets.tearsheet_with_benchmark import TearsheetWithBenchmark
-from qf_lib.common.tearsheets.tearsheet_without_benchmark import TearsheetWithoutBenchmark
 from qf_lib.common.tickers.tickers import QuandlTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
