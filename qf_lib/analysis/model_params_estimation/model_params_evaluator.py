@@ -30,7 +30,7 @@ from qf_lib.plotting.decorators.title_decorator import TitleDecorator
 from qf_lib.settings import Settings
 
 
-class ParamsEvaluator(object):
+class ModelParamsEvaluator(object):
 
     def __init__(self, settings: Settings, pdf_exporter: PDFExporter):
         self.backtest_result = None
