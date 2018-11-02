@@ -1,52 +1,227 @@
 from datetime import datetime
 
-import matplotlib.pyplot as plt
-
-import qf_common.config.ioc as ioc
-from qf_lib.common.enums.matplotlib_location import Location
-from qf_lib.common.enums.price_field import PriceField
-from qf_lib.common.tickers.tickers import QuandlTicker
+from qf_common.config.ioc import container
+from qf_lib.analysis.breakout_strength.trend_strength_sheet import TrendStrengthSheet
+from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
-from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
+from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
-from qf_lib.plotting.charts.line_chart import LineChart
-from qf_lib.plotting.decorators.data_element_decorator import DataElementDecorator
-from qf_lib.plotting.decorators.legend_decorator import LegendDecorator
+from qf_lib.settings import Settings
 
-start_date = str_to_date('2010-01-01')
+# ===========  Settings  ===============================================================================================
+
+start_date = str_to_date('1999-01-01')
 end_date = datetime.now()
 
-data_provider = ioc.container.resolve(GeneralPriceProvider)
-prices_df = data_provider.get_price(QuandlTicker('AAPL', 'WIKI'), PriceField.ohlcv(), start_date, end_date) #type: PricesDataFrame
+tickers = [
+    BloombergTicker('00637L TT Equity'),
+    BloombergTicker('069500 KS Equity'),
+    BloombergTicker('122630 KS Equity'),
+    BloombergTicker('1357 JP Equity'),
+    BloombergTicker('1570 JP Equity'),
+    BloombergTicker('159001 CH Equity'),
+    BloombergTicker('159003 CH Equity'),
+    BloombergTicker('159005 CH Equity'),
+    BloombergTicker('159915 CH Equity'),
+    BloombergTicker('159920 CH Equity'),
+    BloombergTicker('159949 CH Equity'),
+    BloombergTicker('233740 KS Equity'),
+    BloombergTicker('251340 KS Equity'),
+    BloombergTicker('252670 KS Equity'),
+    BloombergTicker('2800 HK Equity'),
+    BloombergTicker('2822 HK Equity'),
+    BloombergTicker('2823 HK Equity'),
+    BloombergTicker('2828 HK Equity'),
+    BloombergTicker('510050 CH Equity'),
+    BloombergTicker('510300 CH Equity'),
+    BloombergTicker('510500 CH Equity'),
+    BloombergTicker('510900 CH Equity'),
+    BloombergTicker('511660 CH Equity'),
+    BloombergTicker('511690 CH Equity'),
+    BloombergTicker('511810 CH Equity'),
+    BloombergTicker('511820 CH Equity'),
+    BloombergTicker('511990 CH Equity'),
+    BloombergTicker('518880 CH Equity'),
+    BloombergTicker('AAXJ US Equity'),
+    BloombergTicker('ACWI US Equity'),
+    BloombergTicker('AGG US Equity'),
+    BloombergTicker('AMLP US Equity'),
+    BloombergTicker('BIL US Equity'),
+    BloombergTicker('BIV US Equity'),
+    BloombergTicker('BKLN US Equity'),
+    BloombergTicker('BND US Equity'),
+    BloombergTicker('BNDX US Equity'),
+    BloombergTicker('BOVA11 BZ Equity'),
+    BloombergTicker('BRZU US Equity'),
+    BloombergTicker('BSV US Equity'),
+    BloombergTicker('CWB US Equity'),
+    BloombergTicker('DAXEX EU Equity'),
+    BloombergTicker('DGAZ US Equity'),
+    BloombergTicker('DIA US Equity'),
+    BloombergTicker('DUST US Equity'),
+    BloombergTicker('DWT US Equity'),
+    BloombergTicker('DXJ US Equity'),
+    BloombergTicker('EEM US Equity'),
+    BloombergTicker('EFA US Equity'),
+    BloombergTicker('EMB US Equity'),
+    BloombergTicker('EMLC US Equity'),
+    BloombergTicker('ERX US Equity'),
+    BloombergTicker('EWC US Equity'),
+    BloombergTicker('EWG US Equity'),
+    BloombergTicker('EWH US Equity'),
+    BloombergTicker('EWJ US Equity'),
+    BloombergTicker('EWT US Equity'),
+    BloombergTicker('EWU US Equity'),
+    BloombergTicker('EWW US Equity'),
+    BloombergTicker('EWY US Equity'),
+    BloombergTicker('EWZ US Equity'),
+    BloombergTicker('EZU US Equity'),
+    BloombergTicker('FAS US Equity'),
+    BloombergTicker('FDN US Equity'),
+    BloombergTicker('FEZ US Equity'),
+    BloombergTicker('FLOT US Equity'),
+    BloombergTicker('FXI US Equity'),
+    BloombergTicker('GDX US Equity'),
+    BloombergTicker('GDXJ US Equity'),
+    BloombergTicker('GLD US Equity'),
+    BloombergTicker('HEDJ US Equity'),
+    BloombergTicker('HRLTB60 IT Equity'),
+    BloombergTicker('HYG US Equity'),
+    BloombergTicker('IAU US Equity'),
+    BloombergTicker('IBB US Equity'),
+    BloombergTicker('IEF US Equity'),
+    BloombergTicker('IEFA US Equity'),
+    BloombergTicker('IEMG US Equity'),
+    BloombergTicker('IGSB US Equity'),
+    BloombergTicker('IJH US Equity'),
+    BloombergTicker('IJR US Equity'),
+    BloombergTicker('ILF US Equity'),
+    BloombergTicker('INBNS59 IT Equity'),
+    BloombergTicker('INDA US Equity'),
+    BloombergTicker('ISF B2 Equity'),
+    BloombergTicker('ISF EU Equity'),
+    BloombergTicker('ISF IX Equity'),
+    BloombergTicker('ISF LN Equity'),
+    BloombergTicker('ITB US Equity'),
+    BloombergTicker('ITOT US Equity'),
+    BloombergTicker('IVE US Equity'),
+    BloombergTicker('IVV US Equity'),
+    BloombergTicker('IVW US Equity'),
+    BloombergTicker('IWB US Equity'),
+    BloombergTicker('IWD US Equity'),
+    BloombergTicker('IWF US Equity'),
+    BloombergTicker('IWM US Equity'),
+    BloombergTicker('IWN US Equity'),
+    BloombergTicker('IWO US Equity'),
+    BloombergTicker('IYR US Equity'),
+    BloombergTicker('JNK US Equity'),
+    BloombergTicker('JNUG US Equity'),
+    BloombergTicker('KBE US Equity'),
+    BloombergTicker('KRE US Equity'),
+    BloombergTicker('KSDAX55 IT Equity'),
+    BloombergTicker('KSNAS54 IT Equity'),
+    BloombergTicker('KWEB US Equity'),
+    BloombergTicker('LABD US Equity'),
+    BloombergTicker('LABU US Equity'),
+    BloombergTicker('LQD US Equity'),
+    BloombergTicker('MBB US Equity'),
+    BloombergTicker('MCHI US Equity'),
+    BloombergTicker('MDY US Equity'),
+    BloombergTicker('MINT US Equity'),
+    BloombergTicker('MTUM US Equity'),
+    BloombergTicker('MUB US Equity'),
+    BloombergTicker('NUGT US Equity'),
+    BloombergTicker('OEF US Equity'),
+    BloombergTicker('OIH US Equity'),
+    BloombergTicker('PFF US Equity'),
+    BloombergTicker('PSQ US Equity'),
+    BloombergTicker('QID US Equity'),
+    BloombergTicker('QLD US Equity'),
+    BloombergTicker('QQQ US Equity'),
+    BloombergTicker('RSP US Equity'),
+    BloombergTicker('RSX US Equity'),
+    BloombergTicker('SCHF US Equity'),
+    BloombergTicker('SCHX US Equity'),
+    BloombergTicker('SCZ US Equity'),
+    BloombergTicker('SDOW US Equity'),
+    BloombergTicker('SDS US Equity'),
+    BloombergTicker('SH US Equity'),
+    BloombergTicker('SHV US Equity'),
+    BloombergTicker('SHY US Equity'),
+    BloombergTicker('SLV US Equity'),
+    BloombergTicker('SMH US Equity'),
+    BloombergTicker('SOXL US Equity'),
+    BloombergTicker('SOXX US Equity'),
+    BloombergTicker('SPLV US Equity'),
+    BloombergTicker('SPXL US Equity'),
+    BloombergTicker('SPXS US Equity'),
+    BloombergTicker('SPXU US Equity'),
+    BloombergTicker('SPY US Equity'),
+    BloombergTicker('SQQQ US Equity'),
+    BloombergTicker('SSO US Equity'),
+    BloombergTicker('STX40 SJ Equity'),
+    BloombergTicker('SVXY US Equity'),
+    BloombergTicker('SX5EE EU Equity'),
+    BloombergTicker('SX5EEX B2 Equity'),
+    BloombergTicker('TBT US Equity'),
+    BloombergTicker('TIP US Equity'),
+    BloombergTicker('TLT US Equity'),
+    BloombergTicker('TNA US Equity'),
+    BloombergTicker('TQQQ US Equity'),
+    BloombergTicker('TVIX US Equity'),
+    BloombergTicker('TZA US Equity'),
+    BloombergTicker('UCO US Equity'),
+    BloombergTicker('UDOW US Equity'),
+    BloombergTicker('UGAZ US Equity'),
+    BloombergTicker('UNG US Equity'),
+    BloombergTicker('UPRO US Equity'),
+    BloombergTicker('USMV US Equity'),
+    BloombergTicker('USO US Equity'),
+    BloombergTicker('UVXY US Equity'),
+    BloombergTicker('UWT US Equity'),
+    BloombergTicker('VB US Equity'),
+    BloombergTicker('VCIT US Equity'),
+    BloombergTicker('VCSH US Equity'),
+    BloombergTicker('VEA US Equity'),
+    BloombergTicker('VEU US Equity'),
+    BloombergTicker('VGK US Equity'),
+    BloombergTicker('VGT US Equity'),
+    BloombergTicker('VIG US Equity'),
+    BloombergTicker('VIXY US Equity'),
+    BloombergTicker('VNQ US Equity'),
+    BloombergTicker('VOO US Equity'),
+    BloombergTicker('VT US Equity'),
+    BloombergTicker('VTI US Equity'),
+    BloombergTicker('VTV US Equity'),
+    BloombergTicker('VUG US Equity'),
+    BloombergTicker('VWO US Equity'),
+    BloombergTicker('VXX US Equity'),
+    BloombergTicker('VYM US Equity'),
+    BloombergTicker('XBI US Equity'),
+    BloombergTicker('XHB US Equity'),
+    BloombergTicker('XIU CN Equity'),
+    BloombergTicker('XLB US Equity'),
+    BloombergTicker('XLE US Equity'),
+    BloombergTicker('XLF US Equity'),
+    BloombergTicker('XLI US Equity'),
+    BloombergTicker('XLK US Equity'),
+    BloombergTicker('XLP US Equity'),
+    BloombergTicker('XLRE US Equity'),
+    BloombergTicker('XLU US Equity'),
+    BloombergTicker('XLV US Equity'),
+    BloombergTicker('XLY US Equity'),
+    BloombergTicker('XME US Equity'),
+    BloombergTicker('XOP US Equity'),
+    BloombergTicker('XRT US Equity')
+]
 
+# ===========  Run evaluation  =========================================================================================
 
+settings = container.resolve(Settings)  # type: Settings
+pdf_exporter = container.resolve(PDFExporter)  # type: PDFExporter
+price_provider = container.resolve(GeneralPriceProvider)
 
-
-
-window_len = 128
-trend_strength_tms = prices_df.rolling_time_window(window_length=window_len, step=1, func=trend_strength)
-down_trend_strength_tms = prices_df.rolling_time_window(window_length=window_len, step=1, func=down_trend_strength)
-up_trend_strength_tms = prices_df.rolling_time_window(window_length=window_len, step=1, func=up_trend_strength)
-
-line_chart = LineChart()
-price_elem = DataElementDecorator(prices_df[PriceField.Close])
-line_chart.add_decorator(price_elem)
-
-trend_elem = DataElementDecorator(trend_strength_tms, use_secondary_axes=True, color='black')
-down_trend_elem = DataElementDecorator(down_trend_strength_tms, use_secondary_axes=True)
-up_trend_elem = DataElementDecorator(up_trend_strength_tms, use_secondary_axes=True)
-
-line_chart.add_decorator(trend_elem)
-line_chart.add_decorator(down_trend_elem)
-line_chart.add_decorator(up_trend_elem)
-
-legend = LegendDecorator(legend_placement=Location.BEST, key='legend')
-legend.add_entry(price_elem, 'Stock price')
-legend.add_entry(trend_elem, 'Trend strength')
-legend.add_entry(down_trend_elem, 'Down trend')
-legend.add_entry(up_trend_elem, 'Up trend')
-
-line_chart.add_decorator(legend)
-
-line_chart.plot()
-plt.show(block=True)
+params_evaluator = TrendStrengthSheet(settings, pdf_exporter, price_provider)
+params_evaluator.build_document(tickers, start_date, end_date, use_next_open_instead_of_close=True)
+params_evaluator.save()
+print("Finished")
