@@ -178,7 +178,7 @@ class TradeAnalysisSheet(object):
         sqn = avg_return / std_of_returns
         table.add_row(["SQN", sqn])
         table.add_row(["SQN for 100 trades", sqn * 10])  # SQN * sqrt(100)
-        table.add_row(["SQN * Sqrt(avg nr. of trades per year)", sqn * sqrt(avg_number_of_trades)])
+        table.add_row(["SQN * Sqrt(avg number of trades per year)", sqn * sqrt(avg_number_of_trades)])
 
         self.document.add_element(table)
 
