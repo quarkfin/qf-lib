@@ -45,6 +45,9 @@ class TrendStrengthSheet(object):
         self.document = None
         self.tickers = None
         self.ticker_to_trend_dict = None
+
+        # if True, the daily trend will be calculated from Open to Open of the next day,
+        # if False, the daily trend will be calculated from Open to Close of the same day
         self.use_next_open_instead_of_close = None
 
         # position is linked to the position of axis in tearsheet.mplstyle
@@ -54,6 +57,19 @@ class TrendStrengthSheet(object):
 
     def build_document(self, tickers: Sequence[Ticker], start_date: datetime, end_date: datetime,
                        use_next_open_instead_of_close=False, title="Trend Strength"):
+        """
+        tickers
+            tickers of all tested instruments 
+        start_date
+            start date of the study
+        end_date
+            end date of the study
+        use_next_open_instead_of_close
+            if True, the daily trend will be calculated from Open to Open of the next day,
+            if False, the daily trend will be calculated from Open to Close of the same day
+        title
+            title of the document to be created
+        """
         self.use_next_open_instead_of_close = use_next_open_instead_of_close
 
         suffix = "O-O" if use_next_open_instead_of_close else "O-C"

@@ -19,10 +19,8 @@ def trend_strength(prices_df: PricesDataFrame, use_next_open_instead_of_close=Fa
     numerator = numerator.abs()
     denominator = high / low - 1
 
-    if len(numerator) > 3:
-        result = numerator.mean() / denominator.mean()
-        return result
-    return float('nan')
+    result = numerator.mean() / denominator.mean()
+    return result
 
 
 def down_trend_strength(prices_df: PricesDataFrame, use_next_open_instead_of_close=False):
@@ -70,10 +68,10 @@ def up_trend_strength(prices_df: PricesDataFrame, use_next_open_instead_of_close
 
     open = open.loc[is_up_day]
     close = close.loc[is_up_day]
-    high = low.loc[is_up_day]
+    low = low.loc[is_up_day]
 
-    numerator = open / close - 1
-    denominator = high / open - 1
+    numerator = open / close - 1  # will always be negative
+    denominator = low / open - 1  # will always be negative
 
     if len(numerator) > 3:
         result = numerator.mean() / denominator.mean()
