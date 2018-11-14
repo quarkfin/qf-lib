@@ -7,7 +7,7 @@ from qf_lib.backtesting.order.order import Order
 class Slippage(object, metaclass=ABCMeta):
 
     @abstractmethod
-    def calc_fill_prices(self, orders: Sequence[Order]) -> Sequence[float]:
+    def apply_slippage(self, orders: Sequence[Order], no_slippage_fill_prices: Sequence[float]) -> Sequence[float]:
         """
         Calculates fill prices for Orders. For Orders that can't be executed (missing security price, etc.) float('nan")
         will be returned.
@@ -16,6 +16,8 @@ class Slippage(object, metaclass=ABCMeta):
         ----------
         orders
             sequence of Orders for which the fill price should be calculated
+        no_slippage_fill_prices
+            fill prices without a slippage applied. Each fill price corresponds to the Order from `orders` list
 
         Returns
         -------
