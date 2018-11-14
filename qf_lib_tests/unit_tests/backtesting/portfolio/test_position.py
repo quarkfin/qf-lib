@@ -1,8 +1,8 @@
 import unittest
 
 from qf_lib.backtesting.contract.contract import Contract
-from qf_lib.backtesting.transaction import Transaction
 from qf_lib.backtesting.portfolio.backtest_position import BacktestPosition
+from qf_lib.backtesting.transaction import Transaction
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 
 
