@@ -104,26 +104,39 @@ class StopOrdersExecutor(object):
         open_orders_data = self._stop_orders_data_dict.values()
         tickers = [ticker for _, ticker in open_orders_data]
 
+        no_slippage_fill_prices_list, to_be_executed_orders, unexecuted_stop_orders_data_dict = \
+            self._get_orders_with_fill_prices_without_slippage(open_orders_data, tickers)
+
+        fill_prices = self._slippage_model.apply_slippage(to_be_executed_orders, no_slippage_fill_prices_list)
+
+        for order, fill_price in zip(to_be_executed_orders, fill_prices):
+            self._execute_order(order, fill_price)
+
+        self._stop_orders_data_dict = unexecuted_stop_orders_data_dict
+
+    def _get_orders_with_fill_prices_without_slippage(self, open_orders_data, tickers):
+        no_slippage_fill_prices_list = []
+        to_be_executed_orders = []
+        unexecuted_stop_orders_data_dict = {}
+
         unique_tickers = list(set(tickers))
         current_bars_df = self._data_handler.get_bar_for_today(
             unique_tickers
         )  # type: pd.DataFrame  # index=tickers, columns=fields
 
-        unexecuted_stop_orders_data_dict = {}
-
         for order, ticker in open_orders_data:
             current_bar = current_bars_df.loc[ticker, :]
+            no_slippage_fill_price = self._calculate_no_slippage_fill_price(current_bar, order)
 
-            theoretical_execution_price = self._calculate_theoretical_execution_price(current_bar, order)
-
-            if theoretical_execution_price is None:  # the Order cannot be executed
+            if no_slippage_fill_price is None:  # the Order cannot be executed
                 unexecuted_stop_orders_data_dict[order.id] = (order, ticker)
             else:
-                self._execute_order(order, theoretical_execution_price)
+                to_be_executed_orders += order
+                no_slippage_fill_prices_list += no_slippage_fill_price
 
-        self._stop_orders_data_dict = unexecuted_stop_orders_data_dict
+        return no_slippage_fill_prices_list, to_be_executed_orders, unexecuted_stop_orders_data_dict
 
-    def _calculate_theoretical_execution_price(self, current_bar, order):
+    def _calculate_no_slippage_fill_price(self, current_bar, order):
         """
         Returns the price which should be used for calculating the real fill price later on. It can return either:
         OPEN or stop price. If the market opens at the price which triggers StopOrders instantly, the OPEN price
@@ -139,26 +152,26 @@ class StopOrdersExecutor(object):
         stop_price = order.execution_style.stop_price
         open_price = current_bar.loc[PriceField.Open]
         is_sell_stop = order.quantity < 0
-        theoretical_execution_price = None
+        no_slippage_fill_price = None
 
         if is_sell_stop:
             if open_price <= stop_price:
-                theoretical_execution_price = open_price
+                no_slippage_fill_price = open_price
             else:
                 low_price = current_bar[PriceField.Low]
                 if low_price <= stop_price:
-                    theoretical_execution_price = stop_price
+                    no_slippage_fill_price = stop_price
         else:  # is buy stop
             if open_price >= stop_price:
-                theoretical_execution_price = open_price
+                no_slippage_fill_price = open_price
             else:
                 high_price = current_bar[PriceField.High]
                 if high_price >= stop_price:
-                    theoretical_execution_price = stop_price
+                    no_slippage_fill_price = stop_price
 
-        return theoretical_execution_price
+        return no_slippage_fill_price
 
-    def _execute_order(self, order: Order, theoretical_fill_price):
+    def _execute_order(self, order: Order, fill_price):
         """
         Simulates execution of a single Order by converting the Order into Transaction.
         """
@@ -166,7 +179,7 @@ class StopOrdersExecutor(object):
         contract = order.contract
         quantity = order.quantity
 
-        fill_price = self._calculate_fill_price(order, theoretical_fill_price)
+        fill_price = self._calculate_fill_price(order, fill_price)
 
         commission = self._commission_model.calculate_commission(order, fill_price)
 
