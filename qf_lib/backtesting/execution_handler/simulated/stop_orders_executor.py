@@ -131,8 +131,8 @@ class StopOrdersExecutor(object):
             if no_slippage_fill_price is None:  # the Order cannot be executed
                 unexecuted_stop_orders_data_dict[order.id] = (order, ticker)
             else:
-                to_be_executed_orders += order
-                no_slippage_fill_prices_list += no_slippage_fill_price
+                to_be_executed_orders.append(order)
+                no_slippage_fill_prices_list.append(no_slippage_fill_price)
 
         return no_slippage_fill_prices_list, to_be_executed_orders, unexecuted_stop_orders_data_dict
 

@@ -8,6 +8,7 @@ from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.contract_to_ticker_conversion.bloomberg_mapper import DummyBloombergContractTickerMapper
 from qf_lib.backtesting.execution_handler.simulated.commission_models.fixed_commission_model import FixedCommissionModel
 from qf_lib.backtesting.execution_handler.simulated.simulated_execution_handler import SimulatedExecutionHandler
+from qf_lib.backtesting.execution_handler.simulated.slippage.fraction_slippage import FractionSlippage
 from qf_lib.backtesting.monitoring.abstract_monitor import AbstractMonitor
 from qf_lib.backtesting.order.execution_style import StopOrder
 from qf_lib.backtesting.order.order import Order
@@ -59,9 +60,10 @@ class TestStopLossExecutionStyle(TestCase):
         self.spied_monitor = spy(self.monitor)
         self.portfolio = mock()
 
+        slippage_model = FractionSlippage(0.0)
         self.exec_hanlder = SimulatedExecutionHandler(self.data_handler, timer, self.scheduler, self.spied_monitor,
                                                       self.commission_model, self.contracts_to_tickers_mapper,
-                                                      self.portfolio)
+                                                      self.portfolio, slippage_model)
 
         self._set_current_msft_price(100.0)
         self.stop_loss_order_1 = Order(self.msft_contract, quantity=-1, execution_style=StopOrder(95.0),

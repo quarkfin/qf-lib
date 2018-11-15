@@ -88,8 +88,8 @@ class MarketOrdersExecutor(object):
             if math.isnan(security_price):
                 unexecuted_orders_dict[order.id] = order
             else:
-                to_be_executed_orders += order
-                no_slippage_prices += security_price
+                to_be_executed_orders.append(order)
+                no_slippage_prices.append(security_price)
 
         return no_slippage_prices, to_be_executed_orders, unexecuted_orders_dict
 
