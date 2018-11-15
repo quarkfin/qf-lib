@@ -6,6 +6,7 @@ import pandas as pd
 from qf_lib.backtesting.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.execution_handler.simulated.commission_models.commission_model import CommissionModel
+from qf_lib.backtesting.execution_handler.simulated.slippage.base import Slippage
 from qf_lib.backtesting.monitoring.abstract_monitor import AbstractMonitor
 from qf_lib.backtesting.order.execution_style import StopOrder
 from qf_lib.backtesting.order.order import Order
@@ -19,7 +20,8 @@ from qf_lib.common.utils.dateutils.timer import Timer
 class StopOrdersExecutor(object):
 
     def __init__(self, contracts_to_tickers_mapper: ContractTickerMapper, data_handler: DataHandler, order_id_generator,
-                 commission_model: CommissionModel, monitor: AbstractMonitor, portfolio: Portfolio, timer: Timer):
+                 commission_model: CommissionModel, monitor: AbstractMonitor, portfolio: Portfolio, timer: Timer,
+                 slippage_model: Slippage):
         self._contracts_to_tickers_mapper = contracts_to_tickers_mapper
         self._data_handler = data_handler
         self._order_id_generator = order_id_generator
@@ -27,6 +29,7 @@ class StopOrdersExecutor(object):
         self._commission_model = commission_model
         self._monitor = monitor
         self._portfolio = portfolio
+        self._slippage_model = slippage_model
 
         # mappings: order_id -> (order, ticker)
         self._stop_orders_data_dict = {}  # type: Dict[int, Tuple[Order, Ticker]]

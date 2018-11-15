@@ -5,6 +5,7 @@ from typing import Dict, List, Sequence, Optional
 from qf_lib.backtesting.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.execution_handler.simulated.commission_models.commission_model import CommissionModel
+from qf_lib.backtesting.execution_handler.simulated.slippage.base import Slippage
 from qf_lib.backtesting.monitoring.abstract_monitor import AbstractMonitor
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
@@ -15,7 +16,7 @@ from qf_lib.common.utils.dateutils.timer import Timer
 class MarketOrdersExecutor(object):
     def __init__(self, contracts_to_tickers_mapper: ContractTickerMapper, data_handler: DataHandler,
                  commission_model: CommissionModel, monitor: AbstractMonitor, portfolio: Portfolio, timer: Timer,
-                 order_id_generator):
+                 order_id_generator, slippage_model: Slippage):
         self._contracts_to_tickers_mapper = contracts_to_tickers_mapper
         self._data_handler = data_handler
         self._commission_model = commission_model
@@ -23,6 +24,7 @@ class MarketOrdersExecutor(object):
         self._portfolio = portfolio
         self._timer = timer
         self._order_id_generator = order_id_generator
+        self._slippage_model = slippage_model
 
         self._awaiting_orders = {}  # type: Dict[int, Order]  # order_id -> Order
 
@@ -62,9 +64,23 @@ class MarketOrdersExecutor(object):
 
         tickers = [self._contracts_to_tickers_mapper.contract_to_ticker(order.contract) for order in market_orders_list]
 
+        no_slippage_prices, to_be_executed_orders, unexecuted_orders_dict = \
+            self._get_orders_with_fill_prices_without_slippage(market_orders_list, tickers)
+
+        fill_prices = self._slippage_model.apply_slippage(to_be_executed_orders, no_slippage_prices)
+
+        for order, fill_price in zip(to_be_executed_orders, fill_prices):
+            self._execute_order(order, fill_price)
+
+        self._awaiting_orders = unexecuted_orders_dict
+
+    def _get_orders_with_fill_prices_without_slippage(self, market_orders_list, tickers):
         unique_tickers = list(set(tickers))
         current_prices_series = self._data_handler.get_current_price(unique_tickers)
+
         unexecuted_orders_dict = {}  # type: Dict[int, Order]
+        to_be_executed_orders = []
+        no_slippage_prices = []
 
         for order, ticker in zip(market_orders_list, tickers):
             security_price = current_prices_series[ticker]
@@ -72,9 +88,10 @@ class MarketOrdersExecutor(object):
             if math.isnan(security_price):
                 unexecuted_orders_dict[order.id] = order
             else:
-                self._execute_order(order, security_price)
+                to_be_executed_orders += order
+                no_slippage_prices += security_price
 
-        self._awaiting_orders = unexecuted_orders_dict
+        return no_slippage_prices, to_be_executed_orders, unexecuted_orders_dict
 
     def _execute_order(self, order: Order, security_price: float):
         """

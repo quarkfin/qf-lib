@@ -9,6 +9,7 @@ from qf_lib.backtesting.events.time_event.scheduler import Scheduler
 from qf_lib.backtesting.execution_handler.execution_handler import ExecutionHandler
 from qf_lib.backtesting.execution_handler.simulated.commission_models.commission_model import CommissionModel
 from qf_lib.backtesting.execution_handler.simulated.market_orders_executor import MarketOrdersExecutor
+from qf_lib.backtesting.execution_handler.simulated.slippage.base import Slippage
 from qf_lib.backtesting.execution_handler.simulated.stop_orders_executor import StopOrdersExecutor
 from qf_lib.backtesting.monitoring.abstract_monitor import AbstractMonitor
 from qf_lib.backtesting.order.execution_style import StopOrder, MarketOrder
@@ -28,7 +29,8 @@ class SimulatedExecutionHandler(ExecutionHandler):
 
     def __init__(self, data_handler: DataHandler, timer: Timer,
                  scheduler: Scheduler, monitor: AbstractMonitor, commission_model: CommissionModel,
-                 contracts_to_tickers_mapper: ContractTickerMapper, portfolio: Portfolio) -> None:
+                 contracts_to_tickers_mapper: ContractTickerMapper, portfolio: Portfolio,
+                 slippage_model: Slippage) -> None:
         scheduler.subscribe(MarketOpenEvent, self)
         scheduler.subscribe(MarketCloseEvent, self)
 
@@ -42,11 +44,12 @@ class SimulatedExecutionHandler(ExecutionHandler):
         order_id_generator = count(start=1)
 
         self._market_orders_executor = MarketOrdersExecutor(
-            contracts_to_tickers_mapper, data_handler, commission_model, monitor, portfolio, timer, order_id_generator
+            contracts_to_tickers_mapper, data_handler, commission_model, monitor, portfolio, timer, order_id_generator,
+            slippage_model
         )
 
         self._stop_orders_executor = StopOrdersExecutor(contracts_to_tickers_mapper, data_handler, order_id_generator,
-                                                        commission_model, monitor, portfolio, timer)
+                                                        commission_model, monitor, portfolio, timer, slippage_model)
 
     def on_market_close(self, _: MarketCloseEvent):
         self._stop_orders_executor.execute_orders()

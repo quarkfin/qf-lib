@@ -5,8 +5,8 @@ from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.events.event_manager import EventManager
 from qf_lib.backtesting.events.time_flow_controller import BacktestTimeFlowController
 from qf_lib.backtesting.execution_handler.simulated.commission_models.fixed_commission_model import FixedCommissionModel
-from qf_lib.backtesting.execution_handler.simulated.commission_models.ib_commission_model import IBCommissionModel
 from qf_lib.backtesting.execution_handler.simulated.simulated_execution_handler import SimulatedExecutionHandler
+from qf_lib.backtesting.execution_handler.simulated.slippage.fraction_slippage import FractionSlippage
 from qf_lib.backtesting.monitoring.backtest_monitor import BacktestMonitor
 from qf_lib.backtesting.monitoring.light_backtest_monitor import LightBacktestMonitor
 from qf_lib.backtesting.order.orderfactory import OrderFactory
@@ -74,9 +74,10 @@ class BacktestTradingSession(object):
 
         commission_model = FixedCommissionModel(0.0)  # IBCommissionModel()
 
+        slippage_model = FractionSlippage(0.005)
         execution_handler = SimulatedExecutionHandler(
             data_handler, timer, notifiers.scheduler, monitor, commission_model,
-            contract_ticker_mapper, portfolio)
+            contract_ticker_mapper, portfolio, slippage_model)
 
         broker = BacktestBroker(portfolio, execution_handler)
         order_factory = OrderFactory(broker, data_handler, contract_ticker_mapper)
@@ -96,6 +97,7 @@ class BacktestTradingSession(object):
                 "\tBacktest Result: {:s}".format(backtest_result.__class__.__name__),
                 "\tMonitor: {:s}".format(monitor.__class__.__name__),
                 "\tExecution Handler: {:s}".format(execution_handler.__class__.__name__),
+                "\tSlippage Model: {:s}".format(slippage_model.__class__.__name__),
                 "\tCommission Model: {:s}".format(commission_model.__class__.__name__),
                 "\tBroker: {:s}".format(broker.__class__.__name__),
             ])
