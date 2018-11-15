@@ -6,6 +6,7 @@ import pandas as pd
 
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.containers.dataframe.cast_dataframe import cast_dataframe
+from qf_lib.containers.series.cast_series import cast_series
 from qf_lib.containers.time_indexed_container import TimeIndexedContainer
 
 
@@ -187,6 +188,7 @@ class QFDataFrame(pd.DataFrame, TimeIndexedContainer):
         """
         series_type = self._constructor_sliced
         series = self.apply(series_type.total_cumulative_return, axis=0)
+        series = cast_series(series, pd.Series)
 
         return series
 

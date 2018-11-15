@@ -4,6 +4,7 @@ import pandas as pd
 
 from qf_lib.common.utils.returns.cagr import cagr
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
+from qf_lib.containers.series.cast_series import cast_series
 from qf_lib.containers.series.qf_series import QFSeries
 
 
@@ -36,6 +37,8 @@ class ReturnAttributionAnalysis(object):
         total_profit = factors_profits.sum() + alpha_profit
 
         regressors_return_attribution = factors_profits * annualised_fit_return / total_profit
+        regressors_return_attribution = cast_series(regressors_return_attribution, pd.Series)
+
         unexplained_return = annualised_fund_return - regressors_return_attribution.sum()
 
         return regressors_return_attribution, unexplained_return
