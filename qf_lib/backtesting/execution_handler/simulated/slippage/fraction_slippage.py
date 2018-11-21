@@ -19,6 +19,9 @@ class FractionSlippage(Slippage):
     def apply_slippage(self, orders: Sequence[Order], no_slippage_fill_prices: Sequence[float]) -> Sequence[float]:
         fill_prices = []
 
+        if self.slippage_rate == 0.0:
+            return no_slippage_fill_prices
+
         for order, no_slippage_price in zip(orders, no_slippage_fill_prices):
             execution_style = order.execution_style
             if isinstance(execution_style, (MarketOrder, StopOrder)):
