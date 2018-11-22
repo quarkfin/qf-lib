@@ -93,6 +93,7 @@ class RollingContractsSeriesProducer(object):
         time_to_expiration_tms_list = []
 
         last_rolling_date_idx = len(rolling_dates) - 1
+        tickers = real_contracts_prices_da.tickers.values
         for i, start_date in enumerate(rolling_dates):
             if i < last_rolling_date_idx:
                 end_date = rolling_dates[i + 1]
@@ -106,7 +107,7 @@ class RollingContractsSeriesProducer(object):
             front_contract_df = cast_dataframe(front_contract_df, PricesDataFrame)
 
             front_contract_df = front_contract_df.dropna()
-            front_contract_df.name = front_contract_da.name
+            front_contract_df.name = tickers[front_contract_idx]
 
             partial_prices_df, partial_tte_tms = self._filter_dates(front_contract_df, start_date, end_date)
             close_prices_tms = partial_prices_df.loc[:, PriceField.Close]
