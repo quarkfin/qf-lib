@@ -13,7 +13,7 @@ class RollingContractData(object):
             DataFrame for a certain contract (e.g. 1-month contract) with Open, High, Low, Close, Volume as columns.
             It is indexed with time.
         time_to_expiration_tms
-            Timeseries showing how in much time the currently held real contract will expire
+            Timeseries showing in how much time the currently held real contract will expire
         returns_tms
             returns of the
         """
