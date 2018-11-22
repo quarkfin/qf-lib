@@ -37,6 +37,10 @@ class RollingContractsSeriesProducer(object):
         real_contracts_prices_da
             dataframe with prices of real contracts (e.g. UXZ06, UXF07 and UXG07). First axis is time, second is
             the ticker of a real contract and third one is the PriceField (OHLCV).
+
+            NOTICE:
+            Order of columns matter! It should correspond to the order of contracts expiration dates.
+
         rolling_dates
             dates on which the rolling contract should be rolled
         contract_numbers
