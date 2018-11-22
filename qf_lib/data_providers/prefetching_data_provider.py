@@ -28,8 +28,8 @@ class PrefetchingDataProvider(DataProvider):
         self.data_provider = data_provider
 
         self._data_bundle = self.data_provider.get_price(tickers, fields, start_date, end_date)
-        self._tickers_cached = tickers
-        self._fields_cached = fields
+        self._tickers_cached_set = set(tickers)
+        self._fields_cached_set = set(fields)
         self._start_date = start_date
         self._end_date = end_date
 
@@ -52,17 +52,17 @@ class PrefetchingDataProvider(DataProvider):
 
     def _check_if_cached_data_available(self, tickers, fields, start_date, end_date):
         # tickers which are not cached but were requested
-        uncached_tickers = [ticker for ticker in tickers if ticker not in self._tickers_cached]
+        uncached_tickers = set(tickers) - self._tickers_cached_set
         if uncached_tickers:
             raise ValueError("Tickers: {} are not available in the Data Bundle".format(tickers))
 
         # fields which are not cached but were requested
-        uncached_fields = [field for field in fields if field not in self._fields_cached]
+        uncached_fields = set(fields) - self._fields_cached_set
         if uncached_fields:
             raise ValueError("Fields: {} are not available in the Data Bundle".format(fields))
 
         if start_date < self._start_date or end_date > self._end_date:
-            raise ValueError("Requested dates are outside of the cached period".format(fields))
+            raise ValueError("Requested dates are outside of the cached period")
 
     def get_history(self, tickers: Union[Ticker, Sequence[Ticker]],
                     fields: Union[str, Sequence[str]],
