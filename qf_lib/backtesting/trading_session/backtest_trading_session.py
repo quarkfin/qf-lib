@@ -74,7 +74,7 @@ class BacktestTradingSession(object):
 
         commission_model = FixedCommissionModel(0.0)  # IBCommissionModel()
 
-        slippage_model = FractionSlippage(0.005)
+        slippage_model = FractionSlippage(0.0)
         execution_handler = SimulatedExecutionHandler(
             data_handler, timer, notifiers.scheduler, monitor, commission_model,
             contract_ticker_mapper, portfolio, slippage_model)
