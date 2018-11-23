@@ -40,7 +40,7 @@ class DriftIndependentVolatility(object):
         Drift Independent Volatility in type float
 
         """
-        assert ohlc.num_of_rows > 3
+        assert ohlc.num_of_rows >= 2
         assert not annualise or frequency is not None
 
         var_RS = DriftIndependentVolatility._rogers_satchell_variance(ohlc)
