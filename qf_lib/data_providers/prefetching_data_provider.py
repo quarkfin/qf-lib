@@ -24,14 +24,18 @@ class PrefetchingDataProvider(DataProvider):
     def __init__(self, data_provider: DataProvider,
                  tickers: Sequence[Ticker],
                  fields: Sequence[PriceField],
-                 start_date: datetime, end_date: datetime):
+                 start_date: datetime, end_date: datetime,
+                 check_data_availability: bool = True):
         self.data_provider = data_provider
 
         self._data_bundle = self.data_provider.get_price(tickers, fields, start_date, end_date)
-        self._tickers_cached_set = set(tickers)
-        self._fields_cached_set = set(fields)
-        self._start_date = start_date
-        self._end_date = end_date
+        self._check_data_availability = check_data_availability
+
+        if self._check_data_availability:
+            self._tickers_cached_set = set(tickers)
+            self._fields_cached_set = set(fields)
+            self._start_date = start_date
+            self._end_date = end_date
 
     def get_price(self, tickers: Union[Ticker, Sequence[Ticker]],
                   fields: Union[PriceField, Sequence[PriceField]],
@@ -42,7 +46,8 @@ class PrefetchingDataProvider(DataProvider):
         fields, got_single_field = convert_to_list(fields, PriceField)
         got_single_date = start_date is not None and (start_date == end_date)
 
-        self._check_if_cached_data_available(tickers, fields, start_date, end_date)
+        if self._check_data_availability:
+            self._check_if_cached_data_available(tickers, fields, start_date, end_date)
 
         data_array = self._data_bundle.loc[start_date:end_date, tickers, fields]
         normalized_result = normalize_data_array(data_array, tickers, fields, got_single_date, got_single_ticker,
