@@ -35,7 +35,7 @@ from qf_lib.settings import Settings
 class TickersScreening(object):
 
     def __init__(self, backtest_summary: BacktestSummary,  settings: Settings, pdf_exporter: PDFExporter):
-        self.backtest_result = backtest_summary
+        self.backtest_summary = backtest_summary
         self.settings = settings
         self.pdf_exporter = pdf_exporter
 
@@ -45,7 +45,7 @@ class TickersScreening(object):
         self.num_of_model_params = backtest_summary.num_of_model_params
 
     def create_document(self):
-        add_backtest_description(self.document, self.backtest_result)
+        add_backtest_description(self.document, self.backtest_summary)
 
         selected_tickers, rejected_tickers = self._evaluate_tickers()
 
@@ -58,7 +58,12 @@ class TickersScreening(object):
         self._add_table(rejected_tickers)
 
     def _evaluate_tickers(self):
-        pass
+        for ticker in self.all_tickers_tested:
+            for backtest_elem in self.backtest_summary.elements_list:
+
+                ticker_eval =
+
+
 
     def _add_table(self, tickers_eval_list: Collection[_TickerEvaluationResult]):
         table = Table(column_names=["Ticker", "Max SQN per 100 trades", "Avg #trades per 1Y for Max SQN"],
@@ -70,29 +75,6 @@ class TickersScreening(object):
             table.add_row([ticker_eval.ticker.as_string(), ticker_eval.SQN, ticker_eval.avg_nr_of_trades_1Y])
 
         self.document.add_element(table)
-
-    def _add_single_heat_map(self, input_dict: Dict[tuple, QFDataFrame], ticker: Ticker=None, third_param=None):
-        result_df = QFDataFrame()
-
-        for param_tuple, trades_df in input_dict.items():
-            row, column = param_tuple
-            trades = self._select_trades_of_ticker(input_dict[param_tuple], ticker)
-            value = self._objective_function(trades)
-            result_df.loc[row, column] = value
-
-            result_df.sort_index(axis=0, inplace=True, ascending=False)
-            result_df.sort_index(axis=1, inplace=True)
-
-    def _add_multiple_heat_maps(self, input_dict: Dict[tuple, QFDataFrame], ticker: Ticker=None):
-        # first sort by the third element of the parameters tuple
-        # it is necessary for groupby to work correctly
-        sorted_dict = sorted(input_dict.items(), key=lambda x: x[0][2])
-
-        for third_param, group in groupby(sorted_dict, lambda x: x[0][2]):
-            # group is a structure: (three_elem_tuple, data_frame) where all third elements of the tuple are the same
-            # we want extract the first 2 elements of the tuple to pass it to the _add_single_heat_map method
-            two_elem_tuple_to_df_dict = {three_elem_tuple[:2]: df for three_elem_tuple, df in group}
-            self._add_single_heat_map(two_elem_tuple_to_df_dict, ticker, third_param=third_param)
 
     def _select_trades_of_ticker(self, trades: QFDataFrame, ticker: Ticker):
         """
@@ -111,7 +93,7 @@ class TickersScreening(object):
         number_of_instruments_traded = len(self.all_tickers_tested)
         returns = trades[TradeField.Return]
 
-        period_length = self.backtest_result.end_date - self.backtest_result.start_date
+        period_length = self.backtest_summary.end_date - self.backtest_summary.start_date
         period_length_in_years = to_days(period_length) / DAYS_PER_YEAR_AVG
         avg_number_of_trades_1y = returns.count() / period_length_in_years / number_of_instruments_traded
 
@@ -126,7 +108,7 @@ class TickersScreening(object):
             # Set the style for the report
             plt.style.use(['tearsheet'])
 
-            filename = "%Y_%m_%d-%H%M {}.pdf".format(self.backtest_result.backtest_name)
+            filename = "%Y_%m_%d-%H%M Screening {}.pdf".format(self.backtest_summary.backtest_name)
             filename = datetime.now().strftime(filename)
             self.pdf_exporter.generate([self.document], output_sub_dir, filename)
         else:
