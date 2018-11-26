@@ -17,7 +17,7 @@ class PresetDataProvider(object):
     Wrapper on QFDataArray which makes it a DataProvider.
     """
 
-    def __init__(self, data: QFDataFrame, check_data_availability: bool = True):
+    def __init__(self, data: QFDataArray, check_data_availability: bool = True):
         """
         Parameters
         ----------
