@@ -18,12 +18,17 @@ class PresetDataProvider(DataProvider):
     Wrapper on QFDataArray which makes it a DataProvider.
     """
 
-    def __init__(self, data: QFDataArray, check_data_availability: bool = True):
+    def __init__(self, data: QFDataArray, start_date: datetime, end_date: datetime,
+                 check_data_availability: bool = True):
         """
         Parameters
         ----------
         data
             data to be wrapped
+        start_date
+            beginning of the cached period (not necessarily the first date in the `data`)
+        end_date
+            end of the cached period (not necessarily the last date in the `data`)
         check_data_availability
             True by default. If False then if there's a call for a non-existent piece of data, some strange behaviour
             may occur (e.g. nans returned).
@@ -34,8 +39,8 @@ class PresetDataProvider(DataProvider):
         if self._check_data_availability:
             self._tickers_cached_set = set(data.tickers.values)
             self._fields_cached_set = set(data.fields.values)
-            self._start_date = data.dates.to_pandas()[0].to_pydatetime()
-            self._end_date = data.dates.to_pandas()[-1].to_pydatetime()
+            self._start_date = start_date
+            self._end_date = end_date
 
         self._ticker_types = {type(ticker) for ticker in data.tickers.values}
 

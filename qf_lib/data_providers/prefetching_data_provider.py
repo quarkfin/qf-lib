@@ -24,6 +24,7 @@ class PrefetchingDataProvider(PresetDataProvider):
                  check_data_availability: bool = True):
         super().__init__(
             data=data_provider.get_price(tickers, fields, start_date, end_date),
+            start_date=start_date, end_date=end_date,
             check_data_availability=check_data_availability
         )
 
