@@ -10,9 +10,10 @@ from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.helpers import normalize_data_array
+from qf_lib.data_providers.price_data_provider import DataProvider
 
 
-class PresetDataProvider(object):
+class PresetDataProvider(DataProvider):
     """
     Wrapper on QFDataArray which makes it a DataProvider.
     """
