@@ -13,7 +13,20 @@ from qf_lib.data_providers.helpers import normalize_data_array
 
 
 class PresetDataProvider(object):
+    """
+    Wrapper on QFDataArray which makes it a DataProvider.
+    """
+
     def __init__(self, data: QFDataFrame, check_data_availability: bool = True):
+        """
+        Parameters
+        ----------
+        data
+            data to be wrapped
+        check_data_availability
+            True by default. If False then if there's a call for a non-existent piece of data, some strange behaviour
+            may occur (e.g. nans returned).
+        """
         self._data_bundle = data
         self._check_data_availability = check_data_availability
 
