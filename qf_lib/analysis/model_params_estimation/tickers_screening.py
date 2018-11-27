@@ -50,6 +50,8 @@ class TickersScreening(object):
         self.num_of_model_params = backtest_summary.num_of_model_params
 
     def create_document(self):
+        self.document = Document(self.backtest_summary.backtest_name)
+        self._add_header()
         add_backtest_description(self.document, self.backtest_summary)
 
         selected_tickers, rejected_tickers = self._evaluate_tickers()
@@ -61,6 +63,11 @@ class TickersScreening(object):
         self.document.add_element(HeadingElement(2, "Rejected Tickers"))
         self.document.add_element(ParagraphElement("\n"))
         self._add_table(rejected_tickers)
+
+    def _add_header(self):
+        logo_path = join(get_src_root(), self.settings.logo_path)
+        company_name = self.settings.company_name
+        self.document.add_element(PageHeaderElement(logo_path, company_name, self.backtest_summary.backtest_name))
 
     def _evaluate_tickers(self):
         for ticker in self.all_tickers_tested:

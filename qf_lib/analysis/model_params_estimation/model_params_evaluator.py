@@ -111,11 +111,11 @@ class ModelParamsEvaluator(object):
             value = self._objective_function(trades)
             result_df.loc[row, column] = value
 
-            result_df.sort_index(axis=0, inplace=True, ascending=False)
-            result_df.sort_index(axis=1, inplace=True)
+        result_df.sort_index(axis=0, inplace=True, ascending=False)
+        result_df.sort_index(axis=1, inplace=True)
 
         chart = HeatMapChart(data=result_df, color_map=plt.get_cmap("coolwarm"),
-                             min_value=min(result_df.min()), max_value=max(result_df.max()))
+                             min_value=0, max_value=2)
 
         chart.add_decorator(AxisTickLabelsDecorator(labels=list(result_df.columns), axis=Axis.X))
         chart.add_decorator(AxisTickLabelsDecorator(labels=list(reversed(result_df.index)), axis=Axis.Y))
