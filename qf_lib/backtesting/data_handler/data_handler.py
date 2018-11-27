@@ -48,6 +48,8 @@ class DataHandler(DataProvider):
         Note that requesting during the backtest any other ticker or price field than the ones in the params
         of this function will result in an Exception.
         """
+        assert not self.is_optimised, "Multiple calls on use_data_bundle() are forbidden"
+
         tickers, _ = convert_to_list(tickers, Ticker)
         fields, _ = convert_to_list(fields, PriceField)
         self.price_data_provider = PrefetchingDataProvider(self._initial_data_provider, tickers, fields,
