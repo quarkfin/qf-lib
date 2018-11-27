@@ -20,9 +20,11 @@ def add_backtest_description(document: Document, backtest_result: BacktestSummar
     document.add_element(ParagraphElement("Backtest end date: {}"
                                           .format(date_to_str(backtest_result.end_date))))
 
+    document.add_element(ParagraphElement("\n"))
+
     document.add_element(HeadingElement(2, "Parameters Tested"))
     for param_index, param_list in enumerate(backtest_result.parameters_tested):
         param_list_str = ", ".join(map(str, param_list))
-        document.add_element(ParagraphElement("Parameter #{} = [{}}".format(param_index + 1, param_list_str)))
+        document.add_element(ParagraphElement("Parameter #{} = [{}]".format(param_index + 1, param_list_str)))
 
     document.add_element(NewPageElement())
