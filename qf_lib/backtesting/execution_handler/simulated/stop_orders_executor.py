@@ -107,7 +107,9 @@ class StopOrdersExecutor(object):
         no_slippage_fill_prices_list, to_be_executed_orders, unexecuted_stop_orders_data_dict = \
             self._get_orders_with_fill_prices_without_slippage(open_orders_data, tickers)
 
-        fill_prices = self._slippage_model.apply_slippage(to_be_executed_orders, no_slippage_fill_prices_list)
+        fill_prices, fill_volumes = self._slippage_model.apply_slippage(
+            to_be_executed_orders, no_slippage_fill_prices_list
+        )
 
         for order, fill_price in zip(to_be_executed_orders, fill_prices):
             self._execute_order(order, fill_price)

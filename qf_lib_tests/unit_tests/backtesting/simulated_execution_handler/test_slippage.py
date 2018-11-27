@@ -2,7 +2,7 @@ import unittest
 from unittest import TestCase
 
 from qf_lib.backtesting.contract_to_ticker_conversion.bloomberg_mapper import DummyBloombergContractTickerMapper
-from qf_lib.backtesting.execution_handler.simulated.slippage.fraction_slippage import FractionSlippage
+from qf_lib.backtesting.execution_handler.simulated.slippage.price_based_slippage import PriceBasedSlippage
 from qf_lib.backtesting.order.execution_style import MarketOrder
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.time_in_force import TimeInForce
@@ -43,13 +43,15 @@ class TestSlippage(TestCase):
             )
         ]
 
-    def test_fraction_slippage(self):
-        slippage_model = FractionSlippage(slippage_rate=0.1)
+    def test_price_based_slippage(self):
+        slippage_model = PriceBasedSlippage(slippage_rate=0.1)
 
-        actual_fill_prices = slippage_model.apply_slippage(self.orders, [1.0, 100.0, 1000.0])
+        actual_fill_prices, actual_fill_volumes = slippage_model.apply_slippage(self.orders, [1.0, 100.0, 1000.0])
         expected_fill_prices = [1.1, 90.0, 1100.0]
+        expected_fill_volumes = [1000, 10, 1]
 
         assert_lists_equal(expected_fill_prices, actual_fill_prices)
+        assert_lists_equal(expected_fill_volumes, actual_fill_volumes)
 
 
 if __name__ == '__main__':

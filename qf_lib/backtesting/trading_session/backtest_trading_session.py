@@ -6,7 +6,7 @@ from qf_lib.backtesting.events.event_manager import EventManager
 from qf_lib.backtesting.events.time_flow_controller import BacktestTimeFlowController
 from qf_lib.backtesting.execution_handler.simulated.commission_models.fixed_commission_model import FixedCommissionModel
 from qf_lib.backtesting.execution_handler.simulated.simulated_execution_handler import SimulatedExecutionHandler
-from qf_lib.backtesting.execution_handler.simulated.slippage.fraction_slippage import FractionSlippage
+from qf_lib.backtesting.execution_handler.simulated.slippage.price_based_slippage import PriceBasedSlippage
 from qf_lib.backtesting.monitoring.backtest_monitor import BacktestMonitor
 from qf_lib.backtesting.monitoring.light_backtest_monitor import LightBacktestMonitor
 from qf_lib.backtesting.order.orderfactory import OrderFactory
@@ -74,7 +74,7 @@ class BacktestTradingSession(object):
 
         commission_model = FixedCommissionModel(0.0)  # IBCommissionModel()
 
-        slippage_model = FractionSlippage(0.0)
+        slippage_model = PriceBasedSlippage(0.0)
         execution_handler = SimulatedExecutionHandler(
             data_handler, timer, notifiers.scheduler, monitor, commission_model,
             contract_ticker_mapper, portfolio, slippage_model)

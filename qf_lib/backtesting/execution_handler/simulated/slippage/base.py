@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import Sequence
+from typing import Sequence, Tuple
 
 from qf_lib.backtesting.order.order import Order
 
@@ -7,7 +7,9 @@ from qf_lib.backtesting.order.order import Order
 class Slippage(object, metaclass=ABCMeta):
 
     @abstractmethod
-    def apply_slippage(self, orders: Sequence[Order], no_slippage_fill_prices: Sequence[float]) -> Sequence[float]:
+    def apply_slippage(
+        self, orders: Sequence[Order], no_slippage_fill_prices: Sequence[float]
+    ) -> Tuple[Sequence[float], Sequence[int]]:
         """
         Calculates fill prices for Orders. For Orders that can't be executed (missing security price, etc.) float("nan")
         will be returned.
