@@ -1,5 +1,3 @@
-from numpy import sqrt
-
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.utils.miscellaneous.annualise_with_sqrt import annualise_with_sqrt
 from qf_lib.containers.series.qf_series import QFSeries

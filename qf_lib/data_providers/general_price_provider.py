@@ -20,7 +20,7 @@ from qf_lib.data_providers.quandl.quandl_data_provider import QuandlDataProvider
 
 
 class GeneralPriceProvider(DataProvider):
-    """"
+    """
     The main class that should be used in order to access prices of financial instruments.
     """
 
