@@ -31,15 +31,20 @@ from qf_lib.settings import Settings
 
 
 class ModelParamsSelector(object):
+    """
+    This class provides the logic for automatic selection of best parameters for given alpha model
+    TODO: implementation not finished
+    """
 
     def __init__(self, backtest_result: BacktestSummary):
-        self.backtest_result = backtest_result
 
+        raise NotImplementedError
+
+        self.backtest_result = backtest_result
         self.tickers_tested = backtest_result.tickers
         self.num_of_model_params = backtest_result.num_of_model_params
 
     def something(self):
-
         if self.backtest_result.num_of_model_params == 1:
             chart_adding_function = self._add_line_chart
         elif self.backtest_result.num_of_model_params == 2:
