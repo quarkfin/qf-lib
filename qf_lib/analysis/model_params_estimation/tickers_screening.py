@@ -20,6 +20,7 @@ from qf_lib.common.utils.document_exporting.element.page_header import PageHeade
 from qf_lib.common.utils.document_exporting.element.table import Table
 from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.common.utils.miscellaneous.constants import DAYS_PER_YEAR_AVG
+from qf_lib.common.utils.returns.sqn import sqn, avg_nr_of_trades_per1y
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.plotting.charts.heatmap.heatmap_chart import HeatMapChart
@@ -60,10 +61,10 @@ class TickersScreening(object):
     def _evaluate_tickers(self):
         for ticker in self.all_tickers_tested:
             for backtest_elem in self.backtest_summary.elements_list:
-
-                ticker_eval =
-
-
+                raise NotImplementedError()
+                # ticker_eval = _TickerEvaluationResult()
+                # ticker_eval.SQN = sqn(ticker_trades_df)
+                # ticker_eval.avg_nr_of_trades_1Y = avg_nr_of_trades_per1y()
 
     def _add_table(self, tickers_eval_list: Collection[_TickerEvaluationResult]):
         table = Table(column_names=["Ticker", "Max SQN per 100 trades", "Avg #trades per 1Y for Max SQN"],
