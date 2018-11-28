@@ -27,7 +27,7 @@ class TestSqnUtils(TestCase):
         ])
 
     def test_sqn(self):
-        expected_value = 0.178174161
+        expected_value = 1.78174161
         actual_return = sqn(self.trades)
         self.assertAlmostEqual(expected_value, actual_return, places=4)
 
