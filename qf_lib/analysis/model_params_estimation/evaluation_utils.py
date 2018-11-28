@@ -40,39 +40,7 @@ def add_backtest_description(document: Document, backtest_result: BacktestSummar
     document.add_element(NewPageElement())
 
 
-def evaluate_backtest(backtest_summary: BacktestSummary):
-    ticker_eval_list = []
-
-    for backtest_elem in backtest_summary.elements_list:
-        parameters = backtest_elem.model_parameters
-
-        for ticker in backtest_summary.tickers:
-            all_trades = backtest_elem.trades_df
-
-            # select trades of single ticker
-            trades_of_ticker = all_trades.loc[all_trades[TradeField.Ticker] == ticker]
-
-            ticker_evaluation = TradesEvaluationResult()
-
-            ticker_evaluation.ticker = ticker
-            ticker_evaluation.parameters = parameters
-            ticker_evaluation.sqn = sqn(trades_of_ticker)
-            ticker_evaluation.avg_nr_of_trades_1Y = avg_nr_of_trades_per1y(trades_of_ticker,
-                                                                           backtest_summary.start_date,
-                                                                           backtest_summary.end_date)
-
-            ticker_evaluation.annualised_return = trade_based_cagr(trades_of_ticker,
-                                                                   backtest_summary.start_date,
-                                                                   backtest_summary.end_date)
-
-            ticker_evaluation.drawdown = trade_based_max_drawdown(trades_of_ticker)
-
-            ticker_eval_list.append(ticker_evaluation)
-
-    return ticker_eval_list
-
-
-class Evaluator(object):
+class BacktestSummaryEvaluator(object):
     def __init__(self, backtest_summary: BacktestSummary):
         self.backtest_summary = backtest_summary
 
@@ -80,7 +48,7 @@ class Evaluator(object):
         for elem in backtest_summary.elements_list:
             self.params_backtest_summary_elem_dict[elem.model_parameters] = elem
 
-    def evaluate_backtest_specific(self, parameters: tuple, tickers: Sequence[Ticker]):
+    def evaluate_params_for_tickers(self, parameters: tuple, tickers: Sequence[Ticker]):
         trades_of_tickers = self._select_trades_of_tickers(parameters, tickers)
         return self._evaluate_single_trades_df(parameters, tickers, trades_of_tickers)
 

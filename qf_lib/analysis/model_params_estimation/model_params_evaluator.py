@@ -1,23 +1,20 @@
 from datetime import datetime
 from itertools import groupby
-from typing import Dict, Callable, Any, Sequence
 from os.path import join
+from typing import Callable, Any, Sequence
 
 import matplotlib.pyplot as plt
 import numpy as np
 
 from geneva_analytics.backtesting.alpha_models_testers.backtest_summary import BacktestSummary
 from get_sources_root import get_src_root
-from qf_lib.analysis.model_params_estimation.evaluation_utils import add_backtest_description, evaluate_backtest, \
-    Evaluator
+from qf_lib.analysis.model_params_estimation.evaluation_utils import add_backtest_description, BacktestSummaryEvaluator
 from qf_lib.common.enums.axis import Axis
 from qf_lib.common.enums.plotting_mode import PlottingMode
 from qf_lib.common.enums.trade_field import TradeField
 from qf_lib.common.tickers.tickers import Ticker
-from qf_lib.common.utils.dateutils.date_to_string import date_to_str
 from qf_lib.common.utils.dateutils.to_days import to_days
-from qf_lib.common.utils.document_exporting import Document, ChartElement, ParagraphElement, HeadingElement, GridElement
-from qf_lib.common.utils.document_exporting.element.new_page import NewPageElement
+from qf_lib.common.utils.document_exporting import Document, GridElement
 from qf_lib.common.utils.document_exporting.element.page_header import PageHeaderElement
 from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.common.utils.miscellaneous.constants import DAYS_PER_YEAR_AVG
@@ -37,7 +34,7 @@ class ModelParamsEvaluator(object):
 
     def __init__(self, settings: Settings, pdf_exporter: PDFExporter):
         self.backtest_result = None
-        self.backtest_evaluator = None  # type: Evaluator
+        self.backtest_evaluator = None  # type: BacktestSummaryEvaluator
         self.document = None
 
         # position is linked to the position of axis in tearsheet.mplstyle
@@ -48,7 +45,7 @@ class ModelParamsEvaluator(object):
 
     def build_document(self, backtest_result: BacktestSummary):
         self.backtest_result = backtest_result
-        self.backtest_evaluator = Evaluator(backtest_result)
+        self.backtest_evaluator = BacktestSummaryEvaluator(backtest_result)
         self.document = Document(backtest_result.backtest_name)
 
         self._add_header()
@@ -90,7 +87,7 @@ class ModelParamsEvaluator(object):
 
         results = []
         for param_tuple in params:
-            trades_eval_result = self.backtest_evaluator.evaluate_backtest_specific(param_tuple, tickers)
+            trades_eval_result = self.backtest_evaluator.evaluate_params_for_tickers(param_tuple, tickers)
             results.append(trades_eval_result)
 
         sqn = [elem.sqn for elem in results]
@@ -121,7 +118,7 @@ class ModelParamsEvaluator(object):
         for param_tuple in parameters_list:
             row = param_tuple[0]
             column = param_tuple[1]
-            trades_eval_result = self.backtest_evaluator.evaluate_backtest_specific(param_tuple, tickers)
+            trades_eval_result = self.backtest_evaluator.evaluate_params_for_tickers(param_tuple, tickers)
             result_df.loc[row, column] = trades_eval_result
 
         result_df.sort_index(axis=0, inplace=True, ascending=False)
