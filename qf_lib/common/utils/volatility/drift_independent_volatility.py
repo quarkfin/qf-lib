@@ -3,6 +3,7 @@ import numpy as np
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.utils.miscellaneous.annualise_with_sqrt import annualise_with_sqrt
+from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
 
@@ -10,7 +11,7 @@ from qf_lib.containers.series.qf_series import QFSeries
 class DriftIndependentVolatility(object):
 
     @staticmethod
-    def get_volatility(ohlc: QFDataFrame, frequency: Frequency=None, annualise: bool=True, alpha: float=None) -> float:
+    def get_volatility(ohlc: PricesDataFrame, frequency: Frequency=None, annualise: bool=True, alpha: float=None) -> float:
         """
 
         Implementation of the algorithm described in 'Drift Independent Volatility Estimation Based on High, Low,
