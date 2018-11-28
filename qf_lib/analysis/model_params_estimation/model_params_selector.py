@@ -8,7 +8,6 @@ import numpy as np
 
 from geneva_analytics.backtesting.alpha_models_testers.backtest_summary import BacktestSummary
 from get_sources_root import get_src_root
-from qf_lib.analysis.model_params_estimation.add_backtest_description import add_backtest_description
 from qf_lib.common.enums.axis import Axis
 from qf_lib.common.enums.trade_field import TradeField
 from qf_lib.common.tickers.tickers import Ticker
@@ -31,57 +30,40 @@ from qf_lib.plotting.decorators.title_decorator import TitleDecorator
 from qf_lib.settings import Settings
 
 
-class ModelParamsEvaluator(object):
+class ModelParamsSelector(object):
+    """
+    This class provides the logic for automatic selection of best parameters for given alpha model
+    TODO: implementation not finished
+    """
 
-    def __init__(self, settings: Settings, pdf_exporter: PDFExporter):
-        self.backtest_result = None
-        self.document = None
-        self.tickers_tested = None
+    def __init__(self, backtest_result: BacktestSummary):
 
-        # position is linked to the position of axis in tearsheet.mplstyle
-        self.image_size = (7, 7)
-        self.dpi = 400
-        self.settings = settings
-        self.pdf_exporter = pdf_exporter
+        raise NotImplementedError
 
-    def build_document(self, backtest_result: BacktestSummary):
         self.backtest_result = backtest_result
-        self.document = Document(backtest_result.backtest_name)
         self.tickers_tested = backtest_result.tickers
+        self.num_of_model_params = backtest_result.num_of_model_params
 
-        self._add_header()
-        self._add_description_of_backtest()
-
-        input_dict = {}
-        for elem in backtest_result.elements_list:
-            input_dict[elem.model_parameters] = elem.trades_df
-
-        if backtest_result.num_of_model_params == 1:
+    def something(self):
+        if self.backtest_result.num_of_model_params == 1:
             chart_adding_function = self._add_line_chart
-        elif backtest_result.num_of_model_params == 2:
+        elif self.backtest_result.num_of_model_params == 2:
             chart_adding_function = self._add_single_heat_map
-        elif backtest_result.num_of_model_params == 3:
+        elif self.backtest_result.num_of_model_params == 3:
             chart_adding_function = self._add_multiple_heat_maps
         else:
             raise ValueError("Incorrect number of parameters. Supported: 1, 2 and 3")
 
-        self._create_charts(input_dict, chart_adding_function)
+        input_dict = {}
+        for elem in self.backtest_result.elements_list:
+            input_dict[elem.model_parameters] = elem.trades_df
 
-    def _create_charts(self, input_dict: Dict[tuple, QFDataFrame], chart_adding_function: Callable[[Any], None]):
         # create a chart for all trades of all tickers traded
         chart_adding_function(input_dict)
 
         for ticker in self.tickers_tested:
             # create a chart for single ticker
             chart_adding_function(input_dict, ticker=ticker)
-
-    def _add_header(self):
-        logo_path = join(get_src_root(), self.settings.logo_path)
-        company_name = self.settings.company_name
-        self.document.add_element(PageHeaderElement(logo_path, company_name, self.backtest_result.backtest_name))
-
-    def _add_description_of_backtest(self):
-        add_backtest_description(self.document, self.backtest_result)
 
     def _add_line_chart(self, input_dict: Dict[tuple, QFDataFrame], ticker: Ticker=None):
         params = sorted(input_dict.keys())  # this will sort the tuples
@@ -95,13 +77,6 @@ class ModelParamsEvaluator(object):
         params_as_values = [param_tuple[0] for param_tuple in params]
         result_series = QFSeries(data=values, index=params_as_values)
 
-        line_chart = LineChart()
-        data_element = DataElementDecorator(result_series)
-        line_chart.add_decorator(data_element)
-        line_chart.add_decorator(TitleDecorator(self._get_chart_title(ticker)))
-        line_chart.add_decorator(AxesLabelDecorator(x_label="Parameter value", y_label="Objective Function"))
-        self.document.add_element(ChartElement(line_chart, figsize=self.image_size, dpi=self.dpi))
-
     def _add_single_heat_map(self, input_dict: Dict[tuple, QFDataFrame], ticker: Ticker=None, third_param=None):
         result_df = QFDataFrame()
 
@@ -111,24 +86,8 @@ class ModelParamsEvaluator(object):
             value = self._objective_function(trades)
             result_df.loc[row, column] = value
 
-        result_df.sort_index(axis=0, inplace=True, ascending=False)
-        result_df.sort_index(axis=1, inplace=True)
-
-        chart = HeatMapChart(data=result_df, color_map=plt.get_cmap("coolwarm"),
-                             min_value=0, max_value=2)
-
-        chart.add_decorator(AxisTickLabelsDecorator(labels=list(result_df.columns), axis=Axis.X))
-        chart.add_decorator(AxisTickLabelsDecorator(labels=list(reversed(result_df.index)), axis=Axis.Y))
-        chart.add_decorator(ValuesAnnotations())
-        chart.add_decorator(AxesLabelDecorator(x_label="Parameter 2", y_label="Parameter 1"))
-
-        if third_param is None:
-            title = self._get_chart_title(ticker)
-        else:
-            title = "{}, 3rd param = {:0.2f}".format(self._get_chart_title(ticker), third_param)
-        chart.add_decorator(TitleDecorator(title))
-
-        self.document.add_element(ChartElement(chart, figsize=self.image_size, dpi=self.dpi))
+            result_df.sort_index(axis=0, inplace=True, ascending=False)
+            result_df.sort_index(axis=1, inplace=True)
 
     def _add_multiple_heat_maps(self, input_dict: Dict[tuple, QFDataFrame], ticker: Ticker=None):
         # first sort by the third element of the parameters tuple
@@ -141,14 +100,6 @@ class ModelParamsEvaluator(object):
             two_elem_tuple_to_df_dict = {three_elem_tuple[:2]: df for three_elem_tuple, df in group}
             self._add_single_heat_map(two_elem_tuple_to_df_dict, ticker, third_param=third_param)
 
-    def _get_chart_title(self, ticker):
-        backtest_name = self.backtest_result.backtest_name
-        if ticker is None:
-            title = "{} - All Tickers".format(backtest_name)
-        else:
-            title = "{} - {}".format(backtest_name, ticker.as_string())
-        return title
-
     def _select_trades_of_ticker(self, trades: QFDataFrame, ticker: Ticker):
         """
         Select only the trades generated by the ticker provided
@@ -160,10 +111,10 @@ class ModelParamsEvaluator(object):
 
     def _objective_function(self, trades: QFDataFrame):
         """
-        Calculates the SQN * sqrt(average number of trades per year)
+        Calculates the simple SQN * sqrt(average number of trades per year)
         """
 
-        number_of_instruments_traded = trades[TradeField.Ticker].unique().size
+        number_of_instruments_traded = len(self.tickers_tested)
         returns = trades[TradeField.Return]
 
         period_length = self.backtest_result.end_date - self.backtest_result.start_date
@@ -173,18 +124,3 @@ class ModelParamsEvaluator(object):
         sqn = returns.mean() / returns.std()
         sqn = sqn * np.sqrt(avg_number_of_trades_1y)
         return sqn
-
-    def save(self):
-        if self.document is not None:
-            output_sub_dir = "param_estimation"
-
-            # Set the style for the report
-            plt.style.use(['tearsheet'])
-
-            filename = "%Y_%m_%d-%H%M {}.pdf".format(self.backtest_result.backtest_name)
-            filename = datetime.now().strftime(filename)
-            self.pdf_exporter.generate([self.document], output_sub_dir, filename)
-        else:
-            raise AssertionError("The documnent is not initialized. Build the document first")
-
-
