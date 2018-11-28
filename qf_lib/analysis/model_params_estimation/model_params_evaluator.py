@@ -166,22 +166,6 @@ class ModelParamsEvaluator(object):
             raise ValueError("No tickers provided")
         return title
 
-    def _objective_function(self, trades: QFDataFrame):
-        """
-        Calculates the SQN * sqrt(average number of trades per year)
-        """
-
-        number_of_instruments_traded = trades[TradeField.Ticker].unique().size
-        returns = trades[TradeField.Return]
-
-        period_length = self.backtest_result.end_date - self.backtest_result.start_date
-        period_length_in_years = to_days(period_length) / DAYS_PER_YEAR_AVG
-        avg_number_of_trades_1y = returns.count() / period_length_in_years / number_of_instruments_traded
-
-        sqn = returns.mean() / returns.std()
-        sqn = sqn * np.sqrt(avg_number_of_trades_1y)
-        return sqn
-
     def save(self):
         if self.document is not None:
             output_sub_dir = "param_estimation"
