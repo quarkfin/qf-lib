@@ -56,7 +56,7 @@ def evaluate_backtest(backtest_summary: BacktestSummary):
 
             ticker_evaluation.ticker = ticker
             ticker_evaluation.parameters = parameters
-            ticker_evaluation.SQN = sqn(trades_of_ticker)
+            ticker_evaluation.sqn = sqn(trades_of_ticker)
             ticker_evaluation.avg_nr_of_trades_1Y = avg_nr_of_trades_per1y(trades_of_ticker,
                                                                            backtest_summary.start_date,
                                                                            backtest_summary.end_date)
@@ -88,7 +88,7 @@ class Evaluator(object):
         ticker_evaluation = TradesEvaluationResult()
         ticker_evaluation.ticker = tickers_to_be_used
         ticker_evaluation.parameters = parameters
-        ticker_evaluation.SQN = sqn(trades_of_tickers)
+        ticker_evaluation.sqn = sqn(trades_of_tickers)
         ticker_evaluation.avg_nr_of_trades_1Y = avg_nr_of_trades_per1y(trades_of_tickers,
                                                                        self.backtest_summary.start_date,
                                                                        self.backtest_summary.end_date)
@@ -112,7 +112,7 @@ class TradesEvaluationResult(object):
         self.ticker = None
         self.parameters = None
 
-        self.SQN = None
+        self.sqn = None
         self.avg_nr_of_trades_1Y = None
         self.annualised_return = None
         self.drawdown = None
