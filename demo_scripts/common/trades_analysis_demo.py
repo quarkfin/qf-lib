@@ -19,17 +19,17 @@ def get_data():
     trades_df = DataFrame(np.random.normal(0.01, 0.2, 200), columns=[TradeField.Return])
     trades_df.loc[0, TradeField.StartDate] = start_date
     trades_df.loc[199, TradeField.EndDate] = end_date
-    return trades_df, 1
+    return trades_df, 1, start_date, end_date
 
 
 this_dir_path = os.path.dirname(os.path.abspath(__file__))
-trades_df, nr_of_assets_traded = cached_value(get_data, os.path.join(this_dir_path, 'trade_analysis.cache'))
+trades_df, nr_of_assets_traded, start_date, end_date = cached_value(get_data, os.path.join(this_dir_path, 'trade_analysis.cache'))
 
 
 settings = container.resolve(Settings)  # type: Settings
 pdf_exporter = container.resolve(PDFExporter)  # type: PDFExporter
 
-trade_analysis_sheet = TradeAnalysisSheet(settings, pdf_exporter, trades_df,
+trade_analysis_sheet = TradeAnalysisSheet(settings, pdf_exporter, trades_df, start_date, end_date,
                                           nr_of_assets_traded=nr_of_assets_traded,
                                           title="Sample trade analysis")
 trade_analysis_sheet.build_document()
