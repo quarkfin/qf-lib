@@ -42,7 +42,7 @@ class TestSqnUtils(TestCase):
         self.assertAlmostEqual(expected_value, actual_return, places=4)
 
     def test_trade_based_max_drawdown(self):
-        expected_value = 0.0975
+        expected_value = -0.0975
         actual_return = trade_based_max_drawdown(self.trades)
         self.assertAlmostEqual(expected_value, actual_return, places=4)
 

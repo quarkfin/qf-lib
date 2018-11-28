@@ -58,4 +58,4 @@ def trade_based_max_drawdown(trades: QFDataFrame):
     returns = trades[TradeField.Return]
     dates = trades[TradeField.EndDate]
     returns_tms = SimpleReturnsSeries(index=dates, data=returns.values)
-    return max_drawdown(returns_tms)
+    return -max_drawdown(returns_tms)

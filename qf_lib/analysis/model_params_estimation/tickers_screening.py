@@ -73,7 +73,7 @@ class TickersScreening(object):
         for ticker in self.all_tickers_tested:
             for backtest_elem in self.backtest_summary.elements_list:
                 raise NotImplementedError()
-                # ticker_eval = TickerEvaluationResult()
+                # ticker_eval = TradesEvaluationResult()
                 # ticker_eval.SQN = sqn(ticker_trades_df)
                 # ticker_eval.avg_nr_of_trades_1Y = avg_nr_of_trades_per1y()
 
