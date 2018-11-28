@@ -4,20 +4,16 @@ from os.path import join
 from typing import Callable, Any, Sequence
 
 import matplotlib.pyplot as plt
-import numpy as np
 
 from geneva_analytics.backtesting.alpha_models_testers.backtest_summary import BacktestSummary
 from get_sources_root import get_src_root
 from qf_lib.analysis.model_params_estimation.evaluation_utils import add_backtest_description, BacktestSummaryEvaluator
 from qf_lib.common.enums.axis import Axis
 from qf_lib.common.enums.plotting_mode import PlottingMode
-from qf_lib.common.enums.trade_field import TradeField
 from qf_lib.common.tickers.tickers import Ticker
-from qf_lib.common.utils.dateutils.to_days import to_days
 from qf_lib.common.utils.document_exporting import Document, GridElement
 from qf_lib.common.utils.document_exporting.element.page_header import PageHeaderElement
 from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
-from qf_lib.common.utils.miscellaneous.constants import DAYS_PER_YEAR_AVG
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.plotting.charts.heatmap.heatmap_chart import HeatMapChart
@@ -81,7 +77,7 @@ class ModelParamsEvaluator(object):
         self.document.add_element(PageHeaderElement(logo_path, company_name, self.backtest_result.backtest_name))
 
     def _add_line_chart_grid(self, tickers: Sequence[Ticker]):
-        grid = GridElement(mode=PlottingMode.PDF, figsize=(5, 5))
+        grid = GridElement(mode=PlottingMode.PDF, figsize=self.image_size)
         params = sorted(self.backtest_evaluator.params_backtest_summary_elem_dict.keys())  # this will sort the tuples
         params_as_values = [param_tuple[0] for param_tuple in params]
 
@@ -112,7 +108,7 @@ class ModelParamsEvaluator(object):
         return line_chart
 
     def _add_heat_map_grid(self, tickers: Sequence[Ticker], parameters_list: Sequence[tuple], third_param=None):
-        grid = GridElement(mode=PlottingMode.PDF, figsize=(5, 5))
+        grid = GridElement(mode=PlottingMode.PDF, figsize=self.image_size)
         result_df = QFDataFrame()
 
         for param_tuple in parameters_list:
