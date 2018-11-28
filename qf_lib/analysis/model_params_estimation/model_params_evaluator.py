@@ -8,7 +8,7 @@ import numpy as np
 
 from geneva_analytics.backtesting.alpha_models_testers.backtest_summary import BacktestSummary
 from get_sources_root import get_src_root
-from qf_lib.analysis.model_params_estimation.add_backtest_description import add_backtest_description
+from qf_lib.analysis.model_params_estimation.evaluation_utils import add_backtest_description
 from qf_lib.common.enums.axis import Axis
 from qf_lib.common.enums.trade_field import TradeField
 from qf_lib.common.tickers.tickers import Ticker

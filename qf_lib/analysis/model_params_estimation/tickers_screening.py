@@ -8,7 +8,7 @@ import numpy as np
 
 from geneva_analytics.backtesting.alpha_models_testers.backtest_summary import BacktestSummary
 from get_sources_root import get_src_root
-from qf_lib.analysis.model_params_estimation.add_backtest_description import add_backtest_description
+from qf_lib.analysis.model_params_estimation.evaluation_utils import add_backtest_description
 from qf_lib.common.enums.axis import Axis
 from qf_lib.common.enums.trade_field import TradeField
 from qf_lib.common.tickers.tickers import Ticker
@@ -73,7 +73,7 @@ class TickersScreening(object):
         for ticker in self.all_tickers_tested:
             for backtest_elem in self.backtest_summary.elements_list:
                 raise NotImplementedError()
-                # ticker_eval = _TickerEvaluationResult()
+                # ticker_eval = TickerEvaluationResult()
                 # ticker_eval.SQN = sqn(ticker_trades_df)
                 # ticker_eval.avg_nr_of_trades_1Y = avg_nr_of_trades_per1y()
 
@@ -125,11 +125,3 @@ class TickersScreening(object):
             self.pdf_exporter.generate([self.document], output_sub_dir, filename)
         else:
             raise AssertionError("The documnent is not initialized. Build the document first")
-
-
-class _TickerEvaluationResult(object):
-
-    def __init__(self):
-        self.ticker = None
-        self.SQN = None
-        self.avg_nr_of_trades_1Y = None
