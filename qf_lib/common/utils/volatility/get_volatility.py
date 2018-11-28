@@ -24,6 +24,7 @@ def get_volatility(qf_series: QFSeries, frequency: Frequency=None, annualise: bo
         volatility for the whole series.
     """
     returns_tms = qf_series.to_log_returns()
+    assert len(returns_tms) >= 2, "minimal num_of_rows to receive a real result is 2"
     assert not annualise or frequency is not None
 
     volatility = returns_tms.std()
