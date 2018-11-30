@@ -14,12 +14,19 @@ from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
 
 def sqn(trades: QFDataFrame):
     """
-    Calculates the SQN = mean return of trade / std(returns of trades) * sqrt(100)
+    Calculates the SQN = mean return of trade / std(returns of trades)
     """
 
     returns = trades[TradeField.Return]
-    result = returns.mean() / returns.std() * 10
+    result = returns.mean() / returns.std()
     return result
+
+
+def sqn_for100trades(trades: QFDataFrame):
+    """
+    Calculates the SQN = mean return of trade / std(returns of trades) * sqrt(100)
+    """
+    return sqn(trades) * 10
 
 
 def avg_nr_of_trades_per1y(trades: QFDataFrame, start_date: datetime, end_date: datetime):

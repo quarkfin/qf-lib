@@ -20,7 +20,7 @@ from qf_lib.common.utils.document_exporting.element.page_header import PageHeade
 from qf_lib.common.utils.document_exporting.element.table import Table
 from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.common.utils.miscellaneous.constants import DAYS_PER_YEAR_AVG
-from qf_lib.common.utils.returns.sqn import sqn, avg_nr_of_trades_per1y
+from qf_lib.common.utils.returns.sqn import sqn_for100trades, avg_nr_of_trades_per1y
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.plotting.charts.heatmap.heatmap_chart import HeatMapChart

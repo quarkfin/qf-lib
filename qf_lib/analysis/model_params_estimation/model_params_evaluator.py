@@ -21,6 +21,7 @@ from qf_lib.plotting.charts.heatmap.heatmap_chart import HeatMapChart
 from qf_lib.plotting.charts.heatmap.values_annotations import ValuesAnnotations
 from qf_lib.plotting.charts.line_chart import LineChart
 from qf_lib.plotting.decorators.axes_label_decorator import AxesLabelDecorator
+from qf_lib.plotting.decorators.axes_position_decorator import AxesPositionDecorator
 from qf_lib.plotting.decorators.axis_tick_labels_decorator import AxisTickLabelsDecorator
 from qf_lib.plotting.decorators.data_element_decorator import DataElementDecorator
 from qf_lib.plotting.decorators.title_decorator import TitleDecorator
@@ -35,7 +36,8 @@ class ModelParamsEvaluator(object):
         self.document = None
 
         # position is linked to the position of axis in tearsheet.mplstyle
-        self.image_size = (7, 7)
+        self.image_size = (7, 6)
+        self.image_axis_position = (0.08, 0.08, 0.92, 0.85)
         self.dpi = 400
         self.settings = settings
         self.pdf_exporter = pdf_exporter
@@ -88,12 +90,14 @@ class ModelParamsEvaluator(object):
             trades_eval_result = self.backtest_evaluator.evaluate_params_for_tickers(param_tuple, tickers)
             results.append(trades_eval_result)
 
-        sqn = [elem.sqn for elem in results]
+        sqn_avg_trades = [elem.sqn_per_avg_nr_trades for elem in results]
+        sqn_per100trades = [elem.sqn_per100trades for elem in results]
         avg_nr_of_trades = [elem.avg_nr_of_trades_1Y for elem in results]
         annualised_return = [elem.annualised_return for elem in results]
         drawdown = [elem.drawdown for elem in results]
 
-        grid.add_chart(self._crete_single_line_chart("SQN per 100trades", params_as_values, sqn, tickers))
+        grid.add_chart(self._crete_single_line_chart("SQN / AVG #trades", params_as_values, sqn_avg_trades, tickers))
+        grid.add_chart(self._crete_single_line_chart("SQN / 100 trades", params_as_values, sqn_per100trades, tickers))
         grid.add_chart(self._crete_single_line_chart("Avg # trades 1Y", params_as_values, avg_nr_of_trades, tickers))
         grid.add_chart(self._crete_single_line_chart("An Return", params_as_values, annualised_return, tickers))
         grid.add_chart(self._crete_single_line_chart("Drawdown", params_as_values, drawdown, tickers))
@@ -108,6 +112,7 @@ class ModelParamsEvaluator(object):
         line_chart.add_decorator(TitleDecorator(self._get_chart_title(tickers, measure_name)))
         param_names = self._get_param_names()
         line_chart.add_decorator(AxesLabelDecorator(x_label=param_names[0], y_label=measure_name))
+        self._resize_chart(line_chart)
         return line_chart
 
     def _add_heat_map_grid(self, tickers: Sequence[Ticker], parameters_list: Sequence[tuple], third_param=None):
@@ -123,12 +128,14 @@ class ModelParamsEvaluator(object):
         result_df.sort_index(axis=0, inplace=True, ascending=False)
         result_df.sort_index(axis=1, inplace=True)
 
-        sqn = result_df.applymap(lambda x: x.sqn)
+        sqn_avg_nr_trades = result_df.applymap(lambda x: x.sqn_per_avg_nr_trades)
+        sqn_per100trades = result_df.applymap(lambda x: x.sqn_per100trades)
         avg_nr_of_trades = result_df.applymap(lambda x: x.avg_nr_of_trades_1Y)
         annualised_return = result_df.applymap(lambda x: x.annualised_return)
         drawdown = result_df.applymap(lambda x: x.drawdown)
 
-        grid.add_chart(self._create_single_heat_map("SQN per 100trades", sqn, tickers, 0, 2, third_param))
+        grid.add_chart(self._create_single_heat_map("SQN / AVG #trades", sqn_avg_nr_trades, tickers, 0, 1, third_param))
+        grid.add_chart(self._create_single_heat_map("SQN / 100 trades", sqn_per100trades, tickers, 0, 2, third_param))
         grid.add_chart(self._create_single_heat_map("Avg # trades 1Y", avg_nr_of_trades, tickers, 3, 30, third_param))
         grid.add_chart(self._create_single_heat_map("An Return", annualised_return, tickers, -0.1, 0.2, third_param))
         grid.add_chart(self._create_single_heat_map("Drawdown", drawdown, tickers, -0.5, -0.1, third_param))
@@ -147,7 +154,13 @@ class ModelParamsEvaluator(object):
         else:
             title = "{}, {} = {:0.2f}".format(self._get_chart_title(tickers, measure_name), param_names[2], third_param)
         chart.add_decorator(TitleDecorator(title))
+        self._resize_chart(chart)
         return chart
+
+    def _resize_chart(self, chart):
+        left, bottom, width, height = self.image_axis_position
+        position_decorator = AxesPositionDecorator(left, bottom, width, height)
+        chart.add_decorator(position_decorator)
 
     def _add_multiple_heat_maps(self, tickers: Sequence[Ticker]):
         parameters_list = self.backtest_evaluator.params_backtest_summary_elem_dict.keys()

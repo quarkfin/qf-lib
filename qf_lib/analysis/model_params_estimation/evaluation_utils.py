@@ -1,12 +1,14 @@
 from typing import List, Sequence
 
+from math import sqrt
+
 from geneva_analytics.backtesting.alpha_models_testers.backtest_summary import BacktestSummary
 from qf_lib.common.enums.trade_field import TradeField
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.date_to_string import date_to_str
 from qf_lib.common.utils.document_exporting import Document, ParagraphElement, HeadingElement
 from qf_lib.common.utils.document_exporting.element.new_page import NewPageElement
-from qf_lib.common.utils.returns.sqn import sqn, avg_nr_of_trades_per1y, trade_based_cagr, trade_based_max_drawdown
+from qf_lib.common.utils.returns.sqn import sqn_for100trades, avg_nr_of_trades_per1y, trade_based_cagr, trade_based_max_drawdown
 
 
 def add_backtest_description(document: Document, backtest_result: BacktestSummary, param_names: List[str]):
@@ -55,14 +57,18 @@ class BacktestSummaryEvaluator(object):
         ticker_evaluation = TradesEvaluationResult()
         ticker_evaluation.ticker = tickers_to_be_used
         ticker_evaluation.parameters = parameters
-        ticker_evaluation.sqn = sqn(trades_of_tickers)
-        ticker_evaluation.avg_nr_of_trades_1Y = avg_nr_of_trades_per1y(trades_of_tickers,
-                                                                       self.backtest_summary.start_date,
-                                                                       self.backtest_summary.end_date)
+        ticker_evaluation.sqn_per100trades = sqn_for100trades(trades_of_tickers)
+        avg_nr_of_trades = avg_nr_of_trades_per1y(trades_of_tickers, self.backtest_summary.start_date,
+                                                  self.backtest_summary.end_date)
+        ticker_evaluation.avg_nr_of_trades_1Y = avg_nr_of_trades
         ticker_evaluation.annualised_return = trade_based_cagr(trades_of_tickers,
                                                                self.backtest_summary.start_date,
                                                                self.backtest_summary.end_date)
         ticker_evaluation.drawdown = trade_based_max_drawdown(trades_of_tickers)
+
+        if avg_nr_of_trades > 5:  # for clarity of the chart remove values that do not show enough trading
+            ticker_evaluation.sqn_per_avg_nr_trades = ticker_evaluation.sqn_per100trades / 10 * sqrt(avg_nr_of_trades)
+
         return ticker_evaluation
 
     def _select_trades_of_tickers(self, parameters: tuple, tickers: Sequence[Ticker]):
@@ -79,7 +85,8 @@ class TradesEvaluationResult(object):
         self.ticker = None
         self.parameters = None
 
-        self.sqn = None
+        self.sqn_per_avg_nr_trades = None
+        self.sqn_per100trades = None
         self.avg_nr_of_trades_1Y = None
         self.annualised_return = None
         self.drawdown = None
