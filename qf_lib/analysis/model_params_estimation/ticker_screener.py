@@ -33,7 +33,7 @@ from qf_lib.plotting.decorators.title_decorator import TitleDecorator
 from qf_lib.settings import Settings
 
 
-class TickersScreening(object):
+class TickerScreener(object):
     """
     Class enables generation of the PDF document containing evaluation of trades on individual tickers
     TODO: Implementation not finished
