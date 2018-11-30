@@ -1,4 +1,5 @@
 from datetime import datetime
+from inspect import getfullargspec
 from itertools import groupby
 from os.path import join
 from typing import Callable, Any, Sequence
@@ -45,7 +46,8 @@ class ModelParamsEvaluator(object):
         self.document = Document(backtest_result.backtest_name)
 
         self._add_header()
-        add_backtest_description(self.document, self.backtest_result)
+        param_names = self._get_param_names()
+        add_backtest_description(self.document, self.backtest_result, param_names)
 
         if backtest_result.num_of_model_params == 1:
             chart_adding_function = self._add_line_chart_grid
@@ -104,7 +106,8 @@ class ModelParamsEvaluator(object):
         data_element = DataElementDecorator(result_series)
         line_chart.add_decorator(data_element)
         line_chart.add_decorator(TitleDecorator(self._get_chart_title(tickers, measure_name)))
-        line_chart.add_decorator(AxesLabelDecorator(x_label="Parameter value", y_label=measure_name))
+        param_names = self._get_param_names()
+        line_chart.add_decorator(AxesLabelDecorator(x_label=param_names[0], y_label=measure_name))
         return line_chart
 
     def _add_heat_map_grid(self, tickers: Sequence[Ticker], parameters_list: Sequence[tuple], third_param=None):
@@ -137,11 +140,12 @@ class ModelParamsEvaluator(object):
         chart.add_decorator(AxisTickLabelsDecorator(labels=list(result_df.columns), axis=Axis.X))
         chart.add_decorator(AxisTickLabelsDecorator(labels=list(reversed(result_df.index)), axis=Axis.Y))
         chart.add_decorator(ValuesAnnotations())
-        chart.add_decorator(AxesLabelDecorator(x_label="Parameter 2", y_label="Parameter 1"))
+        param_names = self._get_param_names()
+        chart.add_decorator(AxesLabelDecorator(x_label=param_names[1], y_label=param_names[0]))
         if third_param is None:
             title = self._get_chart_title(tickers, measure_name)
         else:
-            title = "{}, 3rd param = {:0.2f}".format(self._get_chart_title(tickers, measure_name), third_param)
+            title = "{}, {} = {:0.2f}".format(self._get_chart_title(tickers, measure_name), param_names[2], third_param)
         chart.add_decorator(TitleDecorator(title))
         return chart
 
@@ -162,6 +166,22 @@ class ModelParamsEvaluator(object):
             raise ValueError("No tickers provided")
         return title
 
+    def _get_param_names(self):
+        names = []
+        num_of_params = self.backtest_result.num_of_model_params
+        model_type = self.backtest_result.alpha_model_type
+
+        args = getfullargspec(model_type.__init__).args
+        if len(args) <= 3:  # alpha model type does not include any parameter fields to evaluate
+            for param in range(1, num_of_params + 1):
+                names.append("Parameter #{}".format(param))
+        else:
+            for param in range(1, num_of_params + 1):
+                names.append(args[param])
+
+        assert len(names) == self.backtest_result.num_of_model_params
+        return names
+
     def save(self):
         if self.document is not None:
             output_sub_dir = "param_estimation"
@@ -174,5 +194,3 @@ class ModelParamsEvaluator(object):
             self.pdf_exporter.generate([self.document], output_sub_dir, filename)
         else:
             raise AssertionError("The documnent is not initialized. Build the document first")
-
-
