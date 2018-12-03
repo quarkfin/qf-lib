@@ -69,7 +69,7 @@ class StopOrdersExecutor(object):
                 else:
                     raise ValueError(
                         "Incorrect stop price ({stop_price:5.2f}). "
-                        "For the Sell Stop it must be placed below "
+                        "For the Buy Stop it must be placed above "
                         "the current market price ({current_price:5.2f})".format(
                             stop_price=stop_price, current_price=current_price
                         ))
