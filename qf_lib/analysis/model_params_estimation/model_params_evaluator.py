@@ -1,29 +1,27 @@
 from datetime import datetime
+from inspect import getfullargspec
 from itertools import groupby
-from typing import Dict, Callable, Any
 from os.path import join
+from typing import Callable, Any, Sequence
 
 import matplotlib.pyplot as plt
-import numpy as np
 
 from geneva_analytics.backtesting.alpha_models_testers.backtest_summary import BacktestSummary
 from get_sources_root import get_src_root
+from qf_lib.analysis.model_params_estimation.evaluation_utils import add_backtest_description, BacktestSummaryEvaluator
 from qf_lib.common.enums.axis import Axis
-from qf_lib.common.enums.trade_field import TradeField
+from qf_lib.common.enums.plotting_mode import PlottingMode
 from qf_lib.common.tickers.tickers import Ticker
-from qf_lib.common.utils.dateutils.date_to_string import date_to_str
-from qf_lib.common.utils.dateutils.to_days import to_days
-from qf_lib.common.utils.document_exporting import Document, ChartElement, ParagraphElement, HeadingElement
-from qf_lib.common.utils.document_exporting.element.new_page import NewPageElement
+from qf_lib.common.utils.document_exporting import Document, GridElement
 from qf_lib.common.utils.document_exporting.element.page_header import PageHeaderElement
 from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
-from qf_lib.common.utils.miscellaneous.constants import DAYS_PER_YEAR_AVG
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.plotting.charts.heatmap.heatmap_chart import HeatMapChart
 from qf_lib.plotting.charts.heatmap.values_annotations import ValuesAnnotations
 from qf_lib.plotting.charts.line_chart import LineChart
 from qf_lib.plotting.decorators.axes_label_decorator import AxesLabelDecorator
+from qf_lib.plotting.decorators.axes_position_decorator import AxesPositionDecorator
 from qf_lib.plotting.decorators.axis_tick_labels_decorator import AxisTickLabelsDecorator
 from qf_lib.plotting.decorators.data_element_decorator import DataElementDecorator
 from qf_lib.plotting.decorators.title_decorator import TitleDecorator
@@ -34,158 +32,168 @@ class ModelParamsEvaluator(object):
 
     def __init__(self, settings: Settings, pdf_exporter: PDFExporter):
         self.backtest_result = None
+        self.backtest_evaluator = None  # type: BacktestSummaryEvaluator
         self.document = None
-        self.tickers_tested = None
 
         # position is linked to the position of axis in tearsheet.mplstyle
-        self.image_size = (7, 7)
+        self.image_size = (7, 6)
+        self.image_axis_position = (0.08, 0.08, 0.92, 0.85)
         self.dpi = 400
         self.settings = settings
         self.pdf_exporter = pdf_exporter
 
     def build_document(self, backtest_result: BacktestSummary):
         self.backtest_result = backtest_result
+        self.backtest_evaluator = BacktestSummaryEvaluator(backtest_result)
         self.document = Document(backtest_result.backtest_name)
-        self.tickers_tested = backtest_result.tickers
 
         self._add_header()
-        self._add_description_of_backtest()
-
-        input_dict = {}
-        for elem in backtest_result.elements_list:
-            input_dict[elem.model_parameters] = elem.trades_df
+        param_names = self._get_param_names()
+        add_backtest_description(self.document, self.backtest_result, param_names)
 
         if backtest_result.num_of_model_params == 1:
-            chart_adding_function = self._add_line_chart
+            chart_adding_function = self._add_line_chart_grid
         elif backtest_result.num_of_model_params == 2:
-            chart_adding_function = self._add_single_heat_map
+            parameters_list = self.backtest_evaluator.params_backtest_summary_elem_dict.keys()
+
+            def fun(tickers):
+                return self._add_heat_map_grid(tickers, parameters_list)
+
+            chart_adding_function = fun
         elif backtest_result.num_of_model_params == 3:
             chart_adding_function = self._add_multiple_heat_maps
         else:
             raise ValueError("Incorrect number of parameters. Supported: 1, 2 and 3")
 
-        self._create_charts(input_dict, chart_adding_function)
+        self._create_charts(chart_adding_function)
 
-    def _create_charts(self, input_dict: Dict[tuple, QFDataFrame], char_adding_function: Callable[[Any], None]):
+    def _create_charts(self, chart_adding_function: Callable[[Any], None]):
         # create a chart for all trades of all tickers traded
-        char_adding_function(input_dict)
+        chart_adding_function(tickers=self.backtest_result.tickers)
 
-        for ticker in self.tickers_tested:
+        for ticker in self.backtest_result.tickers:
             # create a chart for single ticker
-            char_adding_function(input_dict, ticker=ticker)
+            chart_adding_function(tickers=[ticker])
 
     def _add_header(self):
         logo_path = join(get_src_root(), self.settings.logo_path)
         company_name = self.settings.company_name
         self.document.add_element(PageHeaderElement(logo_path, company_name, self.backtest_result.backtest_name))
 
-    def _add_description_of_backtest(self):
-        self.document.add_element(ParagraphElement("\n"))
-        self.document.add_element(HeadingElement(1, "Model: {}".format(self.backtest_result.backtest_name)))
-        self.document.add_element(ParagraphElement("\n"))
-
-        self.document.add_element(HeadingElement(2, "Tickers tested in this study: "))
-        ticker_str = "\n".join([ticker.as_string() for ticker in self.tickers_tested])
-        self.document.add_element(ParagraphElement(ticker_str))
-        self.document.add_element(ParagraphElement("\n"))
-
-        self.document.add_element(HeadingElement(2, "Dates of the backtest"))
-        self.document.add_element(ParagraphElement("Backtest start date: {}"
-                                                   .format(date_to_str(self.backtest_result.start_date))))
-        self.document.add_element(ParagraphElement("Backtest end date: {}"
-                                                   .format(date_to_str(self.backtest_result.end_date))))
-        self.document.add_element(NewPageElement())
-
-    def _add_line_chart(self, input_dict: Dict[tuple, QFDataFrame], ticker: Ticker=None):
-        params = sorted(input_dict.keys())  # this will sort the tuples
-        values = []  # stores values of the objective function
-
-        for param in params:
-            trades = self._select_trades_of_ticker(input_dict[param], ticker)
-            value = self._objective_function(trades)
-            values.append(value)
-
+    def _add_line_chart_grid(self, tickers: Sequence[Ticker]):
+        grid = GridElement(mode=PlottingMode.PDF, figsize=self.image_size)
+        params = sorted(self.backtest_evaluator.params_backtest_summary_elem_dict.keys())  # this will sort the tuples
         params_as_values = [param_tuple[0] for param_tuple in params]
-        result_series = QFSeries(data=values, index=params_as_values)
 
+        results = []
+        for param_tuple in params:
+            trades_eval_result = self.backtest_evaluator.evaluate_params_for_tickers(param_tuple, tickers)
+            results.append(trades_eval_result)
+
+        sqn_avg_trades = [elem.sqn_per_avg_nr_trades for elem in results]
+        sqn_per100trades = [elem.sqn_per100trades for elem in results]
+        avg_nr_of_trades = [elem.avg_nr_of_trades_1Y for elem in results]
+        annualised_return = [elem.annualised_return for elem in results]
+        drawdown = [elem.drawdown for elem in results]
+
+        grid.add_chart(self._crete_single_line_chart("SQN / AVG #trades", params_as_values, sqn_avg_trades, tickers))
+        grid.add_chart(self._crete_single_line_chart("SQN / 100 trades", params_as_values, sqn_per100trades, tickers))
+        grid.add_chart(self._crete_single_line_chart("Avg # trades 1Y", params_as_values, avg_nr_of_trades, tickers))
+        grid.add_chart(self._crete_single_line_chart("An Return", params_as_values, annualised_return, tickers))
+        grid.add_chart(self._crete_single_line_chart("Drawdown", params_as_values, drawdown, tickers))
+
+        self.document.add_element(grid)
+
+    def _crete_single_line_chart(self, measure_name, parameters, values, tickers):
+        result_series = QFSeries(data=values, index=parameters)
         line_chart = LineChart()
         data_element = DataElementDecorator(result_series)
         line_chart.add_decorator(data_element)
-        line_chart.add_decorator(TitleDecorator(self._get_chart_title(ticker)))
-        line_chart.add_decorator(AxesLabelDecorator(x_label="Parameter value", y_label="Objective Function"))
-        self.document.add_element(ChartElement(line_chart, figsize=self.image_size, dpi=self.dpi))
+        line_chart.add_decorator(TitleDecorator(self._get_chart_title(tickers, measure_name)))
+        param_names = self._get_param_names()
+        line_chart.add_decorator(AxesLabelDecorator(x_label=param_names[0], y_label=measure_name))
+        self._resize_chart(line_chart)
+        return line_chart
 
-    def _add_single_heat_map(self, input_dict: Dict[tuple, QFDataFrame], ticker: Ticker=None, third_param=None):
+    def _add_heat_map_grid(self, tickers: Sequence[Ticker], parameters_list: Sequence[tuple], third_param=None):
+        grid = GridElement(mode=PlottingMode.PDF, figsize=self.image_size)
         result_df = QFDataFrame()
 
-        for param_tuple, trades_df in input_dict.items():
-            row, column = param_tuple
-            trades = self._select_trades_of_ticker(input_dict[param_tuple], ticker)
-            value = self._objective_function(trades)
-            result_df.loc[row, column] = value
+        for param_tuple in parameters_list:
+            row = param_tuple[0]
+            column = param_tuple[1]
+            trades_eval_result = self.backtest_evaluator.evaluate_params_for_tickers(param_tuple, tickers)
+            result_df.loc[row, column] = trades_eval_result
 
-            result_df.sort_index(axis=0, inplace=True, ascending=False)
-            result_df.sort_index(axis=1, inplace=True)
+        result_df.sort_index(axis=0, inplace=True, ascending=False)
+        result_df.sort_index(axis=1, inplace=True)
 
-        chart = HeatMapChart(data=result_df, color_map=plt.get_cmap("coolwarm"),
-                             min_value=min(result_df.min()), max_value=max(result_df.max()))
+        sqn_avg_nr_trades = result_df.applymap(lambda x: x.sqn_per_avg_nr_trades)
+        sqn_per100trades = result_df.applymap(lambda x: x.sqn_per100trades)
+        avg_nr_of_trades = result_df.applymap(lambda x: x.avg_nr_of_trades_1Y)
+        annualised_return = result_df.applymap(lambda x: x.annualised_return)
+        drawdown = result_df.applymap(lambda x: x.drawdown)
 
+        grid.add_chart(self._create_single_heat_map("SQN / AVG #trades", sqn_avg_nr_trades, tickers, 0, 1, third_param))
+        grid.add_chart(self._create_single_heat_map("SQN / 100 trades", sqn_per100trades, tickers, 0, 2, third_param))
+        grid.add_chart(self._create_single_heat_map("Avg # trades 1Y", avg_nr_of_trades, tickers, 3, 30, third_param))
+        grid.add_chart(self._create_single_heat_map("An Return", annualised_return, tickers, -0.1, 0.2, third_param))
+        grid.add_chart(self._create_single_heat_map("Drawdown", drawdown, tickers, -0.5, -0.1, third_param))
+
+        self.document.add_element(grid)
+
+    def _create_single_heat_map(self, measure_name, result_df, tickers, min_v, max_v, third_param):
+        chart = HeatMapChart(data=result_df, color_map=plt.get_cmap("coolwarm"), min_value=min_v, max_value=max_v)
         chart.add_decorator(AxisTickLabelsDecorator(labels=list(result_df.columns), axis=Axis.X))
         chart.add_decorator(AxisTickLabelsDecorator(labels=list(reversed(result_df.index)), axis=Axis.Y))
         chart.add_decorator(ValuesAnnotations())
-        chart.add_decorator(AxesLabelDecorator(x_label="Parameter 2", y_label="Parameter 1"))
-
+        param_names = self._get_param_names()
+        chart.add_decorator(AxesLabelDecorator(x_label=param_names[1], y_label=param_names[0]))
         if third_param is None:
-            title = self._get_chart_title(ticker)
+            title = self._get_chart_title(tickers, measure_name)
         else:
-            title = "{}, 3rd param = {:0.2f}".format(self._get_chart_title(ticker), third_param)
+            title = "{}, {} = {:0.2f}".format(self._get_chart_title(tickers, measure_name), param_names[2], third_param)
         chart.add_decorator(TitleDecorator(title))
+        self._resize_chart(chart)
+        return chart
 
-        self.document.add_element(ChartElement(chart, figsize=self.image_size, dpi=self.dpi))
+    def _resize_chart(self, chart):
+        left, bottom, width, height = self.image_axis_position
+        position_decorator = AxesPositionDecorator(left, bottom, width, height)
+        chart.add_decorator(position_decorator)
 
-    def _add_multiple_heat_maps(self, input_dict: Dict[tuple, QFDataFrame], ticker: Ticker=None):
-        # first sort by the third element of the parameters tuple
-        # it is necessary for groupby to work correctly
-        sorted_dict = sorted(input_dict.items(), key=lambda x: x[0][2])
+    def _add_multiple_heat_maps(self, tickers: Sequence[Ticker]):
+        parameters_list = self.backtest_evaluator.params_backtest_summary_elem_dict.keys()
+        # sort by third parameter, must have for groupby.
+        sorted_list = sorted(parameters_list, key=lambda x: x[2])
 
-        for third_param, group in groupby(sorted_dict, lambda x: x[0][2]):
-            # group is a structure: (three_elem_tuple, data_frame) where all third elements of the tuple are the same
-            # we want extract the first 2 elements of the tuple to pass it to the _add_single_heat_map method
-            two_elem_tuple_to_df_dict = {three_elem_tuple[:2]: df for three_elem_tuple, df in group}
-            self._add_single_heat_map(two_elem_tuple_to_df_dict, ticker, third_param=third_param)
+        for third_param, group in groupby(sorted_list, lambda x: x[2]):
+            self._add_heat_map_grid(tickers, group, third_param=third_param)
 
-    def _get_chart_title(self, ticker):
-        backtest_name = self.backtest_result.backtest_name
-        if ticker is None:
-            title = "{} - All Tickers".format(backtest_name)
+    def _get_chart_title(self, tickers, measure_name):
+        if len(tickers) > 1:
+            title = "{} - Many Tickers".format(measure_name)
+        elif len(tickers) == 1:
+            title = "{} - {}".format(measure_name, tickers[0].as_string())
         else:
-            title = "{} - {}".format(backtest_name, ticker.as_string())
+            raise ValueError("No tickers provided")
         return title
 
-    def _select_trades_of_ticker(self, trades: QFDataFrame, ticker: Ticker):
-        """
-        Select only the trades generated by the ticker provided
-        If ticker is not provided (None) return all the trades
-        """
-        if ticker is not None:
-            trades = trades.loc[trades[TradeField.Ticker] == ticker]
-        return trades
+    def _get_param_names(self):
+        names = []
+        num_of_params = self.backtest_result.num_of_model_params
+        model_type = self.backtest_result.alpha_model_type
 
-    def _objective_function(self, trades: QFDataFrame):
-        """
-        Calculates the SQN * sqrt(average number of trades per year)
-        """
+        args = getfullargspec(model_type.__init__).args
+        if len(args) <= 3:  # alpha model type does not include any parameter fields to evaluate
+            for param in range(1, num_of_params + 1):
+                names.append("Parameter #{}".format(param))
+        else:
+            for param in range(1, num_of_params + 1):
+                names.append(args[param])
 
-        number_of_instruments_traded = trades[TradeField.Ticker].unique().size
-        returns = trades[TradeField.Return]
-
-        period_length = self.backtest_result.end_date - self.backtest_result.start_date
-        period_length_in_years = to_days(period_length) / DAYS_PER_YEAR_AVG
-        avg_number_of_trades_1y = returns.count() / period_length_in_years / number_of_instruments_traded
-
-        sqn = returns.mean() / returns.std()
-        sqn = sqn * np.sqrt(avg_number_of_trades_1y)
-        return sqn
+        assert len(names) == self.backtest_result.num_of_model_params
+        return names
 
     def save(self):
         if self.document is not None:
@@ -199,5 +207,3 @@ class ModelParamsEvaluator(object):
             self.pdf_exporter.generate([self.document], output_sub_dir, filename)
         else:
             raise AssertionError("The documnent is not initialized. Build the document first")
-
-

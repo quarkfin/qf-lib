@@ -4,9 +4,9 @@ from numpy import array
 from pandas import date_range
 
 from qf_lib.common.enums.price_field import PriceField
+from qf_lib.common.utils.close_open_gap.close_open_gap import close_open_gap
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.testing_tools.containers_comparison import assert_lists_equal
-from scripts.analysis.ensamble_avg_vs_time_avg.close_open_gap import close_open_gap
 
 
 class TestCloseOpenGapUtils(TestCase):

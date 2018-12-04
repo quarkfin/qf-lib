@@ -5,7 +5,8 @@ from qf_lib.containers.series.qf_series import QFSeries
 
 def get_volatility(qf_series: QFSeries, frequency: Frequency=None, annualise: bool=True) -> float:
     """
-    Calculates a volatility for the given series of returns.
+    Calculates a volatility for the given series of returns or prices. If a PricesSeries is given,
+    the calculation window is shorter by 1 due to the initial conversion into returns.
 
     Parameters
     ----------
@@ -24,6 +25,7 @@ def get_volatility(qf_series: QFSeries, frequency: Frequency=None, annualise: bo
         volatility for the whole series.
     """
     returns_tms = qf_series.to_log_returns()
+    assert len(returns_tms) >= 2, "minimal num_of_rows to receive a real result is 2"
     assert not annualise or frequency is not None
 
     volatility = returns_tms.std()
