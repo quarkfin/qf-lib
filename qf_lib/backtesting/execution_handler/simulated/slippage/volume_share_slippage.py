@@ -10,7 +10,7 @@ from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
 
 
-class VolumeBasedSlippage(Slippage):
+class VolumeShareSlippage(Slippage):
     """
     Slippage based on the daily volume of the traded assets. It can limit the Order's volume. The price slippage is
     calculated by multiplying no-slippage-price by (1 + volume-share^2 * self.price_impact).

@@ -6,7 +6,7 @@ import pandas as pd
 from qf_lib.backtesting.contract_to_ticker_conversion.bloomberg_mapper import DummyBloombergContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.execution_handler.simulated.slippage.price_based_slippage import PriceBasedSlippage
-from qf_lib.backtesting.execution_handler.simulated.slippage.volume_based_slippage import VolumeBasedSlippage
+from qf_lib.backtesting.execution_handler.simulated.slippage.volume_share_slippage import VolumeShareSlippage
 from qf_lib.backtesting.order.execution_style import MarketOrder
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.time_in_force import TimeInForce
@@ -89,8 +89,8 @@ class TestSlippage(TestCase):
         assert_lists_equal(expected_fill_prices, actual_fill_prices)
         assert_lists_equal(expected_fill_volumes, actual_fill_volumes)
 
-    def test_volume_based_slippage(self):
-        slippage_model = VolumeBasedSlippage(volume_share_limit=0.1, price_impact=0.1, data_handler=self.data_handler,
+    def test_volume_share_slippage(self):
+        slippage_model = VolumeShareSlippage(volume_share_limit=0.1, price_impact=0.1, data_handler=self.data_handler,
                                              contract_ticker_mapper=DummyBloombergContractTickerMapper())
 
         actual_fill_prices, actual_fill_volumes = slippage_model.apply_slippage(
