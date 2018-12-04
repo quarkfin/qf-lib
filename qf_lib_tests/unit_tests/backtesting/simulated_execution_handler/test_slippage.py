@@ -5,6 +5,7 @@ import pandas as pd
 
 from qf_lib.backtesting.contract_to_ticker_conversion.bloomberg_mapper import DummyBloombergContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
+from qf_lib.backtesting.execution_handler.simulated.slippage.fixed_slippage import FixedSlippage
 from qf_lib.backtesting.execution_handler.simulated.slippage.price_based_slippage import PriceBasedSlippage
 from qf_lib.backtesting.execution_handler.simulated.slippage.volume_share_slippage import VolumeShareSlippage
 from qf_lib.backtesting.order.execution_style import MarketOrder
@@ -99,6 +100,19 @@ class TestSlippage(TestCase):
 
         expected_fill_prices = [float("nan"), 99.9, 1000.01]
         expected_fill_volumes = [0, -1, 1]
+
+        assert_lists_equal(expected_fill_prices, actual_fill_prices)
+        assert_lists_equal(expected_fill_volumes, actual_fill_volumes)
+
+    def test_fixed_slippage(self):
+        slippage_model = FixedSlippage(slippage_per_share=0.05)
+
+        actual_fill_prices, actual_fill_volumes = slippage_model.apply_slippage(
+            self.orders, self.prices_without_slippage
+        )
+
+        expected_fill_prices = [1.05, 99.95, 1000.05]
+        expected_fill_volumes = [1000, -10, 1]
 
         assert_lists_equal(expected_fill_prices, actual_fill_prices)
         assert_lists_equal(expected_fill_volumes, actual_fill_volumes)
