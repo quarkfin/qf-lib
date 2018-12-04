@@ -7,6 +7,10 @@ from qf_lib.backtesting.order.order import Order
 
 
 class FixedSlippage(Slippage):
+    """
+    Slippage which always adds (or subtracts if short sale) certain absolute amount of money to the price.
+    """
+
     def __init__(self, slippage_per_share: float):
         self.slippage_per_share = slippage_per_share
 
