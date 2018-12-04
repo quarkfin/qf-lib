@@ -1,9 +1,8 @@
+import numbers
 from typing import Sequence, TypeVar, List
 
 import numpy as np
 import pandas as pd
-
-from qf_lib.common.utils.numberutils.is_finite_number import is_finite_number
 
 T = TypeVar('T')
 
@@ -48,17 +47,21 @@ def assert_lists_equal(expected_list: Sequence[T], actual_list: Sequence[T],
 
 
 def _two_values_are_different(expected_val, actual_val, absolute_tolerance, relative_tolerance):
-    if is_finite_number(expected_val):
-        return _two_numbers_are_different(expected_val, actual_val, absolute_tolerance, relative_tolerance)
+    if expected_val is not None and isinstance(expected_val, numbers.Number):
+        return not _two_numbers_are_equal(expected_val, actual_val, absolute_tolerance, relative_tolerance)
     else:
         return expected_val != actual_val
 
 
-def _two_numbers_are_different(expected_val, actual_val, absolute_tolerance, relative_tolerance):
-    if not is_finite_number(actual_val):
-        return True
+def _two_numbers_are_equal(expected_val, actual_val, absolute_tolerance, relative_tolerance):
+    if np.isnan(expected_val):
+        result = np.isnan(actual_val)
+    elif np.isnan(actual_val):
+        result = False
     else:
-        return abs(actual_val - expected_val) > absolute_tolerance + relative_tolerance * abs(expected_val)
+        result = abs(actual_val - expected_val) <= absolute_tolerance + relative_tolerance * abs(expected_val)
+
+    return result
 
 
 def assert_series_equal(expected_series: pd.Series, actual_series: pd.Series,
