@@ -97,9 +97,3 @@ class SimulatedExecutionHandler(ExecutionHandler):
         self._market_orders_executor.cancel_all_open_orders()
         self._stop_orders_executor.cancel_all_open_orders()
 
-    @classmethod
-    def _calculate_fill_price(cls, _: Order, security_price: float) -> float:
-        """
-        Dummy fill price calculation. Take the market price
-        """
-        return security_price
