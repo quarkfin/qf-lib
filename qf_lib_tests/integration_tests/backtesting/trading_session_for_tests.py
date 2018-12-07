@@ -7,6 +7,7 @@ from qf_lib.backtesting.events.event_manager import EventManager
 from qf_lib.backtesting.events.time_flow_controller import BacktestTimeFlowController
 from qf_lib.backtesting.execution_handler.simulated.commission_models.fixed_commission_model import FixedCommissionModel
 from qf_lib.backtesting.execution_handler.simulated.simulated_execution_handler import SimulatedExecutionHandler
+from qf_lib.backtesting.execution_handler.simulated.slippage.price_based_slippage import PriceBasedSlippage
 from qf_lib.backtesting.monitoring.dummy_monitor import DummyMonitor
 from qf_lib.backtesting.order.orderfactory import OrderFactory
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
@@ -46,22 +47,23 @@ class TestingTradingSession(object):
         notifiers = Notifiers(timer)
         data_handler = DataHandler(data_provider, timer)
         events_manager = self._create_event_manager(timer, notifiers)
-        contract_to_tickers_mapper = DummyBloombergContractTickerMapper()
+        self.contract_ticker_mapper = DummyBloombergContractTickerMapper()
 
-        portfolio = Portfolio(data_handler, initial_cash, timer, contract_to_tickers_mapper)
+        portfolio = Portfolio(data_handler, initial_cash, timer, self.contract_ticker_mapper)
 
         backtest_result = BacktestResult(portfolio=portfolio, backtest_name="Testing the Backtester",
                                          start_date=start_date, end_date=end_date)
 
         monitor = DummyMonitor()
         commission_model = FixedCommissionModel(0.0)
+        slippage_model = PriceBasedSlippage(0.0)
 
         execution_handler = SimulatedExecutionHandler(
             data_handler, timer, notifiers.scheduler, monitor, commission_model,
-            contract_to_tickers_mapper, portfolio)
+            self.contract_ticker_mapper, portfolio, slippage_model)
 
         broker = BacktestBroker(portfolio, execution_handler)
-        order_factory = OrderFactory(broker, data_handler, contract_to_tickers_mapper)
+        order_factory = OrderFactory(broker, data_handler, self.contract_ticker_mapper)
 
         time_flow_controller = BacktestTimeFlowController(
             notifiers.scheduler, events_manager, timer, notifiers.empty_queue_event_notifier, end_date
@@ -80,7 +82,7 @@ class TestingTradingSession(object):
                 "Execution Handler: {:s}".format(execution_handler.__class__.__name__),
                 "Commission Model: {:s}".format(commission_model.__class__.__name__),
                 "Broker: {:s}".format(broker.__class__.__name__),
-                "Contract-Ticker Mapper: {:s}".format(contract_to_tickers_mapper.__class__.__name__)
+                "Contract-Ticker Mapper: {:s}".format(self.contract_ticker_mapper.__class__.__name__)
             ])
         )
 
