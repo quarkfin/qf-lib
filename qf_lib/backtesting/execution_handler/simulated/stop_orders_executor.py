@@ -63,7 +63,7 @@ class StopOrdersExecutor(object):
                         "the current market price ({current_price:5.2f})".format(
                             stop_price=stop_price, current_price=current_price
                         ))
-            else:
+            elif order.quantity > 0:
                 if stop_price > current_price:
                     self._stop_orders_data_dict[order_id] = (order, ticker)
                 else:
@@ -73,6 +73,8 @@ class StopOrdersExecutor(object):
                         "the current market price ({current_price:5.2f})".format(
                             stop_price=stop_price, current_price=current_price
                         ))
+            else:
+                raise ValueError("Incorrect order quantity (quantity: 0)")
 
             order.id = order_id
             order_id_list.append(order_id)
