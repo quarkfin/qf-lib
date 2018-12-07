@@ -8,7 +8,6 @@ from qf_lib.backtesting.order.order import Order
 class SimplePositionSizer(object):
     """
     This SimplePositionSizer converts signals to orders which are the size of 100% of the current portfolio value
-
     """
 
     def size_signals(self, signals: Sequence[Signal]) -> Sequence[Order]:
