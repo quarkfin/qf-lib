@@ -73,8 +73,9 @@ class QFDataFrame(pd.DataFrame, TimeIndexedContainer):
 
         return dataframe
 
-    def to_prices(self, initial_prices: Sequence[float]=None, suggested_initial_date: Union[datetime, int, float]=None,
-                  frequency: Frequency=None) -> "PricesDataFrame":
+    def to_prices(self, initial_prices: Sequence[float] = None,
+                  suggested_initial_date: Union[datetime, int, float] = None,
+                  frequency: Frequency = None) -> "PricesDataFrame":
         """
         Converts a dataframe to the dataframe of prices. The dataframe of prices returned will have an extra date
         at the beginning (in comparison to the returns' dataframe). The difference between the extra
@@ -117,8 +118,8 @@ class QFDataFrame(pd.DataFrame, TimeIndexedContainer):
         dataframe = cast_dataframe(dataframe, PricesDataFrame)
         return dataframe
 
-    def min_max_normalized(self, original_min_values: Sequence[float]=None,
-                           original_max_values: Sequence[float]=None) -> "QFDataFrame":
+    def min_max_normalized(self, original_min_values: Sequence[float] = None,
+                           original_max_values: Sequence[float] = None) -> "QFDataFrame":
         """
         Normalizes the data using min-max scaling: it maps all the data to the [0;1] range, so that 0 corresponds
         to the minimal value in the original series and 1 corresponds to the maximal value. It is also possible
@@ -220,8 +221,8 @@ class QFDataFrame(pd.DataFrame, TimeIndexedContainer):
                         "(is: {0}, should be: {1}".format(num_of_values, self.num_of_columns)
             raise ValueError(error_msg)
 
-    def rolling_window(self, window_size: int, func: Callable[[Union["QFSeries", np.ndarray]], float], step: int=1,
-                       optimised: bool=False) -> "QFDataFrame":
+    def rolling_window(self, window_size: int, func: Callable[[Union["QFSeries", np.ndarray]], float], step: int = 1,
+                       optimised: bool = False) -> "QFDataFrame":
         """
         Looks at a number of windows of size ``window_size`` and transforms the data in those windows based on the
         specified ``func``. This is performed for each column inside this data frame.
@@ -262,7 +263,7 @@ class QFDataFrame(pd.DataFrame, TimeIndexedContainer):
         return result
 
     def rolling_time_window(
-        self, window_length: int, step: int, func: Callable[[Union["QFDataFrame", np.ndarray]], "QFSeries"]
+            self, window_length: int, step: int, func: Callable[[Union["QFDataFrame", np.ndarray]], "QFSeries"]
     ) -> Union[None, "QFSeries", "QFDataFrame"]:
         """
         Runs a given function on each rolling window in the dataframe. The content of a rolling window is also
@@ -299,7 +300,7 @@ class QFDataFrame(pd.DataFrame, TimeIndexedContainer):
                 break
 
             patch = self.iloc[start_idx:end_idx, :]
-            end_date = self.index[end_idx-1]
+            end_date = self.index[end_idx - 1]
             results_dict[end_date] = func(patch)
 
             end_idx -= step
