@@ -12,7 +12,7 @@ class SimplePositionSizer(PositionSizer):
 
     def _generate_market_order(self, contract, signal):
         target_percentage = signal.suggested_exposure.value
-        market_orders = self._order_factory.target_percent_orders({contract, target_percentage}, MarketOrder())
+        market_orders = self._order_factory.target_percent_orders({contract: target_percentage}, MarketOrder())
 
         assert len(market_orders) == 1, "Only one order should be generated"
         return market_orders[0]

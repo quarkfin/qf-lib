@@ -66,5 +66,6 @@ class PositionSizer(object, metaclass=ABCMeta):
     def _check_for_duplicates(self, signals: Sequence[Signal]):
         sorted_signals = sorted(signals, key=lambda signal: signal.ticker)
         for ticker, signal_group in groupby(sorted_signals, lambda signal: signal.ticker):
-            if len(signal_group) > 1:
+            signal_list = list(signal_group)
+            if len(signal_list) > 1:
                 raise ValueError("More than one signal for ticker {}".format(ticker.as_string()))
