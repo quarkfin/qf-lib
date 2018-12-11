@@ -52,7 +52,6 @@ class AlphaModelBacktest(object):
             self._broker.place_orders(stop_orders)
 
     def _get_current_exposures(self, contracts):
-        # todo: get ready for testing multiple models at the same time (open_positions_dict for each model)
         current_exposures = {}
         positions = self._broker.get_positions()
         for contract in contracts:
