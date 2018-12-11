@@ -8,6 +8,7 @@ from qf_lib.backtesting.order.execution_style import MarketOrder, StopOrder
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.orderfactory import OrderFactory
 from qf_lib.backtesting.position_sizer.position_sizer import PositionSizer
+from qf_lib.common.utils.numberutils.is_finite_number import is_finite_number
 
 
 class InitialRiskPositionSizer(PositionSizer):
@@ -29,9 +30,12 @@ class InitialRiskPositionSizer(PositionSizer):
         self._initial_risk = initial_risk
 
     def _generate_market_order(self, contract: Contract, signal):
-        assert self._initial_risk is not None, "Initial risk has to be set up in order to use InitialRiskPositionSizer"
+        assert is_finite_number(self._initial_risk), "Initial risk has to be a finite number"
+        assert is_finite_number(signal.fraction_at_risk), "fraction_at_risk has to be a finite number"
 
         target_percentage = self._initial_risk / signal.fraction_at_risk
+        assert is_finite_number(target_percentage), "target_percentage has to be a finite number"
+
         market_orders = self._order_factory.target_percent_orders({contract: target_percentage}, MarketOrder())
 
         assert len(market_orders) == 1, "Only one order should be generated"
