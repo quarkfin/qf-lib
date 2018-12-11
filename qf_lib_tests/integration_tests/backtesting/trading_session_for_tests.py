@@ -41,15 +41,15 @@ class TestingTradingSession(object):
             ])
         )
 
-        position_sizer = SimplePositionSizer()
         timer = SettableTimer(start_date)
         risk_manager = NaiveRiskManager(timer)
         notifiers = Notifiers(timer)
         data_handler = DataHandler(data_provider, timer)
         events_manager = self._create_event_manager(timer, notifiers)
-        self.contract_ticker_mapper = DummyBloombergContractTickerMapper()
+        contract_ticker_mapper = DummyBloombergContractTickerMapper()
+        self.contract_ticker_mapper = contract_ticker_mapper
 
-        portfolio = Portfolio(data_handler, initial_cash, timer, self.contract_ticker_mapper)
+        portfolio = Portfolio(data_handler, initial_cash, timer, contract_ticker_mapper)
 
         backtest_result = BacktestResult(portfolio=portfolio, backtest_name="Testing the Backtester",
                                          start_date=start_date, end_date=end_date)
@@ -60,15 +60,16 @@ class TestingTradingSession(object):
 
         execution_handler = SimulatedExecutionHandler(
             data_handler, timer, notifiers.scheduler, monitor, commission_model,
-            self.contract_ticker_mapper, portfolio, slippage_model)
+            contract_ticker_mapper, portfolio, slippage_model)
 
         broker = BacktestBroker(portfolio, execution_handler)
-        order_factory = OrderFactory(broker, data_handler, self.contract_ticker_mapper)
+        order_factory = OrderFactory(broker, data_handler, contract_ticker_mapper)
 
         time_flow_controller = BacktestTimeFlowController(
             notifiers.scheduler, events_manager, timer, notifiers.empty_queue_event_notifier, end_date
         )
         portfolio_handler = PortfolioHandler(portfolio, monitor, notifiers.scheduler)
+        position_sizer = SimplePositionSizer(broker, data_handler, order_factory, contract_ticker_mapper)
 
         self.logger.info(
             "\n".join([
@@ -82,7 +83,7 @@ class TestingTradingSession(object):
                 "Execution Handler: {:s}".format(execution_handler.__class__.__name__),
                 "Commission Model: {:s}".format(commission_model.__class__.__name__),
                 "Broker: {:s}".format(broker.__class__.__name__),
-                "Contract-Ticker Mapper: {:s}".format(self.contract_ticker_mapper.__class__.__name__)
+                "Contract-Ticker Mapper: {:s}".format(contract_ticker_mapper.__class__.__name__)
             ])
         )
 

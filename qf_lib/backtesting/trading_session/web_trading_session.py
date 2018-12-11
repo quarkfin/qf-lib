@@ -52,7 +52,7 @@ class WebTradingSession(object):
             ])
         )
 
-        position_sizer = SimplePositionSizer()
+
         timer = SettableTimer(start_date)
         risk_manager = NaiveRiskManager(timer)
         notifiers = Notifiers(timer)
@@ -78,6 +78,7 @@ class WebTradingSession(object):
             notifiers.scheduler, events_manager, timer, notifiers.empty_queue_event_notifier, end_date
         )
         portfolio_handler = PortfolioHandler(portfolio, monitor, notifiers.scheduler)
+        position_sizer = SimplePositionSizer(broker, data_handler, order_factory, contract_ticker_mapper)
 
         self.logger.info(
             "\n".join([
