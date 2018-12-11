@@ -2,7 +2,7 @@ from abc import ABCMeta, abstractmethod
 from itertools import groupby
 from typing import Sequence
 
-from geneva_analytics.backtesting.alpha_models.signal import Signal
+from qf_lib.backtesting.alpha_model.signal import Signal
 from qf_lib.backtesting.broker.broker import Broker
 from qf_lib.backtesting.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
