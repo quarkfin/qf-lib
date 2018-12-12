@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from itertools import groupby
-from typing import Sequence
+from typing import List, Sequence
 
 from qf_lib.backtesting.alpha_model.signal import Signal
 from qf_lib.backtesting.broker.broker import Broker
@@ -22,7 +22,7 @@ class PositionSizer(object, metaclass=ABCMeta):
         self._order_factory = order_factory
         self._contract_ticker_mapper = contract_ticker_mapper
 
-    def size_signals(self, signals: Sequence[Signal]) -> Sequence[Order]:
+    def size_signals(self, signals: Sequence[Signal]) -> List[Order]:
         """
         Based on the signals provided, creates a list of Orders where proper sizing has been applied
         """
@@ -34,7 +34,7 @@ class PositionSizer(object, metaclass=ABCMeta):
 
         for signal, contract in zip(signals, contracts):
             market_order = self._generate_market_order(contract, signal)
-            stop_order = self._generate_stop_order(contract, signal, [market_order])
+            stop_order = self._generate_stop_order(contract, signal, market_order)
 
             if market_order is not None:
                 orders.append(market_order)
@@ -49,7 +49,7 @@ class PositionSizer(object, metaclass=ABCMeta):
         raise NotImplementedError("Should implement _generate_market_order()")
 
     @abstractmethod
-    def _generate_stop_order(self, contract, signal, market_orders: Sequence[Order]) -> Order:
+    def _generate_stop_order(self, contract, signal, market_order: Order) -> Order:
         raise NotImplementedError("Should implement _generate_stop_order()")
 
     def _calculate_stop_price(self, signal: Signal):

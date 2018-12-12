@@ -44,6 +44,8 @@ class AlphaModelBacktest(object):
 
         orders = self._position_sizer.size_signals(signals)
 
+        self._broker.cancel_all_open_orders()
+
         market_orders = [order for order in orders if isinstance(order.execution_style, MarketOrder)]
         self._broker.place_orders(market_orders)
 
