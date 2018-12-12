@@ -1,3 +1,6 @@
+from dic.container import Container
+
+
 from qf_lib.backtesting.backtest_result.backtest_result import BacktestResult
 from qf_lib.backtesting.broker.backtest_broker import BacktestBroker
 from qf_lib.backtesting.contract_to_ticker_conversion.base import ContractTickerMapper
@@ -10,6 +13,7 @@ from qf_lib.backtesting.execution_handler.simulated.simulated_execution_handler 
 from qf_lib.backtesting.execution_handler.simulated.slippage.price_based_slippage import PriceBasedSlippage
 from qf_lib.backtesting.monitoring.backtest_monitor import BacktestMonitor
 from qf_lib.backtesting.monitoring.light_backtest_monitor import LightBacktestMonitor
+from qf_lib.backtesting.monitoring.live_trading_monitor import LiveTradingMonitor
 from qf_lib.backtesting.order.orderfactory import OrderFactory
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.backtesting.portfolio.portfolio_handler import PortfolioHandler
@@ -17,69 +21,51 @@ from qf_lib.backtesting.position_sizer.simple_position_sizer import SimplePositi
 from qf_lib.backtesting.risk_manager.naive_risk_manager import NaiveRiskManager
 from qf_lib.backtesting.trading_session.trading_session import TradingSession
 from qf_lib.common.utils.dateutils.date_to_string import date_to_str
-from qf_lib.common.utils.dateutils.timer import SettableTimer
+from qf_lib.common.utils.dateutils.timer import SettableTimer, RealTimer
 from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.common.utils.excel.excel_exporter import ExcelExporter
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
+from qf_lib.data_providers.bloomberg import BloombergDataProvider
 from qf_lib.data_providers.price_data_provider import DataProvider
+from qf_lib.interactive_brokers.ib_broker import IBBroker
 from qf_lib.settings import Settings
 
-
-class BacktestTradingSession(TradingSession):
+class LiveTradingSession(TradingSession):
     """
-    Encapsulates the settings and components for carrying out a backtest session. Pulls for data every day.
+    Encapsulates the settings and components for Live Trading
     """
 
-    def __init__(self, backtest_name: str, settings: Settings, data_provider: DataProvider,
-                 contract_ticker_mapper: ContractTickerMapper, pdf_exporter: PDFExporter,
-                 excel_exporter: ExcelExporter, start_date, end_date, initial_cash, is_lightweight: False):
+    def __init__(self, trading_session_name: str, container: Container):
         """
         Set up the backtest variables according to what has been passed in.
         """
         self.logger = qf_logger.getChild(self.__class__.__name__)
+        self.trading_session_name = trading_session_name
 
-        self.backtest_name = backtest_name
-        self.contract_ticker_mapper = contract_ticker_mapper
-        self.start_date = start_date
-        self.end_date = end_date
-        self.initial_cash = initial_cash
+        settings = container.resolve(Settings)  # type: Settings
+        data_provider = container.resolve(BloombergDataProvider)  # type: BloombergDataProvider
+        pdf_exporter = container.resolve(PDFExporter)  # type: PDFExporter
+        excel_exporter = container.resolve(ExcelExporter)  # type: ExcelExporter
+
+        timer = RealTimer()
+        data_handler = DataHandler(data_provider, timer)
+        monitor = LiveTradingMonitor(settings, pdf_exporter, excel_exporter)
+        broker = IBBroker()
+
 
         self.logger.info(
             "\n".join([
                 "Creating Backtest Trading Session.",
-                "\tBacktest Name: {}".format(backtest_name),
-                "\tData Provider: {}".format(data_provider.__class__.__name__),
-                "\tContract - Ticker Mapper: {}".format(contract_ticker_mapper.__class__.__name__),
-                "\tStart Date: {}".format(date_to_str(start_date)),
-                "\tEnd Date: {}".format(date_to_str(end_date)),
-                "\tInitial Cash: {:.2f}".format(initial_cash)
+                "\tTrading Session Name: {}".format(trading_session_name),
+                "\tSettings: {}".format(settings),
+                "\tSettings: {}".format(settings),
+                "\tPFD Exporter: {}".format(pdf_exporter.__class__.__name__),
+                "\tExcel Exporter: {}".format(excel_exporter.__class__.__name__),
             ])
         )
 
-        timer = SettableTimer(start_date)
-        risk_manager = NaiveRiskManager(timer)
-        notifiers = Notifiers(timer)
-        data_handler = DataHandler(data_provider, timer)
-        events_manager = self._create_event_manager(timer, notifiers)
 
-        portfolio = Portfolio(data_handler, initial_cash, timer, contract_ticker_mapper)
 
-        backtest_result = BacktestResult(portfolio=portfolio, backtest_name=backtest_name,
-                                         start_date=start_date, end_date=end_date)
-
-        if is_lightweight:
-            monitor = LightBacktestMonitor(backtest_result, settings, pdf_exporter, excel_exporter)
-        else:
-            monitor = BacktestMonitor(backtest_result, settings, pdf_exporter, excel_exporter)
-
-        commission_model = FixedCommissionModel(0.0)  # IBCommissionModel()
-
-        slippage_model = PriceBasedSlippage(0.0)
-        execution_handler = SimulatedExecutionHandler(
-            data_handler, timer, notifiers.scheduler, monitor, commission_model,
-            contract_ticker_mapper, portfolio, slippage_model)
-
-        broker = BacktestBroker(portfolio, execution_handler)
         order_factory = OrderFactory(broker, data_handler, contract_ticker_mapper)
 
         time_flow_controller = BacktestTimeFlowController(
