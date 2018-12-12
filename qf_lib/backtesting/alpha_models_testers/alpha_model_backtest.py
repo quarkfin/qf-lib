@@ -13,8 +13,7 @@ from qf_lib.backtesting.trading_session.backtest_trading_session import Backtest
 
 class AlphaModelBacktest(object):
     """
-    Performs a Backtest of a selected alpha model
-    TODO: This could be easily extended to test multiple alpha models at the same time.
+    Performs a precise backtest of a selected alpha model
     """
 
     def __init__(self, ts: BacktestTradingSession, model: AlphaModel, tickers: List[Ticker], use_stop_losses=False):

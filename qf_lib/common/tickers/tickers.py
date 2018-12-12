@@ -38,7 +38,7 @@ class Ticker(metaclass=ABCMeta):
 
     def __lt__(self, other):
         if not isinstance(other, Ticker):
-            raise TypeError("Cannot compare {} with a Ticker".format(other))
+            raise TypeError("Cannot compare this object with a Ticker")
 
         class_name = self.__class__.__name__
         other_class_name = other.__class__.__name__
