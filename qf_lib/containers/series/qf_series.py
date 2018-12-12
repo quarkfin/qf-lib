@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Union
 
+import numpy as np
 import pandas as pd
 
 from qf_lib.common.enums.frequency import Frequency
@@ -99,8 +100,8 @@ class QFSeries(pd.Series, TimeIndexedContainer):
                (original_min_value is not None and original_max_value is not None)
 
         if original_min_value is None and original_max_value is None:
-            original_min_value = min(self.values)
-            original_max_value = max(self.values)
+            original_min_value = np.nanmin(self.values)
+            original_max_value = np.nanmax(self.values)
 
         values_span = original_max_value - original_min_value
         normalized_values = (self.values - original_min_value) / values_span
