@@ -8,9 +8,7 @@ from qf_lib.backtesting.broker.broker import Broker
 from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.contract_to_ticker_conversion.bloomberg_mapper import DummyBloombergContractTickerMapper
 from qf_lib.backtesting.order.execution_style import MarketOrder
-from qf_lib.backtesting.position_sizer.position_sizer import PositionSizer
 from qf_lib.backtesting.risk_manager.risk_manager import RiskManager
-from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.excel.excel_exporter import ExcelExporter
 from qf_common.config.ioc import container
@@ -34,11 +32,9 @@ class BuyAndHoldStrategy(object):
     CONTRACT = Contract(symbol="SPY US Equity", security_type='STK', exchange='NASDAQ')
     TICKER = BloombergTicker("SPY US Equity")
 
-    def __init__(self, broker: Broker, order_factory: OrderFactory, position_sizer: PositionSizer,
-                 risk_manager: RiskManager, scheduler: Scheduler):
+    def __init__(self, broker: Broker, order_factory: OrderFactory, risk_manager: RiskManager, scheduler: Scheduler):
         self.order_factory = order_factory
         self.broker = broker
-        self.position_sizer = position_sizer
         self.risk_manager = risk_manager
 
         self.invested = False
@@ -51,8 +47,7 @@ class BuyAndHoldStrategy(object):
     def calculate_signals(self):
         if not self.invested:
             initial_orders = self.order_factory.percent_orders({self.CONTRACT: 1.0}, MarketOrder())
-            sized_orders = self.position_sizer.size_orders(initial_orders)
-            refined_orders = self.risk_manager.refine_orders(sized_orders)
+            refined_orders = self.risk_manager.refine_orders(initial_orders)
 
             self.broker.place_orders(refined_orders)
             self.invested = True
@@ -92,7 +87,6 @@ def main():
     BuyAndHoldStrategy(
         ts.broker,
         ts.order_factory,
-        ts.position_sizer,
         ts.risk_manager,
         ts.notifiers.scheduler
     )

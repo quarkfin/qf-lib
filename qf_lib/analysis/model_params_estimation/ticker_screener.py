@@ -1,35 +1,22 @@
 from datetime import datetime
-from itertools import groupby
-from typing import Dict, Callable, Any, Collection
 from os.path import join
+from typing import Collection
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-from geneva_analytics.backtesting.alpha_models_testers.backtest_summary import BacktestSummary
 from get_sources_root import get_src_root
 from qf_lib.analysis.model_params_estimation.evaluation_utils import add_backtest_description
-from qf_lib.common.enums.axis import Axis
+from qf_lib.backtesting.alpha_models_testers.backtest_summary import BacktestSummary
 from qf_lib.common.enums.trade_field import TradeField
 from qf_lib.common.tickers.tickers import Ticker
-from qf_lib.common.utils.dateutils.date_to_string import date_to_str
 from qf_lib.common.utils.dateutils.to_days import to_days
-from qf_lib.common.utils.document_exporting import Document, ChartElement, ParagraphElement, HeadingElement
-from qf_lib.common.utils.document_exporting.element.new_page import NewPageElement
+from qf_lib.common.utils.document_exporting import Document, ParagraphElement, HeadingElement
 from qf_lib.common.utils.document_exporting.element.page_header import PageHeaderElement
 from qf_lib.common.utils.document_exporting.element.table import Table
 from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.common.utils.miscellaneous.constants import DAYS_PER_YEAR_AVG
-from qf_lib.common.utils.returns.sqn import sqn_for100trades, avg_nr_of_trades_per1y
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
-from qf_lib.containers.series.qf_series import QFSeries
-from qf_lib.plotting.charts.heatmap.heatmap_chart import HeatMapChart
-from qf_lib.plotting.charts.heatmap.values_annotations import ValuesAnnotations
-from qf_lib.plotting.charts.line_chart import LineChart
-from qf_lib.plotting.decorators.axes_label_decorator import AxesLabelDecorator
-from qf_lib.plotting.decorators.axis_tick_labels_decorator import AxisTickLabelsDecorator
-from qf_lib.plotting.decorators.data_element_decorator import DataElementDecorator
-from qf_lib.plotting.decorators.title_decorator import TitleDecorator
 from qf_lib.settings import Settings
 
 

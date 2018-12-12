@@ -12,7 +12,7 @@ class Order(object):
     def __init__(self, contract: Contract, quantity: int, execution_style: ExecutionStyle,
                  time_in_force: TimeInForce, order_state=""):
         """
-        This __init__ shouldn't be used anywhere beyond this module. User OrderFactory for creating Order objects.
+        This __init__ shouldn't be used anywhere beyond this module. Use OrderFactory for creating Order objects.
         """
         self.id = None  # type:int
         self.contract = contract

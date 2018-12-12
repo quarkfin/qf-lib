@@ -63,16 +63,18 @@ class StopOrdersExecutor(object):
                         "the current market price ({current_price:5.2f})".format(
                             stop_price=stop_price, current_price=current_price
                         ))
-            else:
+            elif order.quantity > 0:
                 if stop_price > current_price:
                     self._stop_orders_data_dict[order_id] = (order, ticker)
                 else:
                     raise ValueError(
                         "Incorrect stop price ({stop_price:5.2f}). "
-                        "For the Sell Stop it must be placed below "
+                        "For the Buy Stop it must be placed above "
                         "the current market price ({current_price:5.2f})".format(
                             stop_price=stop_price, current_price=current_price
                         ))
+            else:
+                raise ValueError("Incorrect order quantity (quantity: 0)")
 
             order.id = order_id
             order_id_list.append(order_id)
@@ -107,7 +109,9 @@ class StopOrdersExecutor(object):
         no_slippage_fill_prices_list, to_be_executed_orders, unexecuted_stop_orders_data_dict = \
             self._get_orders_with_fill_prices_without_slippage(open_orders_data, tickers)
 
-        fill_prices = self._slippage_model.apply_slippage(to_be_executed_orders, no_slippage_fill_prices_list)
+        fill_prices, fill_volumes = self._slippage_model.apply_slippage(
+            to_be_executed_orders, no_slippage_fill_prices_list
+        )
 
         for order, fill_price in zip(to_be_executed_orders, fill_prices):
             self._execute_order(order, fill_price)

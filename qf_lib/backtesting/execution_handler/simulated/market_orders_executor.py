@@ -67,7 +67,7 @@ class MarketOrdersExecutor(object):
         no_slippage_prices, to_be_executed_orders, unexecuted_orders_dict = \
             self._get_orders_with_fill_prices_without_slippage(market_orders_list, tickers)
 
-        fill_prices = self._slippage_model.apply_slippage(to_be_executed_orders, no_slippage_prices)
+        fill_prices, fill_volumes = self._slippage_model.apply_slippage(to_be_executed_orders, no_slippage_prices)
 
         for order, fill_price in zip(to_be_executed_orders, fill_prices):
             self._execute_order(order, fill_price)

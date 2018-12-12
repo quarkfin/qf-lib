@@ -7,17 +7,18 @@ from qf_lib.backtesting.events.event_manager import EventManager
 from qf_lib.backtesting.events.time_flow_controller import BacktestTimeFlowController
 from qf_lib.backtesting.execution_handler.simulated.commission_models.fixed_commission_model import FixedCommissionModel
 from qf_lib.backtesting.execution_handler.simulated.simulated_execution_handler import SimulatedExecutionHandler
+from qf_lib.backtesting.execution_handler.simulated.slippage.price_based_slippage import PriceBasedSlippage
 from qf_lib.backtesting.monitoring.dummy_monitor import DummyMonitor
 from qf_lib.backtesting.order.orderfactory import OrderFactory
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.backtesting.portfolio.portfolio_handler import PortfolioHandler
-from qf_lib.backtesting.position_sizer.naive_position_sizer import NaivePositionSizer
+from qf_lib.backtesting.position_sizer.simple_position_sizer import SimplePositionSizer
 from qf_lib.backtesting.risk_manager.naive_risk_manager import NaiveRiskManager
 from qf_lib.backtesting.trading_session.notifiers import Notifiers
 from qf_lib.common.utils.dateutils.date_to_string import date_to_str
 from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
-from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
+from qf_lib.data_providers.price_data_provider import DataProvider
 
 
 class TestingTradingSession(object):
@@ -25,7 +26,7 @@ class TestingTradingSession(object):
     Encapsulates the settings and components for carrying out a backtest session. Pulls for data every day.
     """
 
-    def __init__(self, data_provider: GeneralPriceProvider, start_date, end_date, initial_cash):
+    def __init__(self, data_provider: DataProvider, start_date, end_date, initial_cash):
         """
         Set up the backtest variables according to what has been passed in.
         """
@@ -40,33 +41,35 @@ class TestingTradingSession(object):
             ])
         )
 
-        position_sizer = NaivePositionSizer()
         timer = SettableTimer(start_date)
         risk_manager = NaiveRiskManager(timer)
         notifiers = Notifiers(timer)
         data_handler = DataHandler(data_provider, timer)
         events_manager = self._create_event_manager(timer, notifiers)
-        contract_to_tickers_mapper = DummyBloombergContractTickerMapper()
+        contract_ticker_mapper = DummyBloombergContractTickerMapper()
+        self.contract_ticker_mapper = contract_ticker_mapper
 
-        portfolio = Portfolio(data_handler, initial_cash, timer, contract_to_tickers_mapper)
+        portfolio = Portfolio(data_handler, initial_cash, timer, contract_ticker_mapper)
 
         backtest_result = BacktestResult(portfolio=portfolio, backtest_name="Testing the Backtester",
                                          start_date=start_date, end_date=end_date)
 
         monitor = DummyMonitor()
         commission_model = FixedCommissionModel(0.0)
+        slippage_model = PriceBasedSlippage(0.0)
 
         execution_handler = SimulatedExecutionHandler(
             data_handler, timer, notifiers.scheduler, monitor, commission_model,
-            contract_to_tickers_mapper, portfolio)
+            contract_ticker_mapper, portfolio, slippage_model)
 
         broker = BacktestBroker(portfolio, execution_handler)
-        order_factory = OrderFactory(broker, data_handler, contract_to_tickers_mapper)
+        order_factory = OrderFactory(broker, data_handler, contract_ticker_mapper)
 
         time_flow_controller = BacktestTimeFlowController(
             notifiers.scheduler, events_manager, timer, notifiers.empty_queue_event_notifier, end_date
         )
         portfolio_handler = PortfolioHandler(portfolio, monitor, notifiers.scheduler)
+        position_sizer = SimplePositionSizer(broker, data_handler, order_factory, contract_ticker_mapper)
 
         self.logger.info(
             "\n".join([
@@ -80,7 +83,7 @@ class TestingTradingSession(object):
                 "Execution Handler: {:s}".format(execution_handler.__class__.__name__),
                 "Commission Model: {:s}".format(commission_model.__class__.__name__),
                 "Broker: {:s}".format(broker.__class__.__name__),
-                "Contract-Ticker Mapper: {:s}".format(contract_to_tickers_mapper.__class__.__name__)
+                "Contract-Ticker Mapper: {:s}".format(contract_ticker_mapper.__class__.__name__)
             ])
         )
 

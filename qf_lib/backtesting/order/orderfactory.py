@@ -1,5 +1,5 @@
 import math
-from typing import Sequence, Mapping, Dict
+from typing import Mapping, Dict, List
 
 from qf_lib.backtesting.broker.broker import Broker
 from qf_lib.backtesting.contract.contract import Contract
@@ -17,7 +17,7 @@ class OrderFactory(object):
         self.contract_to_ticker_mapper = contract_to_ticker_mapper
 
     def orders(self, quantities: Mapping[Contract, int], execution_style: ExecutionStyle,
-               time_in_force: TimeInForce = TimeInForce.DAY) -> Sequence[Order]:
+               time_in_force: TimeInForce = TimeInForce.DAY) -> List[Order]:
         """
         Creates a list of Orders for given numbers of shares for each given asset.
 
@@ -42,7 +42,7 @@ class OrderFactory(object):
 
     def target_orders(self, target_quantities: Mapping[Contract, float], execution_style: ExecutionStyle,
                       time_in_force: TimeInForce = TimeInForce.DAY,
-                      tolerance_quantities: Mapping[Contract, float] = None) -> Sequence[Order]:
+                      tolerance_quantities: Mapping[Contract, float] = None) -> List[Order]:
         """
         Creates a list of Orders from a dictionary of desired target number of shares (number of shares which should be
         present in the portfolio after executing the Order).
@@ -102,7 +102,7 @@ class OrderFactory(object):
         return self.orders(quantities, execution_style, time_in_force)
 
     def value_orders(self, values: Mapping[Contract, float], execution_style: ExecutionStyle,
-                     time_in_force: TimeInForce = TimeInForce.DAY) -> Sequence[Order]:
+                     time_in_force: TimeInForce = TimeInForce.DAY) -> List[Order]:
         """
         Creates a list of Orders by specifying the amount of money which should be spent on each asset rather
         than the number of shares to buy/sell.
@@ -123,7 +123,7 @@ class OrderFactory(object):
         return self.orders(int_quantities, execution_style, time_in_force)
 
     def percent_orders(self, percentages: Mapping[Contract, float], execution_style: ExecutionStyle,
-                       time_in_force: TimeInForce = TimeInForce.DAY) -> Sequence[Order]:
+                       time_in_force: TimeInForce = TimeInForce.DAY) -> List[Order]:
         """
         Creates a list of Orders by specifying the percentage of the current portfolio value which should be spent
         on each asset.
@@ -144,7 +144,7 @@ class OrderFactory(object):
         return self.value_orders(values, execution_style, time_in_force)
 
     def target_value_orders(self, target_values: Mapping[Contract, float], execution_style: ExecutionStyle,
-                            time_in_force: TimeInForce = TimeInForce.DAY, tolerance_value=0.0) -> Sequence[Order]:
+                            time_in_force: TimeInForce = TimeInForce.DAY, tolerance_value=0.0) -> List[Order]:
         """
         Creates a list of Orders by specifying how much should be allocated in each asset after the Orders
         have been executed.
@@ -183,7 +183,7 @@ class OrderFactory(object):
         return self.target_orders(target_quantities, execution_style, time_in_force, tolerance_quantities)
 
     def target_percent_orders(self, target_percentages: Mapping[Contract, float], execution_style: ExecutionStyle,
-                              time_in_force: TimeInForce = TimeInForce.DAY, tolerance_percent=0.0) -> Sequence[Order]:
+                              time_in_force: TimeInForce = TimeInForce.DAY, tolerance_percent=0.0) -> List[Order]:
         """
         Creates an Order adjusting a position to a value equal to the given percentage of the portfolio.
 
