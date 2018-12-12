@@ -8,12 +8,12 @@ from qf_lib.backtesting.events.end_trading_event.end_trading_event import EndTra
 from qf_lib.backtesting.events.end_trading_event.end_trading_event_listener import EndTradingEventListener
 from qf_lib.backtesting.events.event_base import AllEventListener, Event
 from qf_lib.backtesting.events.event_manager import EventManager
+from qf_lib.backtesting.events.notifiers import Notifiers
 from qf_lib.backtesting.events.time_event.after_market_close_event import AfterMarketCloseEvent
 from qf_lib.backtesting.events.time_event.before_market_open_event import BeforeMarketOpenEvent
 from qf_lib.backtesting.events.time_event.market_close_event import MarketCloseEvent
 from qf_lib.backtesting.events.time_event.market_open_event import MarketOpenEvent
 from qf_lib.backtesting.events.time_flow_controller import BacktestTimeFlowController
-from qf_lib.backtesting.trading_session.notifiers import Notifiers
 from qf_lib.common.utils.dateutils.date_format import DateFormat
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.dateutils.timer import SettableTimer, Timer
