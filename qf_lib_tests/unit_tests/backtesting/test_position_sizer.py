@@ -80,5 +80,6 @@ class _OrderFactoryMock(object):
         contract, quantity = next(iter(quantities.items()))
         return [Order(contract, quantity, execution_style, time_in_force)]
 
+
 if __name__ == "__main__":
     unittest.main()
