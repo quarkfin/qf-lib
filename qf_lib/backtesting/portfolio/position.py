@@ -9,7 +9,7 @@ class Position(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def quantity(self) -> float:
+    def quantity(self) -> int:
         pass
 
     @abstractmethod
