@@ -6,9 +6,9 @@ from typing import Callable, Any, Sequence
 
 import matplotlib.pyplot as plt
 
-from geneva_analytics.backtesting.alpha_models_testers.backtest_summary import BacktestSummary
 from get_sources_root import get_src_root
 from qf_lib.analysis.model_params_estimation.evaluation_utils import add_backtest_description, BacktestSummaryEvaluator
+from qf_lib.backtesting.alpha_models_testers.backtest_summary import BacktestSummary
 from qf_lib.common.enums.axis import Axis
 from qf_lib.common.enums.plotting_mode import PlottingMode
 from qf_lib.common.tickers.tickers import Ticker

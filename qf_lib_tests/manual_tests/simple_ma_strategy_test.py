@@ -59,15 +59,12 @@ class SimpleMAStrategy(object):
         contract = self.contract_ticker_mapper.ticker_to_contract(self.ticker)
 
         if short_ma_price >= long_ma_price:
-            order = self.order_factory.target_percent_orders({contract: 1.0}, MarketOrder())
+            orders = self.order_factory.target_percent_orders({contract: 1.0}, MarketOrder())
         else:
-            order = self.order_factory.target_percent_orders({contract: 0.0}, MarketOrder())
-
-        sized_orders = self.position_sizer.size_orders(order)
-        refined_orders = self.risk_manager.refine_orders(sized_orders)
+            orders = self.order_factory.target_percent_orders({contract: 0.0}, MarketOrder())
 
         self.broker.cancel_all_open_orders()
-        self.broker.place_orders(refined_orders)
+        self.broker.place_orders(orders)
 
 
 def main():

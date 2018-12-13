@@ -12,7 +12,7 @@ from qf_lib.backtesting.monitoring.light_backtest_monitor import LightBacktestMo
 from qf_lib.backtesting.order.orderfactory import OrderFactory
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.backtesting.portfolio.portfolio_handler import PortfolioHandler
-from qf_lib.backtesting.position_sizer.naive_position_sizer import NaivePositionSizer
+from qf_lib.backtesting.position_sizer.simple_position_sizer import SimplePositionSizer
 from qf_lib.backtesting.risk_manager.naive_risk_manager import NaiveRiskManager
 from qf_lib.backtesting.trading_session.notifiers import Notifiers
 from qf_lib.common.utils.dateutils.date_to_string import date_to_str
@@ -55,7 +55,7 @@ class BacktestTradingSession(object):
             ])
         )
 
-        position_sizer = NaivePositionSizer()
+
         timer = SettableTimer(start_date)
         risk_manager = NaiveRiskManager(timer)
         notifiers = Notifiers(timer)
@@ -86,6 +86,7 @@ class BacktestTradingSession(object):
             notifiers.scheduler, events_manager, timer, notifiers.empty_queue_event_notifier, end_date
         )
         portfolio_handler = PortfolioHandler(portfolio, monitor, notifiers.scheduler)
+        position_sizer = SimplePositionSizer(broker, data_handler, order_factory, contract_ticker_mapper)
 
         self.logger.info(
             "\n".join([
