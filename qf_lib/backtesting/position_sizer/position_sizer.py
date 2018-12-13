@@ -54,7 +54,7 @@ class PositionSizer(object, metaclass=ABCMeta):
 
     def _calculate_stop_price(self, signal: Signal):
         current_price = self._data_handler.get_last_available_price(signal.ticker)
-        price_multiplier = (1 - signal.fraction_at_risk * signal.suggested_exposure.value)
+        price_multiplier = 1 - signal.fraction_at_risk * signal.suggested_exposure.value
         stop_price = price_multiplier * current_price
         return stop_price
 

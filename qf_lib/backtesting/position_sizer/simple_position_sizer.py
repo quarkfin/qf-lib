@@ -1,5 +1,3 @@
-from typing import Sequence
-
 from qf_lib.backtesting.order.execution_style import MarketOrder, StopOrder
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.position_sizer.position_sizer import PositionSizer

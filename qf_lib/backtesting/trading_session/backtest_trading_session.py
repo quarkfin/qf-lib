@@ -55,7 +55,6 @@ class BacktestTradingSession(object):
             ])
         )
 
-
         timer = SettableTimer(start_date)
         risk_manager = NaiveRiskManager(timer)
         notifiers = Notifiers(timer)
