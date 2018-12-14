@@ -52,6 +52,7 @@ class LiveTradingSession(TradingSession):
         monitor = LiveTradingMonitor(settings, pdf_exporter, excel_exporter)
         broker = IBBroker()
 
+        order_factory = OrderFactory(broker, data_handler, contract_ticker_mapper)
 
         self.logger.info(
             "\n".join([
@@ -66,7 +67,7 @@ class LiveTradingSession(TradingSession):
 
 
 
-        order_factory = OrderFactory(broker, data_handler, contract_ticker_mapper)
+
 
         time_flow_controller = BacktestTimeFlowController(
             notifiers.scheduler, events_manager, timer, notifiers.empty_queue_event_notifier, end_date
