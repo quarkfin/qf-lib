@@ -23,7 +23,7 @@ from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.backtesting.portfolio.portfolio_handler import PortfolioHandler
 from qf_lib.backtesting.position_sizer.simple_position_sizer import SimplePositionSizer
 from qf_lib.backtesting.trading_session.notifiers import Notifiers
-from qf_lib.common.utils.dateutils.timer import SettableTimer, Timer
+from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 
 plt.ion()  # required for dynamic chart, good to keep this at the beginning of imports
@@ -46,91 +46,85 @@ class BacktestTradingSessionBuilder(object):
 
     def __init__(self, container: Container, trading_tickers: List[Ticker], data_tickers: List[Ticker],
                  start_date: datetime, end_date: datetime):
-        self.logger = qf_logger.getChild(self.__class__.__name__)
+        self._logger = qf_logger.getChild(self.__class__.__name__)
 
-        self.tickers = trading_tickers + data_tickers
-        self.data_history_start = start_date - RelativeDelta(years=1)
+        self._tickers = trading_tickers + data_tickers
+        self._data_history_start = start_date - RelativeDelta(years=1)
 
-        self.start_date = start_date
-        self.end_date = end_date
+        self._start_date = start_date
+        self._end_date = end_date
 
-        self.set_initial_cash(1000000)
-        self.set_is_lightweight(True)
-        self.set_backtest_name("backtest")
-        self.set_contract_ticker_mapper(trading_tickers)
+        self._initial_cash = 1000000
+        self._is_lightweight = True
+        self.set_backtest_name("Backtest Results")
+        self._contract_ticker_mapper_setup(trading_tickers)
 
-        self.set_settings(container.resolve(Settings))
-        self.set_data_provider(container.resolve(GeneralPriceProvider))
-        self.set_pdf_exporter(container.resolve(PDFExporter))
-        self.set_excel_exporter(container.resolve(ExcelExporter))
+        self._settings = container.resolve(Settings)  # type: Settings
+        self._data_provider = container.resolve(GeneralPriceProvider)  # type: GeneralPriceProvider
+        self._pdf_exporter = container.resolve(PDFExporter)  # type: PDFExporter
+        self._excel_exporter = container.resolve(ExcelExporter)  # type: ExcelExporter
 
-        self.set_settable_timer(start_date)
-        self.set_notifiers(self.timer)
-        self.set_data_handler(self.data_provider, self.timer)
-        self.portfolio = Portfolio(self.data_handler, self.initial_cash, self.timer, self.contract_ticker_mapper)
-        self.backtest_result = BacktestResult(self.portfolio, self.backtest_name, start_date, end_date)
+        self._timer = SettableTimer(start_date)
+        self._notifiers = Notifiers(self._timer)
+        self._data_handler = DataHandler(self._data_provider, self._timer)
+        self._portfolio = Portfolio(self._data_handler, self.initial_cash, self._timer, self._contract_ticker_mapper)
+        self._backtest_result = BacktestResult(self._portfolio, self.backtest_name, start_date, end_date)
 
-        self.set_monitor(self.is_lightweight, self.backtest_result, self.settings, self.pdf_exporter,
-                         self.excel_exporter)
+        self._monitor = self._monitor_setup(self.is_lightweight, self._backtest_result, self._settings,
+                                            self._pdf_exporter,
+                                            self._excel_exporter)
+        self._console_logging_setup(self.is_lightweight)
 
-        self.set_commission_model(FixedCommissionModel(0.0))
-        self.set_slippage_model(PriceBasedSlippage(0.0))
-        self.execution_handler = SimulatedExecutionHandler(self.data_handler, self.timer, self.notifiers.scheduler,
-                                                           self.monitor, self.commission_model,
-                                                           self.contract_ticker_mapper, self.portfolio,
-                                                           self.slippage_model)
+        self.set_commission_model(FixedCommissionModel(0.0))  # to be set
+        self.set_slippage_model(PriceBasedSlippage(0.0))  # to be set
+        self._execution_handler = SimulatedExecutionHandler(self._data_handler, self._timer, self._notifiers.scheduler,
+                                                            self._monitor, self._commission_model,
+                                                            self._contract_ticker_mapper, self._portfolio,
+                                                            self._slippage_model)
 
-        self.broker = BacktestBroker(self.portfolio, self.execution_handler)
-        self.order_factory = OrderFactory(self.broker, self.data_handler, self.contract_ticker_mapper)
+        self._broker = BacktestBroker(self._portfolio, self._execution_handler)
+        self._order_factory = OrderFactory(self._broker, self._data_handler, self._contract_ticker_mapper)
 
-        self.portfolio_handler = PortfolioHandler(self.portfolio, self.monitor, self.notifiers.scheduler)
+        self._portfolio_handler = PortfolioHandler(self._portfolio, self._monitor, self._notifiers.scheduler)
 
-        self.position_sizer = SimplePositionSizer(self.broker, self.data_handler, self.order_factory,
-                                                  self.contract_ticker_mapper)
+        self._position_sizer = SimplePositionSizer(self._broker, self._data_handler, self._order_factory,
+                                                   self._contract_ticker_mapper)
 
-        self.events_manager = self._create_event_manager(self.timer, self.notifiers)  # to build
+        self._events_manager = self._create_event_manager(self._timer, self._notifiers)
 
-        self.time_flow_controller = BacktestTimeFlowController(self.notifiers.scheduler, self.events_manager,
-                                                               self.timer, self.notifiers.empty_queue_event_notifier,
-                                                               end_date)
+        self._time_flow_controller = BacktestTimeFlowController(self._notifiers.scheduler, self._events_manager,
+                                                                self._timer, self._notifiers.empty_queue_event_notifier,
+                                                                end_date)
 
-        self.logger.info(
+        self._logger.info(
             "\n".join([
                 "Creating Backtest Trading Session.",
                 "\tBacktest Name: {}".format(self.backtest_name),
-                "\tData Provider: {}".format(self.data_provider.__class__.__name__),
-                "\tContract - Ticker Mapper: {}".format(self.contract_ticker_mapper.__class__.__name__),
+                "\tData Provider: {}".format(self._data_provider.__class__.__name__),
+                "\tContract - Ticker Mapper: {}".format(self._contract_ticker_mapper.__class__.__name__),
                 "\tStart Date: {}".format(start_date),
                 "\tEnd Date: {}".format(end_date),
                 "\tInitial Cash: {:.2f}".format(self.initial_cash)
             ])
         )
 
-        self.logger.info(
+        self._logger.info(
             "\n".join([
                 "Configuration of components:",
-                "\tPosition sizer: {:s}".format(self.position_sizer.__class__.__name__),
-                "\tTimer: {:s}".format(self.timer.__class__.__name__),
-                "\tData Handler: {:s}".format(self.data_handler.__class__.__name__),
-                "\tBacktest Result: {:s}".format(self.backtest_result.__class__.__name__),
-                "\tMonitor: {:s}".format(self.monitor.__class__.__name__),
-                "\tExecution Handler: {:s}".format(self.execution_handler.__class__.__name__),
-                "\tSlippage Model: {:s}".format(self.slippage_model.__class__.__name__),
-                "\tCommission Model: {:s}".format(self.commission_model.__class__.__name__),
-                "\tBroker: {:s}".format(self.broker.__class__.__name__),
+                "\tPosition sizer: {:s}".format(self._position_sizer.__class__.__name__),
+                "\tTimer: {:s}".format(self._timer.__class__.__name__),
+                "\tData Handler: {:s}".format(self._data_handler.__class__.__name__),
+                "\tBacktest Result: {:s}".format(self._backtest_result.__class__.__name__),
+                "\tMonitor: {:s}".format(self._monitor.__class__.__name__),
+                "\tExecution Handler: {:s}".format(self._execution_handler.__class__.__name__),
+                "\tSlippage Model: {:s}".format(self._slippage_model.__class__.__name__),
+                "\tCommission Model: {:s}".format(self._commission_model.__class__.__name__),
+                "\tBroker: {:s}".format(self._broker.__class__.__name__),
             ])
         )
 
     def set_is_lightweight(self, is_lightweight: bool):
         self.is_lightweight = is_lightweight
-        self.set_console_logging(self.is_lightweight)
-
-    def set_console_logging(self, is_lightweight):
-        if is_lightweight:
-            logging_level = logging.WARNING
-        else:
-            logging_level = logging.INFO
-        setup_logging(level=logging_level, console_logging=True)
 
     def set_initial_cash(self, initial_cash: int):
         assert type(initial_cash) is int and initial_cash > 0
@@ -155,7 +149,7 @@ class BacktestTradingSessionBuilder(object):
 
         self.backtest_name = name
 
-    def set_contract_ticker_mapper(self, trading_tickers):
+    def _contract_ticker_mapper_setup(self, trading_tickers):
         assert trading_tickers
         trading_tickers = list(set(trading_tickers))
         ticker_type = type(trading_tickers[0])
@@ -168,58 +162,44 @@ class BacktestTradingSessionBuilder(object):
         else:
             assert False, "ticker type cannot be handled"
 
-        self.contract_ticker_mapper = contract_ticker_mapper  # type: ContractTickerMapper
+        self._contract_ticker_mapper = contract_ticker_mapper  # type: ContractTickerMapper
 
-    def set_settable_timer(self, start_date):
-        self.timer = SettableTimer(start_date)
-
-    def set_notifiers(self, timer):
-        self.notifiers = Notifiers(timer)
-
-    def set_data_handler(self, data_provider: GeneralPriceProvider, timer: Timer):
-        self.data_handler = DataHandler(data_provider, timer)
-
-    def set_monitor(self, is_lightweight, backtest_result, settings, pdf_exporter, excel_exporter):
+    def _monitor_setup(self, is_lightweight, backtest_result, settings, pdf_exporter, excel_exporter):
         if is_lightweight:
             monitor_type = LightBacktestMonitor
         else:
             monitor_type = BacktestMonitor
-        self.monitor = monitor_type(backtest_result, settings, pdf_exporter, excel_exporter)
+        return monitor_type(backtest_result, settings, pdf_exporter, excel_exporter)
 
-    def set_settings(self, settings: Settings):
-        self.settings = settings
-
-    def set_data_provider(self, data_provider: GeneralPriceProvider):
-        self.data_provider = data_provider
-
-    def set_pdf_exporter(self, pdf_exporter: PDFExporter):
-        self.pdf_exporter = pdf_exporter
-
-    def set_excel_exporter(self, excel_exporter: ExcelExporter):
-        self.excel_exporter = excel_exporter
+    def _console_logging_setup(self, is_lightweight):
+        if is_lightweight:
+            logging_level = logging.WARNING
+        else:
+            logging_level = logging.INFO
+        setup_logging(level=logging_level, console_logging=True)
 
     def set_commission_model(self, commission_model: CommissionModel):
-        self.commission_model = commission_model
+        self._commission_model = commission_model
 
     def set_slippage_model(self, slippage_model: Slippage):
-        self.slippage_model = slippage_model
+        self._slippage_model = slippage_model
 
     def build(self):
         ts = BacktestTradingSession(
-            contract_ticker_mapper=self.contract_ticker_mapper,
-            start_date=self.start_date,
-            end_date=self.end_date,
-            position_sizer=self.position_sizer,
-            data_handler=self.data_handler,
-            timer=self.timer,
-            notifiers=self.notifiers,
-            portfolio=self.portfolio,
-            events_manager=self.events_manager,
-            monitor=self.monitor,
-            broker=self.broker,
-            order_factory=self.order_factory
+            contract_ticker_mapper=self._contract_ticker_mapper,
+            start_date=self._start_date,
+            end_date=self._end_date,
+            position_sizer=self._position_sizer,
+            data_handler=self._data_handler,
+            timer=self._timer,
+            notifiers=self._notifiers,
+            portfolio=self._portfolio,
+            events_manager=self._events_manager,
+            monitor=self._monitor,
+            broker=self._broker,
+            order_factory=self._order_factory
         )
-        ts.data_handler.use_data_bundle(self.tickers, PriceField.ohlcv(), self.data_history_start, ts.end_date)
+        ts.data_handler.use_data_bundle(self._tickers, PriceField.ohlcv(), self._data_history_start, ts.end_date)
         return ts
 
     @staticmethod
