@@ -95,6 +95,12 @@ class Portfolio(object):
         portfolio_timeseries = PricesSeries(data=self.portfolio_values, index=self.dates)
         return portfolio_timeseries
 
+    def get_trades(self) -> List[Trade]:
+        """
+        Returns a list of Trades
+        """
+        return self.trades
+
     def leverage(self) -> QFSeries:
         """
         Leverage = GrossPositionValue / NetLiquidation
