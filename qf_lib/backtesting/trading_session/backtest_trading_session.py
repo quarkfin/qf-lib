@@ -31,11 +31,12 @@ class BacktestTradingSession(TradingSession):
     """
 
     def __init__(self, backtest_name: str, settings: Settings, data_provider: DataProvider,
-                 contract_ticker_mapper: ContractTickerMapper, pdf_exporter: PDFExporter,
-                 excel_exporter: ExcelExporter, start_date, end_date, initial_cash, is_lightweight: False):
+                 contract_ticker_mapper: ContractTickerMapper, pdf_exporter: PDFExporter, excel_exporter: ExcelExporter,
+                 start_date, end_date, initial_cash, is_lightweight: False):
         """
         Set up the backtest variables according to what has been passed in.
         """
+        super().__init__()
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
         self.backtest_name = backtest_name

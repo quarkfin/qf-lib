@@ -32,6 +32,8 @@ class WebTradingSession(TradingSession):
         """
         Set up the backtest variables according to what has been passed in.
         """
+        super().__init__()
+
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
         self.backtest_name = backtest_name
