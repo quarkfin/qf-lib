@@ -24,7 +24,6 @@ from qf_lib.testing_tools.containers_comparison import assert_lists_equal
 class _MonitorMock(AbstractMonitor):
     def __init__(self):
         # noinspection PyTypeChecker
-        super().__init__(None)
         self.transactions = []
 
     def real_time_update(self, timestamp: datetime):
