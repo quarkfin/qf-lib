@@ -2,8 +2,10 @@ from dic.container import Container
 
 from qf_lib.backtesting.contract_to_ticker_conversion.vol_strategy_mapper import VolStrategyContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
+from qf_lib.backtesting.events.notifiers import Notifiers
 from qf_lib.backtesting.monitoring.live_trading_monitor import LiveTradingMonitor
 from qf_lib.backtesting.order.orderfactory import OrderFactory
+from qf_lib.backtesting.position_sizer.initial_risk_position_sizer import InitialRiskPositionSizer
 from qf_lib.backtesting.position_sizer.simple_position_sizer import SimplePositionSizer
 from qf_lib.backtesting.trading_session.trading_session import TradingSession
 from qf_lib.common.utils.dateutils.timer import RealTimer
@@ -40,23 +42,25 @@ class LiveTradingSession(TradingSession):
 
         self.contract_ticker_mapper = VolStrategyContractTickerMapper()
         self.order_factory = OrderFactory(self.broker, self.data_handler, self.contract_ticker_mapper)
-        self.position_sizer = SimplePositionSizer(self.broker, self.data_handler, self.order_factory,
-                                                  self.contract_ticker_mapper)
+        self.position_sizer = InitialRiskPositionSizer(self.broker, self.data_handler, self.order_factory,
+                                                       self.contract_ticker_mapper, initial_risk=0.01)
+        self.notifiers = Notifiers(self.timer)
 
         self.logger.info(
             "\n".join([
                 "Creating Backtest Trading Session: ",
                 "\tTrading Session Name: {}".format(trading_session_name),
-                "\tSettings: {}".format(self.settings),
-                "\tData Provider: {}".format(self.data_provider),
-                "\tPDF Exporter: {}".format(self.pdf_exporter),
-                "\tExcel Exporter: {}".format(self.excel_exporter),
-                "\tData Handler: {}".format(self.data_handler),
-                "\tMonitor: {}".format(self.monitor),
-                "\tBroker: {}".format(self.broker),
-                "\tContract-Ticker Mapper: {}".format(self.contract_ticker_mapper),
-                "\tOrder Factory: {}".format(self.order_factory),
-                "\tPosition Sizer: {}".format(self.position_sizer)
+                "\tSettings: {}".format(self.settings.__class__.__name__),
+                "\tData Provider: {}".format(self.data_provider.__class__.__name__),
+                "\tPDF Exporter: {}".format(self.pdf_exporter.__class__.__name__),
+                "\tExcel Exporter: {}".format(self.excel_exporter.__class__.__name__),
+                "\tData Handler: {}".format(self.data_handler.__class__.__name__),
+                "\tMonitor: {}".format(self.monitor.__class__.__name__),
+                "\tBroker: {}".format(self.broker.__class__.__name__),
+                "\tContract-Ticker Mapper: {}".format(self.contract_ticker_mapper.__class__.__name__),
+                "\tOrder Factory: {}".format(self.order_factory.__class__.__name__),
+                "\tPosition Sizer: {}".format(self.position_sizer.__class__.__name__),
+                "\tNotifiers: {}".format(self.notifiers.__class__.__name__)
             ])
         )
 
