@@ -34,16 +34,16 @@ class Portfolio(object):
 
         # dates and portfolio values are keep separately because it is inefficient to append to the QFSeries
         # use get_portfolio_timeseries() to get them as a series.
-        self.dates = []                 # type: List[datetime]
-        self.portfolio_values = []      # type: List[float]
+        self.dates = []  # type: List[datetime]
+        self.portfolio_values = []  # type: List[float]
         self.current_cash = initial_cash
 
-        self._leverage = []              # type: List[float]
+        self._leverage = []  # type: List[float]
 
-        self.open_positions_dict = {}   # type: Dict[Contract, BacktestPosition]
-        self.closed_positions = []      # type: List[BacktestPosition]
-        self.transactions = []          # type: List[Transaction]
-        self.trades = []                # type: List[Trade]
+        self.open_positions_dict = {}  # type: Dict[Contract, BacktestPosition]
+        self.closed_positions = []  # type: List[BacktestPosition]
+        self.transactions = []  # type: List[Transaction]
+        self.trades = []  # type: List[Trade]
 
     def transact_transaction(self, transaction: Transaction):
         """
@@ -52,10 +52,12 @@ class Portfolio(object):
         """
 
         position = self._get_or_create_position(transaction.contract)
+        prev_position_quantity = position.quantity()
+        prev_position_avg_price = position.avg_cost_per_share()
         transaction_cost = position.transact_transaction(transaction)
         self.current_cash -= transaction_cost
 
-        self._record_trade_and_transaction(position, transaction)
+        self._record_trade_and_transaction(prev_position_quantity, prev_position_avg_price, transaction)
 
         # if the position was closed: remove it from open positions and place in closed positions
         if position.is_closed:
@@ -115,7 +117,8 @@ class Portfolio(object):
 
         return position
 
-    def _record_trade_and_transaction(self, position: BacktestPosition, transaction: Transaction):
+    def _record_trade_and_transaction(self, prev_position_quantity: int, prev_position_avg_price: float,
+                                      transaction: Transaction):
         """
         Trade is defined as a transaction that goes in the direction of making your position smaller.
         For example:
@@ -125,16 +128,16 @@ class Portfolio(object):
         """
         self.transactions.append(transaction)
 
-        is_a_trade = sign(transaction.quantity) != sign(position.quantity())
+        is_a_trade = sign(transaction.quantity) * sign(prev_position_quantity) == -1
         if is_a_trade:
             time = transaction.time
             contract = transaction.contract
 
             # only the part that goes in the opposite direction is considered as a trade
-            quantity = min([abs(transaction.quantity), abs(position.quantity())])
-            quantity *= sign(transaction.quantity)  # sign of the transaction should be preserved
+            quantity = min([abs(transaction.quantity), abs(prev_position_quantity)])
+            quantity *= sign(prev_position_quantity)  # sign of the position should be preserved
 
-            entry_price = position.avg_cost_per_share()
+            entry_price = prev_position_avg_price
             exit_price = transaction.average_price_including_commission()
             trade = Trade(time=time,
                           contract=contract,
