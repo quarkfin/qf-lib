@@ -8,7 +8,7 @@ from numpy.testing import assert_equal, assert_almost_equal
 
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
-from qf_lib.backtesting.alpha_models_testers.alpha_model_backtest import AlphaModelBacktest
+from qf_lib.backtesting.strategy.trading_strategy import TradingStrategy
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker, BloombergTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
@@ -18,7 +18,7 @@ from qf_lib.data_providers.price_data_provider import DataProvider
 from qf_lib_tests.integration_tests.backtesting.trading_session_for_tests import TestingTradingSession
 
 
-class TestAlphaModelBacktest(TestCase):
+class TestTradingStrategy(TestCase):
     tickers = [BloombergTicker("AAPL US Equity")]
 
     data_start_date = str_to_date("2014-12-25")
@@ -35,7 +35,7 @@ class TestAlphaModelBacktest(TestCase):
         self.alpha_model = DummyAlphaModel(risk_estimation_factor)
 
         self.ts = self._test_trading_session_init()
-        AlphaModelBacktest(self.ts, self.alpha_model, self.tickers, use_stop_losses=True)
+        TradingStrategy(self.ts, self.alpha_model, self.tickers, use_stop_losses=True)
         self.ts.start_trading()
 
     @classmethod

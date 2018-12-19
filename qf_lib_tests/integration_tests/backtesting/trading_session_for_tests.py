@@ -15,13 +15,14 @@ from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.backtesting.portfolio.portfolio_handler import PortfolioHandler
 from qf_lib.backtesting.position_sizer.simple_position_sizer import SimplePositionSizer
 from qf_lib.backtesting.risk_manager.naive_risk_manager import NaiveRiskManager
+from qf_lib.backtesting.trading_session.trading_session import TradingSession
 from qf_lib.common.utils.dateutils.date_to_string import date_to_str
 from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.data_providers.price_data_provider import DataProvider
 
 
-class TestingTradingSession(object):
+class TestingTradingSession(TradingSession):
     """
     Encapsulates the settings and components for carrying out a backtest session. Pulls for data every day.
     """
@@ -30,6 +31,7 @@ class TestingTradingSession(object):
         """
         Set up the backtest variables according to what has been passed in.
         """
+        super().__init__()
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
         self.logger.info(
