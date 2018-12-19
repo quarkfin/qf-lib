@@ -1,17 +1,24 @@
 from abc import abstractmethod, ABCMeta
 
-import talib
-
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
 from qf_lib.backtesting.alpha_model.signal import Signal
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
+from qf_lib.common.utils.miscellaneous.average_true_range import average_true_range
 
 
 class AlphaModel(object, metaclass=ABCMeta):
 
     def __init__(self, risk_estimation_factor: float, data_handler: DataHandler):
+        """
+        Parameters
+        ----------
+        risk_estimation_factor
+            float value which estimates the risk level of the specific AlphaModel
+        data_handler
+            DataHandler which provides data for the ticker
+        """
         self.risk_estimation_factor = risk_estimation_factor
         self.data_handler = data_handler
 
@@ -68,10 +75,6 @@ class AlphaModel(object, metaclass=ABCMeta):
         ----------
         ticker
             Ticker for which the calculation should be made
-        risk_estimation_factor
-            float value which estimates the risk level of the specific AlphaModel
-        data_handler
-            DataHandler which provides the data for the ticker
 
         Returns
         -------
@@ -81,15 +84,10 @@ class AlphaModel(object, metaclass=ABCMeta):
 
         """
         fields = [PriceField.High, PriceField.Low, PriceField.Close]
-        time_period = 20
+        time_period = 5
 
         num_of_bars_needed = time_period + 1
         prices_df = self.data_handler.historical_price(ticker, fields, num_of_bars_needed)
 
-        high = prices_df[PriceField.High]
-        low = prices_df[PriceField.Low]
-        close = prices_df[PriceField.Close]
-
-        fraction_at_risk = talib.ATR(high, low, close, time_period) / close[-1] * self.risk_estimation_factor
-
-        return fraction_at_risk[-1]
+        fraction_at_risk = average_true_range(prices_df, normalized=True) * self.risk_estimation_factor
+        return fraction_at_risk

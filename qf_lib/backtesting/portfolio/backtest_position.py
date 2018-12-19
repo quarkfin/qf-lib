@@ -40,8 +40,9 @@ class BacktestPosition(Position):
 
         Returns
         -------
-        For BUY transaction: much we paid for the transaction including commission (it will be a positive number)
-        For SELL transaction: much we received for selling shares including commission (it will be a negative number)
+        For BUY transaction: how much we paid for the transaction including commission (it will be a positive number)
+        For SELL transaction: how much we received for selling shares including commission
+                             (it will be a negative number)
         """
         self._check_if_open()
         assert transaction.contract == self._contract, "Contract of Transaction has to match the Contract of a Position"
@@ -87,7 +88,7 @@ class BacktestPosition(Position):
     def contract(self) -> Contract:
         return self._contract
 
-    def quantity(self) -> float:
+    def quantity(self) -> int:
         return self.number_of_shares
 
     def avg_cost_per_share(self) -> float:

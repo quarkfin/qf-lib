@@ -84,7 +84,7 @@ class AbstractTearsheet(metaclass=ABCMeta):
         """
 
         strategy = series_list[0].to_prices(1)
-        chart = LineChart(start_x=strategy.index[0], end_x=strategy.index[-1])
+        chart = LineChart(start_x=strategy.index[0], end_x=strategy.index[-1], log_scale=True)
         line_decorator = HorizontalLineDecorator(1, key="h_line", linewidth=1)
         chart.add_decorator(line_decorator)
 
