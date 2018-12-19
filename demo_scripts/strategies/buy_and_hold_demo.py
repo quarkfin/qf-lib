@@ -8,7 +8,6 @@ from qf_lib.backtesting.broker.broker import Broker
 from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.contract_to_ticker_conversion.bloomberg_mapper import DummyBloombergContractTickerMapper
 from qf_lib.backtesting.order.execution_style import MarketOrder
-from qf_lib.backtesting.risk_manager.risk_manager import RiskManager
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.excel.excel_exporter import ExcelExporter
 from qf_common.config.ioc import container
@@ -46,10 +45,9 @@ class BuyAndHoldStrategy(object):
 
     def calculate_signals(self):
         if not self.invested:
-            initial_orders = self.order_factory.percent_orders({self.CONTRACT: 1.0}, MarketOrder())
-            refined_orders = self.risk_manager.refine_orders(initial_orders)
+            orders = self.order_factory.percent_orders({self.CONTRACT: 1.0}, MarketOrder())
 
-            self.broker.place_orders(refined_orders)
+            self.broker.place_orders(orders)
             self.invested = True
 
 
