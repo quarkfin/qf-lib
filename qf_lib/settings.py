@@ -11,6 +11,7 @@ class Settings(object):
     def __init__(self, settings_path: Optional[str], secret_path: Optional[str]=None, init_properties=True):
         self.settings_path = settings_path
         self.secret_path = secret_path
+        self.init_properties = init_properties
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
         if init_properties:
@@ -63,3 +64,9 @@ class Settings(object):
                 merged_dict[key] = value
             else:
                 merged_dict[key] = self._merge(merged_dict[key], value)
+
+    def __str__(self):
+        return "Settings: \n" \
+               "\t settings path: {}\n" \
+               "\t secret path: {}\n" \
+               "\t init properties: {}".format(self.settings_path, self.secret_path, self.init_properties)

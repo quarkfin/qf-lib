@@ -20,7 +20,7 @@ class IBBroker(Broker):
     def __init__(self):
         self.logger = qf_logger.getChild(self.__class__.__name__)
         self.lock = Lock()
-        self.waiting_time = 10  # expressed in seconds
+        self.waiting_time = 60  # expressed in seconds
         self.action_event_lock = Event()
         self.wrapper = IBWrapper(self.action_event_lock)
         self.client = EClient(wrapper=self.wrapper)
@@ -40,6 +40,7 @@ class IBBroker(Broker):
     def get_portfolio_value(self) -> float:
         with self.lock:
             request_id = 1
+            self._reset_action_lock()
             self.client.reqAccountSummary(request_id, 'All', 'NetLiquidation')
             wait_result = self._wait_for_results()
             self.client.cancelAccountSummary(request_id)
@@ -54,6 +55,7 @@ class IBBroker(Broker):
     def get_portfolio_tag(self, tag: str) -> float:
         with self.lock:
             request_id = 2
+            self._reset_action_lock()
             self.client.reqAccountSummary(request_id, 'All', tag)
             wait_result = self._wait_for_results()
             self.client.cancelAccountSummary(request_id)
@@ -67,6 +69,7 @@ class IBBroker(Broker):
 
     def get_positions(self) -> List[Position]:
         with self.lock:
+            self._reset_action_lock()
             self.wrapper.reset_position_list()
             self.client.reqPositions()
 
@@ -87,6 +90,7 @@ class IBBroker(Broker):
 
     def cancel_order(self, order_id: int):
         with self.lock:
+            self._reset_action_lock()
             self.wrapper.set_cancel_order_id(order_id)
             self.client.cancelOrder(order_id)
 
@@ -97,6 +101,7 @@ class IBBroker(Broker):
 
     def get_open_orders(self) -> List[Order]:
         with self.lock:
+            self._reset_action_lock()
             self.wrapper.reset_order_list()
             self.client.reqOpenOrders()
 
@@ -118,11 +123,12 @@ class IBBroker(Broker):
     def _execute_single_order(self, order) -> int:
         with self.lock:
             order_id = self.wrapper.next_order_id()
+
+            self._reset_action_lock()
             self.wrapper.set_waiting_order_id(order_id)
 
             ib_contract = self._to_ib_contract(order.contract)
             ib_order = self._to_ib_order(order)
-
             self.client.placeOrder(order_id, ib_contract, ib_order)
 
             if self._wait_for_results():
@@ -133,9 +139,13 @@ class IBBroker(Broker):
                 raise BrokerException(error_msg)
 
     def _wait_for_results(self) -> bool:
+        """ Wait for self.waiting_time """
         wait_result = self.action_event_lock.wait(self.waiting_time)
-        self.action_event_lock.clear()
         return wait_result
+
+    def _reset_action_lock(self):
+        """ threads calling wait() will block until set() is called"""
+        self.action_event_lock.clear()
 
     def _to_ib_contract(self, contract: Contract):
         ib_contract = IBContract()

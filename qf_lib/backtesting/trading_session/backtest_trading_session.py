@@ -11,7 +11,7 @@ from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 
 
-class BacktestTradingSession(object):
+class BacktestTradingSession(TradingSession):
     """
     Encapsulates the settings and components for carrying out a backtest session. Pulls for data every day.
     """
@@ -23,6 +23,7 @@ class BacktestTradingSession(object):
         """
         Set up the backtest variables according to what has been passed in.
         """
+        super().__init__()
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
         self.contract_ticker_mapper = contract_ticker_mapper

@@ -1,7 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from datetime import datetime
 
-from qf_lib.backtesting.backtest_result.backtest_result import BacktestResult
 from qf_lib.backtesting.transaction import Transaction
 
 
@@ -11,9 +10,6 @@ class AbstractMonitor(metaclass=ABCMeta):
     all inherited Monitor classes (live, historic, custom, etc).
     Monitor should be subclassed according to the use.
     """
-
-    def __init__(self, backtest_result: BacktestResult):
-        self.backtest_result = backtest_result
 
     @abstractmethod
     def real_time_update(self, timestamp: datetime):

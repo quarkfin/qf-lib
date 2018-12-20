@@ -6,9 +6,6 @@ from qf_lib.backtesting.transaction import Transaction
 
 class DummyMonitor(AbstractMonitor):
 
-    def __init__(self):
-        super().__init__(None)
-
     def end_of_trading_update(self, timestamp: datetime=None):
         pass
 

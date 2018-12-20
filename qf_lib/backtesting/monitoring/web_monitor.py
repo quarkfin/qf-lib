@@ -12,7 +12,7 @@ from qf_lib.common.enums.frequency import Frequency
 
 class WebMonitor(AbstractMonitor):
     def __init__(self, backtest_result: BacktestResult, strategy_run: StrategyRun):
-        super().__init__(backtest_result)
+        self.backtest_result = backtest_result
         self._strategy_run = strategy_run
         self._tms_id = self._strategy_run.portfolio_value.id
         self._data_provider = TimeseriesDataProvider()

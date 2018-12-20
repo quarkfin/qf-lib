@@ -27,7 +27,8 @@ class BacktestMonitor(AbstractMonitor):
 
     def __init__(self, backtest_result: BacktestResult, settings: Settings,
                  pdf_exporter: PDFExporter, excel_exporter: ExcelExporter):
-        super().__init__(backtest_result)
+
+        self.backtest_result = backtest_result
         self._settings = settings
         self._pdf_exporter = pdf_exporter
         self._excel_exporter = excel_exporter

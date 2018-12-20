@@ -56,6 +56,7 @@ class PositionSizer(object, metaclass=ABCMeta):
         current_price = self._data_handler.get_last_available_price(signal.ticker)
         price_multiplier = 1 - signal.fraction_at_risk * signal.suggested_exposure.value
         stop_price = price_multiplier * current_price
+        stop_price = self._round_stop_price(stop_price)
         return stop_price
 
     def _get_existing_position_quantity(self, contract):
@@ -69,3 +70,12 @@ class PositionSizer(object, metaclass=ABCMeta):
             signal_list = list(signal_group)
             if len(signal_list) > 1:
                 raise ValueError("More than one signal for ticker {}".format(ticker.as_string()))
+
+    @staticmethod
+    def _round_stop_price(stop_price):
+        """
+        The stop price has to be expressed in the format that matches the minimum price variation of a contract.
+        For example 10.123 is not a valid stop price for a contract with minimum price variation of 0.01
+        It is assumed that contracts have minimum price variation of 0.01 and the stop price is rounded to 2 decimals.
+        """
+        return round(stop_price, 2)
