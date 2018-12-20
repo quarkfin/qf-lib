@@ -105,26 +105,6 @@ class BacktestTradingSessionBuilder(object):
         self._position_sizer_type = InitialRiskPositionSizer
         self._position_sizer_initial_risk_param = init_risk
 
-    def _contract_ticker_mapper_setup(self, tickers):
-        assert tickers
-        tickers = list(set(tickers))
-        ticker_type = type(tickers[0])
-        assert all(isinstance(ticker, ticker_type) for ticker in tickers)
-
-        if ticker_type is QuandlTicker:
-            contract_ticker_mapper = DummyQuandlContractTickerMapper()
-        elif ticker_type is BloombergTicker:
-            contract_ticker_mapper = DummyBloombergContractTickerMapper()
-        else:
-            assert False, "ticker type cannot be handled"
-
-        return contract_ticker_mapper  # type: ContractTickerMapper
-
-    def _monitor_setup(self, monitor_type, backtest_result, settings, pdf_exporter, excel_exporter):
-        if monitor_type is DummyMonitor:
-            return DummyMonitor()
-        return monitor_type(backtest_result, settings, pdf_exporter, excel_exporter)
-
     @staticmethod
     def _create_event_manager(timer, notifiers: Notifiers):
         event_manager = EventManager(timer)
@@ -159,14 +139,17 @@ class BacktestTradingSessionBuilder(object):
 
         self._portfolio_handler = PortfolioHandler(self._portfolio, self._monitor, self._notifiers.scheduler)
         self._execution_handler = SimulatedExecutionHandler(self._data_handler, self._timer, self._notifiers.scheduler,
-            self._monitor, self._commission_model, self._contract_ticker_mapper, self._portfolio, self._slippage_model)
+                                                            self._monitor, self._commission_model,
+                                                            self._contract_ticker_mapper, self._portfolio,
+                                                            self._slippage_model)
         self._time_flow_controller = BacktestTimeFlowController(self._notifiers.scheduler, self._events_manager,
-            self._timer, self._notifiers.empty_queue_event_notifier, self._end_date)
+                                                                self._timer, self._notifiers.empty_queue_event_notifier,
+                                                                self._end_date)
 
         self._broker = BacktestBroker(self._portfolio, self._execution_handler)
         self._order_factory = OrderFactory(self._broker, self._data_handler, self._contract_ticker_mapper)
-        self._position_sizer = SimplePositionSizer(self._broker, self._data_handler, self._order_factory,
-                                                   self._contract_ticker_mapper)
+        self._position_sizer = self._position_sizer_setup(self._position_sizer_type, self._broker, self._data_handler,
+                                                          self._order_factory, self._contract_ticker_mapper)
 
         self._logger.info(
             "\n".join([
@@ -211,3 +194,30 @@ class BacktestTradingSessionBuilder(object):
         )
         ts.data_handler.use_data_bundle(self._tickers, PriceField.ohlcv(), self._data_history_start, ts.end_date)
         return ts
+
+    def _contract_ticker_mapper_setup(self, tickers):
+        assert tickers
+        tickers = list(set(tickers))
+        ticker_type = type(tickers[0])
+        assert all(isinstance(ticker, ticker_type) for ticker in tickers)
+
+        if ticker_type is QuandlTicker:
+            contract_ticker_mapper = DummyQuandlContractTickerMapper()
+        elif ticker_type is BloombergTicker:
+            contract_ticker_mapper = DummyBloombergContractTickerMapper()
+        else:
+            assert False, "ticker type cannot be handled"
+        return contract_ticker_mapper  # type: ContractTickerMapper
+
+    def _monitor_setup(self, monitor_type, backtest_result, settings, pdf_exporter, excel_exporter):
+        if monitor_type is DummyMonitor:
+            return DummyMonitor()
+        return monitor_type(backtest_result, settings, pdf_exporter, excel_exporter)
+
+    def _position_sizer_setup(self, position_sizer_type, broker, data_handler, order_factory, contract_ticker_mapper):
+        assert position_sizer_type is InitialRiskPositionSizer or position_sizer_type is SimplePositionSizer, \
+            "only InitialRiskPositionSizer and SimplePositionSizer types are currently handled"
+        if position_sizer_type is InitialRiskPositionSizer:
+            return InitialRiskPositionSizer(broker, data_handler, order_factory, contract_ticker_mapper,
+                                            self._position_sizer_initial_risk_param)
+        return SimplePositionSizer(broker, data_handler, order_factory, contract_ticker_mapper)
