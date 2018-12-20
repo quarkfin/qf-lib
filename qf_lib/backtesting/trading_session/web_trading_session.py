@@ -8,12 +8,12 @@ from qf_lib.backtesting.events.notifiers import Notifiers
 from qf_lib.backtesting.events.time_flow_controller import BacktestTimeFlowController
 from qf_lib.backtesting.execution_handler.simulated.commission_models.fixed_commission_model import FixedCommissionModel
 from qf_lib.backtesting.execution_handler.simulated.simulated_execution_handler import SimulatedExecutionHandler
+from qf_lib.backtesting.execution_handler.simulated.slippage.price_based_slippage import PriceBasedSlippage
 from qf_lib.backtesting.monitoring.web_monitor import WebMonitor
 from qf_lib.backtesting.order.orderfactory import OrderFactory
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.backtesting.portfolio.portfolio_handler import PortfolioHandler
 from qf_lib.backtesting.position_sizer.simple_position_sizer import SimplePositionSizer
-from qf_lib.backtesting.risk_manager.naive_risk_manager import NaiveRiskManager
 from qf_lib.backtesting.trading_session.trading_session import TradingSession
 from qf_lib.common.utils.dateutils.date_to_string import date_to_str
 from qf_lib.common.utils.dateutils.timer import SettableTimer
@@ -56,7 +56,6 @@ class WebTradingSession(TradingSession):
         )
 
         timer = SettableTimer(start_date)
-        risk_manager = NaiveRiskManager(timer)
         notifiers = Notifiers(timer)
         data_handler = DataHandler(data_provider, timer)
         events_manager = self._create_event_manager(timer, notifiers)
@@ -68,10 +67,11 @@ class WebTradingSession(TradingSession):
 
         monitor = WebMonitor(backtest_result, strategy_run)
         commission_model = FixedCommissionModel(0.0)
+        slippage_model = PriceBasedSlippage(0.0)
 
         execution_handler = SimulatedExecutionHandler(
             data_handler, timer, notifiers.scheduler, monitor, commission_model,
-            contract_ticker_mapper, portfolio)
+            contract_ticker_mapper, portfolio, slippage_model)
 
         broker = BacktestBroker(portfolio, execution_handler)
         order_factory = OrderFactory(broker, data_handler, contract_ticker_mapper)
@@ -87,7 +87,6 @@ class WebTradingSession(TradingSession):
                 "Configuration of components:",
                 "\tPosition sizer: {:s}".format(position_sizer.__class__.__name__),
                 "\tTimer: {:s}".format(timer.__class__.__name__),
-                "\tRisk Manager: {:s}".format(risk_manager.__class__.__name__),
                 "\tData Handler: {:s}".format(data_handler.__class__.__name__),
                 "\tBacktest Result: {:s}".format(backtest_result.__class__.__name__),
                 "\tMonitor: {:s}".format(monitor.__class__.__name__),
@@ -105,7 +104,6 @@ class WebTradingSession(TradingSession):
         self.portfolio_handler = portfolio_handler
         self.execution_handler = execution_handler
         self.position_sizer = position_sizer
-        self.risk_manager = risk_manager
         self.monitor = monitor
         self.timer = timer
         self.order_factory = order_factory
