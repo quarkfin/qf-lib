@@ -9,7 +9,7 @@ class DummyMonitor(AbstractMonitor):
     def __init__(self):
         super().__init__(None)
 
-    def end_of_trading_update(self, timestamp: datetime):
+    def end_of_trading_update(self, timestamp: datetime=None):
         pass
 
     def end_of_day_update(self, timestamp: datetime):
