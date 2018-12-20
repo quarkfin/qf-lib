@@ -60,6 +60,7 @@ class IBWrapper(EWrapper):
     def accountSummary(self, reqId: int, account: str, tag: str, value: str, currency: str):
         if tag == 'NetLiquidation':
             self.net_liquidation = float(value)
+            self.logger.info("===> NetLiquidation: {}".format(float(value)))
         else:
             self.tmp_value = float(value)
 
