@@ -10,6 +10,7 @@ from qf_lib.backtesting.broker.backtest_broker import BacktestBroker
 from qf_lib.backtesting.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.events.event_manager import EventManager
+from qf_lib.backtesting.events.notifiers import Notifiers
 from qf_lib.backtesting.events.time_flow_controller import BacktestTimeFlowController
 from qf_lib.backtesting.execution_handler.simulated.commission_models.commission_model import CommissionModel
 from qf_lib.backtesting.execution_handler.simulated.commission_models.fixed_commission_model import FixedCommissionModel
@@ -25,7 +26,6 @@ from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.backtesting.portfolio.portfolio_handler import PortfolioHandler
 from qf_lib.backtesting.position_sizer.initial_risk_position_sizer import InitialRiskPositionSizer
 from qf_lib.backtesting.position_sizer.simple_position_sizer import SimplePositionSizer
-from qf_lib.backtesting.trading_session.notifiers import Notifiers
 from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 

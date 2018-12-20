@@ -2,11 +2,12 @@ from qf_lib.backtesting.broker.backtest_broker import BacktestBroker
 from qf_lib.backtesting.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.events.event_manager import EventManager
+from qf_lib.backtesting.events.notifiers import Notifiers
 from qf_lib.backtesting.monitoring.backtest_monitor import BacktestMonitor
 from qf_lib.backtesting.order.orderfactory import OrderFactory
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.backtesting.position_sizer.position_sizer import PositionSizer
-from qf_lib.backtesting.trading_session.notifiers import Notifiers
+from qf_lib.backtesting.trading_session.trading_session import TradingSession
 from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 
