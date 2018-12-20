@@ -31,10 +31,9 @@ class BuyAndHoldStrategy(object):
     CONTRACT = Contract(symbol="SPY US Equity", security_type='STK', exchange='NASDAQ')
     TICKER = BloombergTicker("SPY US Equity")
 
-    def __init__(self, broker: Broker, order_factory: OrderFactory, risk_manager: RiskManager, scheduler: Scheduler):
+    def __init__(self, broker: Broker, order_factory: OrderFactory, scheduler: Scheduler):
         self.order_factory = order_factory
         self.broker = broker
-        self.risk_manager = risk_manager
 
         self.invested = False
 
@@ -85,7 +84,6 @@ def main():
     BuyAndHoldStrategy(
         ts.broker,
         ts.order_factory,
-        ts.risk_manager,
         ts.notifiers.scheduler
     )
 

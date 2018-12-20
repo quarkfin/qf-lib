@@ -32,7 +32,6 @@ class SpxWithStopLoss(object):
         self.data_handler = ts.data_handler
         self.contract_ticker_mapper = ts.contract_ticker_mapper
         self.position_sizer = ts.position_sizer
-        self.risk_manager = ts.risk_manager
         self.timer = ts.timer
 
         ts.notifiers.scheduler.subscribe(BeforeMarketOpenEvent, listener=self)

@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 plt.ion()  # required for dynamic chart, good to keep this at the beginning of imports
 
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
-from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.backtesting.contract_to_ticker_conversion.bloomberg_mapper import DummyBloombergContractTickerMapper
 from qf_lib.backtesting.order.execution_style import MarketOrder
@@ -35,7 +34,6 @@ class SimpleMAStrategy(object):
         self.data_handler = ts.data_handler
         self.contract_ticker_mapper = ts.contract_ticker_mapper
         self.position_sizer = ts.position_sizer
-        self.risk_manager = ts.risk_manager
         self.timer = ts.timer
 
         ts.notifiers.scheduler.subscribe(BeforeMarketOpenEvent, listener=self)
@@ -88,6 +86,7 @@ def main():
     SimpleMAStrategy(ts)
 
     ts.start_trading()
+
 
 if __name__ == "__main__":
     main()
