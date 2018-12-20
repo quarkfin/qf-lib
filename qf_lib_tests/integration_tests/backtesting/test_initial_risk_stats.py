@@ -8,7 +8,7 @@ from pandas.util.testing import assert_frame_equal
 from qf_lib.backtesting.alpha_models_testers.initial_risk_stats import InitialRiskStatsFactory
 
 
-class TestScenariosGenerator(TestCase):
+class TestInitialRiskStatsFactory(TestCase):
 
     def setUp(self):
         self.initial_risk_stats_factory = InitialRiskStatsFactory(max_accepted_dd=0.2, target_return=0.05)

@@ -18,7 +18,7 @@ class InitialRiskStatsFactory(object):
         self._max_accepted_dd = max_accepted_dd
         self._target_return = target_return
 
-    def make_stats(self, initial_risks: Sequence[float], scenarios_list: Sequence[pd.DataFrame]):
+    def make_stats(self, initial_risks: Sequence[float], scenarios_list: Sequence[pd.DataFrame]) -> pd.DataFrame:
         """
         Creates a pandas.DataFrame showing how many strategies failed (reached certain draw down level) and how many
         of them succeeded (that is: reached the target return and not failed on the way).

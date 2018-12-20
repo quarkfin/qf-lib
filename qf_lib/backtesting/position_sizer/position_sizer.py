@@ -2,6 +2,7 @@ from abc import ABCMeta, abstractmethod
 from itertools import groupby
 from typing import List, Sequence
 
+from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
 from qf_lib.backtesting.alpha_model.signal import Signal
 from qf_lib.backtesting.broker.broker import Broker
 from qf_lib.backtesting.contract_to_ticker_conversion.base import ContractTickerMapper
@@ -34,13 +35,13 @@ class PositionSizer(object, metaclass=ABCMeta):
 
         for signal, contract in zip(signals, contracts):
             market_order = self._generate_market_order(contract, signal)
-            stop_order = self._generate_stop_order(contract, signal, market_order)
-
             if market_order is not None:
                 orders.append(market_order)
 
-            if stop_order is not None:
-                orders.append(stop_order)
+            if not signal.suggested_exposure == Exposure.OUT:
+                stop_order = self._generate_stop_order(contract, signal, market_order)
+                if stop_order is not None:
+                    orders.append(stop_order)
 
         return orders
 

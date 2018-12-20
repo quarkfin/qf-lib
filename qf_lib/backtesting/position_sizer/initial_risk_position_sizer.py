@@ -1,5 +1,3 @@
-from typing import Sequence
-
 from qf_lib.backtesting.broker.broker import Broker
 from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.contract_to_ticker_conversion.base import ContractTickerMapper
@@ -55,6 +53,9 @@ class InitialRiskPositionSizer(PositionSizer):
 
         # put minus before the quantity as stop order has to go in the opposite direction
         stop_orders = self._order_factory.orders({contract: -stop_quantity}, StopOrder(stop_price))
+
+        if len(stop_orders) == 0:
+            return None
 
         assert len(stop_orders) == 1, "Only one order should be generated"
         return stop_orders[0]
