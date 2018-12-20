@@ -1,5 +1,3 @@
-from typing import Sequence
-
 from qf_lib.backtesting.broker.broker import Broker
 from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.contract_to_ticker_conversion.base import ContractTickerMapper
