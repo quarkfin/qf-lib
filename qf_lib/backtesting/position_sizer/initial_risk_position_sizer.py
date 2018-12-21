@@ -34,6 +34,8 @@ class InitialRiskPositionSizer(PositionSizer):
         assert is_finite_number(signal.fraction_at_risk), "fraction_at_risk has to be a finite number"
 
         target_percentage = self._initial_risk / signal.fraction_at_risk
+        target_percentage *= signal.suggested_exposure.value  # preserve the direction (-1, 0 , 1)
+
         assert is_finite_number(target_percentage), "target_percentage has to be a finite number"
 
         market_order_list = self._order_factory.target_percent_orders({contract: target_percentage}, MarketOrder())
@@ -45,16 +47,21 @@ class InitialRiskPositionSizer(PositionSizer):
         return market_order_list[0]
 
     def _generate_stop_order(self, contract, signal, market_order: Order):
-        stop_price = self._calculate_stop_price(signal)
-
         # stop_quantity = existing position size + recent market orders quantity
         stop_quantity = self._get_existing_position_quantity(contract)
 
         if market_order is not None:
             stop_quantity += market_order.quantity
 
-        # put minus before the quantity as stop order has to go in the opposite direction
-        stop_orders = self._order_factory.orders({contract: -stop_quantity}, StopOrder(stop_price))
+        if stop_quantity != 0:
+            # put minus before the quantity as stop order has to go in the opposite direction
+            stop_price = self._calculate_stop_price(signal)
+            assert is_finite_number(stop_price), "Stop price should be a finite number"
 
-        assert len(stop_orders) == 1, "Only one order should be generated"
-        return stop_orders[0]
+            stop_orders = self._order_factory.orders({contract: -stop_quantity}, StopOrder(stop_price))
+
+            assert len(stop_orders) == 1, "Only one order should be generated"
+            return stop_orders[0]
+        else:
+            # quantity is 0 - no need to place a stop order
+            return None
