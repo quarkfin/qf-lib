@@ -9,6 +9,7 @@ from qf_lib.backtesting.alpha_models_testers.alpha_model_factory import AlphaMod
 from qf_lib.backtesting.alpha_models_testers.initial_risk_stats import InitialRiskStatsFactory
 from qf_lib.backtesting.alpha_models_testers.scenarios_generator import ScenariosGenerator
 from qf_lib.backtesting.monitoring.backtest_monitor import BacktestMonitor
+from qf_lib.backtesting.position_sizer.initial_risk_position_sizer import InitialRiskPositionSizer
 from qf_lib.backtesting.strategy.trading_strategy import TradingStrategy
 from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
 from qf_lib.common.tickers.tickers import BloombergTicker
@@ -25,7 +26,6 @@ def get_trade_rets_values(init_risk: float) -> List[float]:
     stop_loss_param = 1.25
 
     trading_tickers = [
-        # BloombergTicker('VXX US Equity'),
         BloombergTicker('SVXY US Equity')
     ]
 
@@ -40,11 +40,11 @@ def get_trade_rets_values(init_risk: float) -> List[float]:
 
     session_builder = BacktestTradingSessionBuilder(start_date, end_date)
     session_builder.set_alpha_model_backtest_name(model_type, param_set, trading_tickers)
-    session_builder.set_intial_risk_position_sizer(init_risk)
+    session_builder.set_position_sizer(InitialRiskPositionSizer, init_risk)
     session_builder.set_monitor_type(BacktestMonitor)
     session_builder.set_backtest_name("Initial Risk Testing - {}".format(init_risk))
     ts = session_builder.build(container)
-    session_builder.use_data_preloading(trading_tickers + data_tickers)
+    ts.use_data_preloading(trading_tickers + data_tickers)
 
     model_factory = AlphaModelFactory(ts.data_handler)
     model = model_factory.make_model(model_type, *param_set, risk_estimation_factor=stop_loss_param)

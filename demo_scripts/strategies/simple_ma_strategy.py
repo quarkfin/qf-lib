@@ -71,7 +71,7 @@ def main():
     session_builder = BacktestTradingSessionBuilder(start_date, end_date)
     session_builder.set_backtest_name('Simple_MA')
     ts = session_builder.build(container)
-    session_builder.use_data_preloading(SimpleMAStrategy.ticker)
+    ts.use_data_preloading(SimpleMAStrategy.ticker)
 
     SimpleMAStrategy(ts)
     ts.start_trading()

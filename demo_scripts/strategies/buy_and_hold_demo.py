@@ -50,7 +50,7 @@ def main():
     session_builder = BacktestTradingSessionBuilder(start_date, end_date)
     session_builder.set_backtest_name('Buy and Hold')
     ts = session_builder.build(container)
-    session_builder.use_data_preloading(BuyAndHoldStrategy.TICKER)
+    ts.use_data_preloading(BuyAndHoldStrategy.TICKER)
 
     BuyAndHoldStrategy(
         ts.broker,

@@ -40,7 +40,7 @@ class PositionSizer(object, metaclass=ABCMeta):
             if market_order is not None:
                 orders.append(market_order)
 
-            if not signal.suggested_exposure == Exposure.OUT:
+            if signal.suggested_exposure != Exposure.OUT:
                 stop_order = self._generate_stop_order(contract, signal, market_order)
                 if stop_order is not None:
                     orders.append(stop_order)

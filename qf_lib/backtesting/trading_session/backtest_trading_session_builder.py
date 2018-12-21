@@ -1,13 +1,14 @@
 import logging
 from datetime import datetime
-from typing import List, Tuple, Type, Union, Sequence
+from typing import List, Tuple, Type
 
-import matplotlib.pyplot as plt
 from dic.container import Container
 
+from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
 from qf_lib.backtesting.backtest_result.backtest_result import BacktestResult
 from qf_lib.backtesting.broker.backtest_broker import BacktestBroker
 from qf_lib.backtesting.contract_to_ticker_conversion.base import ContractTickerMapper
+from qf_lib.backtesting.contract_to_ticker_conversion.bloomberg_mapper import DummyBloombergContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.events.event_manager import EventManager
 from qf_lib.backtesting.events.notifiers import Notifiers
@@ -25,21 +26,15 @@ from qf_lib.backtesting.order.orderfactory import OrderFactory
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.backtesting.portfolio.portfolio_handler import PortfolioHandler
 from qf_lib.backtesting.position_sizer.initial_risk_position_sizer import InitialRiskPositionSizer
+from qf_lib.backtesting.position_sizer.position_sizer import PositionSizer
 from qf_lib.backtesting.position_sizer.simple_position_sizer import SimplePositionSizer
-from qf_lib.common.utils.dateutils.timer import SettableTimer
-from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
-
-plt.ion()  # required for dynamic chart, good to keep this at the beginning of imports
-
-from qf_lib.common.enums.price_field import PriceField
-from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
-from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
-from qf_lib.backtesting.contract_to_ticker_conversion.bloomberg_mapper import DummyBloombergContractTickerMapper
-from qf_lib.common.tickers.tickers import QuandlTicker, Ticker, BloombergTicker
-from qf_lib.common.utils.excel.excel_exporter import ExcelExporter
 from qf_lib.backtesting.trading_session.backtest_trading_session import BacktestTradingSession
+from qf_lib.common.tickers.tickers import QuandlTicker, Ticker, BloombergTicker
+from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
+from qf_lib.common.utils.excel.excel_exporter import ExcelExporter
 from qf_lib.common.utils.logging.logging_config import setup_logging
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
 from qf_lib.settings import Settings
 
@@ -60,6 +55,7 @@ class BacktestTradingSessionBuilder(object):
         self._commission_model = FixedCommissionModel(0.0)
         self._slippage_model = PriceBasedSlippage(0.0)
         self._position_sizer_type = SimplePositionSizer
+        self._position_sizer_param = None
 
     def set_backtest_name(self, name: str):
         assert not any(char in name for char in ('/\\?%*:|"<>'))
@@ -102,16 +98,13 @@ class BacktestTradingSessionBuilder(object):
     def set_slippage_model(self, slippage_model: Slippage):
         self._slippage_model = slippage_model
 
-    def set_intial_risk_position_sizer(self, init_risk: float):
-        self._position_sizer_type = InitialRiskPositionSizer
-        self._position_sizer_initial_risk_param = init_risk
-
-    def use_data_preloading(self, tickers: Union[Ticker, Sequence[Ticker]], time_delta: RelativeDelta = None):
-        assert self._data_handler is not None, "This method should be called only after build() method call."
-        if time_delta is None:
-            time_delta = RelativeDelta(years=1)
-        data_history_start = self._start_date - time_delta
-        self._data_handler.use_data_bundle(tickers, PriceField.ohlcv(), data_history_start, self._end_date)
+    def set_position_sizer(self, position_sizer_type: Type[PositionSizer], param: float=None):
+        if position_sizer_type is SimplePositionSizer:
+            assert param is None
+        if position_sizer_type is InitialRiskPositionSizer:
+            assert param is not None
+        self._position_sizer_type = position_sizer_type
+        self._position_sizer_param = param
 
     @staticmethod
     def _create_event_manager(timer, notifiers: Notifiers):
@@ -141,8 +134,7 @@ class BacktestTradingSessionBuilder(object):
 
         self._portfolio = Portfolio(self._data_handler, self._initial_cash, self._timer, self._contract_ticker_mapper)
         self._backtest_result = BacktestResult(self._portfolio, self._backtest_name, self._start_date, self._end_date)
-        self._monitor = self._monitor_setup(self._monitor_type, self._backtest_result, self._settings,
-                                            self._pdf_exporter, self._excel_exporter)
+        self._monitor = self._monitor_setup()
 
         self._portfolio_handler = PortfolioHandler(self._portfolio, self._monitor, self._notifiers.scheduler)
         self._execution_handler = SimulatedExecutionHandler(self._data_handler, self._timer, self._notifiers.scheduler,
@@ -155,8 +147,7 @@ class BacktestTradingSessionBuilder(object):
 
         self._broker = BacktestBroker(self._portfolio, self._execution_handler)
         self._order_factory = OrderFactory(self._broker, self._data_handler, self._contract_ticker_mapper)
-        self._position_sizer = self._position_sizer_setup(self._position_sizer_type, self._broker, self._data_handler,
-                                                          self._order_factory, self._contract_ticker_mapper)
+        self._position_sizer = self._position_sizer_setup()
 
         self._logger.info(
             "\n".join([
@@ -201,15 +192,15 @@ class BacktestTradingSessionBuilder(object):
         )
         return ts
 
-    def _monitor_setup(self, monitor_type, backtest_result, settings, pdf_exporter, excel_exporter):
-        if monitor_type is DummyMonitor:
+    def _monitor_setup(self):
+        if self._monitor_type is DummyMonitor:
             return DummyMonitor()
-        return monitor_type(backtest_result, settings, pdf_exporter, excel_exporter)
+        return self._monitor_type(self._backtest_result, self._settings, self._pdf_exporter, self._excel_exporter)
 
-    def _position_sizer_setup(self, position_sizer_type, broker, data_handler, order_factory, contract_ticker_mapper):
-        assert position_sizer_type is InitialRiskPositionSizer or position_sizer_type is SimplePositionSizer, \
-            "only InitialRiskPositionSizer and SimplePositionSizer types are currently handled"
-        if position_sizer_type is InitialRiskPositionSizer:
-            return InitialRiskPositionSizer(broker, data_handler, order_factory, contract_ticker_mapper,
-                                            self._position_sizer_initial_risk_param)
-        return SimplePositionSizer(broker, data_handler, order_factory, contract_ticker_mapper)
+    def _position_sizer_setup(self):
+        if self._position_sizer_param is None:
+            return self._position_sizer_type(self._broker, self._data_handler, self._order_factory,
+                                             self._contract_ticker_mapper)
+        else:
+            return self._position_sizer_type(self._broker, self._data_handler, self._order_factory,
+                                             self._contract_ticker_mapper, self._position_sizer_param)
