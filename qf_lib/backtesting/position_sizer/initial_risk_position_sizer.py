@@ -1,3 +1,4 @@
+from qf_lib.backtesting.alpha_model.signal import Signal
 from qf_lib.backtesting.broker.broker import Broker
 from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.contract_to_ticker_conversion.base import ContractTickerMapper
@@ -26,7 +27,7 @@ class InitialRiskPositionSizer(PositionSizer):
 
         self._initial_risk = initial_risk
 
-    def _generate_market_order(self, contract: Contract, signal):
+    def _generate_market_order(self, contract: Contract, signal: Signal):
         assert is_finite_number(self._initial_risk), "Initial risk has to be a finite number"
         assert is_finite_number(signal.fraction_at_risk), "fraction_at_risk has to be a finite number"
 

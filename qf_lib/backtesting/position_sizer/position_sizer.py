@@ -47,7 +47,7 @@ class PositionSizer(object, metaclass=ABCMeta):
         return orders
 
     @abstractmethod
-    def _generate_market_order(self, contract, signal) -> Order:
+    def _generate_market_order(self, contract, signal: Signal) -> Order:
         raise NotImplementedError("Should implement _generate_market_order()")
 
     def _generate_stop_order(self, contract, signal, market_order: Order):
