@@ -1,6 +1,6 @@
-import logging
-
 import matplotlib.pyplot as plt
+
+from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
 
 plt.ion()  # required for dynamic chart, good to keep this at the beginning of imports
 
@@ -15,7 +15,6 @@ from qf_lib.backtesting.events.time_event.before_market_open_event import Before
 from qf_lib.backtesting.trading_session.backtest_trading_session import BacktestTradingSession
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
-from qf_lib.common.utils.logging.logging_config import setup_logging
 from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
 from qf_lib.settings import Settings
 
@@ -66,25 +65,15 @@ class SimpleMAStrategy(object):
 
 
 def main():
-    setup_logging(
-        level=logging.INFO,
-        console_logging=True
-    )
+    start_date = str_to_date("2010-01-01")
+    end_date = str_to_date("2010-03-01")
 
-    ts = BacktestTradingSession(
-        backtest_name='Simple_MA',
-        settings=container.resolve(Settings),
-        data_provider=container.resolve(GeneralPriceProvider),
-        contract_ticker_mapper=DummyBloombergContractTickerMapper(),
-        pdf_exporter=container.resolve(PDFExporter),
-        excel_exporter=container.resolve(ExcelExporter),
-        start_date=str_to_date("2010-01-01"),
-        end_date=str_to_date("2010-03-31"),
-        initial_cash=1000000
-    )
+    session_builder = BacktestTradingSessionBuilder(start_date, end_date)
+    session_builder.set_backtest_name('Simple_MA')
+    ts = session_builder.build(container)
+    session_builder.use_data_preloading(SimpleMAStrategy.ticker)
 
     SimpleMAStrategy(ts)
-
     ts.start_trading()
 
 

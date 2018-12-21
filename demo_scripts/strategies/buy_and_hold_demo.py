@@ -1,25 +1,18 @@
-import logging
-
 import matplotlib.pyplot as plt
+
+from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
 
 plt.ion()  # required for dynamic chart
 
 from qf_lib.backtesting.broker.broker import Broker
 from qf_lib.backtesting.contract.contract import Contract
-from qf_lib.backtesting.contract_to_ticker_conversion.bloomberg_mapper import DummyBloombergContractTickerMapper
 from qf_lib.backtesting.order.execution_style import MarketOrder
 from qf_lib.common.tickers.tickers import BloombergTicker
-from qf_lib.common.utils.excel.excel_exporter import ExcelExporter
 from qf_common.config.ioc import container
 from qf_lib.backtesting.events.time_event.before_market_open_event import BeforeMarketOpenEvent
 from qf_lib.backtesting.events.time_event.scheduler import Scheduler
 from qf_lib.backtesting.order.orderfactory import OrderFactory
-from qf_lib.backtesting.trading_session.backtest_trading_session import BacktestTradingSession
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
-from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
-from qf_lib.common.utils.logging.logging_config import setup_logging
-from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
-from qf_lib.settings import Settings
 
 
 class BuyAndHoldStrategy(object):
@@ -51,35 +44,13 @@ class BuyAndHoldStrategy(object):
 
 
 def main():
-    setup_logging(
-        level=logging.INFO,
-        console_logging=True
-    )
-
-    backtest_name = 'Buy and Hold'
-
     start_date = str_to_date("2010-01-01")
     end_date = str_to_date("2018-01-01")
 
-    data_provider = container.resolve(GeneralPriceProvider)  # type: GeneralPriceProvider
-    settings = container.resolve(Settings)  # type: Settings
-    pdf_exporter = container.resolve(PDFExporter)  # type: PDFExporter
-    excel_exporter = container.resolve(ExcelExporter)  # type: ExcelExporter
-
-    initial_cash = 1000000
-
-    ts = BacktestTradingSession(
-        backtest_name=backtest_name,
-        settings=settings,
-        data_provider=data_provider,
-        contract_ticker_mapper=DummyBloombergContractTickerMapper(),
-        pdf_exporter=pdf_exporter,
-        excel_exporter=excel_exporter,
-        start_date=start_date,
-        end_date=end_date,
-        initial_cash=initial_cash,
-        is_lightweight=True
-    )
+    session_builder = BacktestTradingSessionBuilder(start_date, end_date)
+    session_builder.set_backtest_name('Buy and Hold')
+    ts = session_builder.build(container)
+    session_builder.use_data_preloading(BuyAndHoldStrategy.TICKER)
 
     BuyAndHoldStrategy(
         ts.broker,
@@ -88,6 +59,7 @@ def main():
     )
 
     ts.start_trading()
+
 
 if __name__ == "__main__":
     main()

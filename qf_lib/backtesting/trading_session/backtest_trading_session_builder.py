@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import List, Tuple, Type
+from typing import List, Tuple, Type, Union, Sequence
 
 import matplotlib.pyplot as plt
 from dic.container import Container
@@ -35,7 +35,6 @@ from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
 from qf_lib.backtesting.contract_to_ticker_conversion.bloomberg_mapper import DummyBloombergContractTickerMapper
-from qf_lib.backtesting.contract_to_ticker_conversion.quandl_mapper import DummyQuandlContractTickerMapper
 from qf_lib.common.tickers.tickers import QuandlTicker, Ticker, BloombergTicker
 from qf_lib.common.utils.excel.excel_exporter import ExcelExporter
 from qf_lib.backtesting.trading_session.backtest_trading_session import BacktestTradingSession
@@ -47,29 +46,28 @@ from qf_lib.settings import Settings
 
 class BacktestTradingSessionBuilder(object):
 
-    def __init__(self, trading_tickers: List[Ticker], data_tickers: List[Ticker],
-                 start_date: datetime, end_date: datetime):
+    def __init__(self, start_date: datetime, end_date: datetime):
         self._logger = qf_logger.getChild(self.__class__.__name__)
 
-        self._tickers = trading_tickers + data_tickers
         self._start_date = start_date
         self._end_date = end_date
-        self._data_history_start = start_date - RelativeDelta(years=1)
 
         self._backtest_name = "Backtest Results"
         self._initial_cash = 100000
-        self._logging_level = logging.WARNING
         self._monitor_type = LightBacktestMonitor
-        self._position_sizer_type = SimplePositionSizer
+        self._logging_level = logging.WARNING
+        self._contract_ticker_mapper = DummyBloombergContractTickerMapper()
         self._commission_model = FixedCommissionModel(0.0)
         self._slippage_model = PriceBasedSlippage(0.0)
+        self._position_sizer_type = SimplePositionSizer
+
+    def set_backtest_name(self, name: str):
+        assert not any(char in name for char in ('/\\?%*:|"<>'))
+        self._backtest_name = name
 
     def set_initial_cash(self, initial_cash: int):
         assert type(initial_cash) is int and initial_cash > 0
         self._initial_cash = initial_cash
-
-    def set_backtest_name(self, name: str):
-        self._backtest_name = name
 
     def set_alpha_model_backtest_name(self, model_type: Type[AlphaModel], param_set: Tuple, tickers: List[Ticker]):
         name = model_type.__name__ + '_' + '_'.join((str(item)) for item in param_set)
@@ -95,6 +93,9 @@ class BacktestTradingSessionBuilder(object):
         assert logging_level == logging.WARNING or logging_level == logging.INFO
         self._logging_level = logging_level
 
+    def set_contract_ticker_mapper(self, contract_ticker_mapper: ContractTickerMapper):
+        self._contract_ticker_mapper = contract_ticker_mapper
+
     def set_commission_model(self, commission_model: CommissionModel):
         self._commission_model = commission_model
 
@@ -104,6 +105,13 @@ class BacktestTradingSessionBuilder(object):
     def set_intial_risk_position_sizer(self, init_risk: float):
         self._position_sizer_type = InitialRiskPositionSizer
         self._position_sizer_initial_risk_param = init_risk
+
+    def use_data_preloading(self, tickers: Union[Ticker, Sequence[Ticker]], time_delta: RelativeDelta = None):
+        assert self._data_handler is not None, "This method should be called only after build() method call."
+        if time_delta is None:
+            time_delta = RelativeDelta(years=1)
+        data_history_start = self._start_date - time_delta
+        self._data_handler.use_data_bundle(tickers, PriceField.ohlcv(), data_history_start, self._end_date)
 
     @staticmethod
     def _create_event_manager(timer, notifiers: Notifiers):
@@ -129,7 +137,6 @@ class BacktestTradingSessionBuilder(object):
         self._notifiers = Notifiers(self._timer)
         self._events_manager = self._create_event_manager(self._timer, self._notifiers)
 
-        self._contract_ticker_mapper = self._contract_ticker_mapper_setup(self._tickers)
         self._data_handler = DataHandler(self._data_provider, self._timer)
 
         self._portfolio = Portfolio(self._data_handler, self._initial_cash, self._timer, self._contract_ticker_mapper)
@@ -192,22 +199,7 @@ class BacktestTradingSessionBuilder(object):
             broker=self._broker,
             order_factory=self._order_factory
         )
-        ts.data_handler.use_data_bundle(self._tickers, PriceField.ohlcv(), self._data_history_start, ts.end_date)
         return ts
-
-    def _contract_ticker_mapper_setup(self, tickers):
-        assert tickers
-        tickers = list(set(tickers))
-        ticker_type = type(tickers[0])
-        assert all(isinstance(ticker, ticker_type) for ticker in tickers)
-
-        if ticker_type is QuandlTicker:
-            contract_ticker_mapper = DummyQuandlContractTickerMapper()
-        elif ticker_type is BloombergTicker:
-            contract_ticker_mapper = DummyBloombergContractTickerMapper()
-        else:
-            assert False, "ticker type cannot be handled"
-        return contract_ticker_mapper  # type: ContractTickerMapper
 
     def _monitor_setup(self, monitor_type, backtest_result, settings, pdf_exporter, excel_exporter):
         if monitor_type is DummyMonitor:

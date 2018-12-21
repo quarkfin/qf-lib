@@ -1,25 +1,20 @@
-import logging
 from unittest import TestCase
 
 import matplotlib.pyplot as plt
+
+from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
 
 plt.ion()  # required for dynamic chart, good to keep this at the beginning of imports
 
 from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.enums.price_field import PriceField
-from qf_lib.backtesting.contract_to_ticker_conversion.bloomberg_mapper import DummyBloombergContractTickerMapper
 from qf_lib.backtesting.order.execution_style import MarketOrder, StopOrder
 from qf_lib.common.tickers.tickers import BloombergTicker
-from qf_lib.common.utils.excel.excel_exporter import ExcelExporter
 from qf_common.config.ioc import container
 from qf_lib.backtesting.events.time_event.before_market_open_event import BeforeMarketOpenEvent
 from qf_lib.backtesting.trading_session.backtest_trading_session import BacktestTradingSession
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
-from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
-from qf_lib.common.utils.logging.logging_config import setup_logging
-from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
-from qf_lib.settings import Settings
 
 
 class SpxWithStopLoss(object):
@@ -50,7 +45,7 @@ class SpxWithStopLoss(object):
         orders = self.order_factory.target_percent_orders({contract: 1.0}, MarketOrder(),
                                                           time_in_force=TimeInForce.GTC, tolerance_percent=0.02)
 
-        stop_price = last_price * (1-self.percentage)
+        stop_price = last_price * (1 - self.percentage)
         execution_style = StopOrder(stop_price=stop_price)
         stop_order = self.order_factory.percent_orders({contract: -1}, execution_style=execution_style,
                                                        time_in_force=TimeInForce.GTC)
@@ -61,27 +56,13 @@ class SpxWithStopLoss(object):
 
 
 def main():
-    is_lightweight = True
+    start_date = str_to_date("2017-01-01")
+    end_date = str_to_date("2018-01-01")
 
-    if is_lightweight:
-        logging_level = logging.WARNING
-    else:
-        logging_level = logging.INFO
-
-    setup_logging(level=logging_level, console_logging=True)
-
-    ts = BacktestTradingSession(
-        backtest_name='SPX w. stop{:.3f}'.format(SpxWithStopLoss.percentage),
-        settings=container.resolve(Settings),
-        data_provider=container.resolve(GeneralPriceProvider),
-        contract_ticker_mapper=DummyBloombergContractTickerMapper(),
-        pdf_exporter=container.resolve(PDFExporter),
-        excel_exporter=container.resolve(ExcelExporter),
-        start_date=str_to_date("2017-01-01"),
-        end_date=str_to_date("2018-01-01"),
-        initial_cash=1000000,
-        is_lightweight=is_lightweight
-    )
+    session_builder = BacktestTradingSessionBuilder(start_date, end_date)
+    session_builder.set_backtest_name('SPY w. stop ' + str(SpxWithStopLoss.percentage))
+    session_builder.set_initial_cash(1000000)
+    ts = session_builder.build(container)
 
     SpxWithStopLoss(ts)
     ts.start_trading()
