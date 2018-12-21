@@ -6,17 +6,12 @@ plt.ion()  # required for dynamic chart, good to keep this at the beginning of i
 
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.enums.price_field import PriceField
-from qf_lib.backtesting.contract_to_ticker_conversion.bloomberg_mapper import DummyBloombergContractTickerMapper
 from qf_lib.backtesting.order.execution_style import MarketOrder
 from qf_lib.common.tickers.tickers import BloombergTicker
-from qf_lib.common.utils.excel.excel_exporter import ExcelExporter
 from qf_common.config.ioc import container
 from qf_lib.backtesting.events.time_event.before_market_open_event import BeforeMarketOpenEvent
 from qf_lib.backtesting.trading_session.backtest_trading_session import BacktestTradingSession
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
-from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
-from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
-from qf_lib.settings import Settings
 
 
 class SimpleMAStrategy(object):
@@ -36,9 +31,6 @@ class SimpleMAStrategy(object):
         self.timer = ts.timer
 
         ts.notifiers.scheduler.subscribe(BeforeMarketOpenEvent, listener=self)
-
-        data_history_start = ts.start_date - RelativeDelta(days=40)
-        self.data_handler.use_data_bundle(self.ticker, PriceField.ohlcv(), data_history_start, ts.end_date)
 
     def on_before_market_open(self, _: BeforeMarketOpenEvent):
         self.calculate_signals()
@@ -71,7 +63,7 @@ def main():
     session_builder = BacktestTradingSessionBuilder(start_date, end_date)
     session_builder.set_backtest_name('Simple_MA')
     ts = session_builder.build(container)
-    ts.use_data_preloading(SimpleMAStrategy.ticker)
+    ts.use_data_preloading(SimpleMAStrategy.ticker, RelativeDelta(days=40))
 
     SimpleMAStrategy(ts)
     ts.start_trading()

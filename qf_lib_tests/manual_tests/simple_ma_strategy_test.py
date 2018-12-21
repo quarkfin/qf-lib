@@ -34,9 +34,6 @@ class SimpleMAStrategy(object):
 
         ts.notifiers.scheduler.subscribe(BeforeMarketOpenEvent, listener=self)
 
-        data_history_start = ts.start_date - RelativeDelta(days=40)
-        self.data_handler.use_data_bundle(self.ticker, PriceField.ohlcv(), data_history_start, ts.end_date)
-
     def on_before_market_open(self, _: BeforeMarketOpenEvent):
         self.calculate_signals()
 
@@ -69,6 +66,7 @@ def main():
     session_builder.set_backtest_name('Simple_MA')
     session_builder.set_initial_cash(1000000)
     ts = session_builder.build(container)
+    ts.use_data_preloading(SimpleMAStrategy.ticker, RelativeDelta(days=40))
 
     SimpleMAStrategy(ts)
     ts.start_trading()

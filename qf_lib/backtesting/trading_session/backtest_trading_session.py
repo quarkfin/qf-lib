@@ -48,12 +48,10 @@ class BacktestTradingSession(TradingSession):
         self.broker = broker
 
     def use_data_preloading(self, tickers: Union[Ticker, Sequence[Ticker]], time_delta: RelativeDelta = None):
-        assert self.data_handler is not None, "This method should be called only after build() method call."
         if time_delta is None:
             time_delta = RelativeDelta(years=1)
         data_history_start = self.start_date - time_delta
         self.data_handler.use_data_bundle(tickers, PriceField.ohlcv(), data_history_start, self.end_date)
-
 
     def start_trading(self) -> None:
         """

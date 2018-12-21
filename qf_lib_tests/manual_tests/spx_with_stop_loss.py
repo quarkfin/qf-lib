@@ -8,7 +8,6 @@ plt.ion()  # required for dynamic chart, good to keep this at the beginning of i
 
 from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
-from qf_lib.common.enums.price_field import PriceField
 from qf_lib.backtesting.order.execution_style import MarketOrder, StopOrder
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_common.config.ioc import container
@@ -30,9 +29,6 @@ class SpxWithStopLoss(object):
         self.timer = ts.timer
 
         ts.notifiers.scheduler.subscribe(BeforeMarketOpenEvent, listener=self)
-
-        data_history_start = ts.start_date - RelativeDelta(days=40)
-        self.data_handler.use_data_bundle(self.ticker, PriceField.ohlcv(), data_history_start, ts.end_date)
 
     def on_before_market_open(self, _: BeforeMarketOpenEvent):
         self.calculate_signals()
@@ -63,6 +59,7 @@ def main():
     session_builder.set_backtest_name('SPY w. stop ' + str(SpxWithStopLoss.percentage))
     session_builder.set_initial_cash(1000000)
     ts = session_builder.build(container)
+    ts.use_data_preloading(SpxWithStopLoss.ticker, RelativeDelta(days=40))
 
     SpxWithStopLoss(ts)
     ts.start_trading()
