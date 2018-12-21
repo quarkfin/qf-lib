@@ -7,8 +7,10 @@ from qf_lib.backtesting.alpha_model.signal import Signal
 from qf_lib.backtesting.broker.broker import Broker
 from qf_lib.backtesting.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
+from qf_lib.backtesting.order.execution_style import StopOrder
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.orderfactory import OrderFactory
+from qf_lib.common.utils.numberutils.is_finite_number import is_finite_number
 
 
 class PositionSizer(object, metaclass=ABCMeta):
@@ -46,12 +48,28 @@ class PositionSizer(object, metaclass=ABCMeta):
         return orders
 
     @abstractmethod
-    def _generate_market_order(self, contract, signal) -> Order:
+    def _generate_market_order(self, contract, signal: Signal) -> Order:
         raise NotImplementedError("Should implement _generate_market_order()")
 
-    @abstractmethod
-    def _generate_stop_order(self, contract, signal, market_order: Order) -> Order:
-        raise NotImplementedError("Should implement _generate_stop_order()")
+    def _generate_stop_order(self, contract, signal, market_order: Order):
+        # stop_quantity = existing position size + recent market orders quantity
+        stop_quantity = self._get_existing_position_quantity(contract)
+
+        if market_order is not None:
+            stop_quantity += market_order.quantity
+
+        if stop_quantity != 0:
+            stop_price = self._calculate_stop_price(signal)
+            assert is_finite_number(stop_price), "Stop price should be a finite number"
+
+            # put minus before the quantity as stop order has to go in the opposite direction
+            stop_orders = self._order_factory.orders({contract: -stop_quantity}, StopOrder(stop_price))
+
+            assert len(stop_orders) == 1, "Only one order should be generated"
+            return stop_orders[0]
+        else:
+            # quantity is 0 - no need to place a stop order
+            return None
 
     def _calculate_stop_price(self, signal: Signal):
         current_price = self._data_handler.get_last_available_price(signal.ticker)
