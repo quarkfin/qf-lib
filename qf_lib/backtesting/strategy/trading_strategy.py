@@ -1,4 +1,7 @@
 from typing import List
+
+import numpy as np
+
 from qf_lib.backtesting.trading_session.trading_session import TradingSession
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
@@ -56,6 +59,7 @@ class TradingStrategy(object):
         current_exposures = {}
         positions = self._broker.get_positions()
         for contract in contracts:
-            direction = next((position.direction for position in positions if position.contract() == contract), 0)
+            quantity = next((position.quantity() for position in positions if position.contract() == contract), 0)
+            direction = np.sign(quantity)
             current_exposures[contract] = Exposure(direction)
         return current_exposures
