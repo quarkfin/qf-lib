@@ -1,3 +1,4 @@
+from qf_lib.backtesting.alpha_model.signal import Signal
 from qf_lib.backtesting.broker.broker import Broker
 from qf_lib.backtesting.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
@@ -24,7 +25,7 @@ class FixedPortfolioPercentagePositionSizer(PositionSizer):
 
         self.fixed_percentage = fixed_percentage
 
-    def _generate_market_order(self, contract, signal):
+    def _generate_market_order(self, contract, signal: Signal):
         target_percentage = signal.suggested_exposure.value * self.fixed_percentage
 
         market_order_list = self._order_factory.target_percent_orders({contract: target_percentage}, MarketOrder())
