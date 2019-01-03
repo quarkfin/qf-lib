@@ -1,6 +1,7 @@
 import logging
-import math
-from typing import Dict, List, Sequence, Optional
+from typing import Dict, List, Sequence, Tuple, Optional
+
+import pandas as pd
 
 from qf_lib.backtesting.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
@@ -8,21 +9,24 @@ from qf_lib.backtesting.execution_handler.simulated.commission_models.commission
 from qf_lib.backtesting.execution_handler.simulated.simulated_executor import SimulatedExecutor
 from qf_lib.backtesting.execution_handler.simulated.slippage.base import Slippage
 from qf_lib.backtesting.monitoring.abstract_monitor import AbstractMonitor
+from qf_lib.backtesting.order.execution_style import StopOrder
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.backtesting.transaction import Transaction
+from qf_lib.common.enums.price_field import PriceField
+from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.timer import Timer
 
 
-class MarketOrdersExecutor(SimulatedExecutor):
+class MarketOnCloseOrdersExecutor(SimulatedExecutor):
+
     def __init__(self, contracts_to_tickers_mapper: ContractTickerMapper, data_handler: DataHandler,
                  monitor: AbstractMonitor, portfolio: Portfolio, timer: Timer, order_id_generator,
                  commission_model: CommissionModel, slippage_model: Slippage):
 
-        super().__init__(contracts_to_tickers_mapper, data_handler, monitor, portfolio, timer,
-                         order_id_generator, commission_model, slippage_model)
+        super().__init__(contracts_to_tickers_mapper, data_handler, monitor, portfolio, timer, order_id_generator,
+                         commission_model, slippage_model)
 
-        self._awaiting_orders = {}  # type: Dict[int, Order]  # order_id -> Order
         self._logger = logging.getLogger(self.__class__.__name__)
 
     def accept_orders(self, orders: Sequence[Order]) -> List[int]:
@@ -51,41 +55,45 @@ class MarketOrdersExecutor(SimulatedExecutor):
 
     def execute_orders(self):
         """
-        Converts Orders into Transactions and preserves the unexecuted Orders (orders that could not be executed)
+        Converts Orders into Transactions. Returns dictionary of unexecuted Orders (order_id -> Order)
         """
-
-        market_orders_list = self.get_open_orders()
-        if not market_orders_list:
+        if not self._awaiting_orders:
             return
 
-        tickers = [self._contracts_to_tickers_mapper.contract_to_ticker(order.contract) for order in market_orders_list]
+        open_orders_data = self._stop_orders_data_dict.values()
+        tickers = [ticker for _, ticker in open_orders_data]
 
-        no_slippage_prices, to_be_executed_orders, unexecuted_orders_dict = \
-            self._get_orders_with_fill_prices_without_slippage(market_orders_list, tickers)
+        no_slippage_fill_prices_list, to_be_executed_orders, unexecuted_stop_orders_data_dict = \
+            self._get_orders_with_fill_prices_without_slippage(open_orders_data, tickers)
 
-        fill_prices, _ = self._slippage_model.apply_slippage(to_be_executed_orders, no_slippage_prices)
+        fill_prices, fill_volumes = self._slippage_model.apply_slippage(
+            to_be_executed_orders, no_slippage_fill_prices_list
+        )
 
         for order, fill_price in zip(to_be_executed_orders, fill_prices):
             self._execute_order(order, fill_price)
 
-        self._awaiting_orders = unexecuted_orders_dict
+        self._stop_orders_data_dict = unexecuted_stop_orders_data_dict
 
-    def _get_orders_with_fill_prices_without_slippage(self, market_orders_list, tickers):
-        unique_tickers = list(set(tickers))
-        current_prices_series = self._data_handler.get_current_price(unique_tickers)
-
-        unexecuted_orders_dict = {}  # type: Dict[int, Order]
+    def _get_orders_with_fill_prices_without_slippage(self, open_orders_data, tickers):
+        no_slippage_fill_prices_list = []
         to_be_executed_orders = []
-        no_slippage_prices = []
+        unexecuted_stop_orders_data_dict = {}
 
-        for order, ticker in zip(market_orders_list, tickers):
-            security_price = current_prices_series[ticker]
+        unique_tickers = list(set(tickers))
+        current_bars_df = self._data_handler.get_bar_for_today(
+            unique_tickers
+        )  # type: pd.DataFrame  # index=tickers, columns=fields
 
-            if math.isnan(security_price):
-                unexecuted_orders_dict[order.id] = order
+        for order, ticker in open_orders_data:
+            current_bar = current_bars_df.loc[ticker, :]
+            no_slippage_fill_price = self._calculate_no_slippage_fill_price(current_bar, order)
+
+            if no_slippage_fill_price is None:  # the Order cannot be executed
+                unexecuted_stop_orders_data_dict[order.id] = (order, ticker)
             else:
                 to_be_executed_orders.append(order)
-                no_slippage_prices.append(security_price)
+                no_slippage_fill_prices_list.append(no_slippage_fill_price)
 
-        return no_slippage_prices, to_be_executed_orders, unexecuted_orders_dict
+        return no_slippage_fill_prices_list, to_be_executed_orders, unexecuted_stop_orders_data_dict
 

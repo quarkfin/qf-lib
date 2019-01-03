@@ -6,6 +6,7 @@ import pandas as pd
 from qf_lib.backtesting.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.execution_handler.simulated.commission_models.commission_model import CommissionModel
+from qf_lib.backtesting.execution_handler.simulated.simulated_executor import SimulatedExecutor
 from qf_lib.backtesting.execution_handler.simulated.slippage.base import Slippage
 from qf_lib.backtesting.monitoring.abstract_monitor import AbstractMonitor
 from qf_lib.backtesting.order.execution_style import StopOrder
@@ -17,23 +18,17 @@ from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.timer import Timer
 
 
-class StopOrdersExecutor(object):
+class StopOrdersExecutor(SimulatedExecutor):
 
-    def __init__(self, contracts_to_tickers_mapper: ContractTickerMapper, data_handler: DataHandler, order_id_generator,
-                 commission_model: CommissionModel, monitor: AbstractMonitor, portfolio: Portfolio, timer: Timer,
-                 slippage_model: Slippage):
-        self._contracts_to_tickers_mapper = contracts_to_tickers_mapper
-        self._data_handler = data_handler
-        self._order_id_generator = order_id_generator
-        self._timer = timer
-        self._commission_model = commission_model
-        self._monitor = monitor
-        self._portfolio = portfolio
-        self._slippage_model = slippage_model
+    def __init__(self, contracts_to_tickers_mapper: ContractTickerMapper, data_handler: DataHandler,
+                 monitor: AbstractMonitor, portfolio: Portfolio, timer: Timer, order_id_generator,
+                 commission_model: CommissionModel, slippage_model: Slippage):
+
+        super().__init__(contracts_to_tickers_mapper, data_handler, monitor, portfolio, timer,
+                         order_id_generator, commission_model, slippage_model)
 
         # mappings: order_id -> (order, ticker)
         self._stop_orders_data_dict = {}  # type: Dict[int, Tuple[Order, Ticker]]
-
         self._logger = logging.getLogger(self.__class__.__name__)
 
     def accept_orders(self, orders: Sequence[Order]) -> List[int]:
@@ -91,9 +86,7 @@ class StopOrdersExecutor(object):
     def get_open_orders(self) -> List[Order]:
         # a list containing tuples (order, ticker), where ticker corresponds to order.contract
         all_open_orders_data = self._stop_orders_data_dict.values()  # type: Sequence[Tuple[Order, Ticker]]
-
         open_orders = [order for order, _ in all_open_orders_data]
-
         return open_orders
 
     def execute_orders(self):
@@ -174,24 +167,3 @@ class StopOrdersExecutor(object):
                     no_slippage_fill_price = stop_price
 
         return no_slippage_fill_price
-
-    def _execute_order(self, order: Order, fill_price):
-        """
-        Simulates execution of a single Order by converting the Order into Transaction.
-        """
-        timestamp = self._timer.now()
-        contract = order.contract
-        quantity = order.quantity
-
-        fill_price = self._calculate_fill_price(order, fill_price)
-
-        commission = self._commission_model.calculate_commission(order, fill_price)
-
-        transaction = Transaction(timestamp, contract, quantity, fill_price, commission)
-        self._monitor.record_transaction(transaction)
-
-        self._logger.info("Order executed. Transaction has been created:\n{:s}".format(str(transaction)))
-        self._portfolio.transact_transaction(transaction)
-
-    def _calculate_fill_price(self, _, security_price):
-        return security_price

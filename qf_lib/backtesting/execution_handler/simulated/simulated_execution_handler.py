@@ -12,7 +12,7 @@ from qf_lib.backtesting.execution_handler.simulated.market_orders_executor impor
 from qf_lib.backtesting.execution_handler.simulated.slippage.base import Slippage
 from qf_lib.backtesting.execution_handler.simulated.stop_orders_executor import StopOrdersExecutor
 from qf_lib.backtesting.monitoring.abstract_monitor import AbstractMonitor
-from qf_lib.backtesting.order.execution_style import StopOrder, MarketOrder
+from qf_lib.backtesting.order.execution_style import StopOrder, MarketOrder, MarketOnCloseOrder
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.common.exceptions.broker_exceptions import OrderCancellingException
@@ -44,12 +44,19 @@ class SimulatedExecutionHandler(ExecutionHandler):
         order_id_generator = count(start=1)
 
         self._market_orders_executor = MarketOrdersExecutor(
-            contracts_to_tickers_mapper, data_handler, commission_model, monitor, portfolio, timer, order_id_generator,
-            slippage_model
+            contracts_to_tickers_mapper, data_handler, monitor, portfolio,
+            timer, order_id_generator, commission_model, slippage_model
         )
 
-        self._stop_orders_executor = StopOrdersExecutor(contracts_to_tickers_mapper, data_handler, order_id_generator,
-                                                        commission_model, monitor, portfolio, timer, slippage_model)
+        self._stop_orders_executor = StopOrdersExecutor(
+            contracts_to_tickers_mapper, data_handler, monitor, portfolio,
+            timer, order_id_generator, commission_model, slippage_model
+        )
+
+        self._market_on_close_orders_executor = MarketOnCloseOrdersExecutor(
+            contracts_to_tickers_mapper, data_handler, monitor, portfolio,
+            timer, order_id_generator, commission_model, slippage_model
+        )
 
     def on_market_close(self, _: MarketCloseEvent):
         self._stop_orders_executor.execute_orders()
@@ -63,12 +70,15 @@ class SimulatedExecutionHandler(ExecutionHandler):
         """
         order_id_list = []
 
-        for order_style_type, orders_list in groupby(orders, lambda x: type(x.execution_style)):
+        sorted_orders = sorted(orders, key=lambda x: type(x.execution_style))
+        for order_style_type, orders_list in groupby(sorted_orders, lambda x: type(x.execution_style)):
             orders_list = list(orders_list)
             if order_style_type == MarketOrder:
                 partial_order_id_list = self._market_orders_executor.accept_orders(orders_list)
             elif order_style_type == StopOrder:
                 partial_order_id_list = self._stop_orders_executor.accept_orders(orders_list)
+            elif order_style_type == MarketOnCloseOrder:
+                partial_order_id_list = self._market_on_close_orders_executor.accept_orders(orders_list)
             else:
                 raise ValueError("Unsupported ExecutionStyle: {}".format(order_style_type))
 
@@ -79,21 +89,27 @@ class SimulatedExecutionHandler(ExecutionHandler):
     def cancel_order(self, order_id: int):
         # if order_id is in the awaiting orders its id will be returned, otherwise: None will be returned
         removed_order = self._market_orders_executor.cancel_order(order_id)
-
         if removed_order is not None:
             return
 
         removed_order = self._stop_orders_executor.cancel_order(order_id)
+        if removed_order is not None:
+            return
 
+        removed_order = self._market_on_close_orders_executor.cancel_order(order_id)
         if removed_order is not None:
             return
 
         raise OrderCancellingException("Order of id: {:d} wasn't found in the list of awaiting Orders")
 
     def get_open_orders(self) -> List[Order]:
-        return self._market_orders_executor.get_open_orders() + self._stop_orders_executor.get_open_orders()
+        orders = self._market_orders_executor.get_open_orders() \
+                 + self._stop_orders_executor.get_open_orders() \
+                 + self._market_on_close_orders_executor.get_open_orders()
+        return orders
 
     def cancel_all_open_orders(self):
         self._market_orders_executor.cancel_all_open_orders()
         self._stop_orders_executor.cancel_all_open_orders()
+        self._market_on_close_orders_executor.cancel_all_open_orders()
 
