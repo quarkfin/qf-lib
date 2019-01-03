@@ -83,7 +83,7 @@ class StopOrdersExecutor(SimulatedExecutor):
             no_slippage_fill_price = self._calculate_no_slippage_fill_price(current_bar, order)
 
             if no_slippage_fill_price is None:  # the Order cannot be executed
-                unexecuted_stop_orders_data_dict[order.id] = (order, ticker)
+                unexecuted_stop_orders_data_dict[order.id] = order
             else:
                 to_be_executed_orders.append(order)
                 no_slippage_fill_prices_list.append(no_slippage_fill_price)
