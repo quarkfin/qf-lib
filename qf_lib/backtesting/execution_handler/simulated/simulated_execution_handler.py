@@ -8,6 +8,7 @@ from qf_lib.backtesting.events.time_event.market_open_event import MarketOpenEve
 from qf_lib.backtesting.events.time_event.scheduler import Scheduler
 from qf_lib.backtesting.execution_handler.execution_handler import ExecutionHandler
 from qf_lib.backtesting.execution_handler.simulated.commission_models.commission_model import CommissionModel
+from qf_lib.backtesting.execution_handler.simulated.market_on_close_orders_executor import MarketOnCloseOrdersExecutor
 from qf_lib.backtesting.execution_handler.simulated.market_orders_executor import MarketOrdersExecutor
 from qf_lib.backtesting.execution_handler.simulated.slippage.base import Slippage
 from qf_lib.backtesting.execution_handler.simulated.stop_orders_executor import StopOrdersExecutor
@@ -60,6 +61,7 @@ class SimulatedExecutionHandler(ExecutionHandler):
 
     def on_market_close(self, _: MarketCloseEvent):
         self._stop_orders_executor.execute_orders()
+        self._market_on_close_orders_executor.execute_orders()
 
     def on_market_open(self, _: MarketOpenEvent):
         self._market_orders_executor.execute_orders()
@@ -70,8 +72,7 @@ class SimulatedExecutionHandler(ExecutionHandler):
         """
         order_id_list = []
 
-        sorted_orders = sorted(orders, key=lambda x: type(x.execution_style))
-        for order_style_type, orders_list in groupby(sorted_orders, lambda x: type(x.execution_style)):
+        for order_style_type, orders_list in groupby(orders, lambda x: type(x.execution_style)):
             orders_list = list(orders_list)
             if order_style_type == MarketOrder:
                 partial_order_id_list = self._market_orders_executor.accept_orders(orders_list)
