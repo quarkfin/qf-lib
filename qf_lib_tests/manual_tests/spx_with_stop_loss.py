@@ -39,12 +39,12 @@ class SpxWithStopLoss(object):
         contract = self.contract_ticker_mapper.ticker_to_contract(self.ticker)
 
         orders = self.order_factory.target_percent_orders({contract: 1.0}, MarketOrder(),
-                                                          time_in_force=TimeInForce.GTC, tolerance_percent=0.02)
+                                                          time_in_force=TimeInForce.OPG, tolerance_percent=0.02)
 
         stop_price = last_price * (1 - self.percentage)
         execution_style = StopOrder(stop_price=stop_price)
         stop_order = self.order_factory.percent_orders({contract: -1}, execution_style=execution_style,
-                                                       time_in_force=TimeInForce.GTC)
+                                                       time_in_force=TimeInForce.DAY)
 
         self.broker.cancel_all_open_orders()
         self.broker.place_orders(orders)

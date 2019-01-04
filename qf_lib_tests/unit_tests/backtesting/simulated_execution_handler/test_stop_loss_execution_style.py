@@ -70,14 +70,31 @@ class TestStopLossExecutionStyle(TestCase):
         self.stop_loss_order_2 = Order(self.msft_contract, quantity=-1, execution_style=StopOrder(90.0),
                                        time_in_force=TimeInForce.GTC)
 
-        self.exec_hanlder.accept_orders([self.stop_loss_order_1, self.stop_loss_order_2])
+        self.stop_loss_order_3 = Order(self.msft_contract, quantity=-1, execution_style=StopOrder(50.0),
+                                       time_in_force=TimeInForce.DAY)
+
+        self.exec_hanlder.accept_orders([self.stop_loss_order_1, self.stop_loss_order_2, self.stop_loss_order_3])
+
+    def test_day_order_disappears_after_a_day(self):
+        self._set_bar_for_today(open=105.0, high=110.0, low=100.0, close=105.0, volume=100000000.0)
+
+        expected_orders = [self.stop_loss_order_1, self.stop_loss_order_2, self.stop_loss_order_3]
+        actual_orders = self.exec_hanlder.get_open_orders()
+        assert_lists_equal(expected_orders, actual_orders)
+
+        self.exec_hanlder.on_market_close(...)
+        verifyZeroInteractions(self.portfolio, self.spied_monitor)
+
+        actual_orders = self.exec_hanlder.get_open_orders()
+        expected_orders = [self.stop_loss_order_1, self.stop_loss_order_2]
+        assert_lists_equal(expected_orders, actual_orders)
 
     def test_no_orders_executed_on_market_open(self):
         self.exec_hanlder.on_market_open(...)
         verifyZeroInteractions(self.portfolio, self.spied_monitor)
 
         actual_orders = self.exec_hanlder.get_open_orders()
-        expected_orders = [self.stop_loss_order_1, self.stop_loss_order_2]
+        expected_orders = [self.stop_loss_order_1, self.stop_loss_order_2, self.stop_loss_order_3]
         assert_lists_equal(expected_orders, actual_orders)
 
     def test_order_not_executed_when_stop_price_not_hit(self):
@@ -86,8 +103,8 @@ class TestStopLossExecutionStyle(TestCase):
         verifyZeroInteractions(self.portfolio, self.spied_monitor)
 
         actual_orders = self.exec_hanlder.get_open_orders()
-        exoected_orders = [self.stop_loss_order_1, self.stop_loss_order_2]
-        assert_lists_equal(exoected_orders, actual_orders)
+        expected_orders = [self.stop_loss_order_1, self.stop_loss_order_2]
+        assert_lists_equal(expected_orders, actual_orders)
 
     def test_order_not_executed_when_bar_for_today_is_incomplete(self):
         self._set_bar_for_today(open=None, high=110.0, low=100.0, close=105.0, volume=100000000.0)
@@ -95,8 +112,8 @@ class TestStopLossExecutionStyle(TestCase):
         verifyZeroInteractions(self.portfolio, self.spied_monitor)
 
         actual_orders = self.exec_hanlder.get_open_orders()
-        exoected_orders = [self.stop_loss_order_1, self.stop_loss_order_2]
-        assert_lists_equal(exoected_orders, actual_orders)
+        expected_orders = [self.stop_loss_order_1, self.stop_loss_order_2]
+        assert_lists_equal(expected_orders, actual_orders)
 
     def test_one_order_executed_when_one_stop_price_hit(self):
         self._set_bar_for_today(open=100.0, high=110.0, low=94.0, close=105.0, volume=100000000.0)
