@@ -78,14 +78,14 @@ class TestMarketOnOpenExecutionStyle(TestCase):
 
         self._set_last_msft_price(100.0)
         self.order_1 = Order(self.msft_contract, quantity=10, execution_style=MarketOrder(),
-                             time_in_force=TimeInForce.GTC)
+                             time_in_force=TimeInForce.OPG)
         self.order_2 = Order(self.msft_contract, quantity=-5, execution_style=MarketOrder(),
-                             time_in_force=TimeInForce.GTC)
+                             time_in_force=TimeInForce.OPG)
         self.order_3 = Order(self.msft_contract, quantity=-7, execution_style=MarketOrder(),
-                             time_in_force=TimeInForce.GTC)
+                             time_in_force=TimeInForce.OPG)
 
         self.order_4 = Order(self.msft_contract, quantity=4, execution_style=MarketOnCloseOrder(),
-                             time_in_force=TimeInForce.GTC)
+                             time_in_force=TimeInForce.DAY)
 
     def test_1_order_fill(self):
         self.exec_hanlder.accept_orders([self.order_1])

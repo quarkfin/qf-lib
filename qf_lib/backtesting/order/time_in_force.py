@@ -11,3 +11,9 @@ class TimeInForce(Enum):
     """
     Order stays open for the rest of the day.
     """
+
+    OPG = 3
+    """
+    Active ony on market open
+    Combined with MarketOrder Creates Market On Open Order.
+    """
