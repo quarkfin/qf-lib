@@ -41,7 +41,7 @@ class MarketOrdersExecutor(SimulatedExecutor):
         for order, ticker in zip(market_orders_list, tickers):
             security_price = current_prices_series[ticker]
 
-            if math.isnan(security_price):
+            if security_price is None or math.isnan(security_price):
                 unexecuted_orders_dict[order.id] = order
             else:
                 to_be_executed_orders.append(order)

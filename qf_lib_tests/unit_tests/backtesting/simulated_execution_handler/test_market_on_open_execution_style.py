@@ -3,6 +3,7 @@ from unittest import TestCase
 
 import pandas as pd
 from mockito import mock, verify, spy, when, verifyZeroInteractions
+from mockito.matchers import Matcher
 
 from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.contract_to_ticker_conversion.bloomberg_mapper import DummyBloombergContractTickerMapper
@@ -18,6 +19,18 @@ from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.testing_tools.containers_comparison import assert_lists_equal
+
+
+class _ArgCaptor(Matcher):
+    def __init__(self):
+        self.value = None
+
+    def matches(self, arg):
+        self.value = arg
+        return True
+
+    def get_value(self):
+        return self.value
 
 
 class _MonitorMock(AbstractMonitor):
@@ -159,9 +172,9 @@ class TestMarketOnOpenExecutionStyle(TestCase):
         expected_orders = []
         assert_lists_equal(expected_orders, actual_orders)
 
-    def test_market_order_transaction(self):
+    def test_market_open_transaction(self):
         order = self.order_1
-        price = 101
+        price = 102
         self.exec_hanlder.accept_orders([order])
         self._set_price_for_now(price)
         self.exec_hanlder.on_market_open(...)
@@ -172,6 +185,42 @@ class TestMarketOnOpenExecutionStyle(TestCase):
         commission = self.commission_model.calculate_commission(order, price)
         expected_transaction = Transaction(timestamp, contract, quantity, price, commission)
 
+        captor = _ArgCaptor()
+        verify(self.spied_monitor, times=1).record_transaction(captor)
+        self.assertEqual(expected_transaction, captor.get_value())
+
+    def test_market_close_transaction(self):
+        order = self.order_4
+        price = 102
+        self.exec_hanlder.accept_orders([self.order_1, order])
+        self._set_price_for_now(price)
+        self.exec_hanlder.on_market_close(...)
+
+        timestamp = self.timer.now()
+        contract = order.contract
+        quantity = order.quantity
+        commission = self.commission_model.calculate_commission(order, price)
+        expected_transaction = Transaction(timestamp, contract, quantity, price, commission)
+
+        captor = _ArgCaptor()
+        verify(self.spied_monitor, times=1).record_transaction(captor)
+        self.assertEqual(expected_transaction, captor.get_value())
+
+    def test_market_close_does_not_trade(self):
+        price = None
+        self.exec_hanlder.accept_orders([self.order_1, self.order_4])
+        self._set_price_for_now(price)
+        self.exec_hanlder.on_market_close(...)
+
+        verifyZeroInteractions(self.portfolio, self.spied_monitor)
+
+    def test_market_open_does_not_trade(self):
+        price = None
+        self.exec_hanlder.accept_orders([self.order_1, self.order_4])
+        self._set_price_for_now(price)
+        self.exec_hanlder.on_market_open(...)
+
+        verifyZeroInteractions(self.portfolio, self.spied_monitor)
 
     def _set_last_msft_price(self, price):
         when(self.data_handler).get_last_available_price([self.msft_ticker]).thenReturn(

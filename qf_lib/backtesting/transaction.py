@@ -52,3 +52,13 @@ class Transaction(object):
             )
 
         return string_template
+
+    def __eq__(self, other):
+        if self is other:
+            return True
+
+        if not isinstance(other, Transaction):
+            return False
+
+        return (self.time, self.contract, self.quantity, self.price, self.commission) == \
+               (other.time, other.contract, other.quantity, other.price, other.commission)
