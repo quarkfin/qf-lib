@@ -121,6 +121,8 @@ class IBWrapper(EWrapper):
             time_in_force = TimeInForce.DAY
         elif ib_order.tif.upper() == 'GTC':
             time_in_force = TimeInForce.GTC
+        elif ib_order.tif.upper() == 'OPG':
+            time_in_force = TimeInForce.OPG
         else:
             error_message = "Time in Force is not supported: {}".format(ib_order.tif)
             self.logger.error(error_message)

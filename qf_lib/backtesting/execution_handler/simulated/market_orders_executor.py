@@ -7,9 +7,12 @@ from qf_lib.backtesting.execution_handler.simulated.commission_models.commission
 from qf_lib.backtesting.execution_handler.simulated.simulated_executor import SimulatedExecutor
 from qf_lib.backtesting.execution_handler.simulated.slippage.base import Slippage
 from qf_lib.backtesting.monitoring.abstract_monitor import AbstractMonitor
+from qf_lib.backtesting.order.execution_style import MarketOrder
 from qf_lib.backtesting.order.order import Order
+from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.common.utils.dateutils.timer import Timer
+from qf_lib.common.utils.numberutils.is_finite_number import is_finite_number
 
 
 class MarketOrdersExecutor(SimulatedExecutor):
@@ -23,14 +26,20 @@ class MarketOrdersExecutor(SimulatedExecutor):
     def accept_orders(self, orders: Sequence[Order]) -> List[int]:
         order_id_list = []
         for order in orders:
-            order.id = next(self._order_id_generator)
 
+            self._check_order_validity(order)
+
+            order.id = next(self._order_id_generator)
             order_id_list.append(order.id)
             self._awaiting_orders[order.id] = order
 
         return order_id_list
 
     def _get_orders_with_fill_prices_without_slippage(self, market_orders_list, tickers):
+        """
+        Unexecuted orders dict will always be empty.
+        Executes only on the market open and drops the orders if unexecuted
+        """
         unique_tickers = list(set(tickers))
         current_prices_series = self._data_handler.get_current_price(unique_tickers)
 
@@ -41,11 +50,15 @@ class MarketOrdersExecutor(SimulatedExecutor):
         for order, ticker in zip(market_orders_list, tickers):
             security_price = current_prices_series[ticker]
 
-            if security_price is None or math.isnan(security_price):
-                unexecuted_orders_dict[order.id] = order
-            else:
+            if is_finite_number(security_price):
                 to_be_executed_orders.append(order)
                 no_slippage_prices.append(security_price)
 
         return no_slippage_prices, to_be_executed_orders, unexecuted_orders_dict
+
+    def _check_order_validity(self, order):
+        assert order.time_in_force == TimeInForce.OPG, \
+            "Only TimeInForce.OPG Time in Force is accepted by MarketOrdersExecutor"
+        assert order.execution_style == MarketOrder(), \
+            "Only MarketOrder ExecutionStyle is supported by MarketOrdersExecutor"
 

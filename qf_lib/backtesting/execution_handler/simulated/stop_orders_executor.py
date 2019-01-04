@@ -11,6 +11,7 @@ from qf_lib.backtesting.execution_handler.simulated.slippage.base import Slippag
 from qf_lib.backtesting.monitoring.abstract_monitor import AbstractMonitor
 from qf_lib.backtesting.order.execution_style import StopOrder
 from qf_lib.backtesting.order.order import Order
+from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.utils.dateutils.timer import Timer
@@ -83,7 +84,9 @@ class StopOrdersExecutor(SimulatedExecutor):
             no_slippage_fill_price = self._calculate_no_slippage_fill_price(current_bar, order)
 
             if no_slippage_fill_price is None:  # the Order cannot be executed
-                unexecuted_stop_orders_data_dict[order.id] = order
+                if order.time_in_force == TimeInForce.GTC:
+                    # preserve only GTC orders. DAY orders will be dropped at this point
+                    unexecuted_stop_orders_data_dict[order.id] = order
             else:
                 to_be_executed_orders.append(order)
                 no_slippage_fill_prices_list.append(no_slippage_fill_price)
@@ -124,3 +127,9 @@ class StopOrdersExecutor(SimulatedExecutor):
                     no_slippage_fill_price = stop_price
 
         return no_slippage_fill_price
+
+    def _check_order_validity(self, order):
+        assert order.time_in_force == TimeInForce.DAY or order.time_in_force == TimeInForce.GTC, \
+            "Only TimeInForce.DAY or TimeInForce.GTC Time in Force is accepted by StopOrdersExecutor"
+        assert isinstance(order.execution_style, StopOrder),\
+            "Only StopOrder ExecutionStyle is supported by StopOrdersExecutor"
