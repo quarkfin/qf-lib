@@ -50,7 +50,7 @@ class TestPositionSizer(unittest.TestCase):
 
         quantity = np.floor(self.initial_position * (1 / self.initial_allocation - 1))
         self.assertEqual(len(orders), 2)  # market order and stop order
-        self.assertEqual(orders[0], Order(self.contract, quantity, MarketOrder(), TimeInForce.DAY))
+        self.assertEqual(orders[0], Order(self.contract, quantity, MarketOrder(), TimeInForce.OPG))
 
         stop_price = self.last_price * (1 - fraction_at_risk)
         stop_quantity = -(self.initial_position + quantity)
@@ -65,7 +65,7 @@ class TestPositionSizer(unittest.TestCase):
         portfolio_value = self.initial_position / self.initial_allocation
         target_quantity = int(np.floor(portfolio_value * self.initial_risk / fraction_at_risk))
         additional_contracts = target_quantity - self.initial_position
-        self.assertEqual(orders[0], Order(self.contract, additional_contracts, MarketOrder(), TimeInForce.DAY))
+        self.assertEqual(orders[0], Order(self.contract, additional_contracts, MarketOrder(), TimeInForce.OPG))
 
         stop_price = self.last_price * (1 - fraction_at_risk)
         stop_quantity = -(self.initial_position + additional_contracts)
@@ -77,7 +77,7 @@ class TestPositionSizer(unittest.TestCase):
         orders = self.simple_position_sizer.size_signals([signal])
 
         self.assertEqual(len(orders), 1)  # market order only
-        self.assertEqual(orders[0], Order(self.contract, -200, MarketOrder(), TimeInForce.DAY))
+        self.assertEqual(orders[0], Order(self.contract, -200, MarketOrder(), TimeInForce.OPG))
 
 
 class _OrderFactoryMock(object):
