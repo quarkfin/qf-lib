@@ -28,6 +28,8 @@ class TradingStrategy(object):
         self._tickers = list(set(tickers))  # remove potential duplicates
         self._use_stop_losses = use_stop_losses
 
+        self.signals_dict = {}
+
         ts.notifiers.scheduler.subscribe(BeforeMarketOpenEvent, listener=self)
 
     def on_before_market_open(self, _: BeforeMarketOpenEvent):
@@ -44,6 +46,7 @@ class TradingStrategy(object):
                 signal = model.get_signal(ticker, current_exposure)
                 signals.append(signal)
 
+        self.signals_dict[self._data_handler.timer.now().date()] = signals
         orders = self._position_sizer.size_signals(signals)
 
         self._broker.cancel_all_open_orders()
