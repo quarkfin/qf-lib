@@ -8,6 +8,7 @@ from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
 from qf_lib.backtesting.order.execution_style import MarketOrder, StopOrder
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.backtesting.events.time_event.before_market_open_event import BeforeMarketOpenEvent
+from qf_lib.containers.series.qf_series import QFSeries
 
 
 class TradingStrategy(object):
@@ -23,12 +24,13 @@ class TradingStrategy(object):
         self._data_handler = ts.data_handler
         self._contract_ticker_mapper = ts.contract_ticker_mapper
         self._position_sizer = ts.position_sizer
+        self._timer = ts.timer
 
         self._models = models
         self._tickers = list(set(tickers))  # remove potential duplicates
         self._use_stop_losses = use_stop_losses
 
-        self.signals_dict = {}
+        self.signals_tms = QFSeries(name="signals")
 
         ts.notifiers.scheduler.subscribe(BeforeMarketOpenEvent, listener=self)
 
@@ -46,7 +48,7 @@ class TradingStrategy(object):
                 signal = model.get_signal(ticker, current_exposure)
                 signals.append(signal)
 
-        self.signals_dict[self._data_handler.timer.now().date()] = signals
+        self.signals_tms[self._timer.now().date()] = signals
         orders = self._position_sizer.size_signals(signals)
 
         self._broker.cancel_all_open_orders()
