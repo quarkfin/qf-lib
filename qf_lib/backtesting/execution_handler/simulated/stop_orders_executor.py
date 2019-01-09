@@ -1,43 +1,32 @@
 import logging
-from typing import Dict, List, Sequence, Tuple, Optional
+from typing import List, Sequence
 
 import pandas as pd
 
 from qf_lib.backtesting.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.execution_handler.simulated.commission_models.commission_model import CommissionModel
+from qf_lib.backtesting.execution_handler.simulated.simulated_executor import SimulatedExecutor
 from qf_lib.backtesting.execution_handler.simulated.slippage.base import Slippage
 from qf_lib.backtesting.monitoring.abstract_monitor import AbstractMonitor
 from qf_lib.backtesting.order.execution_style import StopOrder
 from qf_lib.backtesting.order.order import Order
+from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
-from qf_lib.backtesting.transaction import Transaction
 from qf_lib.common.enums.price_field import PriceField
-from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.timer import Timer
 
 
-class StopOrdersExecutor(object):
+class StopOrdersExecutor(SimulatedExecutor):
 
-    def __init__(self, contracts_to_tickers_mapper: ContractTickerMapper, data_handler: DataHandler, order_id_generator,
-                 commission_model: CommissionModel, monitor: AbstractMonitor, portfolio: Portfolio, timer: Timer,
-                 slippage_model: Slippage):
-        self._contracts_to_tickers_mapper = contracts_to_tickers_mapper
-        self._data_handler = data_handler
-        self._order_id_generator = order_id_generator
-        self._timer = timer
-        self._commission_model = commission_model
-        self._monitor = monitor
-        self._portfolio = portfolio
-        self._slippage_model = slippage_model
+    def __init__(self, contracts_to_tickers_mapper: ContractTickerMapper, data_handler: DataHandler,
+                 monitor: AbstractMonitor, portfolio: Portfolio, timer: Timer, order_id_generator,
+                 commission_model: CommissionModel, slippage_model: Slippage):
 
-        # mappings: order_id -> (order, ticker)
-        self._stop_orders_data_dict = {}  # type: Dict[int, Tuple[Order, Ticker]]
-
-        self._logger = logging.getLogger(self.__class__.__name__)
+        super().__init__(contracts_to_tickers_mapper, data_handler, monitor, portfolio, timer,
+                         order_id_generator, commission_model, slippage_model)
 
     def accept_orders(self, orders: Sequence[Order]) -> List[int]:
-        # order, ticker, price_when_accepted
         tickers = [
             self._contracts_to_tickers_mapper.contract_to_ticker(order.contract) for order in orders
         ]
@@ -55,7 +44,7 @@ class StopOrdersExecutor(object):
 
             if order.quantity < 0:
                 if stop_price < current_price:
-                    self._stop_orders_data_dict[order_id] = (order, ticker)
+                    self._awaiting_orders[order_id] = order
                 else:
                     raise ValueError(
                         "Incorrect stop price ({stop_price:5.2f}). "
@@ -65,7 +54,7 @@ class StopOrdersExecutor(object):
                         ))
             elif order.quantity > 0:
                 if stop_price > current_price:
-                    self._stop_orders_data_dict[order_id] = (order, ticker)
+                    self._awaiting_orders[order_id] = order
                 else:
                     raise ValueError(
                         "Incorrect stop price ({stop_price:5.2f}). "
@@ -81,59 +70,23 @@ class StopOrdersExecutor(object):
 
         return order_id_list
 
-    def cancel_all_open_orders(self):
-        self._stop_orders_data_dict.clear()
-
-    def cancel_order(self, order_id: int) -> Optional[Order]:
-        cancelled_order, _ = self._stop_orders_data_dict.pop(order_id, (None, None))
-        return cancelled_order
-
-    def get_open_orders(self) -> List[Order]:
-        # a list containing tuples (order, ticker), where ticker corresponds to order.contract
-        all_open_orders_data = self._stop_orders_data_dict.values()  # type: Sequence[Tuple[Order, Ticker]]
-
-        open_orders = [order for order, _ in all_open_orders_data]
-
-        return open_orders
-
-    def execute_orders(self):
-        """
-        Converts Orders into Transactions. Returns dictionary of unexecuted Orders (order_id -> Order)
-        """
-        if not self._stop_orders_data_dict:
-            return
-
-        open_orders_data = self._stop_orders_data_dict.values()
-        tickers = [ticker for _, ticker in open_orders_data]
-
-        no_slippage_fill_prices_list, to_be_executed_orders, unexecuted_stop_orders_data_dict = \
-            self._get_orders_with_fill_prices_without_slippage(open_orders_data, tickers)
-
-        fill_prices, fill_volumes = self._slippage_model.apply_slippage(
-            to_be_executed_orders, no_slippage_fill_prices_list
-        )
-
-        for order, fill_price in zip(to_be_executed_orders, fill_prices):
-            self._execute_order(order, fill_price)
-
-        self._stop_orders_data_dict = unexecuted_stop_orders_data_dict
-
-    def _get_orders_with_fill_prices_without_slippage(self, open_orders_data, tickers):
+    def _get_orders_with_fill_prices_without_slippage(self, open_orders_list, tickers):
         no_slippage_fill_prices_list = []
         to_be_executed_orders = []
         unexecuted_stop_orders_data_dict = {}
 
         unique_tickers = list(set(tickers))
-        current_bars_df = self._data_handler.get_bar_for_today(
-            unique_tickers
-        )  # type: pd.DataFrame  # index=tickers, columns=fields
+        # index=tickers, columns=fields
+        current_bars_df = self._data_handler.get_bar_for_today(unique_tickers)  # type: pd.DataFrame
 
-        for order, ticker in open_orders_data:
+        for order, ticker in zip(open_orders_list, tickers):
             current_bar = current_bars_df.loc[ticker, :]
             no_slippage_fill_price = self._calculate_no_slippage_fill_price(current_bar, order)
 
             if no_slippage_fill_price is None:  # the Order cannot be executed
-                unexecuted_stop_orders_data_dict[order.id] = (order, ticker)
+                if order.time_in_force == TimeInForce.GTC:
+                    # preserve only GTC orders. DAY orders will be dropped at this point
+                    unexecuted_stop_orders_data_dict[order.id] = order
             else:
                 to_be_executed_orders.append(order)
                 no_slippage_fill_prices_list.append(no_slippage_fill_price)
@@ -175,23 +128,8 @@ class StopOrdersExecutor(object):
 
         return no_slippage_fill_price
 
-    def _execute_order(self, order: Order, fill_price):
-        """
-        Simulates execution of a single Order by converting the Order into Transaction.
-        """
-        timestamp = self._timer.now()
-        contract = order.contract
-        quantity = order.quantity
-
-        fill_price = self._calculate_fill_price(order, fill_price)
-
-        commission = self._commission_model.calculate_commission(order, fill_price)
-
-        transaction = Transaction(timestamp, contract, quantity, fill_price, commission)
-        self._monitor.record_transaction(transaction)
-
-        self._logger.info("Order executed. Transaction has been created:\n{:s}".format(str(transaction)))
-        self._portfolio.transact_transaction(transaction)
-
-    def _calculate_fill_price(self, _, security_price):
-        return security_price
+    def _check_order_validity(self, order):
+        assert order.time_in_force == TimeInForce.DAY or order.time_in_force == TimeInForce.GTC, \
+            "Only TimeInForce.DAY or TimeInForce.GTC Time in Force is accepted by StopOrdersExecutor"
+        assert isinstance(order.execution_style, StopOrder),\
+            "Only StopOrder ExecutionStyle is supported by StopOrdersExecutor"

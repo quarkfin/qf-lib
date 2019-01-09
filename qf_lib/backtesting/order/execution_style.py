@@ -10,6 +10,11 @@ class MarketOrder(ExecutionStyle):
         return type(other) == MarketOrder
 
 
+class MarketOnCloseOrder(ExecutionStyle):
+    def __eq__(self, other):
+        return type(other) == MarketOnCloseOrder
+
+
 class StopOrder(ExecutionStyle):
     def __init__(self, stop_price: float):
         self.stop_price = stop_price

@@ -10,6 +10,7 @@ from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.order.execution_style import StopOrder
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.orderfactory import OrderFactory
+from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.common.utils.numberutils.is_finite_number import is_finite_number
 
 
@@ -63,7 +64,7 @@ class PositionSizer(object, metaclass=ABCMeta):
             assert is_finite_number(stop_price), "Stop price should be a finite number"
 
             # put minus before the quantity as stop order has to go in the opposite direction
-            stop_orders = self._order_factory.orders({contract: -stop_quantity}, StopOrder(stop_price))
+            stop_orders = self._order_factory.orders({contract: -stop_quantity}, StopOrder(stop_price), TimeInForce.DAY)
 
             assert len(stop_orders) == 1, "Only one order should be generated"
             return stop_orders[0]

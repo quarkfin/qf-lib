@@ -34,7 +34,7 @@ class TradingStrategy(object):
 
         ts.notifiers.scheduler.subscribe(BeforeMarketOpenEvent, listener=self)
 
-    def on_before_market_open(self, _: BeforeMarketOpenEvent):
+    def on_before_market_open(self, _: BeforeMarketOpenEvent=None):
         self._calculate_signals_and_place_orders()
 
     def _calculate_signals_and_place_orders(self):

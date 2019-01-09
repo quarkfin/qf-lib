@@ -46,9 +46,9 @@ class IBWrapper(EWrapper):
     @iswrapper
     def error(self, req_id: TickerId, error_code: int, error_string: str):
         if req_id == -1 and error_code != 502:
-            self.logger.info("-> Data Connection info: {} {} {}".format(req_id, error_code, error_string))
+            self.logger.info("Data Connection info: {} {} {}".format(req_id, error_code, error_string))
         else:
-            self.logger.error("===> error function call {} {} {}".format(req_id, error_code, error_string))
+            self.logAnswer(current_fn_name(), vars())
 
     @iswrapper
     def nextValidId(self, orderId: int):
@@ -121,6 +121,8 @@ class IBWrapper(EWrapper):
             time_in_force = TimeInForce.DAY
         elif ib_order.tif.upper() == 'GTC':
             time_in_force = TimeInForce.GTC
+        elif ib_order.tif.upper() == 'OPG':
+            time_in_force = TimeInForce.OPG
         else:
             error_message = "Time in Force is not supported: {}".format(ib_order.tif)
             self.logger.error(error_message)

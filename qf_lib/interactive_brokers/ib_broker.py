@@ -178,6 +178,8 @@ class IBBroker(Broker):
             tif_str = "GTC"
         elif time_in_force == TimeInForce.DAY:
             tif_str = "DAY"
+        elif time_in_force == TimeInForce.OPG:
+            tif_str = "OPG"
         else:
             raise ValueError("Not supported TimeInForce {tif:s}".format(tif=str(time_in_force)))
 

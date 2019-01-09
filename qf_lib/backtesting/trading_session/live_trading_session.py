@@ -22,7 +22,7 @@ class LiveTradingSession(TradingSession):
     Encapsulates the settings and components for Live Trading
     """
 
-    def __init__(self, trading_session_name: str, container: Container):
+    def __init__(self, trading_session_name: str, container: Container, initial_risk:float):
         """
         Set up the configuration of all elements.
         """
@@ -43,7 +43,7 @@ class LiveTradingSession(TradingSession):
         self.contract_ticker_mapper = VolStrategyContractTickerMapper()
         self.order_factory = OrderFactory(self.broker, self.data_handler, self.contract_ticker_mapper)
         self.position_sizer = InitialRiskPositionSizer(self.broker, self.data_handler, self.order_factory,
-                                                       self.contract_ticker_mapper, initial_risk=0.01)
+                                                       self.contract_ticker_mapper, initial_risk=initial_risk)
         self.notifiers = Notifiers(self.timer)
 
         self.logger.info(

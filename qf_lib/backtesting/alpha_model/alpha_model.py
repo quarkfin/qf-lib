@@ -15,7 +15,8 @@ class AlphaModel(object, metaclass=ABCMeta):
         Parameters
         ----------
         risk_estimation_factor
-            float value which estimates the risk level of the specific AlphaModel
+            float value which estimates the risk level of the specific AlphaModel. Corresponds to the level at which
+            the stop-loss should be placed.
         data_handler
             DataHandler which provides data for the ticker
         """
@@ -83,11 +84,26 @@ class AlphaModel(object, metaclass=ABCMeta):
             fraction_at_risk = ATR / last_close * risk_estimation_factor
 
         """
-        fields = [PriceField.High, PriceField.Low, PriceField.Close]
         time_period = 5
+        return self._atr_fraction_at_risk(ticker, time_period)
 
+    def _atr_fraction_at_risk(self, ticker, time_period):
+        """
+        Parameters
+        ----------
+        ticker
+            Ticker for which the calculation should be made
+        time_period
+            time period in days for which the ATR is calculated
+
+        Returns
+        -------
+            fraction_at_risk value for an AlphaModel and a Ticker, calculated as Normalized Average True Range
+            multiplied by the risk_estimation_factor, being a property of each AlphaModel:
+            fraction_at_risk = ATR / last_close * risk_estimation_factor
+        """
         num_of_bars_needed = time_period + 1
+        fields = [PriceField.High, PriceField.Low, PriceField.Close]
         prices_df = self.data_handler.historical_price(ticker, fields, num_of_bars_needed)
-
         fraction_at_risk = average_true_range(prices_df, normalized=True) * self.risk_estimation_factor
         return fraction_at_risk

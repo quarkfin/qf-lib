@@ -20,4 +20,4 @@ class VolStrategyContractTickerMapper(ContractTickerMapper):
 
     def ticker_to_contract(self, ticker: BloombergTicker) -> Contract:
         assert ticker.ticker == self.bbg_ticker_str
-        return Contract(symbol=self.symbol, security_type=self.sec_type, exchange="SMART")
+        return Contract(symbol=self.symbol, security_type=self.sec_type, exchange="ARCA")
