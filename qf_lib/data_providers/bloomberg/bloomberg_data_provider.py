@@ -15,6 +15,7 @@ from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceData
 from qf_lib.data_providers.bloomberg.bloomberg_names import REF_DATA_SERVICE_URI
 from qf_lib.data_providers.bloomberg.historical_data_provider import HistoricalDataProvider
 from qf_lib.data_providers.bloomberg.reference_data_provider import ReferenceDataProvider, BloombergError
+from qf_lib.data_providers.bloomberg.tabular_data_provider import TabularDataProvider
 from qf_lib.data_providers.helpers import normalize_data_array, cast_dataframe_to_proper_type
 from qf_lib.settings import Settings
 
@@ -37,6 +38,7 @@ class BloombergDataProvider(AbstractPriceDataProvider):
 
         self._historical_data_provider = HistoricalDataProvider(self.session)
         self._reference_data_provider = ReferenceDataProvider(self.session)
+        self._tabular_data_provider = TabularDataProvider(self.session)
         self.connected = False
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
@@ -57,7 +59,7 @@ class BloombergDataProvider(AbstractPriceDataProvider):
         self.connected = True
 
     def get_current_values(
-        self, tickers: Union[BloombergTicker, Sequence[BloombergTicker]], fields: Union[str, Sequence[str]]) \
+            self, tickers: Union[BloombergTicker, Sequence[BloombergTicker]], fields: Union[str, Sequence[str]]) \
             -> Union[None, float, QFSeries, QFDataFrame]:
         """
         Gets the current values of fields for given tickers.
@@ -103,9 +105,10 @@ class BloombergDataProvider(AbstractPriceDataProvider):
         return casted_result
 
     def get_history(
-        self, tickers: Union[BloombergTicker, Sequence[BloombergTicker]], fields: Union[str, Sequence[str]],
-            start_date: datetime, end_date: datetime=None, frequency: Frequency=Frequency.DAILY, currency: str=None,
-            override_name: str=None, override_value: str=None)\
+            self, tickers: Union[BloombergTicker, Sequence[BloombergTicker]], fields: Union[str, Sequence[str]],
+            start_date: datetime, end_date: datetime = None, frequency: Frequency = Frequency.DAILY,
+            currency: str = None,
+            override_name: str = None, override_value: str = None) \
             -> Union[QFSeries, QFDataFrame, QFDataArray]:
         if fields is None:
             raise ValueError("Fields being None is not supported by {}".format(self.__class__.__name__))
@@ -131,10 +134,27 @@ class BloombergDataProvider(AbstractPriceDataProvider):
 
         return normalized_result
 
+    def get_tabular_data(self, tickers: Union[BloombergTicker, Sequence[BloombergTicker]],
+                         fields: Union[str, Sequence[str]]):
+
+        if fields is None:
+            raise ValueError("Fields being None is not supported by {}".format(self.__class__.__name__))
+
+        self._connect_if_needed()
+        self._assert_is_connected()
+
+        tickers, got_single_ticker = convert_to_list(tickers, BloombergTicker)
+        fields, got_single_field = convert_to_list(fields, (PriceField, str))
+
+        tickers_str = tickers_as_strings(tickers)
+        data_array = self._tabular_data_provider.get(tickers_str, fields)
+
+        return data_array
+
     def supported_ticker_types(self):
         return {BloombergTicker}
 
-    def price_field_to_str_map(self, ticker: BloombergTicker=None) -> Dict[PriceField, str]:
+    def price_field_to_str_map(self, ticker: BloombergTicker = None) -> Dict[PriceField, str]:
         price_field_dict = {
             PriceField.Open: 'PX_OPEN',
             PriceField.High: 'PX_HIGH',
