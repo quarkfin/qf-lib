@@ -111,7 +111,7 @@ class QFDataArray(xr.DataArray):
         docstring for xr.concat()
         """
         result = xr.concat(
-            objs, dim, data_vars, coords, compat,positions, indexers, mode, concat_over
+            objs, dim, data_vars, coords, compat, positions, indexers, mode, concat_over
         )  # type: xr.DataArray
         result = QFDataArray.from_xr_data_array(result)
 
