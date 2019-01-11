@@ -53,12 +53,14 @@ class MarketOrdersExecutor(SimulatedExecutor):
             if is_finite_number(security_price):
                 to_be_executed_orders.append(order)
                 no_slippage_prices.append(security_price)
+            else:
+                if order.time_in_force == TimeInForce.GTC:
+                    # preserve only GTC orders. DAY orders will be dropped at this point
+                    unexecuted_orders_dict[order.id] = order
 
         return no_slippage_prices, to_be_executed_orders, unexecuted_orders_dict
 
     def _check_order_validity(self, order):
-        assert order.time_in_force == TimeInForce.OPG, \
-            "Only TimeInForce.OPG Time in Force is accepted by MarketOrdersExecutor"
         assert order.execution_style == MarketOrder(), \
             "Only MarketOrder ExecutionStyle is supported by MarketOrdersExecutor"
 

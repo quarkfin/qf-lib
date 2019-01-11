@@ -141,6 +141,8 @@ def tickers_dict_to_data_array(tickers_data_dict, requested_tickers, requested_f
         data_arrays.append(data_array)
 
     tickers_index = pd.Index(tickers, name=TICKERS)
+    if not data_arrays:
+        return QFDataArray.create(dates=[], tickers=requested_tickers, fields=requested_fields)
     result = QFDataArray.concat(data_arrays, dim=tickers_index)
 
     # the DataArray gets a name after the first ticker in the tickers_data_dict.keys() which is incorrect;
