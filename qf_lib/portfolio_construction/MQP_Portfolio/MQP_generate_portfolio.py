@@ -98,6 +98,6 @@ xlx_file_path = join(settings.output_directory, file_name_template)
 if os.path.exists(xlx_file_path):
     os.remove(xlx_file_path)
 xlx_exporter = ExcelExporter(settings)
-xlx_exporter.export_container(portfolio_output, xlx_file_path, include_column_names=True)
+xlx_exporter.export_container(portfolio_output, xlx_file_path)
 print("4. Portfolio Tickers and weights exported to {}.".format(file_name_template))
 

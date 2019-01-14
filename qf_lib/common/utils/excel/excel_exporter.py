@@ -41,7 +41,7 @@ class ExcelExporter(object):
         include_index
             determines whether the index should be written together with the data.
         include_column_names
-            determines whethe the column names should be written together with the data. For series containers the
+            determines whether the column names should be written together with the data. For series containers the
             column names are always "Index" and "Values".
         """
         starting_row, starting_column = row_and_column(starting_cell)
