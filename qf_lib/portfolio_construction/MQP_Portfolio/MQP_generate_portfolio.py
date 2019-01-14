@@ -1,8 +1,10 @@
 import os
 from datetime import timedelta, datetime
 from os.path import join
+from typing import List
 
 import numpy as np
+from pandas import Series
 
 from qf_common.config import ioc
 from qf_common.config.ioc import container
@@ -18,14 +20,13 @@ from qf_lib.portfolio_construction.portfolio_models.multifactor_portfolio import
     PortfolioParameters
 from qf_lib.settings import Settings
 
-
 allocation_date = datetime.now()
 stress_level = 1  # to be passed from stress level calculation'
 riy_ticker = BloombergTicker('RIY Index')
 field = 'INDX_MEMBERS'
 
 
-def remove_tickers(riy_ticker_names, tickers_to_remove):
+def remove_tickers(riy_ticker_names: List[str], tickers_to_remove: List[str]):
     for name in riy_ticker_names:
         for name_to_remove in tickers_to_remove:
             if name_to_remove in name:
@@ -37,7 +38,7 @@ def remove_tickers(riy_ticker_names, tickers_to_remove):
         print("\tSignatures {} were not found in the list of Tickers.".format(tickers_to_remove))
 
 
-def create_tickers(riy_ticker_names):
+def create_tickers(riy_ticker_names: List[str]) -> List[BloombergTicker]:
     tickers_universe = []
     for elem in riy_ticker_names:
         ticker_name = elem + " Equity"
@@ -46,7 +47,8 @@ def create_tickers(riy_ticker_names):
     return tickers_universe
 
 
-def calculate_returns(tickers_universe, allocation_date, riy_ticker) -> SimpleReturnsDataFrame:
+def calculate_returns(tickers_universe: List[BloombergTicker], allocation_date: datetime,
+                      riy_ticker: BloombergTicker) -> SimpleReturnsDataFrame:
     # take a bit more history than needed and then cut out what is left
     end_date = allocation_date - timedelta(days=1)
     nr_of_days_to_go_back = np.floor(365 / MQPSettings.frequency.value * MQPSettings.window_size * 1.2)
@@ -66,11 +68,22 @@ def calculate_returns(tickers_universe, allocation_date, riy_ticker) -> SimpleRe
     return all_returns_df
 
 
-def calculate_portfolio_tickers_and_weights(returns_df, stress_level):
+def calculate_portfolio_tickers_and_weights(returns_df: SimpleReturnsDataFrame, stress_level: int) -> Series:
     weights = MQPSettings.weights[stress_level]
     parameters = PortfolioParameters(*weights)
     portfolio = MultiFactorPortfolio(returns_df, parameters)
     return portfolio.get_weights()
+
+
+def export_to_file(portfolio_output: Series, file_name_template: str):
+    portfolio_output.index = [ticker.as_string() for ticker in portfolio_output.index]
+    settings = container.resolve(Settings)
+    xlx_file_path = join(settings.output_directory, file_name_template)
+    # Make sure an old version of this file is removed.
+    if os.path.exists(xlx_file_path):
+        os.remove(xlx_file_path)
+    xlx_exporter = ExcelExporter(settings)
+    xlx_exporter.export_container(portfolio_output, xlx_file_path)
 
 
 data_provider = ioc.container.resolve(BloombergDataProvider)  # type: BloombergDataProvider
@@ -88,16 +101,7 @@ print("2. DataFrame of Ticker returns calculated.")
 portfolio_output = calculate_portfolio_tickers_and_weights(returns_df, stress_level)
 portfolio_output = portfolio_output[portfolio_output > 0.01]
 print("3. Portfolio Tickers and weights generated (optimisation).")
-print(portfolio_output)
 
-portfolio_output.index = [ticker.as_string() for ticker in portfolio_output.index]
-settings = container.resolve(Settings)
 file_name_template = datetime.now().strftime("%Y_%m_%d-%H%M {}".format("portfolio_output" + ".xlsx"))
-xlx_file_path = join(settings.output_directory, file_name_template)
-# Make sure an old version of this file is removed.
-if os.path.exists(xlx_file_path):
-    os.remove(xlx_file_path)
-xlx_exporter = ExcelExporter(settings)
-xlx_exporter.export_container(portfolio_output, xlx_file_path)
+export_to_file(portfolio_output, file_name_template)
 print("4. Portfolio Tickers and weights exported to {}.".format(file_name_template))
-
