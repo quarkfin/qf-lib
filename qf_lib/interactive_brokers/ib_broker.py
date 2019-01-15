@@ -11,14 +11,14 @@ from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.backtesting.portfolio.position import Position
 from qf_lib.common.exceptions.broker_exceptions import BrokerException, OrderCancellingException
-from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
+from qf_lib.common.utils.logging.qf_parent_logger import ib_logger
 from qf_lib.interactive_brokers.ib_wrapper import IBWrapper
 from qf_lib.backtesting.contract.contract import Contract
 
 
 class IBBroker(Broker):
     def __init__(self):
-        self.logger = qf_logger.getChild(self.__class__.__name__)
+        self.logger = ib_logger.getChild(self.__class__.__name__)
         self.lock = Lock()
         self.waiting_time = 60  # expressed in seconds
         self.action_event_lock = Event()
