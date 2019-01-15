@@ -56,6 +56,7 @@ class TradingStrategy(object):
         self.logger.info("Converting Signals to Orders using: {}".format(self._position_sizer.__class__.__name__))
         orders = self._position_sizer.size_signals(signals)
 
+        self.logger.info("Cancelling all open orders")
         self._broker.cancel_all_open_orders()
 
         market_orders = [order for order in orders if isinstance(order.execution_style, MarketOrder)]

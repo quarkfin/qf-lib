@@ -27,13 +27,17 @@ class InitialRiskPositionSizer(PositionSizer):
         super().__init__(broker, data_handler, order_factory, contract_ticker_mapper)
 
         self._initial_risk = initial_risk
+        self.logger.info("Initial Risk: {}".format(initial_risk))
 
     def _generate_market_order(self, contract: Contract, signal: Signal):
         assert is_finite_number(self._initial_risk), "Initial risk has to be a finite number"
         assert is_finite_number(signal.fraction_at_risk), "fraction_at_risk has to be a finite number"
 
         target_percentage = self._initial_risk / signal.fraction_at_risk
+        self.logger.info("Target Percentage: {}".format(target_percentage))
+
         target_percentage *= signal.suggested_exposure.value  # preserve the direction (-1, 0 , 1)
+        self.logger.info("Target Percentage considering direction: {}".format(target_percentage))
 
         assert is_finite_number(target_percentage), "target_percentage has to be a finite number"
 

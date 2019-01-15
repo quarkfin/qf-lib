@@ -83,6 +83,7 @@ class IBBroker(Broker):
     def place_orders(self, orders: Sequence[Order]) -> Sequence[int]:
         order_ids_list = []
         for order in orders:
+            self.logger.info('Placing Order: {}'.format(order))
             order_id = self._execute_single_order(order)
             order_ids_list.append(order_id)
 
@@ -90,6 +91,7 @@ class IBBroker(Broker):
 
     def cancel_order(self, order_id: int):
         with self.lock:
+            self.logger.info('cancel_order: {}'.format(order_id))
             self._reset_action_lock()
             self.wrapper.set_cancel_order_id(order_id)
             self.client.cancelOrder(order_id)
@@ -119,6 +121,7 @@ class IBBroker(Broker):
         """
         with self.lock:
             self.client.reqGlobalCancel()
+            self.logger.info('cancel_all_open_orders')
 
     def _execute_single_order(self, order) -> int:
         with self.lock:
