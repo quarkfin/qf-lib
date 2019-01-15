@@ -8,6 +8,7 @@ from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
 from qf_lib.backtesting.order.execution_style import MarketOrder, StopOrder
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.backtesting.events.time_event.before_market_open_event import BeforeMarketOpenEvent
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 
 
 class TradingStrategy(object):
@@ -27,11 +28,14 @@ class TradingStrategy(object):
         self._models = models
         self._tickers = list(set(tickers))  # remove potential duplicates
         self._use_stop_losses = use_stop_losses
+        self.logger = qf_logger.getChild(self.__class__.__name__)
 
         ts.notifiers.scheduler.subscribe(BeforeMarketOpenEvent, listener=self)
 
     def on_before_market_open(self, _: BeforeMarketOpenEvent=None):
+        self.logger.info("on_before_market_open - Signal Generation Started")
         self._calculate_signals_and_place_orders()
+        self.logger.info("on_before_market_open - Signal Generation Finished")
 
     def _calculate_signals_and_place_orders(self):
         contracts = [self._contract_ticker_mapper.ticker_to_contract(ticker) for ticker in self._tickers]
@@ -40,10 +44,16 @@ class TradingStrategy(object):
 
         for ticker, contract in zip(self._tickers, contracts):
             current_exposure = current_exposures[contract]
+
+            self.logger.info("Ticker: {}, Current_Exposure: {}, {}".format(
+                ticker.as_string(), current_exposure, contract))
+
             for model in self._models:
                 signal = model.get_signal(ticker, current_exposure)
                 signals.append(signal)
+                self.logger.info(signal)
 
+        self.logger.info("Converting Signals to Orders using: {}".format(self._position_sizer.__class__.__name__))
         orders = self._position_sizer.size_signals(signals)
 
         self._broker.cancel_all_open_orders()

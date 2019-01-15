@@ -9,6 +9,7 @@ from qf_lib.backtesting.events.end_trading_event.end_trading_event import EndTra
 from qf_lib.backtesting.events.event_manager import EventManager
 from qf_lib.backtesting.events.time_event.scheduler import Scheduler
 from qf_lib.common.utils.dateutils.timer import SettableTimer, RealTimer
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 
 
 class TimeFlowController(EmptyQueueEventListener, metaclass=ABCMeta):
@@ -64,16 +65,24 @@ class LiveSessionTimeFlowController(TimeFlowController):
         super().__init__(event_manager, empty_queue_event_notifier)
         self.scheduler = scheduler
         self.real_timer = real_timer
+        self.logger = qf_logger.getChild(self.__class__.__name__)
 
     def generate_time_event(self):
         time_event = self.scheduler.get_next_time_event()
         next_time_of_event = time_event.time
 
+        self.logger.info("Next time event type: {}, time: {}".format(time_event.__class__.__name__, next_time_of_event))
+
         self.sleep_until(next_time_of_event)
+
+        self.logger.info("Wake up!".format(time_event.__class__.__name__, next_time_of_event))
         self.event_manager.publish(time_event)
 
     def sleep_until(self, time_of_next_time_event: datetime):
         # if we're in the live session we need to put the program to sleep until the next TimeEvent
         now = self.real_timer.now()
         waiting_time = time_of_next_time_event - now
-        time.sleep(waiting_time.total_seconds())
+        seconds_to_sleep = waiting_time.total_seconds()
+        self.logger.info("Going to sleep for {:f5.2} minutes".format(seconds_to_sleep / 60))
+        time.sleep(seconds_to_sleep)
+
