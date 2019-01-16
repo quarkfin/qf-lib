@@ -139,6 +139,7 @@ class BacktestTradingSessionBuilder(object):
                                                             self._monitor, self._commission_model,
                                                             self._contract_ticker_mapper, self._portfolio,
                                                             self._slippage_model)
+
         self._time_flow_controller = BacktestTimeFlowController(self._notifiers.scheduler, self._events_manager,
                                                                 self._timer, self._notifiers.empty_queue_event_notifier,
                                                                 self._end_date)

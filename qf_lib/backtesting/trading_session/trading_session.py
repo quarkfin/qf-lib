@@ -43,9 +43,21 @@ class TradingSession(object, metaclass=ABCMeta):
         Carries out an while loop that processes incoming events. The loop continues until the EndTradingEvent occurs
         (e.g. no more data for the backtest).
         """
-        self.logger.info("Running backtest...")
+        self.logger.info("Trading Session - start trading...")
         while self.event_manager.continue_trading:
             self.event_manager.dispatch_next_event()
 
-        self.logger.info("Backtest finished, generating report...")
+        self.logger.info("Trading Session - trading finished...")
         self.monitor.end_of_trading_update()
+
+    @staticmethod
+    def _create_event_manager(timer: Timer, notifiers: Notifiers):
+        event_manager = EventManager(timer)
+
+        event_manager.register_notifiers([
+            notifiers.all_event_notifier,
+            notifiers.empty_queue_event_notifier,
+            notifiers.end_trading_event_notifier,
+            notifiers.scheduler
+        ])
+        return event_manager

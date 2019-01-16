@@ -4,6 +4,7 @@ from qf_lib.backtesting.contract_to_ticker_conversion.vol_strategy_mapper import
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.events.event_manager import EventManager
 from qf_lib.backtesting.events.notifiers import Notifiers
+from qf_lib.backtesting.events.time_flow_controller import LiveSessionTimeFlowController
 from qf_lib.backtesting.monitoring.live_trading_monitor import LiveTradingMonitor
 from qf_lib.backtesting.order.orderfactory import OrderFactory
 from qf_lib.backtesting.position_sizer.initial_risk_position_sizer import InitialRiskPositionSizer
@@ -37,7 +38,10 @@ class LiveTradingSession(TradingSession):
 
         self.timer = RealTimer()
         self.notifiers = Notifiers(self.timer)
-        self.events_manager = self._create_event_manager(self.timer, self.notifiers)
+        self.event_manager = self._create_event_manager(self.timer, self.notifiers)
+        self.time_flow_controller = LiveSessionTimeFlowController(self.notifiers.scheduler, self.event_manager,
+                                                                  self.timer,
+                                                                  self.notifiers.empty_queue_event_notifier)
 
         self.data_handler = DataHandler(self.data_provider, self.timer)
         self.monitor = LiveTradingMonitor(self.settings, self.pdf_exporter, self.excel_exporter)
@@ -58,7 +62,8 @@ class LiveTradingSession(TradingSession):
                 "\tExcel Exporter: {}".format(self.excel_exporter.__class__.__name__),
                 "\tTimer: {}".format(self.timer.__class__.__name__),
                 "\tNotifiers: {}".format(self.notifiers.__class__.__name__),
-                "\tEvent Manager: {}".format(self.events_manager.__class__.__name__),
+                "\tEvent Manager: {}".format(self.event_manager.__class__.__name__),
+                "\tTime Flow Controller: {}".format(self.time_flow_controller.__class__.__name__),
                 "\tData Handler: {}".format(self.data_handler.__class__.__name__),
                 "\tMonitor: {}".format(self.monitor.__class__.__name__),
                 "\tBroker: {}".format(self.broker.__class__.__name__),
@@ -68,14 +73,4 @@ class LiveTradingSession(TradingSession):
             ])
         )
 
-    @staticmethod
-    def _create_event_manager(timer: RealTimer, notifiers: Notifiers):
-        event_manager = EventManager(timer)
 
-        event_manager.register_notifiers([
-            notifiers.all_event_notifier,
-            notifiers.empty_queue_event_notifier,
-            notifiers.end_trading_event_notifier,
-            notifiers.scheduler
-        ])
-        return event_manager
