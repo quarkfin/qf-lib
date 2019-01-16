@@ -44,9 +44,7 @@ class TradingStrategy(object):
 
         for ticker, contract in zip(self._tickers, contracts):
             current_exposure = current_exposures[contract]
-
-            self.logger.info("Ticker: {}, Current_Exposure: {}, {}".format(
-                ticker.as_string(), current_exposure, contract))
+            self.logger.info("Current_Exposure: {}, {}, {}".format(current_exposure, contract, ticker))
 
             for model in self._models:
                 signal = model.get_signal(ticker, current_exposure)
@@ -60,10 +58,12 @@ class TradingStrategy(object):
         self._broker.cancel_all_open_orders()
 
         market_orders = [order for order in orders if isinstance(order.execution_style, MarketOrder)]
+        self.logger.info("Placing market orders")
         self._broker.place_orders(market_orders)
 
         if self._use_stop_losses:
             stop_orders = [order for order in orders if isinstance(order.execution_style, StopOrder)]
+            self.logger.info("Placing stop orders")
             self._broker.place_orders(stop_orders)
 
     def _get_current_exposures(self, contracts):
