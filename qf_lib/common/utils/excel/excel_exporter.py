@@ -1,3 +1,4 @@
+from datetime import datetime
 from os import makedirs
 from os.path import exists, isfile, join, dirname
 from typing import Any
@@ -6,8 +7,10 @@ import numpy
 from openpyxl import Workbook, load_workbook
 from pandas import Series, DataFrame
 
+from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.excel.helpers import row_and_column
 from qf_lib.common.utils.excel.write_mode import WriteMode
+from qf_lib.common.utils.numberutils.is_finite_number import is_finite_number
 from qf_lib.get_sources_root import get_src_root
 from qf_lib.settings import Settings
 
@@ -41,7 +44,7 @@ class ExcelExporter(object):
         include_index
             determines whether the index should be written together with the data.
         include_column_names
-            determines whethe the column names should be written together with the data. For series containers the
+            determines whether the column names should be written together with the data. For series containers the
             column names are always "Index" and "Values".
         """
         starting_row, starting_column = row_and_column(starting_cell)
@@ -185,5 +188,9 @@ class ExcelExporter(object):
     def _to_supported_type(self, value):
         if isinstance(value, (numpy.int64, numpy.int32)):
             return int(value)
-        else:
+        elif is_finite_number(value) or isinstance(value, datetime):
             return value
+        elif isinstance(value, Ticker):
+            return value.as_string()
+        else:
+            return str(value)

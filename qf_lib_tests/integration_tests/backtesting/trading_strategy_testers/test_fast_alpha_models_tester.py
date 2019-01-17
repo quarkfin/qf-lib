@@ -1,11 +1,9 @@
 import unittest
-from datetime import datetime
 from itertools import cycle, islice
 from unittest import TestCase
 
 import numpy as np
 import pandas as pd
-from mockito import mock, when, ANY
 from pandas.tseries.offsets import BDay
 from pandas.util.testing import assert_frame_equal, assert_series_equal
 
@@ -21,7 +19,6 @@ from qf_lib.common.utils.dateutils.timer import SettableTimer, Timer
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
 from qf_lib.data_providers.preset_data_provider import PresetDataProvider
-from qf_lib.data_providers.price_data_provider import DataProvider
 
 
 class TestFastAlphaModelsTester(TestCase):
@@ -63,13 +60,6 @@ class TestFastAlphaModelsTester(TestCase):
         mocked_result.loc[:, :, PriceField.High] += 50.0
 
         return mocked_result
-
-    @classmethod
-    def _create_price_provider_mock(cls, tickers, fields, result) -> DataProvider:
-        price_provider_mock = mock(strict=True)
-        when(price_provider_mock).get_price(tickers, fields, ANY(datetime), ANY(datetime)).thenReturn(result)
-
-        return price_provider_mock
 
     def test_alpha_models_tester(self):
         first_param_set = (10, Exposure.LONG)

@@ -7,7 +7,7 @@ from qf_lib.data_providers.bloomberg.helpers import *
 
 class ReferenceDataProvider(object):
     """
-    Used for providing current data from Bloomberg.
+    Used for providing current price data from Bloomberg.
     """
 
     def __init__(self, session):

@@ -22,13 +22,9 @@ class PrefetchingDataProvider(PresetDataProvider):
                  fields: Sequence[PriceField],
                  start_date: datetime, end_date: datetime,
                  check_data_availability: bool = True):
+        prefetched_data = data_provider.get_price(tickers, fields, start_date, end_date)
         super().__init__(
-            data=data_provider.get_price(tickers, fields, start_date, end_date),
+            data=prefetched_data,
             start_date=start_date, end_date=end_date,
             check_data_availability=check_data_availability
         )
-
-    def get_history(
-            self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[str, Sequence[str]],
-            start_date: datetime, end_date: datetime = None, **kwargs) -> Union[QFSeries, QFDataFrame, QFDataArray]:
-        raise NotImplementedError()

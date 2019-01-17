@@ -130,6 +130,9 @@ def tickers_dict_to_data_array(tickers_data_dict, requested_tickers, requested_f
     data_arrays = []
     for ticker, df in tickers_data_dict.items():
         df.index.name = DATES
+        if df.empty:  # if there is no data for a given ticker, skip it (proper column will be added afterwards anyway)
+            continue
+
         data_array = df.to_xarray()
         data_array = data_array.to_array(dim=FIELDS, name=ticker)
         data_array = data_array.transpose(DATES, FIELDS)
@@ -138,6 +141,8 @@ def tickers_dict_to_data_array(tickers_data_dict, requested_tickers, requested_f
         data_arrays.append(data_array)
 
     tickers_index = pd.Index(tickers, name=TICKERS)
+    if not data_arrays:
+        return QFDataArray.create(dates=[], tickers=requested_tickers, fields=requested_fields)
     result = QFDataArray.concat(data_arrays, dim=tickers_index)
 
     # the DataArray gets a name after the first ticker in the tickers_data_dict.keys() which is incorrect;

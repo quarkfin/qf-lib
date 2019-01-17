@@ -11,6 +11,7 @@ from qf_lib.backtesting.order.execution_style import MarketOrder, StopOrder
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.backtesting.events.time_event.before_market_open_event import BeforeMarketOpenEvent
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
+from qf_lib.containers.series.qf_series import QFSeries
 
 
 class TradingStrategy(object):
@@ -33,10 +34,13 @@ class TradingStrategy(object):
         self._data_handler = ts.data_handler
         self._contract_ticker_mapper = ts.contract_ticker_mapper
         self._position_sizer = ts.position_sizer
+        self._timer = ts.timer
 
         self._model_tickers_dict = model_tickers_dict
         self._use_stop_losses = use_stop_losses
         self.logger = qf_logger.getChild(self.__class__.__name__)
+
+        self.signals_tms = QFSeries(name="signals")
 
         ts.notifiers.scheduler.subscribe(BeforeMarketOpenEvent, listener=self)
 
@@ -58,6 +62,8 @@ class TradingStrategy(object):
                 signal = model.get_signal(ticker, current_exposure)
                 signals.append(signal)
                 self.logger.info(signal)
+
+        self.signals_tms[self._timer.now().date()] = signals  # save signals
 
         self.logger.info("Converting Signals to Orders using: {}".format(self._position_sizer.__class__.__name__))
         orders = self._position_sizer.size_signals(signals)
