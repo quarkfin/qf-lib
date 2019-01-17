@@ -2,7 +2,7 @@ from typing import List, Dict
 
 import numpy as np
 
-from geneva_analytics.web_api.backend.models import Contract
+from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.portfolio.position import Position
 from qf_lib.backtesting.trading_session.trading_session import TradingSession
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
