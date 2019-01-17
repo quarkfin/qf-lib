@@ -54,7 +54,7 @@ class TestPositionSizer(unittest.TestCase):
 
         stop_price = self.last_price * (1 - fraction_at_risk)
         stop_quantity = -(self.initial_position + quantity)
-        self.assertEqual(orders[1], Order(self.contract, stop_quantity, StopOrder(stop_price), TimeInForce.DAY))
+        self.assertEqual(orders[1], Order(self.contract, stop_quantity, StopOrder(stop_price), TimeInForce.GTC))
 
     def test_initial_risk_position_sizer(self):
         fraction_at_risk = 0.01
@@ -69,7 +69,7 @@ class TestPositionSizer(unittest.TestCase):
 
         stop_price = self.last_price * (1 - fraction_at_risk)
         stop_quantity = -(self.initial_position + additional_contracts)
-        self.assertEqual(orders[1], Order(self.contract, stop_quantity, StopOrder(stop_price), TimeInForce.DAY))
+        self.assertEqual(orders[1], Order(self.contract, stop_quantity, StopOrder(stop_price), TimeInForce.GTC))
 
     def test_out_signal(self):
         fraction_at_risk = 0.02
