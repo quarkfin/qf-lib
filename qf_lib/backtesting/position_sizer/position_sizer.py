@@ -72,7 +72,7 @@ class PositionSizer(object, metaclass=ABCMeta):
             assert is_finite_number(stop_price), "Stop price should be a finite number"
 
             # put minus before the quantity as stop order has to go in the opposite direction
-            stop_orders = self._order_factory.orders({contract: -stop_quantity}, StopOrder(stop_price), TimeInForce.DAY)
+            stop_orders = self._order_factory.orders({contract: -stop_quantity}, StopOrder(stop_price), TimeInForce.GTC)
 
             assert len(stop_orders) == 1, "Only one order should be generated"
             return stop_orders[0]
