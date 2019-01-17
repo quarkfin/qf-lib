@@ -1,7 +1,9 @@
-from typing import List
+from typing import List, Dict
 
 import numpy as np
 
+from geneva_analytics.web_api.backend.models import Contract
+from qf_lib.backtesting.portfolio.position import Position
 from qf_lib.backtesting.trading_session.trading_session import TradingSession
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
@@ -16,8 +18,15 @@ class TradingStrategy(object):
     Puts together models and all settings around it and generates orders on before market open
     """
 
-    def __init__(self, ts: TradingSession, models: List[AlphaModel], tickers: List[Ticker],
-                 use_stop_losses=False):
+    def __init__(self, ts: TradingSession, model_tickers_dict: Dict[AlphaModel, List[Ticker]], use_stop_losses=True):
+        """
+        Parameters
+        ----------
+        ts: trading session
+        model_tickers_dict: dict mapping models to list of tickers that the model trades. (The tickers for which the
+            model gives recommendations)
+        use_stop_losses: flag to use stop losses or not. If False all stop orders are ignored
+        """
 
         self._broker = ts.broker
         self._order_factory = ts.order_factory
@@ -25,8 +34,7 @@ class TradingStrategy(object):
         self._contract_ticker_mapper = ts.contract_ticker_mapper
         self._position_sizer = ts.position_sizer
 
-        self._models = models
-        self._tickers = list(set(tickers))  # remove potential duplicates
+        self._model_tickers_dict = model_tickers_dict
         self._use_stop_losses = use_stop_losses
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
@@ -38,15 +46,15 @@ class TradingStrategy(object):
         self.logger.info("on_before_market_open - Signal Generation Finished")
 
     def _calculate_signals_and_place_orders(self):
-        contracts = [self._contract_ticker_mapper.ticker_to_contract(ticker) for ticker in self._tickers]
-        current_exposures = self._get_current_exposures(contracts)
+        current_positions = self._broker.get_positions()
         signals = []
 
-        for ticker, contract in zip(self._tickers, contracts):
-            current_exposure = current_exposures[contract]
-            self.logger.info("Current_Exposure: {}, {}, {}".format(current_exposure, contract, ticker))
+        for model, tickers in self._model_tickers_dict.items():
+            tickers = list(set(tickers))  # remove duplicates
+            contracts = [self._contract_ticker_mapper.ticker_to_contract(ticker) for ticker in tickers]
 
-            for model in self._models:
+            for ticker, contract in zip(tickers, contracts):
+                current_exposure = self._get_current_exposure(contract, current_positions)
                 signal = model.get_signal(ticker, current_exposure)
                 signals.append(signal)
                 self.logger.info(signal)
@@ -66,11 +74,12 @@ class TradingStrategy(object):
             self.logger.info("Placing stop orders")
             self._broker.place_orders(stop_orders)
 
-    def _get_current_exposures(self, contracts):
-        current_exposures = {}
-        positions = self._broker.get_positions()
-        for contract in contracts:
-            quantity = next((position.quantity() for position in positions if position.contract() == contract), 0)
-            direction = np.sign(quantity)
-            current_exposures[contract] = Exposure(direction)
-        return current_exposures
+    @staticmethod
+    def _get_current_exposure(contract: Contract, current_positions: List[Position]) -> Exposure:
+        matching_position_quantities = [position.quantity()
+                                        for position in current_positions if position.contract() == contract]
+
+        assert len(matching_position_quantities) in [0, 1]
+        quantity = next(iter(matching_position_quantities), 0)
+        current_exposure = Exposure(np.sign(quantity))
+        return current_exposure
