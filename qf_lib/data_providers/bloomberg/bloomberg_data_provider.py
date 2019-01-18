@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Union, Sequence, Dict
+from typing import Union, Sequence, Dict, List
 
 import blpapi
 
@@ -17,10 +17,11 @@ from qf_lib.data_providers.bloomberg.historical_data_provider import HistoricalD
 from qf_lib.data_providers.bloomberg.reference_data_provider import ReferenceDataProvider, BloombergError
 from qf_lib.data_providers.bloomberg.tabular_data_provider import TabularDataProvider
 from qf_lib.data_providers.helpers import normalize_data_array, cast_dataframe_to_proper_type
+from qf_lib.data_providers.tickers_universe_provider import TickersUniverseProvider
 from qf_lib.settings import Settings
 
 
-class BloombergDataProvider(AbstractPriceDataProvider):
+class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
     """
     Provides financial data from the Bloomberg.
     """
@@ -134,23 +135,6 @@ class BloombergDataProvider(AbstractPriceDataProvider):
 
         return normalized_result
 
-    def get_tabular_data(self, tickers: Union[BloombergTicker, Sequence[BloombergTicker]],
-                         fields: Union[str, Sequence[str]]):
-
-        if fields is None:
-            raise ValueError("Fields being None is not supported by {}".format(self.__class__.__name__))
-
-        self._connect_if_needed()
-        self._assert_is_connected()
-
-        tickers, got_single_ticker = convert_to_list(tickers, BloombergTicker)
-        fields, got_single_field = convert_to_list(fields, (PriceField, str))
-
-        tickers_str = tickers_as_strings(tickers)
-        data_array = self._tabular_data_provider.get(tickers_str, fields)
-
-        return data_array
-
     def supported_ticker_types(self):
         return {BloombergTicker}
 
@@ -163,6 +147,30 @@ class BloombergDataProvider(AbstractPriceDataProvider):
             PriceField.Volume: 'PX_VOLUME'
         }
         return price_field_dict
+
+    def get_tickers_universe(self, universe_name: BloombergTicker, date: datetime) -> List[BloombergTicker]:
+        if date.date() != datetime.today().date():
+            raise ValueError("BloombergDataProvider does not provide historical tickers_universe data")
+        field = 'INDX_MEMBERS'
+        ticker_names = self.get_tabular_data(universe_name, field)
+        tickers = [BloombergTicker(name + " Equity") for name in ticker_names]
+        return tickers
+
+    def get_tabular_data(self, ticker: BloombergTicker, field: str):
+
+        if field is None:
+            raise ValueError("Field being None is not supported by {}".format(self.__class__.__name__))
+
+        self._connect_if_needed()
+        self._assert_is_connected()
+
+        tickers, got_single_ticker = convert_to_list(ticker, BloombergTicker)
+        fields, got_single_field = convert_to_list(field, (PriceField, str))
+
+        tickers_str = tickers_as_strings(tickers)
+        data_array = self._tabular_data_provider.get(tickers_str, fields)
+
+        return data_array
 
     def _connect_if_needed(self):
         if not self.connected:
