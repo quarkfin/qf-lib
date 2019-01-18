@@ -7,8 +7,8 @@ from weasyprint import HTML, CSS
 from qf_lib.common.utils.document_exporting.document import Document
 from qf_lib.common.utils.document_exporting.document_exporter import DocumentExporter
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
-from qf_lib.get_sources_root import get_src_root
 from qf_lib.settings import Settings
+from qf_lib.starting_dir import get_starting_dir_abs_path
 
 
 class PDFExporter(DocumentExporter):
@@ -25,7 +25,7 @@ class PDFExporter(DocumentExporter):
         super().__init__(settings)
 
         if hasattr(settings, 'document_css_directory'):
-            self._document_css_dir = join(get_src_root(), settings.document_css_directory)
+            self._document_css_dir = join(get_starting_dir_abs_path(), settings.document_css_directory)
         else:
             this_dir_abs_path = abspath(dirname(__file__))
             self._document_css_dir = join(this_dir_abs_path, self.DEFAULT_CSS_DIR_NAME)

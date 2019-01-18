@@ -14,7 +14,6 @@ from qf_lib.common.utils.document_exporting.element.page_header import PageHeade
 from qf_lib.common.utils.document_exporting.element.table import Table
 from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.containers.series.qf_series import QFSeries
-from qf_lib.get_sources_root import get_src_root
 from qf_lib.plotting.charts.cone_chart import ConeChart
 from qf_lib.plotting.charts.line_chart import LineChart
 from qf_lib.plotting.charts.returns_heatmap_chart import ReturnsHeatmapChart
@@ -31,6 +30,7 @@ from qf_lib.plotting.helpers.create_return_quantiles import create_return_quanti
 from qf_lib.plotting.helpers.create_returns_bar_chart import create_returns_bar_chart
 from qf_lib.plotting.helpers.create_skewness_chart import create_skewness_chart
 from qf_lib.settings import Settings
+from qf_lib.starting_dir import get_starting_dir_abs_path
 
 
 class AbstractTearsheet(metaclass=ABCMeta):
@@ -72,7 +72,7 @@ class AbstractTearsheet(metaclass=ABCMeta):
         return GridElement(mode=PlottingMode.PDF, figsize=self.half_image_size, dpi=self.dpi)
 
     def _add_header(self):
-        logo_path = join(get_src_root(), self.settings.logo_path)
+        logo_path = join(get_starting_dir_abs_path(), self.settings.logo_path)
         company_name = self.settings.company_name
 
         self.document.add_element(PageHeaderElement(logo_path, company_name, self.title))

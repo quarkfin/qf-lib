@@ -11,8 +11,8 @@ from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.excel.helpers import row_and_column
 from qf_lib.common.utils.excel.write_mode import WriteMode
 from qf_lib.common.utils.numberutils.is_finite_number import is_finite_number
-from qf_lib.get_sources_root import get_src_root
 from qf_lib.settings import Settings
+from qf_lib.starting_dir import get_starting_dir_abs_path
 
 
 class ExcelExporter(object):
@@ -49,7 +49,7 @@ class ExcelExporter(object):
         """
         starting_row, starting_column = row_and_column(starting_cell)
 
-        file_path = join(get_src_root(), self.settings.output_directory, file_path)
+        file_path = join(get_starting_dir_abs_path(), self.settings.output_directory, file_path)
 
         work_book = self.get_workbook(file_path, write_mode)
         work_sheet = self.get_worksheet(work_book, sheet_name)
