@@ -46,10 +46,14 @@ class TradingStrategy(object):
 
     def on_before_market_open(self, _: BeforeMarketOpenEvent=None):
         self.logger.info("on_before_market_open - Signal Generation Started")
-        self._calculate_signals_and_place_orders()
-        self.logger.info("on_before_market_open - Signal Generation Finished")
+        signals = self._calculate_signals()
 
-    def _calculate_signals_and_place_orders(self):
+        self.logger.info("on_before_market_open - Signal Generation Finished, Placing Orders")
+
+        self._place_orders(signals)
+        self.logger.info("on_before_market_open - Order Placed")
+
+    def _calculate_signals(self):
         current_positions = self._broker.get_positions()
         signals = []
 
@@ -63,8 +67,13 @@ class TradingStrategy(object):
                 signals.append(signal)
                 self.logger.info(signal)
 
-        self.signals_tms[self._timer.now().date()] = signals  # save signals
+        for signal in signals:
+            self.logger.info(signal)
 
+        self.signals_tms[self._timer.now().date()] = signals  # save signals
+        return signals
+
+    def _place_orders(self, signals):
         self.logger.info("Converting Signals to Orders using: {}".format(self._position_sizer.__class__.__name__))
         orders = self._position_sizer.size_signals(signals)
 
