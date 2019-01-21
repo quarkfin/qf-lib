@@ -3,6 +3,7 @@ from io import TextIOWrapper
 
 import matplotlib.pyplot as plt
 
+from qf_lib.analysis.leverage_analysis.leverage_analysis_sheet import LeverageAnalysisSheet
 from qf_lib.starting_dir import get_starting_dir_abs_path
 
 plt.ion()  # required for dynamic chart
@@ -67,6 +68,12 @@ class BacktestMonitor(AbstractMonitor):
             self._settings, self._pdf_exporter, portfolio_tms, title=portfolio_tms.name)
         tearsheet.build_document()
         tearsheet.save(self._report_dir)
+
+        # export leverage analysis
+        leverage = self.backtest_result.portfolio.leverage()
+        leverage_sheet = LeverageAnalysisSheet(self._settings, self._pdf_exporter, leverage, title=portfolio_tms.name)
+        leverage_sheet.build_document()
+        leverage_sheet.save(self._report_dir)
 
         # export a timeseries into an xlsx file
         xlsx_filename = "{}.xlsx".format(self._file_name_template)
