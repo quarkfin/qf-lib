@@ -18,7 +18,7 @@ from qf_lib.starting_dir import get_starting_dir_abs_path
 
 class LeverageAnalysisSheet(object):
     """
-    Creates a PDF containing main statistics of the trades
+    Creates a PDF containing a visual representation of leverage changes over time
     """
 
     def __init__(self, settings: Settings, pdf_exporter: PDFExporter, leverage: QFSeries, title: str = "Leverage"):
