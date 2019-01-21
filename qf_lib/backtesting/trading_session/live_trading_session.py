@@ -2,11 +2,12 @@ from dic.container import Container
 
 from qf_lib.backtesting.contract_to_ticker_conversion.vol_strategy_mapper import VolStrategyContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
+from qf_lib.backtesting.events.event_manager import EventManager
 from qf_lib.backtesting.events.notifiers import Notifiers
+from qf_lib.backtesting.events.time_flow_controller import LiveSessionTimeFlowController
 from qf_lib.backtesting.monitoring.live_trading_monitor import LiveTradingMonitor
 from qf_lib.backtesting.order.orderfactory import OrderFactory
 from qf_lib.backtesting.position_sizer.initial_risk_position_sizer import InitialRiskPositionSizer
-from qf_lib.backtesting.position_sizer.simple_position_sizer import SimplePositionSizer
 from qf_lib.backtesting.trading_session.trading_session import TradingSession
 from qf_lib.common.utils.dateutils.timer import RealTimer
 from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
@@ -36,6 +37,12 @@ class LiveTradingSession(TradingSession):
         self.excel_exporter = container.resolve(ExcelExporter)          # type: ExcelExporter
 
         self.timer = RealTimer()
+        self.notifiers = Notifiers(self.timer)
+        self.event_manager = self._create_event_manager(self.timer, self.notifiers)
+        self.time_flow_controller = LiveSessionTimeFlowController(self.notifiers.scheduler, self.event_manager,
+                                                                  self.timer,
+                                                                  self.notifiers.empty_queue_event_notifier)
+
         self.data_handler = DataHandler(self.data_provider, self.timer)
         self.monitor = LiveTradingMonitor(self.settings, self.pdf_exporter, self.excel_exporter)
         self.broker = IBBroker()
@@ -44,7 +51,6 @@ class LiveTradingSession(TradingSession):
         self.order_factory = OrderFactory(self.broker, self.data_handler, self.contract_ticker_mapper)
         self.position_sizer = InitialRiskPositionSizer(self.broker, self.data_handler, self.order_factory,
                                                        self.contract_ticker_mapper, initial_risk=initial_risk)
-        self.notifiers = Notifiers(self.timer)
 
         self.logger.info(
             "\n".join([
@@ -54,15 +60,17 @@ class LiveTradingSession(TradingSession):
                 "\tData Provider: {}".format(self.data_provider.__class__.__name__),
                 "\tPDF Exporter: {}".format(self.pdf_exporter.__class__.__name__),
                 "\tExcel Exporter: {}".format(self.excel_exporter.__class__.__name__),
+                "\tTimer: {}".format(self.timer.__class__.__name__),
+                "\tNotifiers: {}".format(self.notifiers.__class__.__name__),
+                "\tEvent Manager: {}".format(self.event_manager.__class__.__name__),
+                "\tTime Flow Controller: {}".format(self.time_flow_controller.__class__.__name__),
                 "\tData Handler: {}".format(self.data_handler.__class__.__name__),
                 "\tMonitor: {}".format(self.monitor.__class__.__name__),
                 "\tBroker: {}".format(self.broker.__class__.__name__),
                 "\tContract-Ticker Mapper: {}".format(self.contract_ticker_mapper.__class__.__name__),
                 "\tOrder Factory: {}".format(self.order_factory.__class__.__name__),
-                "\tPosition Sizer: {}".format(self.position_sizer.__class__.__name__),
-                "\tNotifiers: {}".format(self.notifiers.__class__.__name__)
+                "\tPosition Sizer: {}".format(self.position_sizer.__class__.__name__)
             ])
         )
 
-    def start_trading(self) -> None:
-        raise NotImplementedError("This method should not be used in live trading")
+

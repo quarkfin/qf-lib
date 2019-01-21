@@ -45,7 +45,7 @@ class TestingTradingSession(TradingSession):
         timer = SettableTimer(start_date)
         notifiers = Notifiers(timer)
         data_handler = DataHandler(data_provider, timer)
-        events_manager = self._create_event_manager(timer, notifiers)
+        event_manager = self._create_event_manager(timer, notifiers)
         contract_ticker_mapper = DummyBloombergContractTickerMapper()
         self.contract_ticker_mapper = contract_ticker_mapper
 
@@ -66,7 +66,7 @@ class TestingTradingSession(TradingSession):
         order_factory = OrderFactory(broker, data_handler, contract_ticker_mapper)
 
         time_flow_controller = BacktestTimeFlowController(
-            notifiers.scheduler, events_manager, timer, notifiers.empty_queue_event_notifier, end_date
+            notifiers.scheduler, event_manager, timer, notifiers.empty_queue_event_notifier, end_date
         )
         portfolio_handler = PortfolioHandler(portfolio, monitor, notifiers.scheduler)
         position_sizer = SimplePositionSizer(broker, data_handler, order_factory, contract_ticker_mapper)
@@ -91,7 +91,7 @@ class TestingTradingSession(TradingSession):
         self.initial_cash = initial_cash
         self.start_date = start_date
         self.end_date = end_date
-        self.event_manager = events_manager
+        self.event_manager = event_manager
         self.data_handler = data_handler
         self.portfolio = portfolio
         self.portfolio_handler = portfolio_handler
@@ -101,27 +101,3 @@ class TestingTradingSession(TradingSession):
         self.timer = timer
         self.order_factory = order_factory
         self.time_flow_controller = time_flow_controller
-
-    @staticmethod
-    def _create_event_manager(timer, notifiers: Notifiers):
-        events_manager = EventManager(timer)
-
-        events_manager.register_notifiers([
-            notifiers.all_event_notifier,
-            notifiers.empty_queue_event_notifier,
-            notifiers.end_trading_event_notifier,
-            notifiers.scheduler
-        ])
-        return events_manager
-
-    def start_trading(self) -> None:
-        """
-        Carries out an while loop that processes incoming events. The loop continues until the EndTradingEvent occurs
-        (e.g. no more data for the backtest).
-        """
-        self.logger.info("Running backtest...")
-        while self.event_manager.continue_trading:
-            self.event_manager.dispatch_next_event()
-
-        self.logger.info("Backtest finished, generating report...")
-        self.monitor.end_of_trading_update(self.timer.now())

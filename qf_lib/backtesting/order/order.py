@@ -28,7 +28,7 @@ class Order(object):
                '\tquantity: {}\n' \
                '\ttif: {}\n' \
                '\texecution_style: {}\n' \
-               '\torder_state: {}\n'.format(
+               '\torder_state: {}'.format(
                     self.id, str(self.contract), self.quantity, str(self.time_in_force),
                     self.execution_style, self.order_state
                 )

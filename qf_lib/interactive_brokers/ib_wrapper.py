@@ -14,14 +14,14 @@ from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.backtesting.portfolio.broker_positon import BrokerPosition
 from qf_lib.backtesting.portfolio.position import Position
-from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
+from qf_lib.common.utils.logging.qf_parent_logger import ib_logger
 
 
 class IBWrapper(EWrapper):
     def __init__(self, action_event_lock: Event):
 
         self.action_event_lock = action_event_lock
-        self.logger = qf_logger.getChild(self.__class__.__name__)
+        self.logger = ib_logger.getChild(self.__class__.__name__)
 
         self.net_liquidation = None
         self.tmp_value = None

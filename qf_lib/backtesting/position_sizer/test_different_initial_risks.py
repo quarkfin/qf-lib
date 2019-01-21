@@ -48,8 +48,8 @@ def get_trade_rets_values(init_risk: float) -> List[float]:
 
     model_factory = AlphaModelFactory(ts.data_handler)
     model = model_factory.make_model(model_type, *param_set, risk_estimation_factor=stop_loss_param)
-
-    TradingStrategy(ts, [model], trading_tickers, use_stop_losses=True)
+    model_tickers_dict = {model: trading_tickers}
+    TradingStrategy(ts, model_tickers_dict, use_stop_losses=True)
     ts.start_trading()
     trades = ts.portfolio.get_trades()
     return calc_trade_returns(trades)

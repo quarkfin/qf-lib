@@ -36,3 +36,14 @@ class Signal(object):
         self.expected_move = expected_move
         self.fraction_at_risk = fraction_at_risk
         self.alpha_model = alpha_model
+
+    def __str__(self):
+        return "Signal \n" \
+               "\tTicker:             {} \n" \
+               "\tSuggested Exposure: {} \n" \
+               "\tConfidence:         {} \n" \
+               "\tExpected Move:      {} \n" \
+               "\tFraction at Risk:   {} \n" \
+               "\tAlpha Model:        {}".format(self.ticker, self.suggested_exposure, self.confidence,
+                                                 self.expected_move, self.fraction_at_risk,
+                                                 self.alpha_model.__class__.__name__)

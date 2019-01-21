@@ -11,6 +11,7 @@ from qf_lib.backtesting.order.execution_style import StopOrder
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.orderfactory import OrderFactory
 from qf_lib.backtesting.order.time_in_force import TimeInForce
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.numberutils.is_finite_number import is_finite_number
 
 
@@ -25,6 +26,7 @@ class PositionSizer(object, metaclass=ABCMeta):
         self._data_handler = data_handler
         self._order_factory = order_factory
         self._contract_ticker_mapper = contract_ticker_mapper
+        self.logger = qf_logger.getChild(self.__class__.__name__)
 
     def size_signals(self, signals: Sequence[Signal]) -> List[Order]:
         """
@@ -40,11 +42,17 @@ class PositionSizer(object, metaclass=ABCMeta):
             market_order = self._generate_market_order(contract, signal)
             if market_order is not None:
                 orders.append(market_order)
+                self.logger.info("Market Order for {}, {}".format(contract, market_order))
+            else:
+                self.logger.info("No Market Order for {}".format(contract))
 
             if signal.suggested_exposure != Exposure.OUT:
                 stop_order = self._generate_stop_order(contract, signal, market_order)
                 if stop_order is not None:
                     orders.append(stop_order)
+                    self.logger.info("Stop Order for {}, {}".format(contract, stop_order))
+                else:
+                    self.logger.info("No Stop Order for {}".format(contract))
 
         return orders
 
@@ -64,7 +72,7 @@ class PositionSizer(object, metaclass=ABCMeta):
             assert is_finite_number(stop_price), "Stop price should be a finite number"
 
             # put minus before the quantity as stop order has to go in the opposite direction
-            stop_orders = self._order_factory.orders({contract: -stop_quantity}, StopOrder(stop_price), TimeInForce.DAY)
+            stop_orders = self._order_factory.orders({contract: -stop_quantity}, StopOrder(stop_price), TimeInForce.GTC)
 
             assert len(stop_orders) == 1, "Only one order should be generated"
             return stop_orders[0]
