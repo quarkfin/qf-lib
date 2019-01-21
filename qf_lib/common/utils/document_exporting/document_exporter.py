@@ -5,8 +5,8 @@ from typing import Sequence
 from qf_lib.common.utils.document_exporting import Document
 from qf_lib.common.utils.document_exporting.element.header import HeaderElement
 from qf_lib.common.utils.document_exporting.element.index import IndexElement
-from qf_lib.get_sources_root import get_src_root
 from qf_lib.settings import Settings
+from qf_lib.starting_dir import get_starting_dir_abs_path
 
 
 class DocumentExporter(object):
@@ -15,7 +15,7 @@ class DocumentExporter(object):
     """
 
     def __init__(self, settings: Settings):
-        self._output_root_dir = join(get_src_root(), settings.output_directory)
+        self._output_root_dir = join(get_starting_dir_abs_path(), settings.output_directory)
 
     def get_output_dir(self, export_dir: str) -> str:
         """

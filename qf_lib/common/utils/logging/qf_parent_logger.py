@@ -2,6 +2,8 @@ import logging
 
 qf_logger = logging.getLogger("qf")
 
+ib_logger = logging.getLogger("ib")
+
 """
 This is the preferred way of using logger in the project. All loggers are the children of QF and therefore 
 can be filtered in the logging settings. 

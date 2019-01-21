@@ -8,8 +8,8 @@ from qf_lib.backtesting.monitoring.abstract_monitor import AbstractMonitor
 from qf_lib.backtesting.transaction import Transaction
 from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.common.utils.excel.excel_exporter import ExcelExporter
-from qf_lib.get_sources_root import get_src_root
 from qf_lib.settings import Settings
+from qf_lib.starting_dir import get_starting_dir_abs_path
 
 
 class LiveTradingMonitor(AbstractMonitor):
@@ -59,7 +59,7 @@ class LiveTradingMonitor(AbstractMonitor):
         """
         Creates a new csv file for every backtest run, writes the header and returns the path to the file.
         """
-        output_dir = path.join(get_src_root(), self._settings.output_directory, self._report_dir)
+        output_dir = path.join(get_starting_dir_abs_path(), self._settings.output_directory, self._report_dir)
         if not path.exists(output_dir):
             makedirs(output_dir)
 

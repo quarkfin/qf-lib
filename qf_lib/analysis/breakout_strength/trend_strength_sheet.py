@@ -17,7 +17,6 @@ from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.data_providers.price_data_provider import DataProvider
-from qf_lib.get_sources_root import get_src_root
 from qf_lib.plotting.charts.chart import Chart
 from qf_lib.plotting.charts.line_chart import LineChart
 from qf_lib.plotting.decorators.axes_position_decorator import AxesPositionDecorator
@@ -26,6 +25,7 @@ from qf_lib.plotting.decorators.legend_decorator import LegendDecorator
 from qf_lib.plotting.decorators.line_decorators import HorizontalLineDecorator
 from qf_lib.plotting.decorators.title_decorator import TitleDecorator
 from qf_lib.settings import Settings
+from qf_lib.starting_dir import get_starting_dir_abs_path
 
 
 class TrendStrengthSheet(object):
@@ -112,7 +112,7 @@ class TrendStrengthSheet(object):
         self.document.add_element(NewPageElement())  # add page break
 
     def _add_header(self):
-        logo_path = join(get_src_root(), self.settings.logo_path)
+        logo_path = join(get_starting_dir_abs_path(), self.settings.logo_path)
         company_name = self.settings.company_name
         self.document.add_element(PageHeaderElement(logo_path, company_name, self.title))
 

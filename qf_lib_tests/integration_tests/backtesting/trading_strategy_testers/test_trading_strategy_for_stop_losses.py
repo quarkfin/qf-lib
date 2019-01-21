@@ -35,7 +35,8 @@ class TestTradingStrategy(TestCase):
         self.alpha_model = DummyAlphaModel(risk_estimation_factor)
 
         self.ts = self._test_trading_session_init()
-        TradingStrategy(self.ts, [self.alpha_model], self.tickers, use_stop_losses=True)
+        model_tickers_dict = {self.alpha_model: self.tickers}
+        TradingStrategy(self.ts, model_tickers_dict, use_stop_losses=True)
         self.ts.start_trading()
 
     @classmethod

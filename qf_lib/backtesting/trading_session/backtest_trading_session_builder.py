@@ -119,8 +119,6 @@ class BacktestTradingSessionBuilder(object):
         return event_manager
 
     def build(self, container: Container):
-        setup_logging(level=self._logging_level, console_logging=True)
-
         self._settings = container.resolve(Settings)  # type: Settings
         self._data_provider = container.resolve(GeneralPriceProvider)  # type: GeneralPriceProvider
         self._pdf_exporter = container.resolve(PDFExporter)  # type: PDFExporter
@@ -141,6 +139,7 @@ class BacktestTradingSessionBuilder(object):
                                                             self._monitor, self._commission_model,
                                                             self._contract_ticker_mapper, self._portfolio,
                                                             self._slippage_model)
+
         self._time_flow_controller = BacktestTimeFlowController(self._notifiers.scheduler, self._events_manager,
                                                                 self._timer, self._notifiers.empty_queue_event_notifier,
                                                                 self._end_date)

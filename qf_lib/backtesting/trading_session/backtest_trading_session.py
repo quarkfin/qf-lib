@@ -53,14 +53,4 @@ class BacktestTradingSession(TradingSession):
         data_history_start = self.start_date - time_delta
         self.data_handler.use_data_bundle(tickers, PriceField.ohlcv(), data_history_start, self.end_date)
 
-    def start_trading(self) -> None:
-        """
-        Carries out an while loop that processes incoming events. The loop continues until the EndTradingEvent occurs
-        (e.g. no more data for the backtest).
-        """
-        self.logger.info("Running backtest...")
-        while self.event_manager.continue_trading:
-            self.event_manager.dispatch_next_event()
 
-        self.logger.info("Backtest finished, generating report...")
-        self.monitor.end_of_trading_update()

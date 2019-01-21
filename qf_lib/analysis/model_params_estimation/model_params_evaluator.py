@@ -6,7 +6,6 @@ from typing import Callable, Any, Sequence
 
 import matplotlib.pyplot as plt
 
-from get_sources_root import get_src_root
 from qf_lib.analysis.model_params_estimation.evaluation_utils import add_backtest_description, BacktestSummaryEvaluator
 from qf_lib.backtesting.alpha_models_testers.backtest_summary import BacktestSummary
 from qf_lib.common.enums.axis import Axis
@@ -26,6 +25,7 @@ from qf_lib.plotting.decorators.axis_tick_labels_decorator import AxisTickLabels
 from qf_lib.plotting.decorators.data_element_decorator import DataElementDecorator
 from qf_lib.plotting.decorators.title_decorator import TitleDecorator
 from qf_lib.settings import Settings
+from qf_lib.starting_dir import get_starting_dir_abs_path
 
 
 class ModelParamsEvaluator(object):
@@ -76,7 +76,7 @@ class ModelParamsEvaluator(object):
             chart_adding_function(tickers=[ticker])
 
     def _add_header(self):
-        logo_path = join(get_src_root(), self.settings.logo_path)
+        logo_path = join(get_starting_dir_abs_path(), self.settings.logo_path)
         company_name = self.settings.company_name
         self.document.add_element(PageHeaderElement(logo_path, company_name, self.backtest_result.backtest_name))
 

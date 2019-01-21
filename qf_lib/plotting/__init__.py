@@ -1,7 +1,5 @@
 def _setup_matplotlib_config():
-    import os
     from os.path import join, dirname
-    import matplotlib
 
     import matplotlib.pyplot as plt
     import matplotlib.style.core as style_core

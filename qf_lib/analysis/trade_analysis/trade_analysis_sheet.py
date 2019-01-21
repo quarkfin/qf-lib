@@ -17,7 +17,6 @@ from qf_lib.common.utils.returns.annualise_total_return import annualise_total_r
 from qf_lib.common.utils.returns.max_drawdown import max_drawdown
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
-from qf_lib.get_sources_root import get_src_root
 from qf_lib.plotting.charts.chart import Chart
 from qf_lib.plotting.charts.histogram_chart import HistogramChart
 from qf_lib.plotting.charts.line_chart import LineChart
@@ -29,6 +28,7 @@ from qf_lib.plotting.decorators.legend_decorator import LegendDecorator
 from qf_lib.plotting.decorators.line_decorators import HorizontalLineDecorator, VerticalLineDecorator
 from qf_lib.plotting.decorators.title_decorator import TitleDecorator
 from qf_lib.settings import Settings
+from qf_lib.starting_dir import get_starting_dir_abs_path
 
 
 class TradeAnalysisSheet(object):
@@ -74,7 +74,7 @@ class TradeAnalysisSheet(object):
         self._add_statistics_table()
 
     def _add_header(self):
-        logo_path = join(get_src_root(), self.settings.logo_path)
+        logo_path = join(get_starting_dir_abs_path(), self.settings.logo_path)
         company_name = self.settings.company_name
 
         self.document.add_element(PageHeaderElement(logo_path, company_name, self.title))

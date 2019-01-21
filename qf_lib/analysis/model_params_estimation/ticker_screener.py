@@ -5,7 +5,6 @@ from typing import Collection
 import matplotlib.pyplot as plt
 import numpy as np
 
-from get_sources_root import get_src_root
 from qf_lib.analysis.model_params_estimation.evaluation_utils import add_backtest_description
 from qf_lib.backtesting.alpha_models_testers.backtest_summary import BacktestSummary
 from qf_lib.common.enums.trade_field import TradeField
@@ -18,6 +17,7 @@ from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.common.utils.miscellaneous.constants import DAYS_PER_YEAR_AVG
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.settings import Settings
+from qf_lib.starting_dir import get_starting_dir_abs_path
 
 
 class TickerScreener(object):
@@ -52,7 +52,7 @@ class TickerScreener(object):
         self._add_table(rejected_tickers)
 
     def _add_header(self):
-        logo_path = join(get_src_root(), self.settings.logo_path)
+        logo_path = join(get_starting_dir_abs_path(), self.settings.logo_path)
         company_name = self.settings.company_name
         self.document.add_element(PageHeaderElement(logo_path, company_name, self.backtest_summary.backtest_name))
 
