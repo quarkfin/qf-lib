@@ -14,6 +14,8 @@ def get_starting_dir_abs_path() -> str:
         if dir_path is None:
             raise KeyError("Starting directory wasn't set. Use set_starting_dir_abs_path() function "
                            "or set the environment variable QF_STARTING_DIRECTORY to the proper value")
+        else:
+            return dir_path
     else:
         return _starting_dir
 
