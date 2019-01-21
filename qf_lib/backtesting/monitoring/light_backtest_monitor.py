@@ -1,5 +1,8 @@
 # it is important to import the matplotlib first and then switch the interactive/dynamic mode on.
 import matplotlib.pyplot as plt
+
+from qf_lib.analysis.leverage_analysis.leverage_analysis_sheet import LeverageAnalysisSheet
+
 plt.ion()  # required for dynamic chart
 
 from qf_lib.analysis.tearsheets.tearsheet_without_benchmark import TearsheetWithoutBenchmark
@@ -46,9 +49,12 @@ class LightBacktestMonitor(BacktestMonitor):
         Saves the results of the backtest
         """
 
+        portfolio_tms = self.backtest_result.portfolio.get_portfolio_timeseries()
+        portfolio_tms.name = self.backtest_result.backtest_name
+
+        leverage = self.backtest_result.portfolio.leverage()
+
         try:  # export a PDF with charts
-            portfolio_tms = self.backtest_result.portfolio.get_portfolio_timeseries()
-            portfolio_tms.name = self.backtest_result.backtest_name
             tearsheet = TearsheetWithoutBenchmark(
                 self._settings, self._pdf_exporter, portfolio_tms, title=portfolio_tms.name)
             tearsheet.build_document()
@@ -56,8 +62,13 @@ class LightBacktestMonitor(BacktestMonitor):
         except Exception as ex:
             self.logger.error("Error while exporting to PDF: " + str(ex))
 
-        portfolio_tms = self.backtest_result.portfolio.get_portfolio_timeseries()
-        portfolio_tms.name = self.backtest_result.backtest_name
+        try:  # export leverage analysis
+            leverage_sheet = LeverageAnalysisSheet(
+                self._settings, self._pdf_exporter, leverage, title=portfolio_tms.name)
+            leverage_sheet.build_document()
+            leverage_sheet.save(self._report_dir)
+        except Exception as ex:
+            self.logger.error("Error while exporting to PDF: " + str(ex))
 
         try:  # export a timeseries to Excel
             xlsx_filename = "{}.xlsx".format(self._file_name_template)
