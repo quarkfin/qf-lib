@@ -61,27 +61,32 @@ class BacktestMonitor(AbstractMonitor):
         Generates a tearsheet PDF with the statistics of the backtest and saves it on the disk
         Saves the timeseries of the portfolio in the excel file
         """
-        # export a pdf with charts
+
         portfolio_tms = self.backtest_result.portfolio.get_portfolio_timeseries()
-        portfolio_tms.name = self.backtest_result.backtest_name
-        tearsheet = TearsheetWithoutBenchmark(
-            self._settings, self._pdf_exporter, portfolio_tms, title=portfolio_tms.name)
-        tearsheet.build_document()
-        tearsheet.save(self._report_dir)
+        self._export_pdf_with_charts(portfolio_tms)
+        self._export_leverage_analysis(portfolio_tms)
+        self._export_tms_to_excel(portfolio_tms)
 
-        # export leverage analysis
-        leverage = self.backtest_result.portfolio.leverage()
-        leverage_sheet = LeverageAnalysisSheet(self._settings, self._pdf_exporter, leverage, title=portfolio_tms.name)
-        leverage_sheet.build_document()
-        leverage_sheet.save(self._report_dir)
+        self._close_csv_file()
 
-        # export a timeseries into an xlsx file
+    def _export_tms_to_excel(self, portfolio_tms):
         xlsx_filename = "{}.xlsx".format(self._file_name_template)
         relative_file_path = path.join(self._report_dir, "timeseries", xlsx_filename)
         self._excel_exporter.export_container(portfolio_tms, relative_file_path,
                                               starting_cell='A1', include_column_names=True)
 
-        self._close_csv_file()
+    def _export_leverage_analysis(self, portfolio_tms):
+        leverage = self.backtest_result.portfolio.leverage()
+        leverage_sheet = LeverageAnalysisSheet(self._settings, self._pdf_exporter, leverage, title=portfolio_tms.name)
+        leverage_sheet.build_document()
+        leverage_sheet.save(self._report_dir)
+
+    def _export_pdf_with_charts(self, portfolio_tms):
+        portfolio_tms.name = self.backtest_result.backtest_name
+        tearsheet = TearsheetWithoutBenchmark(
+            self._settings, self._pdf_exporter, portfolio_tms, title=portfolio_tms.name)
+        tearsheet.build_document()
+        tearsheet.save(self._report_dir)
 
     def _close_csv_file(self):
         if self._csv_file is not None:  # close the csv file
