@@ -54,23 +54,22 @@ class LightBacktestMonitor(BacktestMonitor):
 
         leverage = self.backtest_result.portfolio.leverage()
 
-        try:  # export a PDF with charts
-            tearsheet = TearsheetWithoutBenchmark(
-                self._settings, self._pdf_exporter, portfolio_tms, title=portfolio_tms.name)
-            tearsheet.build_document()
-            tearsheet.save(self._report_dir)
-        except Exception as ex:
-            self.logger.error("Error while exporting to PDF: " + str(ex))
+        self._export_PDF_with_charts(portfolio_tms)
+        self._export_leverage_analysis(leverage, portfolio_tms)
+        self._export_tms_to_excel(portfolio_tms)
+        self._print_stats_to_console(portfolio_tms)
 
-        try:  # export leverage analysis
-            leverage_sheet = LeverageAnalysisSheet(
-                self._settings, self._pdf_exporter, leverage, title=portfolio_tms.name)
-            leverage_sheet.build_document()
-            leverage_sheet.save(self._report_dir)
-        except Exception as ex:
-            self.logger.error("Error while exporting to PDF: " + str(ex))
+        self._close_csv_file()
 
-        try:  # export a timeseries to Excel
+    def _print_stats_to_console(self, portfolio_tms):
+        try:
+            ta = TimeseriesAnalysis(portfolio_tms, frequency=Frequency.DAILY)
+            print(TimeseriesAnalysis.values_in_table(ta))
+        except Exception as ex:
+            self.logger.error("Error while calculating TimeseriesAnalysis: " + str(ex))
+
+    def _export_tms_to_excel(self, portfolio_tms):
+        try:
             xlsx_filename = "{}.xlsx".format(self._file_name_template)
             relative_file_path = path.join(self._report_dir, "timeseries", xlsx_filename)
             self._excel_exporter.export_container(portfolio_tms, relative_file_path,
@@ -78,13 +77,23 @@ class LightBacktestMonitor(BacktestMonitor):
         except Exception as ex:
             self.logger.error("Error while exporting to Excel: " + str(ex))
 
-        try:  # print stats to the console
-            ta = TimeseriesAnalysis(portfolio_tms, frequency=Frequency.DAILY)
-            print(TimeseriesAnalysis.values_in_table(ta))
+    def _export_leverage_analysis(self, leverage, portfolio_tms):
+        try:
+            leverage_sheet = LeverageAnalysisSheet(
+                self._settings, self._pdf_exporter, leverage, title=portfolio_tms.name)
+            leverage_sheet.build_document()
+            leverage_sheet.save(self._report_dir)
         except Exception as ex:
-            self.logger.error("Error while calculating TimeseriesAnalysis: " + str(ex))
+            self.logger.error("Error while exporting to PDF: " + str(ex))
 
-        self._close_csv_file()
+    def _export_PDF_with_charts(self, portfolio_tms):
+        try:
+            tearsheet = TearsheetWithoutBenchmark(
+                self._settings, self._pdf_exporter, portfolio_tms, title=portfolio_tms.name)
+            tearsheet.build_document()
+            tearsheet.save(self._report_dir)
+        except Exception as ex:
+            self.logger.error("Error while exporting to PDF: " + str(ex))
 
     def record_transaction(self, transaction: Transaction):
         """ Do not record trades to save execution time, for more details use BacktestMonitor"""

@@ -39,14 +39,17 @@ def get_data():
     return leverage_tms
 
 
-this_dir_path = os.path.dirname(os.path.abspath(__file__))
+def main():
+    this_dir_path = os.path.dirname(os.path.abspath(__file__))
+    settings = container.resolve(Settings)  # type: Settings
+    pdf_exporter = container.resolve(PDFExporter)  # type: PDFExporter
+    leverage_tms = get_data()
+    leverage_analysis_sheet = LeverageAnalysisSheet(settings, pdf_exporter, leverage_tms,
+                                                    title="Sample leverage analysis")
+    leverage_analysis_sheet.build_document()
+    leverage_analysis_sheet.save(this_dir_path)
+    print("Finished")
 
-settings = container.resolve(Settings)  # type: Settings
-pdf_exporter = container.resolve(PDFExporter)  # type: PDFExporter
 
-leverage_tms = get_data()
-leverage_analysis_sheet = LeverageAnalysisSheet(settings, pdf_exporter, leverage_tms, title="Sample leverage analysis")
-leverage_analysis_sheet.build_document()
-leverage_analysis_sheet.save()
-
-print("Finished")
+if __name__ == "__main__":
+    main()
