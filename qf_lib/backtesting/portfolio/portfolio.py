@@ -1,14 +1,16 @@
 from datetime import datetime
 from typing import List, Dict
 
+import numpy as np
 from numpy import sign
 
 from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
-from qf_lib.backtesting.transaction import Transaction
 from qf_lib.backtesting.portfolio.backtest_position import BacktestPosition
 from qf_lib.backtesting.portfolio.trade import Trade
+from qf_lib.backtesting.transaction import Transaction
+from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
@@ -78,6 +80,13 @@ class Portfolio(object):
 
         all_tickers_in_portfolio = list(contract_to_ticker_dict.values())
         current_prices_series = self.data_handler.get_last_available_price(tickers=all_tickers_in_portfolio)
+
+        # if the ticker ceases to exist, remove the contract from self.open_positions_dict
+        remove = [c for c in self.open_positions_dict if np.isnan(current_prices_series[BloombergTicker(c.symbol)])]
+        for con in remove:
+            del self.open_positions_dict[con]
+            print("{}: position assigned to Ticker {} removed due to incomplete price data."
+                  .format(str(self.timer.now()), con.symbol))
 
         for contract, position in self.open_positions_dict.items():
             ticker = contract_to_ticker_dict[contract]
