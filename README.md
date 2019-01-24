@@ -38,9 +38,6 @@ NOTICE: If possible use precompiled packages (wheels) provided in the `windows_d
 * [cvxopt](http://cvxopt.org/install/index.html#windows)
 
 # Testing
-When you installed all the requirements, you can also run tests to verify that everything works fine.
-In order to do so, go into `qf_lib_tests` directory of the 
-
 After the installation process test that everything was setup fine. In order to do so:
 1. Add path of `QuantFin Lib` to the `PYTHONPATH` environment variable (create it if it doesn't exist).
 2. Go to the `qf_lib_tests` directory.
