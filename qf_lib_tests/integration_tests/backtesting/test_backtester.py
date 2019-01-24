@@ -2,10 +2,10 @@ import unittest
 from unittest import TestCase
 
 import matplotlib
-from os.path import join
 
 from qf_lib.backtesting.broker.broker import Broker
 from qf_lib.backtesting.order.time_in_force import TimeInForce
+from qf_lib_tests.unit_tests.config.test_settings import get_test_settings
 
 matplotlib.use("Agg")
 
@@ -14,7 +14,6 @@ from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.order.execution_style import MarketOrder
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.data_providers.bloomberg import BloombergDataProvider
-from qf_lib.get_sources_root import get_src_root
 from qf_lib.testing_tools.containers_comparison import assert_series_equal
 
 from qf_lib.backtesting.events.time_event.before_market_open_event import BeforeMarketOpenEvent
@@ -23,10 +22,6 @@ from qf_lib.backtesting.order.orderfactory import OrderFactory
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
-from qf_lib.settings import Settings
-
-
-settings = Settings(join(get_src_root(), 'qf_lib_tests', 'unit_tests', 'config', 'test_settings.json'))
 
 
 class BuyAndHoldStrategy(object):
@@ -56,6 +51,7 @@ class BuyAndHoldStrategy(object):
             self.invested = True
 
 
+settings = get_test_settings()
 bbg_provider = BloombergDataProvider(settings)
 bbg_provider.connect()
 
