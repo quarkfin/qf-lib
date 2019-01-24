@@ -1,5 +1,4 @@
 import unittest
-from os.path import join
 from unittest import TestCase
 
 import pandas as pd
@@ -14,11 +13,10 @@ from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.dimension_names import DATES, TICKERS
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.data_providers.bloomberg import BloombergDataProvider
-from qf_lib.get_sources_root import get_src_root
-from qf_lib.settings import Settings
 from qf_lib.testing_tools.containers_comparison import assert_series_equal, assert_same_index
+from qf_lib_tests.unit_tests.config.test_settings import get_test_settings
 
-settings = Settings(join(get_src_root(), 'qf_lib_tests', 'unit_tests', 'config', 'test_settings.json'))
+settings = get_test_settings()
 bbg_provider = BloombergDataProvider(settings)
 bbg_provider.connect()
 

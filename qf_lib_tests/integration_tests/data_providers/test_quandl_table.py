@@ -1,7 +1,6 @@
 import unittest
 
 import pandas as pd
-from os.path import join
 
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.enums.quandl_db_type import QuandlDBType
@@ -13,11 +12,9 @@ from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.quandl.quandl_data_provider import QuandlDataProvider
-from qf_lib.get_sources_root import get_src_root
-from qf_lib.settings import Settings
+from qf_lib_tests.unit_tests.config.test_settings import get_test_settings
 
 
-# @unittest.skip("Never really used, and causes the GitLab Runner to crash. Also these tests alone take about 60s")
 class TestQuandlTable(unittest.TestCase):
     START_DATE = str_to_date('2014-01-01')
     END_DATE = str_to_date('2015-02-02')
@@ -36,7 +33,7 @@ class TestQuandlTable(unittest.TestCase):
     MANY_PRICE_FIELDS = [PriceField.Close, PriceField.Open, PriceField.High]
 
     def setUp(self):
-        settings = Settings(join(get_src_root(), 'qf_lib_tests', 'unit_tests', 'config', 'test_settings.json'))
+        settings = get_test_settings()
         self.quandl_provider = QuandlDataProvider(settings)
 
     # =========================== Test invalid ticker ==========================================================

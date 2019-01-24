@@ -1,7 +1,5 @@
 import unittest
 
-from os.path import join
-
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import HaverTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
@@ -10,10 +8,9 @@ from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.haver import HaverDataProvider
-from qf_lib.get_sources_root import get_src_root
-from qf_lib.settings import Settings
+from qf_lib_tests.unit_tests.config.test_settings import get_test_settings
 
-settings = Settings(join(get_src_root(), 'qf_lib_tests', 'unit_tests', 'config', 'test_settings.json'))
+settings = get_test_settings()
 haver_provider = HaverDataProvider(settings)
 haver_provider.connect()
 
