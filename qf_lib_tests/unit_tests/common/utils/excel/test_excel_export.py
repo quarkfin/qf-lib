@@ -33,7 +33,10 @@ class TestExcelExport(TestCaseWithFileOutput):
         self.test_series_reversed = QFSeries(index=dates, data=reversed_returns)
 
         self.test_data_frame = concat([self.test_series, self.test_series_reversed], axis=1, join='inner')
-        settings = Settings(join(get_src_root(), 'qf_lib_tests', 'unit_tests', 'config', 'test_settings.json'))
+        settings = Settings(
+            join(get_src_root(), 'qf_lib_tests', 'unit_tests', 'config', 'test_settings.json'),
+            join(get_src_root(), 'qf_lib_tests', 'unit_tests', 'config', 'secret_test_settings.json')
+        )
         self.xl_exporter = ExcelExporter(settings=settings)
 
     def tearDown(self):
