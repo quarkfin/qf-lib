@@ -33,9 +33,9 @@ from qf_lib.common.tickers.tickers import QuandlTicker, Ticker, BloombergTicker
 from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.common.utils.excel.excel_exporter import ExcelExporter
-from qf_lib.common.utils.logging.logging_config import setup_logging
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
+from qf_lib.data_providers.price_data_provider import DataProvider
 from qf_lib.settings import Settings
 
 
@@ -81,6 +81,9 @@ class BacktestTradingSessionBuilder(object):
 
         self._backtest_name = name
 
+    def set_data_provider(self, data_provider: DataProvider):
+        self._data_provider = data_provider
+
     def set_monitor_type(self, monitor_type: Type[AbstractMonitor]):
         assert monitor_type is BacktestMonitor or monitor_type is LightBacktestMonitor or monitor_type is DummyMonitor
         self._monitor_type = monitor_type
@@ -119,8 +122,9 @@ class BacktestTradingSessionBuilder(object):
         return event_manager
 
     def build(self, container: Container) -> BacktestTradingSession:
+        if not self._data_provider:
+            self._data_provider = container.resolve(GeneralPriceProvider)  # type: GeneralPriceProvider
         self._settings = container.resolve(Settings)  # type: Settings
-        self._data_provider = container.resolve(GeneralPriceProvider)  # type: GeneralPriceProvider
         self._pdf_exporter = container.resolve(PDFExporter)  # type: PDFExporter
         self._excel_exporter = container.resolve(ExcelExporter)  # type: ExcelExporter
 

@@ -82,8 +82,11 @@ class Portfolio(object):
         current_prices_series = self.data_handler.get_last_available_price(tickers=all_tickers_in_portfolio)
 
         # if the ticker ceases to exist, remove the contract from self.open_positions_dict
-        remove = [c for c in self.open_positions_dict if np.isnan(current_prices_series[BloombergTicker(c.symbol)])]
+        remove = [c for c in self.open_positions_dict if np.isnan(current_prices_series[contract_to_ticker_dict[c]])]
         for con in remove:
+            pos = self.open_positions_dict[con]
+            self.current_cash += pos.current_price * pos.number_of_shares
+            self.net_liquidation += pos.current_price * pos.number_of_shares
             del self.open_positions_dict[con]
             print("{}: position assigned to Ticker {} removed due to incomplete price data."
                   .format(str(self.timer.now()), con.symbol))
