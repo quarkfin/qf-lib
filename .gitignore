@@ -1,7 +1,12 @@
 *.pyc
 *.pyc.*
+*.pyo
 *.cache
-build/*
+
+build
+dist
+qf_lib.egg-info
+
 output
 
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio and Webstorm
