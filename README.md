@@ -23,7 +23,9 @@ NOTICE: If possible use precompiled packages (wheels) provided in the `windows_d
 * Install `scipy` by running `pip install scipy-1.1.0-cp36-cp36m-win_amd64.whl` in the `windows_dependencies` directory.
 * Install `cvxopt` by running `pip install cvxopt-1.2.2-cp36-cp36m-win_amd64.whl` in the `windows_dependencies` directory.
 * Install `pyodbc` by running `pip install pyodbc-4.0.24-cp36-cp36m-win_amd64.whl` in the `windows_dependencies` directory.
-* Install `TA Lib` by running `TA_Lib-0.4.17-cp36-cp36m-win_amd64.whl` in the `windows_dependencies` directory.
+* Install `TA Lib`:
+    * download [ta-lib-0.4.0-msvc.zip](http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-msvc.zip) and extract it to C:\ta-lib
+    * run `pip install TA_Lib-0.4.17-cp36-cp36m-win_amd64.whl` in the `windows_dependencies` directory.
 * Install `Haver` by running `Haver-1.1.0-cp36-cp36m-win_amd64.whl` in the `windows_dependencies` directory.
 * Install other requirements using `pip`. Run `pip install -r requirements.txt` in the main directory of the `QuantFin Lib`.
 
