@@ -5,7 +5,7 @@ import blpapi
 
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
-from qf_lib.common.tickers.tickers import BloombergTicker, tickers_as_strings
+from qf_lib.common.tickers.tickers import BloombergTicker, tickers_as_strings, Ticker
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
@@ -148,7 +148,13 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
         }
         return price_field_dict
 
-    def get_tickers_universe(self, universe_name: BloombergTicker, date: datetime) -> List[BloombergTicker]:
+    def get_tickers_universe(self, universe_name: Union[Ticker, str], date: datetime) -> List[BloombergTicker]:
+        if universe_name == 'RIY Index' or universe_name == 'Russell 1000':
+            BloombergTicker('RIY Index')
+
+        if universe_name != BloombergTicker('RIY Index'):
+            raise ValueError("Universe name {} not supported".format(universe_name.as_string()))
+
         if date.date() != datetime.today().date():
             raise ValueError("BloombergDataProvider does not provide historical tickers_universe data")
         field = 'INDX_MEMBERS'
@@ -156,8 +162,13 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
         tickers = [BloombergTicker(name + " Equity") for name in ticker_names]
         return tickers
 
-    def get_tabular_data(self, ticker: BloombergTicker, field: str):
+    def get_tabular_data(self, ticker: BloombergTicker, field: str) -> QFDataArray:
+        """
+        Provides current tabular data from Bloomberg.
 
+        Was tested on 'INDX_MEMBERS' request. There is no guarantee that all other request will be handled,
+        as returned data structures might vary.
+        """
         if field is None:
             raise ValueError("Field being None is not supported by {}".format(self.__class__.__name__))
 
