@@ -19,15 +19,19 @@ NOTICE: If possible use precompiled packages (wheels) provided in the `windows_d
     * extract the files from the installation archive (zip) from the `windows_dependencies` directory
     * create a new environment variable called `BLPAPI_ROOT` and set it to the path of the `/bin` directory inside the Bloomberg's directory (extracted from the `zip` achive)
     * add `/bin` directory to the `PATH` environment variable
-* Install `blpapi` by running `pip install `blpapi-3.9.1-cp36-cp36m-win_amd64.whl` in the `windows_dependencies` directory.
-* Install `numpy` by running `pip install `numpy-1.15.4+mkl-cp36-cp36m-win_amd64.whl` in the `windows_dependencies` directory.
-* Install `scipy` by running `pip install `scipy-1.1.0-cp36-cp36m-win_amd64.whl` in the `windows_dependencies` directory.
-* Install `cvxopt` by running `pip install `cvxopt-1.2.2-cp36-cp36m-win_amd64.whl` in the `windows_dependencies` directory.
+* Install `blpapi` by running `pip install blpapi-3.9.1-cp36-cp36m-win_amd64.whl` in the `windows_dependencies` directory.
+* Install `numpy` by running `pip install numpy-1.15.4+mkl-cp36-cp36m-win_amd64.whl` in the `windows_dependencies` directory.
+* Install `scipy` by running `pip install scipy-1.1.0-cp36-cp36m-win_amd64.whl` in the `windows_dependencies` directory.
+* Install `cvxopt` by running `pip install cvxopt-1.2.2-cp36-cp36m-win_amd64.whl` in the `windows_dependencies` directory.
+* Install `statsmodels` by running `pip install statsmodels-0.9.0-cp36-cp36m-win_amd64.whl` in the `windows_dependencies` directory.
 * Install `TA Lib` (optional):
     * extract TA Lib SDK archive (zip) to `C:\ta-lib` (unfortunately this is the fixed path)
     * run `pip install TA_Lib-0.4.17-cp36-cp36m-win_amd64.whl` in the `windows_dependencies` directory.
 * Install `Haver` (optional) by running `Haver-1.1.0-cp36-cp36m-win_amd64.whl` in the `windows_dependencies` directory.
 * Install other requirements using `pip`. Run `pip install -r requirements.txt` in the main directory of the `QuantFin Lib`.
+
+# Configuration
+TODO what needs to be in configuration for different modules to work
 
 
 #### Links
