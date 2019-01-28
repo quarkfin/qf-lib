@@ -11,13 +11,10 @@ Jinja2==2.10
 weasyprint==43
 sqlalchemy==1.2.14
 seaborn==0.9.0
-pyodbc==4.0.24
-cx_Oracle==7.0.0
-statsmodels==0.8.0
+statsmodels==0.9.0
 arch==4.6.0
 quandl==3.4.4
 beautifulsoup4==4.6.3
 mockito==1.1.1
 xarray==0.11.0
-TA-Lib==0.4.17
 cvxopt==1.2.2
