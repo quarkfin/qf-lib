@@ -150,7 +150,7 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
 
     def get_tickers_universe(self, universe_name: Union[Ticker, str], date: datetime) -> List[BloombergTicker]:
         if universe_name == 'RIY Index' or universe_name == 'Russell 1000':
-            BloombergTicker('RIY Index')
+            universe_name = BloombergTicker('RIY Index')
 
         if universe_name != BloombergTicker('RIY Index'):
             raise ValueError("Universe name {} not supported".format(universe_name.as_string()))
@@ -162,12 +162,12 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
         tickers = [BloombergTicker(name + " Equity") for name in ticker_names]
         return tickers
 
-    def get_tabular_data(self, ticker: BloombergTicker, field: str) -> QFDataArray:
+    def get_tabular_data(self, ticker: BloombergTicker, field: str) -> List:
         """
         Provides current tabular data from Bloomberg.
 
-        Was tested on 'INDX_MEMBERS' request. There is no guarantee that all other request will be handled,
-        as returned data structures might vary.
+        Was tested on 'INDX_MEMBERS' and 'MERGERS_AND_ACQUISITIONS' requests. There is no guarantee that
+        all other request will be handled, as returned data structures might vary.
         """
         if field is None:
             raise ValueError("Field being None is not supported by {}".format(self.__class__.__name__))
@@ -179,9 +179,9 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
         fields, got_single_field = convert_to_list(field, (PriceField, str))
 
         tickers_str = tickers_as_strings(tickers)
-        data_array = self._tabular_data_provider.get(tickers_str, fields)
+        result = self._tabular_data_provider.get(tickers_str, fields)
 
-        return data_array
+        return result
 
     def _connect_if_needed(self):
         if not self.connected:
