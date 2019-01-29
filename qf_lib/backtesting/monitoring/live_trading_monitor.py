@@ -44,14 +44,14 @@ class LiveTradingMonitor(AbstractMonitor):
          and sends it by email
         """
         attachments_paths = [
-            self._export_test_file()
+            self._export_test_file(timestamp)
         ]
 
         self._publish_by_email(attachments_paths, timestamp)
 
-    def _export_test_file(self):
+    def _export_test_file(self, timestamp):
         # todo: export an actual file here
-        xlsx_filename = 'test_file.xlsx'
+        xlsx_filename = '{}_test_file.xlsx'.format(timestamp.date())
         relative_file_path = path.join(self._report_dir, "test", xlsx_filename)
         test_tms = Series(name='test_tms', index=[0, 1, 2], data=['a', 'b', 'c'])
         return self._excel_exporter.export_container(test_tms, relative_file_path, include_column_names=True)
