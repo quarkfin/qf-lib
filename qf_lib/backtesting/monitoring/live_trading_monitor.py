@@ -3,11 +3,16 @@ import csv
 from datetime import datetime
 from io import TextIOWrapper
 from os import path, makedirs
+from typing import List
+
+from pandas import Series
 
 from qf_lib.backtesting.monitoring.abstract_monitor import AbstractMonitor
 from qf_lib.backtesting.transaction import Transaction
+from qf_lib.common.utils.dateutils.date_to_string import date_to_str
 from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.common.utils.excel.excel_exporter import ExcelExporter
+from qf_lib.publishers.email_publishing.email_publisher import EmailPublisher
 from qf_lib.settings import Settings
 from qf_lib.starting_dir import get_starting_dir_abs_path
 
@@ -17,10 +22,12 @@ class LiveTradingMonitor(AbstractMonitor):
     This Monitor will be used to monitor live trading activities
     """
 
-    def __init__(self, settings: Settings, pdf_exporter: PDFExporter, excel_exporter: ExcelExporter):
+    def __init__(self, settings: Settings, pdf_exporter: PDFExporter,
+                 excel_exporter: ExcelExporter, email_publisher: EmailPublisher):
         self._settings = settings
         self._pdf_exporter = pdf_exporter
         self._excel_exporter = excel_exporter
+        self._email_publisher = email_publisher
         self._report_dir = "live_trading"
         self._csv_file = self._init_csv_file("Live_Trading_Trades")
         self._csv_writer = csv.writer(self._csv_file)
@@ -33,9 +40,46 @@ class LiveTradingMonitor(AbstractMonitor):
 
     def end_of_day_update(self, timestamp: datetime = None):
         """
-        Do nothing
+        Generates #todo: what does it generate?
+         and sends it by email
         """
-        pass
+        attachments_paths = [
+            self._export_test_file()
+        ]
+
+        self._publish_by_email(attachments_paths, timestamp)
+
+    def _export_test_file(self):
+        # todo: export an actual file here
+        xlsx_filename = 'test_file.xlsx'
+        relative_file_path = path.join(self._report_dir, "test", xlsx_filename)
+        test_tms = Series(name='test_tms', index=[0, 1, 2], data=['a', 'b', 'c'])
+        return self._excel_exporter.export_container(test_tms, relative_file_path, include_column_names=True)
+
+    def _publish_by_email(self, attachments_dirs: List[str], timestamp):
+        class User(object):
+            def __init__(self, name, surname, email_address=None):
+                self.name = name
+                self.surname = surname
+                if email_address:
+                    self.email_address = email_address
+                else:
+                    self.email_address = name.lower() + '.' + surname.lower() + "@cern.ch"
+
+        date_str = date_to_str(timestamp.date())
+        template_path = 'live_trading_report.html'
+        users = {
+            User("Olga", "Kalinowska")
+            # ,User("Jacek", "Witkowski")
+        }
+        for user in users:
+            self._email_publisher.publish(
+                mail_to=user.email_address,
+                subject="Test Message " + date_str,
+                template_path=template_path,
+                attachments=attachments_dirs,
+                context={'user': user, 'date': date_str}
+            )
 
     def real_time_update(self, timestamp: datetime = None):
         """

@@ -179,4 +179,4 @@ class AbstractTearsheet(metaclass=ABCMeta):
 
         filename = "%Y_%m_%d-%H%M {}.pdf".format(self.title)
         filename = datetime.now().strftime(filename)
-        self.pdf_exporter.generate([self.document], output_sub_dir, filename)
+        return self.pdf_exporter.generate([self.document], output_sub_dir, filename)

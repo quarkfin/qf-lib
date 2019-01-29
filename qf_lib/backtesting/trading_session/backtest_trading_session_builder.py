@@ -22,6 +22,7 @@ from qf_lib.backtesting.monitoring.abstract_monitor import AbstractMonitor
 from qf_lib.backtesting.monitoring.backtest_monitor import BacktestMonitor
 from qf_lib.backtesting.monitoring.dummy_monitor import DummyMonitor
 from qf_lib.backtesting.monitoring.light_backtest_monitor import LightBacktestMonitor
+from qf_lib.backtesting.monitoring.live_trading_monitor import LiveTradingMonitor
 from qf_lib.backtesting.order.orderfactory import OrderFactory
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.backtesting.portfolio.portfolio_handler import PortfolioHandler
@@ -36,6 +37,7 @@ from qf_lib.common.utils.excel.excel_exporter import ExcelExporter
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
 from qf_lib.data_providers.price_data_provider import DataProvider
+from qf_lib.publishers.email_publishing.email_publisher import EmailPublisher
 from qf_lib.settings import Settings
 
 
@@ -85,7 +87,7 @@ class BacktestTradingSessionBuilder(object):
         self._data_provider = data_provider
 
     def set_monitor_type(self, monitor_type: Type[AbstractMonitor]):
-        assert monitor_type is BacktestMonitor or monitor_type is LightBacktestMonitor or monitor_type is DummyMonitor
+        assert monitor_type in (BacktestMonitor, LightBacktestMonitor, LiveTradingMonitor, DummyMonitor)
         self._monitor_type = monitor_type
 
     def set_logging_level(self, logging_level: int):
@@ -101,7 +103,7 @@ class BacktestTradingSessionBuilder(object):
     def set_slippage_model(self, slippage_model: Slippage):
         self._slippage_model = slippage_model
 
-    def set_position_sizer(self, position_sizer_type: Type[PositionSizer], param: float=None):
+    def set_position_sizer(self, position_sizer_type: Type[PositionSizer], param: float = None):
         if position_sizer_type is SimplePositionSizer:
             assert param is None
         if position_sizer_type is InitialRiskPositionSizer:
@@ -123,10 +125,11 @@ class BacktestTradingSessionBuilder(object):
 
     def build(self, container: Container) -> BacktestTradingSession:
         if not self._data_provider:
-            self._data_provider = container.resolve(GeneralPriceProvider)  # type: GeneralPriceProvider
-        self._settings = container.resolve(Settings)  # type: Settings
-        self._pdf_exporter = container.resolve(PDFExporter)  # type: PDFExporter
-        self._excel_exporter = container.resolve(ExcelExporter)  # type: ExcelExporter
+            self._data_provider = container.resolve(GeneralPriceProvider)   # type: GeneralPriceProvider
+        self._settings = container.resolve(Settings)                        # type: Settings
+        self._pdf_exporter = container.resolve(PDFExporter)                 # type: PDFExporter
+        self._excel_exporter = container.resolve(ExcelExporter)             # type: ExcelExporter
+        self._email_publisher = container.resolve(EmailPublisher)           # type: EmailPublisher
 
         self._timer = SettableTimer(self._start_date)
         self._notifiers = Notifiers(self._timer)
@@ -198,6 +201,8 @@ class BacktestTradingSessionBuilder(object):
     def _monitor_setup(self):
         if self._monitor_type is DummyMonitor:
             return DummyMonitor()
+        elif self._monitor_type is LiveTradingMonitor:
+            return LiveTradingMonitor(self._settings, self._pdf_exporter, self._excel_exporter, self._email_publisher)
         return self._monitor_type(self._backtest_result, self._settings, self._pdf_exporter, self._excel_exporter)
 
     def _position_sizer_setup(self):
