@@ -29,7 +29,6 @@ setup(
         'emails',
         'Jinja2',
         'weasyprint',
-        'sqlalchemy',
         'seaborn',
         'statsmodels',
         'arch',
