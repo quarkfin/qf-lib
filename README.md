@@ -79,7 +79,7 @@ Sample content of the `secret_settings.json`:
 ```
 
 ## QF-Lib used settings
-You may define your own settings and later on have them loaded into Settings object. However there are some, which are
+You may define your own settings and later on have them loaded into `Settings` object. However there are some, which are
 required for some QF-Lib components to work correctly.
 
 NOTICE: all paths used in the settings should be relative to the starting directory. (which can be set either by using `set_starting_dir_abs_path(path)` function or by setting
