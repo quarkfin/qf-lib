@@ -43,8 +43,11 @@ class TabularDataProvider(object):
                 for field_name in fields:
                     array = field_data_array.getElement(field_name)
                     for element in array.values():
-                        key = element.getElement(0).name().__str__()
-                        value = element.getElementAsString(key)
-                        elements.append(value)
+                        keys_values_dict = {}
+                        for elem in element.elements():
+                            key = elem.name().__str__()
+                            value = element.getElementAsString(key)
+                            keys_values_dict[key] = value
+                        elements.append(keys_values_dict)
 
         return elements
