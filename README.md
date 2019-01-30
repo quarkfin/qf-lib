@@ -29,6 +29,9 @@ NOTICE: If possible use precompiled packages (wheels) provided in the `windows_d
     * run `pip install TA_Lib-0.4.17-cp36-cp36m-win_amd64.whl` in the `windows_dependencies` directory.
 * Install `Haver` (optional) by running `Haver-1.1.0-cp36-cp36m-win_amd64.whl` in the `windows_dependencies` directory.
 * Install other requirements using `pip`. Run `pip install -r requirements.txt` in the main directory of the `QuantFin Lib`.
+* Install Interactive Brokers platform (optional):
+    * install `TWS` by running `TWS API Install 973.06.msi` in the `windows_dependencies`
+    * got to `C:\TWS_API\source\pythonclient` and run `python setup.py install`
 
 # Configuration
 TODO what needs to be in configuration for different modules to work
