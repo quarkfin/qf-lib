@@ -33,8 +33,81 @@ NOTICE: If possible use precompiled packages (wheels) provided in the `windows_d
     * install `TWS` by running `TWS API Install 973.06.msi` in the `windows_dependencies`
     * got to `C:\TWS_API\source\pythonclient` and run `python setup.py install`
 
-# Configuration
-TODO what needs to be in configuration for different modules to work
+# Settings
+Many components from `qf-lib` require the `Settings` object as a dependency. To create it one needs to put in their Python code:
+```python
+from qf_lib.settings import Settings
+
+
+settings_path = ...
+secret_settings_path = ...
+settings = Settings(settings_path, secret_settings_path)
+```  
+where `settings_path` is an absolute path of your file containing settings (JSON, described later) used
+by the application and the `secret_settings_path` which is complementary to the settings file but contains secret data
+(e.g. passwords) and thus mustn't be added to the CVS. When `Settings` object is created, it:
+- loads settings defined in the `settings.json` file
+- loads settings defined in the `secret_settings.json` file (if the file exists)
+- loads settings defined in the `QUANTFIN_SECRET` environment variable (if the `secret_settings.json` file doesn't exist)
+- merges both loaded sets of settings together.
+
+Sample content of the `settings.json`:
+```json
+{
+  "some_setting": "value of that setting",
+  "another_setting": "value of another setting",
+  "some_connection_settings": {
+    "username": "jan.kowalski"
+  }
+}
+```
+
+Sample content of the `secret_settings.json`:
+```json
+{
+  "some_connection_settings": {
+    "password": "i like donuts"
+  }
+}
+```
+
+## QF-Lib used settings
+You may define your own settings and later on have them loaded into Settings object. However there are some, which are
+required for some QF-Lib components to work correctly. Below you'll find a list of those.
+
+### company_name and logo_path
+`settings.json`:
+```json
+    "company_name": "Jacek Witkowski",
+    "logo_path": "C:/path/to/logo.jpg"
+```
+Used by components producing tearsheets (in a form of PDFs). The company name and a logo is put in the header of those
+tearsheets. 
+
+### bloomberg
+`settings.json`:
+```json
+  "bloomberg": {
+    "host": "localhost",
+    "port": 8194
+  }
+```
+
+Used by the `BloombergDataProvider`. To have this component running, first you need to have a Bloomberg subscription.
+Then you need to have the BLPAPI running somewhere. Then you need to specify where the API is running by specifying its
+host and port.
+ 
+### input_directory
+
+### email_templates_directory
+### output_directory
+### reports_directory_name
+### logs_directory
+### smtp
+### haver_path
+### reporting_db
+### backtester_db
+### external_reports
 
 
 #### Links
