@@ -33,7 +33,14 @@ NOTICE: If possible use precompiled packages (wheels) provided in the `windows_d
     * install `TWS` by running `TWS API Install 973.06.msi` in the `windows_dependencies`
     * got to `C:\TWS_API\source\pythonclient` and run `python setup.py install`
 
-# Settings
+# Configuration
+## Starting directory
+Starting directory is used to turn relative paths into absolute paths. In many places you'll be required to specify
+a path which should be relative to the starting directory. To set up starting directory one needs to either:
+- call `set_starting_dir_abs_path(abs_path_to_starting_directory)`
+- or set `QF_STARTING_DIRECTORY` environment variable.
+
+## Settings files
 Many components from `qf-lib` require the `Settings` object as a dependency. To create it one needs to put in their Python code:
 ```python
 from qf_lib.settings import Settings
@@ -73,18 +80,23 @@ Sample content of the `secret_settings.json`:
 
 ## QF-Lib used settings
 You may define your own settings and later on have them loaded into Settings object. However there are some, which are
-required for some QF-Lib components to work correctly. Below you'll find a list of those.
+required for some QF-Lib components to work correctly.
 
-### company_name and logo_path
+NOTICE: all paths used in the settings should be relative to the starting directory. (which can be set either by using `set_starting_dir_abs_path(path)` function or by setting
+`QF_STARTING_DIRECTORY` environment variable)
+
+Below you'll find a list of those.
+
+#### company_name and logo_path
 `settings.json`:
 ```json
-    "company_name": "Jacek Witkowski",
-    "logo_path": "C:/path/to/logo.jpg"
+    "company_name": "Jacek Witkowski PDK",
+    "logo_path": "path/to/logo.jpg"
 ```
 Used by components producing tearsheets (in a form of PDFs). The company name and a logo is put in the header of those
 tearsheets. 
 
-### bloomberg
+#### bloomberg
 `settings.json`:
 ```json
   "bloomberg": {
@@ -97,17 +109,48 @@ Used by the `BloombergDataProvider`. To have this component running, first you n
 Then you need to have the BLPAPI running somewhere. Then you need to specify where the API is running by specifying its
 host and port.
  
-### input_directory
+#### email_templates_directory
+`settings.json`:
+```json
+  "email_templates_directory": "input/email_templates"
+```
 
-### email_templates_directory
-### output_directory
-### reports_directory_name
-### logs_directory
-### smtp
-### haver_path
-### reporting_db
-### backtester_db
-### external_reports
+Setting used by the `EmailPublisher`. Email templates are HTML templates with placeholders (e.g. {{user.name}}).
+
+#### output_directory
+`settings.json`:
+```json
+  "output_directory": "output"
+```
+A relative path to the directory into which different components will put their output (e.g. generated tearsheets).
+
+#### smtp
+`settings.json`:
+```json
+  "smtp": {
+    "host": "smtp.server.pl",
+    "port": 587,
+    "domain": "SOME_DOMAIN",
+    "tls": true,
+    "sender": "sample_user@some.domain.pl"
+  }
+```
+
+`secret_settings.json`:
+```json
+  "smtp": {
+    "username": "sample_user",
+    "password": "VeryStrong P4ssw0rd with s0me Polish special characters (to confuse the hacker)"
+  }
+```
+SMTP settings used by the `EmailPublisher`.
+
+#### haver_path
+`settings.json`:
+```json
+  "haver_path": "C:/absolute/path-to-haver-data"
+```
+Absolute path to the Haver data (see: http://www.haver.com/).
 
 
 #### Links
