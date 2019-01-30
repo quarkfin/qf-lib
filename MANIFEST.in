@@ -9,9 +9,6 @@ include *.ps1
 # Add everything within the qf_lib
 graft qf_lib
 
-# Add everything within the qf_lib_test
-graft qf_lib_tests
-
 # Include everything from demo_scripts (besides the generated output)
 graft demo_scripts
 recursive-exclude demo_scripts/output *
