@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name='qf-lib',
-    version='0.0.1',
+    version='1.0.0',
     author='Jacek Witkowski, Marcin Borratynski, Thomas Ruxton, Dominik Picheta, Olga Kalinowska',
     author_email='qf-lib@cern.ch',
     description='Quantitative Finance Library',
