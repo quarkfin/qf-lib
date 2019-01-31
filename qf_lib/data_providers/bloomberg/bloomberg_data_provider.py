@@ -158,8 +158,8 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
         if date.date() != datetime.today().date():
             raise ValueError("BloombergDataProvider does not provide historical tickers_universe data")
         field = 'INDX_MEMBERS'
-        ticker_names = self.get_tabular_data(universe_name, field)
-        tickers = [BloombergTicker(name + " Equity") for name in ticker_names]
+        ticker_data = self.get_tabular_data(universe_name, field)
+        tickers = [BloombergTicker(fields['Member Ticker and Exchange Code'] + " Equity") for fields in ticker_data]
         return tickers
 
     def get_tabular_data(self, ticker: BloombergTicker, field: str) -> List:
