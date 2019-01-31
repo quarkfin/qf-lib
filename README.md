@@ -94,7 +94,15 @@ Below you'll find a list of those.
     "logo_path": "path/to/logo.jpg"
 ```
 Used by components producing tearsheets (in a form of PDFs). The company name and a logo is put in the header of those
-tearsheets. 
+tearsheets.
+
+#### document_css_directory (optional)
+`settings.json`:
+```json
+    "document_css_directory": "input/elements_css"
+```
+Setting used by the `PDFExporter` component to style the elements put in PDFs (e.g. tables, paragraphs, etc.).
+If `document_css_directory` is not specified then the default style will be applied.
 
 #### bloomberg
 `settings.json`:
