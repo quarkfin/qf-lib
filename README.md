@@ -8,7 +8,8 @@ There are two ways to install the project for Windows. The easy way is to use th
 ### With Script
 
 * Run the `install.ps1` script in a PowerShell terminal running as Administrator
-* Run `pip install .`
+* Script will create install all the dependencies and create a Python virtual environment with all the Python
+dependencies installed (later on you'll need to activate the virtual environment; see: https://docs.python.org/3.6/library/venv.html)
 * To check if everything installed correctly, check the [Testing](#testing) section.
 
 ### Without Script
