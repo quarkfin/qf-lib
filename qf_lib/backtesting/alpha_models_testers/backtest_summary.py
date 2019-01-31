@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Tuple, Sequence, Type, List
 
 import pandas as pd
+
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
@@ -22,8 +23,9 @@ class BacktestSummaryElement(object):
         self.trades_df = trades_df
         """
         DataFrame representing Trades (pairs of Transactions) performed by the tested strategy. Rows are indexed with
-        natural numbers (starting with 0). Columns are: START_DATE (when the Trade was entered), END_DATE (when
-        the trade was exited), Ticker, OPEN, HIGH, LOW, CLOSE.
+        natural numbers (starting with 0). Columns are indexed with TradeFields (see: TradeField). 
+        
+        If there are multiple tickers, then there will be one row for each position opened and then closed.
         """
 
 

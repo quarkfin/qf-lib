@@ -1,0 +1,17 @@
+include README.md
+include COPYRIGHT
+include requirements.txt
+include COPYRIGHT
+include README.md
+include *.yml
+include *.ps1
+
+# Add everything within the qf_lib
+graft qf_lib
+
+# Include everything from demo_scripts (besides the generated output)
+graft demo_scripts
+recursive-exclude demo_scripts/output *
+
+# Exclude all *.pyc and *.pyo files
+global-exclude *.py[co]

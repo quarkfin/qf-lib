@@ -1,6 +1,5 @@
 {
   "company_name": "CERN Pension Fund",
-  "timezone": "Europe/Zurich",
   "bloomberg": {
     "host": "localhost",
     "port": 8194

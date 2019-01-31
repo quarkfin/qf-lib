@@ -1,12 +1,18 @@
 {
+  "company_name": "Sample Company Name",
+  "logo_path": "input/logo.jpg",
   "bloomberg": {
     "host": "localhost",
     "port": 8194
   },
-  "output_directory": "demo_scripts/output",
-  "document_css_directory": "demo_scripts/demo_configuration/input/document_css",
-  "logo_path": "demo_scripts/demo_configuration/input/images/cern_logo.png",
-  "company_name": "QF-Lib Demo",
-  "timezone": "Europe/Zurich",
-  "email_templates_directory": "demo_scripts/demo_configuration/input/email_templates"
+  "email_templates_directory": "input/email_templates",
+  "output_directory": "output",
+  "smtp": {
+    "host": "smtp.server.pl",
+    "port": 587,
+    "domain": "SOME_DOMAIN",
+    "tls": true,
+    "sender": "sample_user@some.domain.pl"
+  },
+  "haver_path": "C:/absolute/path-to-haver-data"
 }
