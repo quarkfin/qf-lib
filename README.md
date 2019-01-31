@@ -32,7 +32,7 @@ NOTICE: If possible use precompiled packages (wheels) provided in the `windows_d
 * Install other requirements using `pip`. Run `pip install -r requirements.txt` in the main directory of the `QuantFin Lib`.
 * Install Interactive Brokers platform (optional):
     * install `TWS` by running `TWS API Install 973.06.msi` in the `windows_dependencies`
-    * got to `C:\TWS_API\source\pythonclient` and run `python setup.py install`
+    * go to `C:\TWS_API\source\pythonclient` and run `python setup.py install`
 
 # Configuration
 ## Starting directory
