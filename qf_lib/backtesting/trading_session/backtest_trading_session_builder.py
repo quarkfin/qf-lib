@@ -58,6 +58,7 @@ class BacktestTradingSessionBuilder(object):
         self._slippage_model = PriceBasedSlippage(0.0)
         self._position_sizer_type = SimplePositionSizer
         self._position_sizer_param = None
+        self._data_provider = None
 
     def set_backtest_name(self, name: str):
         assert not any(char in name for char in ('/\\?%*:|"<>'))
