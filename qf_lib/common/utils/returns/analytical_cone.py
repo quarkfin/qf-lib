@@ -11,11 +11,12 @@ from qf_lib.containers.series.qf_series import QFSeries
 
 class AnalyticalCone:
 
-    def __init__(self, series: QFSeries):
-        self.series = series
-        self.log_returns_tms = series.to_log_returns()
+    def __init__(self, series: QFSeries=None):
+        if series is not None:
+            self.series = series
+            self.log_returns_tms = series.to_log_returns()
 
-    def calculate_simple_cone(self, live_start_date: datetime, number_of_std: float)-> QFDataFrame:
+    def calculate_simple_cone(self, live_start_date: datetime, number_of_std: float)-> PricesSeries:
         """
         Creates a simple cone starting from a given date using the solution to the stochastic equation:
         S(t) = S(0)*exp( (mu-0.5*sigma^2)*t + sigma*N(0,1)*sqrt(t) )
@@ -99,6 +100,58 @@ class AnalyticalCone:
             number_of_steps = len(oos_log_returns)
             starting_price = 1  # we take 1 as a base value
             total_expected_return = self._get_expected_value(mean_return, sigma, starting_price, number_of_steps, number_of_std)
+
+            # writing to the array starting from the last array element and then moving towards the first one
+            strategy_values[-i - 1] = total_strategy_return
+            expected_values[-i - 1] = total_expected_return
+
+        index = Int64Index(range(0, nr_of_data_points))
+
+        strategy_values_tms = PricesSeries(index=index, data=strategy_values)
+        expected_tms = QFSeries(index=index, data=expected_values)
+
+        return QFDataFrame({
+            'Strategy': strategy_values_tms,
+            'Expectation': expected_tms,
+        })
+
+    def calculate_aggregated_cone_oos_only(self, oos_series: QFSeries, is_mean_return: float,
+                                           is_sigma: float, number_of_std: float) -> QFDataFrame:
+        """
+        This functions does not need the IS history, only the IS statistics.
+
+        Parameters
+        ----------
+        oos_series: series that is plotted on the cone - corresponds to the oos returns
+        is_mean_return: mean daily return of the strategy In Sample
+        is_sigma: std of daily returns of the strategy In Sample
+        number_of_std: corresponds to the randomness of the stochastic process. reflects number of standard deviations
+            to get expected values for. For example 1.0 means 1 standard deviation above the expected value.
+
+        Returns
+        -------
+        QFDataFrame: contains values corresponding to Strategy, Mean and Std. Values are indexed by number of days
+            from which given cone was evaluated
+        """
+
+        log_returns_tms = oos_series.to_log_returns()
+        nr_of_data_points = oos_series.size
+
+        strategy_values = np.empty(nr_of_data_points)
+        expected_values = np.empty(nr_of_data_points)
+
+        for i in range(nr_of_data_points):
+            cone_start_idx = i + 1
+
+            # calculate total return of the strategy
+            oos_log_returns = log_returns_tms[cone_start_idx:]
+            total_strategy_return = exp(oos_log_returns.sum())  # 1 + percentage return
+
+            # calculate expectation
+            number_of_steps = len(oos_log_returns)
+            starting_price = 1  # we take 1 as a base value
+            total_expected_return = self._get_expected_value(is_mean_return, is_sigma, starting_price,
+                                                             number_of_steps, number_of_std)
 
             # writing to the array starting from the last array element and then moving towards the first one
             strategy_values[-i - 1] = total_strategy_return

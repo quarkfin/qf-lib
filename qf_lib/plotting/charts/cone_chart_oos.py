@@ -1,4 +1,3 @@
-from datetime import datetime
 from itertools import cycle
 from typing import Sequence, List
 
@@ -8,7 +7,7 @@ from qf_lib.plotting.charts.chart import Chart
 from qf_lib.plotting.decorators.data_element_decorator import DataElementDecorator
 
 
-class ConeChart(Chart):
+class ConeChartOOS(Chart):
     """
     While using a simple cone (e.g. LineChart with Cone decorator) the results of the evaluation may be very different
     depending on the live_start_date. To be immune to this, ConeChart plots only the ends of simple cones which start
@@ -17,36 +16,38 @@ class ConeChart(Chart):
     will be 1 day.
     """
 
-    def __init__(self, data: QFSeries, nr_of_data_points: int, is_end_date: datetime, cone_opacity: float=0.3,
+    def __init__(self, oos_series: QFSeries, is_mean_return: float, is_sigma: float, cone_opacity: float=0.3,
                  cone_stds: Sequence[float]=(1.0, 2.0)):
         """
         Parameters
         ----------
-        data
-            data to be plotted using ConeChart
-        nr_of_data_points
-            number of data points for which the cone is evaluated
-        is_end_date
-            date fixing the end of the In-Sample period
+        oos_series
+            data to be plotted using ConeChartOOS - only the Out of sample data
+        is_mean_return:
+            mean daily return of the strategy In Sample
+        is_sigma:
+            std of daily returns of the strategy In Sample
         cone_opacity
             opacity of the cone
         cone_stds
             list/tuple of different standard deviations for which cones should be drawn
         """
         super().__init__()
-        self.nr_of_data_points = nr_of_data_points  # Nr of data points for which the cone is evaluated.
-        self.is_end_date = is_end_date
+        self.assert_is_qfseries(oos_series)
+        self.oos_series = oos_series
+
+        self.is_mean_return = is_mean_return
+        self.is_sigma = is_sigma
+
         self.cone_opacity = cone_opacity
         self.cone_stds = cone_stds
-
-        self.assert_is_qfseries(data)
-        self.data = data
 
     def plot(self, figsize=None):
         self._setup_axes_if_necessary(figsize)
 
-        cone = AnalyticalCone(self.data)
-        cone_data_frame = cone.calculate_aggregated_cone(self.nr_of_data_points, self.is_end_date, 0)
+        cone = AnalyticalCone()
+        cone_data_frame = cone.calculate_aggregated_cone_oos_only(
+            self.oos_series, self.is_mean_return, self.is_sigma, 0)
 
         strategy_tms = cone_data_frame['Strategy']
         mean_tms = cone_data_frame['Expectation']
@@ -59,8 +60,10 @@ class ConeChart(Chart):
 
         # fill areas for every standard deviation
         for cone_std in self.cone_stds:
-            upper_df = cone.calculate_aggregated_cone(self.nr_of_data_points, self.is_end_date, cone_std)
-            lower_df = cone.calculate_aggregated_cone(self.nr_of_data_points, self.is_end_date, -cone_std)
+            upper_df = cone.calculate_aggregated_cone_oos_only(
+                self.oos_series, self.is_mean_return, self.is_sigma, cone_std)
+            lower_df = cone.calculate_aggregated_cone_oos_only(
+                self.oos_series, self.is_mean_return, self.is_sigma, -cone_std)
 
             upper_bound = upper_df['Expectation']
             lower_bound = lower_df['Expectation']
@@ -70,7 +73,7 @@ class ConeChart(Chart):
         ax.set_xlabel('Days in the past')
         ax.set_ylabel('Current valuation')
         ax.set_title('Performance vs. Expectation')
-        ax.set_xlim(0, self.nr_of_data_points)
+        ax.set_xlim(0, self.oos_series.size)
 
     def apply_data_element_decorators(self, data_element_decorators: List["DataElementDecorator"]):
         pass
