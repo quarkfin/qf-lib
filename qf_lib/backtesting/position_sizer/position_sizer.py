@@ -100,10 +100,12 @@ class PositionSizer(object, metaclass=ABCMeta):
                 raise ValueError("More than one signal for ticker {}".format(ticker.as_string()))
 
     @staticmethod
-    def _round_stop_price(stop_price):
+    def _round_stop_price(stop_price: float):
         """
         The stop price has to be expressed in the format that matches the minimum price variation of a contract.
         For example 10.123 is not a valid stop price for a contract with minimum price variation of 0.01
         It is assumed that contracts have minimum price variation of 0.01 and the stop price is rounded to 2 decimals.
         """
         return round(stop_price, 2)
+
+

@@ -36,16 +36,29 @@ class InitialRiskPositionSizer(PositionSizer):
         target_percentage = self._initial_risk / signal.fraction_at_risk
         self.logger.info("Target Percentage: {}".format(target_percentage))
 
+        target_percentage = self._cap_max_target_percentage(target_percentage)
+
         target_percentage *= signal.suggested_exposure.value  # preserve the direction (-1, 0 , 1)
         self.logger.info("Target Percentage considering direction: {}".format(target_percentage))
 
         assert is_finite_number(target_percentage), "target_percentage has to be a finite number"
 
         market_order_list = self._order_factory.target_percent_orders({contract: target_percentage},
-                                                                      MarketOrder(), TimeInForce.OPG)
-
+                                                                      MarketOrder(), TimeInForce.DAY)
         if len(market_order_list) == 0:
             return None
 
         assert len(market_order_list) == 1, "Only one order should be generated"
         return market_order_list[0]
+
+    def _cap_max_target_percentage(self, initial_target_percentage: float):
+        """
+        Sometimes the target percentage can be excessive to be executed by the broker (might exceed margin requirement)
+        Cap the target percentage to the max value defined in this function
+        """
+        max_target_percentage = 1.5
+        if initial_target_percentage > max_target_percentage:
+            self.logger.info("Target Percentage: {} above the maximum of {}. Setting the target percentage to {}"
+                             .format(initial_target_percentage, max_target_percentage, max_target_percentage))
+            return max_target_percentage
+        return initial_target_percentage
