@@ -7,7 +7,9 @@ from typing import List
 
 from pandas import Series
 
-from qf_lib.backtesting.monitoring.abstract_monitor import AbstractMonitor
+from qf_lib.backtesting.events.notifiers import Notifiers
+from qf_lib.backtesting.events.time_event.after_market_close_event import AfterMarketCloseEvent
+from qf_lib.backtesting.monitoring.dummy_monitor import DummyMonitor
 from qf_lib.backtesting.transaction import Transaction
 from qf_lib.common.utils.dateutils.date_to_string import date_to_str
 from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
@@ -17,12 +19,12 @@ from qf_lib.settings import Settings
 from qf_lib.starting_dir import get_starting_dir_abs_path
 
 
-class LiveTradingMonitor(AbstractMonitor):
+class LiveTradingMonitor(DummyMonitor):
     """
     This Monitor will be used to monitor live trading activities
     """
 
-    def __init__(self, settings: Settings, pdf_exporter: PDFExporter,
+    def __init__(self, notifiers: Notifiers, settings: Settings, pdf_exporter: PDFExporter,
                  excel_exporter: ExcelExporter, email_publisher: EmailPublisher):
         self._settings = settings
         self._pdf_exporter = pdf_exporter
@@ -31,12 +33,11 @@ class LiveTradingMonitor(AbstractMonitor):
         self._report_dir = "live_trading"
         self._csv_file = self._init_csv_file("Live_Trading_Trades")
         self._csv_writer = csv.writer(self._csv_file)
+        self.notifiers = notifiers
+        self.notifiers.scheduler.subscribe(AfterMarketCloseEvent, listener=self)
 
-    def end_of_trading_update(self, _: datetime = None):
-        """
-        Close the CSV file
-        """
-        self._close_csv_file()
+    def on_after_market_close(self, after_close_event: AfterMarketCloseEvent):
+        self.end_of_day_update(after_close_event.time)
 
     def end_of_day_update(self, timestamp: datetime = None):
         """
@@ -80,12 +81,6 @@ class LiveTradingMonitor(AbstractMonitor):
                 attachments=attachments_dirs,
                 context={'user': user, 'date': date_str}
             )
-
-    def real_time_update(self, timestamp: datetime = None):
-        """
-        Do nothing
-        """
-        pass
 
     def record_transaction(self, transaction: Transaction):
         """

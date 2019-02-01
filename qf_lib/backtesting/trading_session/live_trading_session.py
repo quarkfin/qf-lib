@@ -46,7 +46,8 @@ class LiveTradingSession(TradingSession):
                                                                   self.notifiers.empty_queue_event_notifier)
 
         self.data_handler = DataHandler(self.data_provider, self.timer)
-        self.monitor = LiveTradingMonitor(self.settings, self.pdf_exporter, self.excel_exporter, self.email_publisher)
+        self.monitor = LiveTradingMonitor(self.notifiers, self.settings,
+                                          self.pdf_exporter, self.excel_exporter, self.email_publisher)
         self.broker = IBBroker()
 
         self.contract_ticker_mapper = VolStrategyContractTickerMapper()
