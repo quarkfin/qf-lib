@@ -42,7 +42,7 @@ class TradingStrategy(object):
         self._use_stop_losses = use_stop_losses
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
-        self.signals_df = QFDataFrame()  # rows indexed by date and columns by "AlphaModel/Ticker" string
+        self.signals_df = QFDataFrame()  # rows indexed by date and columns by "AlphaModel@Ticker" string
 
         ts.notifiers.scheduler.subscribe(BeforeMarketOpenEvent, listener=self)
 
@@ -91,7 +91,7 @@ class TradingStrategy(object):
     def _save_signals(self, signals: List[Signal]):
         for signal in signals:
             self.logger.info(signal)
-            column = signal.alpha_model.__class__.__name__ + "/" + signal.ticker.as_string()
+            column = signal.ticker.as_string() + "@" + signal.alpha_model.__class__.__name__
             self.signals_df.loc[self._timer.now().date(), column] = signal  # save signals
 
     @staticmethod
