@@ -11,6 +11,7 @@ from qf_lib.backtesting.portfolio.backtest_position import BacktestPosition
 from qf_lib.backtesting.portfolio.trade import Trade
 from qf_lib.backtesting.transaction import Transaction
 from qf_lib.common.utils.dateutils.timer import Timer
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 
@@ -45,6 +46,8 @@ class Portfolio(object):
         self.closed_positions = []  # type: List[BacktestPosition]
         self.transactions = []  # type: List[Transaction]
         self.trades = []  # type: List[Trade]
+
+        self.logger = qf_logger.getChild(self.__class__.__name__)
 
     def transact_transaction(self, transaction: Transaction):
         """
@@ -101,8 +104,8 @@ class Portfolio(object):
             self.current_cash += pos.current_price * pos.number_of_shares
             self.net_liquidation += pos.current_price * pos.number_of_shares
             del self.open_positions_dict[con]
-            print("{}: position assigned to Ticker {} removed due to incomplete price data."
-                  .format(str(self.timer.now()), con.symbol))
+            self.logger.warning("{}: position assigned to Ticker {} removed due to incomplete price data."
+                                .format(str(self.timer.now()), con.symbol))
 
     def get_portfolio_timeseries(self) -> PricesSeries:
         """

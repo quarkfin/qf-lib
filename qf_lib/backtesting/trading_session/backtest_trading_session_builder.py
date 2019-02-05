@@ -33,6 +33,7 @@ from qf_lib.common.tickers.tickers import QuandlTicker, Ticker, BloombergTicker
 from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.common.utils.excel.excel_exporter import ExcelExporter
+from qf_lib.common.utils.logging.logging_config import setup_logging
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
 from qf_lib.data_providers.price_data_provider import DataProvider
@@ -151,6 +152,8 @@ class BacktestTradingSessionBuilder(object):
         self._broker = BacktestBroker(self._portfolio, self._execution_handler)
         self._order_factory = OrderFactory(self._broker, self._data_handler, self._contract_ticker_mapper)
         self._position_sizer = self._position_sizer_setup()
+
+        setup_logging(self._logging_level)
 
         self._logger.info(
             "\n".join([
