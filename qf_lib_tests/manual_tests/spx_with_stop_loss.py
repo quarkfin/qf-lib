@@ -55,10 +55,10 @@ def main():
     start_date = str_to_date("2017-01-01")
     end_date = str_to_date("2018-01-01")
 
-    session_builder = BacktestTradingSessionBuilder(start_date, end_date)
+    session_builder = BacktestTradingSessionBuilder(container, start_date, end_date)
     session_builder.set_backtest_name('SPY w. stop ' + str(SpxWithStopLoss.percentage))
     session_builder.set_initial_cash(1000000)
-    ts = session_builder.build(container)
+    ts = session_builder.build()
     ts.use_data_preloading(SpxWithStopLoss.ticker, RelativeDelta(days=40))
 
     SpxWithStopLoss(ts)

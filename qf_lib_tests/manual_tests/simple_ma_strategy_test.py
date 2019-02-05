@@ -62,10 +62,10 @@ def main():
     start_date = str_to_date("2010-01-01")
     end_date = str_to_date("2011-01-01")
 
-    session_builder = BacktestTradingSessionBuilder(start_date, end_date)
+    session_builder = BacktestTradingSessionBuilder(container, start_date, end_date)
     session_builder.set_backtest_name('Simple_MA')
     session_builder.set_initial_cash(1000000)
-    ts = session_builder.build(container)
+    ts = session_builder.build()
     ts.use_data_preloading(SimpleMAStrategy.ticker, RelativeDelta(days=40))
 
     SimpleMAStrategy(ts)

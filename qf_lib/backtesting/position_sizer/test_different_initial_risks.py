@@ -38,12 +38,12 @@ def get_trade_rets_values(init_risk: float) -> List[float]:
     start_date = str_to_date('2013-01-01')
     end_date = str_to_date('2016-12-31')
 
-    session_builder = BacktestTradingSessionBuilder(start_date, end_date)
+    session_builder = BacktestTradingSessionBuilder(container, start_date, end_date)
     session_builder.set_alpha_model_backtest_name(model_type, param_set, trading_tickers)
     session_builder.set_position_sizer(InitialRiskPositionSizer, init_risk)
     session_builder.set_monitor_type(BacktestMonitor)
     session_builder.set_backtest_name("Initial Risk Testing - {}".format(init_risk))
-    ts = session_builder.build(container)
+    ts = session_builder.build()
     ts.use_data_preloading(trading_tickers + data_tickers)
 
     model_factory = AlphaModelFactory(ts.data_handler)

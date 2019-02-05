@@ -42,7 +42,7 @@ from qf_lib.settings import Settings
 
 class BacktestTradingSessionBuilder(object):
 
-    def __init__(self, start_date: datetime, end_date: datetime):
+    def __init__(self, container: Container, start_date: datetime, end_date: datetime):
         self._logger = qf_logger.getChild(self.__class__.__name__)
 
         self._start_date = start_date
@@ -57,6 +57,11 @@ class BacktestTradingSessionBuilder(object):
         self._slippage_model = PriceBasedSlippage(0.0)
         self._position_sizer_type = SimplePositionSizer
         self._position_sizer_param = None
+
+        self._data_provider = container.resolve(GeneralPriceProvider)  # type: GeneralPriceProvider
+        self._settings = container.resolve(Settings)  # type: Settings
+        self._pdf_exporter = container.resolve(PDFExporter)  # type: PDFExporter
+        self._excel_exporter = container.resolve(ExcelExporter)  # type: ExcelExporter
 
     def set_backtest_name(self, name: str):
         assert not any(char in name for char in ('/\\?%*:|"<>'))
@@ -122,13 +127,7 @@ class BacktestTradingSessionBuilder(object):
         ])
         return event_manager
 
-    def build(self, container: Container) -> BacktestTradingSession:
-        if not self._data_provider:
-            self._data_provider = container.resolve(GeneralPriceProvider)  # type: GeneralPriceProvider
-        self._settings = container.resolve(Settings)  # type: Settings
-        self._pdf_exporter = container.resolve(PDFExporter)  # type: PDFExporter
-        self._excel_exporter = container.resolve(ExcelExporter)  # type: ExcelExporter
-
+    def build(self) -> BacktestTradingSession:
         self._timer = SettableTimer(self._start_date)
         self._notifiers = Notifiers(self._timer)
         self._events_manager = self._create_event_manager(self._timer, self._notifiers)
