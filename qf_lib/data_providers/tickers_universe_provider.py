@@ -19,6 +19,6 @@ class TickersUniverseProvider(object, metaclass=ABCMeta):
         universe_ticker
             ticker that describes a specific universe, which members will be returned
         date
-            date at which current universe members' tickers will be returned
+            date for which current universe members' tickers will be returned
         """
         pass
