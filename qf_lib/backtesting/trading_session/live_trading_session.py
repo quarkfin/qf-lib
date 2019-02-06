@@ -24,7 +24,7 @@ class LiveTradingSession(TradingSession):
     Encapsulates the settings and components for Live Trading
     """
 
-    def __init__(self, trading_session_name: str, container: Container, initial_risk:float):
+    def __init__(self, trading_session_name: str, container: Container, initial_risk: float):
         """
         Set up the configuration of all elements.
         """

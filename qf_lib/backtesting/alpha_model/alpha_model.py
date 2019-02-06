@@ -1,4 +1,5 @@
 from abc import abstractmethod, ABCMeta
+from typing import Sequence
 
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
 from qf_lib.backtesting.alpha_model.signal import Signal
@@ -8,7 +9,22 @@ from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.miscellaneous.average_true_range import average_true_range
 
 
+class AlphaModelSettings(object):
+    """
+    Holds parameters of parametrized alpha models
+    """
+    def __init__(self, parameters: Sequence[float]=None, risk_estimation_factor: float=None):
+        self.parameters = parameters
+        self.risk_estimation_factor = risk_estimation_factor
+
+
 class AlphaModel(object, metaclass=ABCMeta):
+    """
+    Base class for all alpha models
+    """
+
+    settings = None  # type: AlphaModelSettings
+    "holds parameters of a parametrized model used in production"
 
     def __init__(self, risk_estimation_factor: float, data_handler: DataHandler):
         """

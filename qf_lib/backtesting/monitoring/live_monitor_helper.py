@@ -1,11 +1,12 @@
 from datetime import datetime
 from os.path import join
-from typing import Sequence, Dict
+from typing import Sequence, Dict, Type
 
 import pandas as pd
 from dic.container import Container
 
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
+from qf_lib.backtesting.alpha_models_testers.alpha_model_factory import AlphaModelFactory
 from qf_lib.backtesting.monitoring.dummy_monitor import DummyMonitor
 from qf_lib.backtesting.position_sizer.initial_risk_position_sizer import InitialRiskPositionSizer
 from qf_lib.backtesting.strategy.trading_strategy import TradingStrategy
@@ -18,17 +19,16 @@ from qf_lib.settings import Settings
 
 class LiveMonitorHelper(object):
 
-    def __init__(self, container: Container, start_date: datetime, end_date: datetime, initial_risk: float,
-                 all_tickers: Sequence[Ticker], model_tickers_dict: Dict[AlphaModel, Sequence[Ticker]]):
+    def __init__(self, container: Container, live_start_date: datetime, initial_risk: float,
+                 all_tickers: Sequence[Ticker], model_type_tickers_dict: Dict[Type[AlphaModel], Sequence[Ticker]]):
         self.container = container
         self.settings = self.container.resolve(Settings)
-        self.start_date = start_date
-        self.end_date = end_date
+        self.live_start_date = live_start_date
+        self.end_date = datetime.now()
         self.initial_risk = initial_risk
         self.all_tickers_used = all_tickers
-        self.model_tickers_dict = model_tickers_dict
 
-        session_builder = BacktestTradingSessionBuilder(self.start_date, self.end_date)
+        session_builder = BacktestTradingSessionBuilder(self.live_start_date, self.end_date)
         session_builder.set_position_sizer(InitialRiskPositionSizer, self.initial_risk)
         session_builder.set_monitor_type(DummyMonitor)
 
@@ -36,7 +36,12 @@ class LiveMonitorHelper(object):
         backtest_ts.use_data_preloading(self.all_tickers_used)
 
         self.backtest_ts = backtest_ts
-        self.strategy = TradingStrategy(self.backtest_ts, self.model_tickers_dict)
+        model_factory = AlphaModelFactory(backtest_ts.data_handler)
+        model_tickers_dict = {}
+        for model_type, tickers in model_type_tickers_dict.items():
+            model = model_factory.make_parametrized_model(model_type)
+            model_tickers_dict[model] = tickers
+        self.strategy = TradingStrategy(self.backtest_ts, model_tickers_dict)
 
         self.signals_df = None
         self.exposures_df = None
@@ -65,13 +70,11 @@ class LiveMonitorHelper(object):
             return str_to_ticker(column_name.split('@')[0]), column_name
 
         tickers_columns_list = [unwrap_col_name(column_name) for column_name in self.signals_df]
-        # start_date = datetime(signals_df.index[0].year, signals_df.index[0].month, signals_df.index[0].day)
-        # end_date = datetime(signals_df.index[-1].year, signals_df.index[-1].month, signals_df.index[-1].day)
         fields = [PriceField.Open, PriceField.High, PriceField.Low, PriceField.Close]
 
         for ticker, column in tickers_columns_list:
-            prices_df = self.backtest_ts.data_handler.get_price(ticker, fields, self.start_date, self.end_date)
-            prices_df = prices_df.reindex(pd.date_range(start=self.start_date, end=self.end_date, freq='D'))
+            prices_df = self.backtest_ts.data_handler.get_price(ticker, fields, self.live_start_date, self.end_date)
+            prices_df = prices_df.reindex(pd.date_range(start=self.live_start_date, end=self.end_date, freq='D'))
 
             exposure = self.exposures_df[column]
             fraction_at_risk = self.fractions_at_risk_df[column]

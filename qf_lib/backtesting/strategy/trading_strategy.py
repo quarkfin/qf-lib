@@ -39,11 +39,11 @@ class TradingStrategy(object):
 
         self._model_tickers_dict = model_tickers_dict
         self._use_stop_losses = use_stop_losses
-        self.logger = qf_logger.getChild(self.__class__.__name__)
-
         self.signals_df = QFDataFrame()  # rows indexed by date and columns by "Ticker@AlphaModel" string
 
         ts.notifiers.scheduler.subscribe(BeforeMarketOpenEvent, listener=self)
+        self.logger = qf_logger.getChild(self.__class__.__name__)
+        self._log_configuration()
 
     def on_before_market_open(self, _: BeforeMarketOpenEvent=None):
         self.logger.info("on_before_market_open - Signal Generation Started")
@@ -102,3 +102,10 @@ class TradingStrategy(object):
         quantity = next(iter(matching_position_quantities), 0)
         current_exposure = Exposure(np.sign(quantity))
         return current_exposure
+
+    def _log_configuration(self):
+        self.logger.info("TradingStrategy configuration:")
+        for model, tickers in self._model_tickers_dict.items():
+            self.logger.info('Model: {}'.format(str(model)))
+            for ticker in tickers:
+                self.logger.info('\t Ticker: {}'.format(ticker.as_string()))

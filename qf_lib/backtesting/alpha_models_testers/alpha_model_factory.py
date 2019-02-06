@@ -11,3 +11,9 @@ class AlphaModelFactory(object):
     def make_model(self, model_type: Type[AlphaModel], *params, risk_estimation_factor=None):
         model = model_type(*params, risk_estimation_factor=risk_estimation_factor, data_handler=self.data_handler)
         return model
+
+    def make_parametrized_model(self, model_type: Type[AlphaModel]):
+        model = model_type(*model_type.settings.parameters,
+                           risk_estimation_factor=model_type.settings.risk_estimation_factor,
+                           data_handler=self.data_handler)
+        return model
