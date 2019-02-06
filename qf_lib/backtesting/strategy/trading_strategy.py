@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Sequence
 
 import numpy as np
 
@@ -13,7 +13,6 @@ from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.backtesting.events.time_event.before_market_open_event import BeforeMarketOpenEvent
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
-from qf_lib.containers.series.qf_series import QFSeries
 
 
 class TradingStrategy(object):
@@ -21,7 +20,7 @@ class TradingStrategy(object):
     Puts together models and all settings around it and generates orders on before market open
     """
 
-    def __init__(self, ts: TradingSession, model_tickers_dict: Dict[AlphaModel, List[Ticker]], use_stop_losses=True):
+    def __init__(self, ts: TradingSession, model_tickers_dict: Dict[AlphaModel, Sequence[Ticker]], use_stop_losses=True):
         """
         Parameters
         ----------
@@ -42,7 +41,7 @@ class TradingStrategy(object):
         self._use_stop_losses = use_stop_losses
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
-        self.signals_df = QFDataFrame()  # rows indexed by date and columns by "AlphaModel@Ticker" string
+        self.signals_df = QFDataFrame()  # rows indexed by date and columns by "Ticker@AlphaModel" string
 
         ts.notifiers.scheduler.subscribe(BeforeMarketOpenEvent, listener=self)
 

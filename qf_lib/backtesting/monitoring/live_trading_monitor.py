@@ -1,4 +1,3 @@
-# it is important to import the matplotlib first and then switch the interactive/dynamic mode on.
 import csv
 from datetime import datetime
 from io import TextIOWrapper
@@ -38,6 +37,12 @@ class LiveTradingMonitor(DummyMonitor):
 
     def on_after_market_close(self, after_close_event: AfterMarketCloseEvent):
         self.end_of_day_update(after_close_event.time)
+
+    def _generate_past_signals_file(self):
+        pass
+
+    def _generate_cone_chart(self):
+        pass
 
     def end_of_day_update(self, timestamp: datetime = None):
         """
