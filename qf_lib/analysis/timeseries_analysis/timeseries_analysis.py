@@ -1,5 +1,6 @@
 from typing import List, Tuple, Sequence, Union
 
+from qf_lib.analysis.timeseries_analysis.timeseries_analysis_dto import TimeseriesAnalysisDTO
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.utils.dateutils.date_to_string import date_to_str
 from qf_lib.common.utils.document_exporting.element.table import Table
@@ -22,7 +23,7 @@ from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
 
 
-class TimeseriesAnalysis(object):
+class TimeseriesAnalysis(TimeseriesAnalysisDTO):
     """
     Used for analysing a timeseries of returns. Calculates and aggregates different statistics of the timeseries
 
@@ -69,6 +70,7 @@ class TimeseriesAnalysis(object):
         frequency: Frequency
             Corresponds to the frequency od data samples in the seres.
         """
+        super().__init__()
 
         self.returns_tms = returns_timeseries.to_simple_returns()  # by default series is a series of simple returns
         self.frequency = frequency

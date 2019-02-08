@@ -14,6 +14,7 @@ from qf_lib.backtesting.trading_session.backtest_trading_session_builder import 
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import str_to_ticker, Ticker
 from qf_lib.common.utils.excel.excel_exporter import ExcelExporter
+from qf_lib.plotting.charts.cone_chart_oos import ConeChartOOS
 from qf_lib.settings import Settings
 
 
@@ -86,8 +87,9 @@ class LiveMonitorHelper(object):
         return path
 
     def generate_cone_chart(self):
+        # oos_series = ...
+        # chart = ConeChartOOS(oos_series, is_mean_return, is_sigma)
         pass
-
 
 
 

@@ -4,6 +4,8 @@ from io import TextIOWrapper
 import matplotlib.pyplot as plt
 
 from qf_lib.analysis.leverage_analysis.leverage_analysis_sheet import LeverageAnalysisSheet
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
+from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.starting_dir import get_starting_dir_abs_path
 
 plt.ion()  # required for dynamic chart
@@ -31,6 +33,7 @@ class BacktestMonitor(AbstractMonitor):
                  pdf_exporter: PDFExporter, excel_exporter: ExcelExporter):
 
         self.backtest_result = backtest_result
+        self.logger = qf_logger.getChild(self.__class__.__name__)
         self._settings = settings
         self._pdf_exporter = pdf_exporter
         self._excel_exporter = excel_exporter
@@ -64,7 +67,7 @@ class BacktestMonitor(AbstractMonitor):
 
         portfolio_tms = self.backtest_result.portfolio.get_portfolio_timeseries()
         self._export_pdf_with_charts(portfolio_tms)
-        self._export_leverage_analysis(portfolio_tms)
+        self._export_leverage_analysis(portfolio_tms, self.backtest_result.portfolio.leverage())
         self._export_tms_to_excel(portfolio_tms)
 
         self._close_csv_file()
@@ -75,11 +78,13 @@ class BacktestMonitor(AbstractMonitor):
         self._excel_exporter.export_container(portfolio_tms, relative_file_path,
                                               starting_cell='A1', include_column_names=True)
 
-    def _export_leverage_analysis(self, portfolio_tms):
-        leverage = self.backtest_result.portfolio.leverage()
-        leverage_sheet = LeverageAnalysisSheet(self._settings, self._pdf_exporter, leverage, title=portfolio_tms.name)
-        leverage_sheet.build_document()
-        leverage_sheet.save(self._report_dir)
+    def _export_leverage_analysis(self, portfolio_tms: QFSeries, leverage: QFSeries):
+        try:
+            leverage_sheet = LeverageAnalysisSheet(self._settings, self._pdf_exporter, leverage, portfolio_tms.name)
+            leverage_sheet.build_document()
+            leverage_sheet.save(self._report_dir)
+        except Exception as ex:
+            self.logger.error("Error while exporting to PDF: " + str(ex))
 
     def _export_pdf_with_charts(self, portfolio_tms):
         portfolio_tms.name = self.backtest_result.backtest_name
