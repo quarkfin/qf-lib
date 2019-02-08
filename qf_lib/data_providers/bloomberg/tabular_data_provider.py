@@ -1,3 +1,5 @@
+from typing import List
+
 from qf_lib.data_providers.bloomberg.helpers import *
 
 
@@ -6,14 +8,14 @@ class TabularDataProvider(object):
     Used for providing current tabular data from Bloomberg.
     Handles requests containing only one ticker and one field.
 
-    Was tested on 'INDX_MEMBERS' request. There is no guarantee that all other request will be handled,
-    as returned data structures might vary.
+    Was tested on 'INDX_MEMBERS' and 'MERGERS_AND_ACQUISITIONS' requests. There is no guarantee that
+    all other request will be handled, as returned data structures might vary.
     """
 
     def __init__(self, session):
         self._session = session
 
-    def get(self, tickers, fields):
+    def get(self, tickers, fields) -> List:
         ref_data_service = self._session.getService(REF_DATA_SERVICE_URI)
         request = ref_data_service.createRequest("ReferenceDataRequest")
         set_tickers(request, tickers)
@@ -41,8 +43,11 @@ class TabularDataProvider(object):
                 for field_name in fields:
                     array = field_data_array.getElement(field_name)
                     for element in array.values():
-                        key = element.getElement(0).name().__str__()
-                        value = element.getElementAsString(key)
-                        elements.append(value)
+                        keys_values_dict = {}
+                        for elem in element.elements():
+                            key = elem.name().__str__()
+                            value = element.getElementAsString(key)
+                            keys_values_dict[key] = value
+                        elements.append(keys_values_dict)
 
         return elements

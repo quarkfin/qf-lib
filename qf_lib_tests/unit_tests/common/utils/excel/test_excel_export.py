@@ -8,12 +8,12 @@ from qf_lib.common.utils.excel.excel_files_comparator import ExcelFilesComparato
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.get_sources_root import get_src_root
-from qf_lib.settings import Settings
 from qf_lib.starting_dir import set_starting_dir_abs_path
 from qf_lib.testing_tools.test_case import TestCaseWithFileOutput
 from qf_lib_tests.unit_tests.common.utils.excel.constants import SINGLE_SHEET_ONE_SERIES, SINGLE_SHEET_TWO_SERIES, \
     TWO_SHEETS_TWO_SERIES, TWO_SHEETS_THREE_SERIES, SINGLE_SHEET_ONE_DATA_FRAME, SINGLE_SHEET_CUSTOM_INDEX_DATA_FRAME, \
     SINGLE_CELLS
+from qf_lib_tests.unit_tests.config.test_settings import get_test_settings
 
 set_starting_dir_abs_path(get_src_root())
 
@@ -33,7 +33,8 @@ class TestExcelExport(TestCaseWithFileOutput):
         self.test_series_reversed = QFSeries(index=dates, data=reversed_returns)
 
         self.test_data_frame = concat([self.test_series, self.test_series_reversed], axis=1, join='inner')
-        settings = Settings(join(get_src_root(), 'qf_lib_tests', 'unit_tests', 'config', 'test_settings.json'))
+
+        settings = get_test_settings()
         self.xl_exporter = ExcelExporter(settings=settings)
 
     def tearDown(self):

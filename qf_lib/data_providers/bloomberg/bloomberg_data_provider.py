@@ -5,7 +5,7 @@ import blpapi
 
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
-from qf_lib.common.tickers.tickers import BloombergTicker, tickers_as_strings
+from qf_lib.common.tickers.tickers import BloombergTicker, tickers_as_strings, Ticker
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
@@ -148,16 +148,21 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
         }
         return price_field_dict
 
-    def get_tickers_universe(self, universe_name: BloombergTicker, date: datetime) -> List[BloombergTicker]:
-        if date.date() != datetime.today().date():
+    def get_tickers_universe(self, universe_ticker: BloombergTicker, date: datetime=None) -> List[BloombergTicker]:
+        if date and date.date() != datetime.today().date():
             raise ValueError("BloombergDataProvider does not provide historical tickers_universe data")
         field = 'INDX_MEMBERS'
-        ticker_names = self.get_tabular_data(universe_name, field)
-        tickers = [BloombergTicker(name + " Equity") for name in ticker_names]
+        ticker_data = self.get_tabular_data(universe_ticker, field)
+        tickers = [BloombergTicker(fields['Member Ticker and Exchange Code'] + " Equity") for fields in ticker_data]
         return tickers
 
-    def get_tabular_data(self, ticker: BloombergTicker, field: str):
+    def get_tabular_data(self, ticker: BloombergTicker, field: str) -> List:
+        """
+        Provides current tabular data from Bloomberg.
 
+        Was tested on 'INDX_MEMBERS' and 'MERGERS_AND_ACQUISITIONS' requests. There is no guarantee that
+        all other request will be handled, as returned data structures might vary.
+        """
         if field is None:
             raise ValueError("Field being None is not supported by {}".format(self.__class__.__name__))
 
@@ -168,9 +173,9 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
         fields, got_single_field = convert_to_list(field, (PriceField, str))
 
         tickers_str = tickers_as_strings(tickers)
-        data_array = self._tabular_data_provider.get(tickers_str, fields)
+        result = self._tabular_data_provider.get(tickers_str, fields)
 
-        return data_array
+        return result
 
     def _connect_if_needed(self):
         if not self.connected:
