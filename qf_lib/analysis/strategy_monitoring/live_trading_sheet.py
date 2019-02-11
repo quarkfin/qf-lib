@@ -18,37 +18,44 @@ class LiveTradingSheet(AbstractDocument):
     """
 
     def __init__(self, settings: Settings, pdf_exporter,
-                 strategy_series: QFSeries,
-                 strategy_leverage: QFSeries,
+                 strategy_tms: QFSeries,
+                 strategy_leverage_tms: QFSeries,
                  is_tms_analysis: TimeseriesAnalysisDTO,
                  title: str = "Live Trading Sheet",
-                 benchmark_series: QFSeries=None):
+                 benchmark_tms: QFSeries=None):
 
         super().__init__(settings, pdf_exporter, title)
-        self.strategy_series = strategy_series
-        self.strategy_leverage = strategy_leverage
-        self.benchmark_series = benchmark_series
+        self.strategy_tms = strategy_tms
+        self.strategy_leverage_tms = strategy_leverage_tms
+        self.benchmark_tms = benchmark_tms
         self.is_tms_analysis = is_tms_analysis
-        self.is_tms_analysis.name = 'In-Sample Performance'
         self.frequency = Frequency.DAILY
+
+        # set column name for stats table
+        if not hasattr(self.is_tms_analysis, 'returns_tms'):
+            self.is_tms_analysis.returns_tms.name = "In-Sample Results"
 
     def build_document(self):
         self._add_header()
         self._perf_and_cone()
         self._add_dd_and_leverage()
 
-        ta_list = [TimeseriesAnalysis(self.strategy_series, self.frequency), self.is_tms_analysis]
+        if self.benchmark_tms is None:
+            ta_list = [TimeseriesAnalysis(self.strategy_tms, self.frequency), self.is_tms_analysis]
+        else:
+            ta_list = [TimeseriesAnalysis(self.strategy_tms, self.frequency), self.is_tms_analysis,
+                       TimeseriesAnalysis(self.benchmark_tms, self.frequency)]
         self._add_statistics_table(ta_list)
 
     def _perf_and_cone(self):
         grid = self._get_new_grid()
-        series_list = [self.strategy_series] if self.benchmark_series is None \
-            else [self.strategy_series, self.benchmark_series]
+        series_list = [self.strategy_tms] if self.benchmark_tms is None \
+            else [self.strategy_tms, self.benchmark_tms]
 
         perf_chart = self._get_small_perf_chart(series_list)
         grid.add_chart(perf_chart)
 
-        cone_chart = ConeChartOOS(self.strategy_series,
+        cone_chart = ConeChartOOS(self.strategy_tms,
                                   self.is_tms_analysis.mean_ret, self.is_tms_analysis.std)
         grid.add_chart(cone_chart)
         self.document.add_element(grid)
@@ -56,10 +63,10 @@ class LiveTradingSheet(AbstractDocument):
     def _add_dd_and_leverage(self):
         grid = self._get_new_grid()
 
-        dd_chart = self._get_underwater_chart(self.strategy_series)
+        dd_chart = self._get_underwater_chart(self.strategy_tms)
         grid.add_chart(dd_chart)
 
-        leverage_chart = self._get_leverage_chart(self.strategy_leverage, rotate_x_axis=True)
+        leverage_chart = self._get_leverage_chart(self.strategy_leverage_tms, rotate_x_axis=True)
         grid.add_chart(leverage_chart)
         self.document.add_element(grid)
 

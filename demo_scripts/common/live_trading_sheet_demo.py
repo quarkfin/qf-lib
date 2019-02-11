@@ -24,27 +24,28 @@ def get_data():
     benchmark = data_provider.get_price(tickers=QuandlTicker('IBM', 'WIKI'),
                                         fields=PriceField.Close, start_date=start_date, end_date=end_date)
 
-    strategy.name = "Strategy"
-    benchmark.name = "Benchmark"
-
+    strategy.name = "Live Trading"
+    benchmark.name = "In-Sample Results"
     return strategy, benchmark, live_date
 
 
 this_dir_path = os.path.dirname(os.path.abspath(__file__))
-strategy, benchmark, live_date = cached_value(get_data, os.path.join(this_dir_path, 'tearsheet4.cache'))
+strategy, benchmark, live_date = cached_value(get_data, os.path.join(this_dir_path, 'live_trading_sheet.cache'))
 
 
 settings = container.resolve(Settings)  # type: Settings
 pdf_exporter = container.resolve(PDFExporter)  # type: PDFExporter
 
 is_tms_analysis = TimeseriesAnalysis(benchmark, frequency=Frequency.DAILY)
-tearsheet = LiveTradingSheet(settings, pdf_exporter, strategy, strategy, is_tms_analysis, "Live perf evaluation demo")
+tearsheet = LiveTradingSheet(settings, pdf_exporter, strategy, strategy, is_tms_analysis, "Live Trading Sheet demo")
 tearsheet.build_document()
 tearsheet.save()
 
-# tearsheet = LiveTradingSheet(settings, pdf_exporter, strategy, strategy, is_tms_analysis,
-#                              "Live trading sheet demo - Benchmark", benchmark_series=benchmark)
-# tearsheet.build_document()
-# tearsheet.save()
+benchmark.name = "Benchmark"
+leverage = strategy  # does not make sense, but just to plot something
+tearsheet = LiveTradingSheet(settings, pdf_exporter, strategy, leverage, is_tms_analysis,
+                             "Live trading sheet demo - Benchmark", benchmark_tms=benchmark)
+tearsheet.build_document()
+tearsheet.save()
 
 print("Finished")
