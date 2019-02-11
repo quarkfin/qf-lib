@@ -1,3 +1,4 @@
+import matplotlib as mpl
 from itertools import cycle
 from typing import Sequence, List
 
@@ -75,5 +76,24 @@ class ConeChartOOS(Chart):
         ax.set_title('Performance vs. Expectation')
         ax.set_xlim(0, self.oos_series.size)
 
+        # add text box with average expectation over 20 days and overall horizon
+        one_sigma_df = cone.calculate_aggregated_cone_oos_only(self.oos_series, self.is_mean_return, self.is_sigma, 1)
+        one_sigma_tms = one_sigma_df['Expectation']
+        valuation_tms = (strategy_tms-1) / (one_sigma_tms-1)  # type: QFSeries
+        valuation_total = valuation_tms.mean()
+        total_days = valuation_tms.size - 1
+
+        if valuation_tms.size > 20:
+            valuation20d = valuation_tms.head(20).mean()
+            textstr = 'Valuation 20D = {:.2f}\nValuation {}D = {:.2f}'.format(valuation20d, total_days, valuation_total)
+        else:
+            textstr = 'Valuation {}D = {:.2f}'.format(total_days, valuation_total)
+
+        props = dict(boxstyle='square', facecolor='white', alpha=0.5, edgecolor='grey')
+        font_size = mpl.rcParams['legend.fontsize']
+        self.axes.text(0.05, 0.95, textstr, transform=self.axes.transAxes, bbox=props,
+                       verticalalignment='top', fontsize=font_size)
+
     def apply_data_element_decorators(self, data_element_decorators: List["DataElementDecorator"]):
         pass
+

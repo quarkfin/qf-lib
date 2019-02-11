@@ -33,8 +33,8 @@ class AbstractDocument(metaclass=ABCMeta):
         self.full_image_size = (8, 2.4)
 
         # position is linked to the position of axis in tearsheet.mplstyle
-        self.full_image_axis_position = (0.08, 0.1, 0.892, 0.80)
-        self.half_image_size = (4, 2.2)
+        self.full_image_axis_position = (0.07, 0.1, 0.915, 0.80)  # (left, bottom, width, height)
+        self.half_image_size = (4, 2.1)
         self.dpi = 400
 
         self.settings = settings

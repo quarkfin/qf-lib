@@ -42,9 +42,9 @@ tearsheet = LiveTradingSheet(settings, pdf_exporter, strategy, strategy, is_tms_
 tearsheet.build_document()
 tearsheet.save()
 
-tearsheet = LiveTradingSheet(settings, pdf_exporter, strategy, strategy, is_tms_analysis,
-                             "Live trading sheet demo - Benchmark", benchmark_series=benchmark)
-tearsheet.build_document()
-tearsheet.save()
+# tearsheet = LiveTradingSheet(settings, pdf_exporter, strategy, strategy, is_tms_analysis,
+#                              "Live trading sheet demo - Benchmark", benchmark_series=benchmark)
+# tearsheet.build_document()
+# tearsheet.save()
 
 print("Finished")

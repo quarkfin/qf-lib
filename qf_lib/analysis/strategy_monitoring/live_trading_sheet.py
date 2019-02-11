@@ -7,7 +7,6 @@ from qf_lib.analysis.common.abstract_document import AbstractDocument
 from qf_lib.analysis.timeseries_analysis.timeseries_analysis import TimeseriesAnalysis
 from qf_lib.analysis.timeseries_analysis.timeseries_analysis_dto import TimeseriesAnalysisDTO
 from qf_lib.common.enums.frequency import Frequency
-from qf_lib.common.utils.document_exporting import ParagraphElement
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.plotting.charts.cone_chart_oos import ConeChartOOS
 from qf_lib.settings import Settings
@@ -35,13 +34,10 @@ class LiveTradingSheet(AbstractDocument):
 
     def build_document(self):
         self._add_header()
-
         self._perf_and_cone()
-
         self._add_dd_and_leverage()
 
         ta_list = [TimeseriesAnalysis(self.strategy_series, self.frequency), self.is_tms_analysis]
-
         self._add_statistics_table(ta_list)
 
     def _perf_and_cone(self):
