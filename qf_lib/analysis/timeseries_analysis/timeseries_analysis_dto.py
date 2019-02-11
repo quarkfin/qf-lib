@@ -32,6 +32,6 @@ class TimeseriesAnalysisDTO(object):
         self.kurtosis                  = None
         self.kelly                     = None
 
-        self.daily_mean_ret            = None
-        self.daily_std                 = None
+        self.mean_ret                  = None        # mean log return expressed in the frequency of data samples
+        self.std                       = None        # std of log returns expressed in the frequency of data samples
 

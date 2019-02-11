@@ -12,6 +12,7 @@ from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.plotting.charts.line_chart import LineChart
 from qf_lib.plotting.charts.underwater_chart import UnderwaterChart
 from qf_lib.plotting.decorators.axes_label_decorator import AxesLabelDecorator
+from qf_lib.plotting.decorators.axes_position_decorator import AxesPositionDecorator
 from qf_lib.plotting.decorators.data_element_decorator import DataElementDecorator
 from qf_lib.plotting.decorators.legend_decorator import LegendDecorator
 from qf_lib.plotting.decorators.line_decorators import HorizontalLineDecorator
@@ -65,10 +66,23 @@ class AbstractDocument(metaclass=ABCMeta):
         underwater_chart.add_decorator(TitleDecorator("Drawdown"))
         return underwater_chart
 
-    def _get_perf_chart(self, series_list):
-        strategy = series_list[0].to_prices(1)
+    def _get_large_perf_chart(self, series_list):
+        return self.__get_perf_chart(series_list, True)
+
+    def _get_small_perf_chart(self, series_list):
+        return self.__get_perf_chart(series_list, False)
+
+    def __get_perf_chart(self, series_list, is_large_chart):
+        strategy = series_list[0].to_prices(1)  # the main strategy should be the first series
         log_scale = True if strategy[-1] > 5 else False  # use log scale for returns above 500 %
-        chart = LineChart(start_x=strategy.index[0], end_x=strategy.index[-1], log_scale=log_scale)
+
+        if is_large_chart:
+            chart = LineChart(start_x=strategy.index[0], end_x=strategy.index[-1], log_scale=log_scale)
+            position_decorator = AxesPositionDecorator(*self.full_image_axis_position)
+            chart.add_decorator(position_decorator)
+        else:
+            chart = LineChart(log_scale=log_scale, rotate_x_axis=True)
+
         line_decorator = HorizontalLineDecorator(1, key="h_line", linewidth=1)
         chart.add_decorator(line_decorator)
         legend = LegendDecorator()
@@ -76,15 +90,16 @@ class AbstractDocument(metaclass=ABCMeta):
             strategy_tms = series.to_prices(1)
             series_elem = DataElementDecorator(strategy_tms)
             chart.add_decorator(series_elem)
-
             legend.add_entry(series_elem, strategy_tms.name)
+
         chart.add_decorator(legend)
         title_decorator = TitleDecorator("Strategy Performance", key="title")
         chart.add_decorator(title_decorator)
+
         return chart
 
-    def _get_leverage_chart(self, leverage: QFSeries):
-        chart = LineChart()
+    def _get_leverage_chart(self, leverage: QFSeries, rotate_x_axis:bool=False):
+        chart = LineChart(rotate_x_axis=rotate_x_axis)
 
         series_elem = DataElementDecorator(leverage)
         chart.add_decorator(series_elem)

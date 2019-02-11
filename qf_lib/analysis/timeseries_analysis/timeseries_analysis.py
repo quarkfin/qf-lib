@@ -21,6 +21,7 @@ from qf_lib.common.utils.returns.simple_to_log_return import simple_to_log_retur
 from qf_lib.common.utils.volatility.get_volatility import get_volatility
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
+from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
 
 
 class TimeseriesAnalysis(TimeseriesAnalysisDTO):
@@ -59,6 +60,9 @@ class TimeseriesAnalysis(TimeseriesAnalysisDTO):
         skewness
         kurtosis
         kelly
+
+        mean_ret                         - mean log return expressed in the frequency corresponding to data samples
+        std                              - std of log returns expressed in the frequency corresponding to data samples
     """
 
     def __init__(self, returns_timeseries: QFSeries, frequency: Frequency):
@@ -72,7 +76,7 @@ class TimeseriesAnalysis(TimeseriesAnalysisDTO):
         """
         super().__init__()
 
-        self.returns_tms = returns_timeseries.to_simple_returns()  # by default series is a series of simple returns
+        self.returns_tms = returns_timeseries.to_simple_returns()   # type: SimpleReturnsSeries
         self.frequency = frequency
         self.start_date = self.returns_tms.first_valid_index()
         self.end_date = self.returns_tms.index[-1]
@@ -83,6 +87,7 @@ class TimeseriesAnalysis(TimeseriesAnalysisDTO):
         self._calculate_ratios()
         self._calculate_risk_stats()
         self._calculate_returns_stats()
+        self._calculate_log_ret_and_std()
 
     # ========= Methods presenting and aggregating results =========
 
@@ -360,3 +365,8 @@ class TimeseriesAnalysis(TimeseriesAnalysisDTO):
 
         self.skewness = self.returns_tms.skew()
         self.kurtosis = self.returns_tms.kurt()
+
+    def _calculate_log_ret_and_std(self):
+        log_ret_tms = self.returns_tms.to_log_returns()
+        self.mean_ret = log_ret_tms.mean()
+        self.std = log_ret_tms.std()

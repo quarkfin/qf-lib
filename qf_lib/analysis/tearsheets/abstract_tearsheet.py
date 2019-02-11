@@ -44,10 +44,8 @@ class AbstractTearsheet(AbstractDocument, metaclass=ABCMeta):
         series_list
             List of compared series. The strategy should always be the first element in the list
         """
-        chart = self._get_perf_chart(series_list)
-        position_decorator = AxesPositionDecorator(*self.full_image_axis_position)
-        chart.add_decorator(position_decorator)
-        self.document.add_element(ChartElement(chart, figsize=self.full_image_size, dpi=self.dpi))
+        self.document.add_element(ChartElement(self._get_large_perf_chart(series_list),
+                                               figsize=self.full_image_size, dpi=self.dpi))
 
     def _add_returns_statistics_charts(self):
         grid = self._get_new_grid()
