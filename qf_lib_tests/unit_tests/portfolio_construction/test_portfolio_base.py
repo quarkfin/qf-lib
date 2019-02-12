@@ -84,7 +84,6 @@ class TestPortfolio(TestCase):
         expected_df = self.alloc_for_fully_invested_drift_weights
         _, actual_df = Portfolio.drifting_weights(self.assets_df, self.weights_full_invest)
         assert_dataframes_equal(expected_df, actual_df, absolute_tolerance=1e-04)
-        # TODO get more accurate data for the expected results (so that absolute_tolerance=1e-06 can be used)
 
     def test_drifting_weights_alloc_not_fully_invested(self):
         expected_df = self.alloc_for_not_fully_invested_drift_weights

@@ -13,8 +13,6 @@ class SimpleReturnsDataFrame(QFDataFrame):
         return SimpleReturnsDataFrame
 
     def aggregate_by_year(self):
-        # TODO make get_aggregate_returns accept DataFrames and remove this function
-        # or create get_aggregate_returns_for_data_frame
         from qf_lib.common.utils.returns.get_aggregate_returns import get_aggregate_returns
         from qf_lib.common.enums.frequency import Frequency
 

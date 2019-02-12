@@ -4,8 +4,8 @@ from qf_lib.containers.series.returns_series import ReturnsSeries
 
 
 def intraday_volatility(returns: ReturnsSeries, interval_in_minutes: int) -> float:
-    # TODO think how it can be merged with another function for computing volatility from returns
-    # TODO test
+    # Think how it can be merged with another function for computing volatility from returns
+    # Test
     # second thing: the function is not used anywhere (not even in Matlab), maybe it can be deleted
     # third thing: maybe the interval could be inferred from returns dates
     """

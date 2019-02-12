@@ -6,9 +6,6 @@ from matplotlib.ticker import FuncFormatter
 This is here in order to become a base for trade summary.
 """
 
-# TODO: We need % of winning trades  and % of losing trades !!!
-# TODO: we also need to implement statistics form Position sizing book
-
 
 def _plot_txt_trade(self, stats, ax=None, **kwargs):
     """
@@ -43,7 +40,6 @@ def _plot_txt_trade(self, stats, ax=None, **kwargs):
     y_axis_formatter = FuncFormatter(format_perc)
     ax.yaxis.set_major_formatter(FuncFormatter(y_axis_formatter))
 
-    # TODO: Position class needs entry date
     max_loss_dt = 'TBD'  # pos[pos["trade_pct"] == np.min(pos["trade_pct"])].entry_date.values[0]
     avg_dit = '0.0'  # = '{:.2f}'.format(np.mean(pos.time_in_pos))
 

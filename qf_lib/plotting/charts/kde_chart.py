@@ -8,7 +8,7 @@ from qf_lib.plotting.decorators.data_element_decorator import DataElementDecorat
 
 class KDEChart(Chart):
     """
-    Fits and plots a univariate (bivariate TODO) kernel density estimate using Seaborn's kdeplot function.
+    Fits and plots a univariate (bivariate to be implemented) kernel density estimate using Seaborn's kdeplot function.
 
     For more details see: https://stanford.edu/~mwaskom/software/seaborn/generated/seaborn.kdeplot.html
     """

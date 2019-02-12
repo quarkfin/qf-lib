@@ -92,7 +92,7 @@ class VerticalLineDecorator(ChartDecorator, SimpleLegendItem):
                 {% endfor %}
             });
         """)
-        # TODO: This assumes that the line chart's x-axis contains dates.
+        # This assumes that the line chart's x-axis contains dates.
         assert isinstance(self._x, datetime.datetime)
 
         color = HIGHCHART_COLORS.get(self._color, self._color)
