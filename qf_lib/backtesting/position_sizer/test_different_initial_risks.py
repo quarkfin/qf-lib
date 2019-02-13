@@ -14,6 +14,10 @@ from qf_lib.backtesting.strategy.trading_strategy import TradingStrategy
 from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
+from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
+from qf_lib.common.utils.excel.excel_exporter import ExcelExporter
+from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
+from qf_lib.settings import Settings
 
 
 def calc_trade_returns(trades):
@@ -38,12 +42,17 @@ def get_trade_rets_values(init_risk: float) -> List[float]:
     start_date = str_to_date('2013-01-01')
     end_date = str_to_date('2016-12-31')
 
-    session_builder = BacktestTradingSessionBuilder(container, start_date, end_date)
+    data_provider = container.resolve(GeneralPriceProvider)  # type: GeneralPriceProvider
+    settings = container.resolve(Settings)  # type: Settings
+    pdf_exporter = container.resolve(PDFExporter)  # type: PDFExporter
+    excel_exporter = container.resolve(ExcelExporter)  # type: ExcelExporter
+
+    session_builder = BacktestTradingSessionBuilder(data_provider, settings, pdf_exporter, excel_exporter)
     session_builder.set_alpha_model_backtest_name(model_type, param_set, trading_tickers)
     session_builder.set_position_sizer(InitialRiskPositionSizer, init_risk)
     session_builder.set_monitor_type(BacktestMonitor)
     session_builder.set_backtest_name("Initial Risk Testing - {}".format(init_risk))
-    ts = session_builder.build()
+    ts = session_builder.build(start_date, end_date)
     ts.use_data_preloading(trading_tickers + data_tickers)
 
     model_factory = AlphaModelFactory(ts.data_handler)
