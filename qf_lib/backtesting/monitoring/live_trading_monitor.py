@@ -6,6 +6,7 @@ from typing import List
 
 from pandas import Series
 
+from qf_lib.analysis.strategy_monitoring.live_trading_sheet import LiveTradingSheet
 from qf_lib.backtesting.events.notifiers import Notifiers
 from qf_lib.backtesting.events.time_event.after_market_close_event import AfterMarketCloseEvent
 from qf_lib.backtesting.monitoring.dummy_monitor import DummyMonitor
@@ -36,12 +37,33 @@ class LiveTradingMonitor(DummyMonitor):
         self.notifiers.scheduler.subscribe(AfterMarketCloseEvent, listener=self)
 
     def on_after_market_close(self, after_close_event: AfterMarketCloseEvent):
-        self.end_of_day_update(after_close_event.time)
+        pass
+        # generate past signals
+        past_signals_file = self._generate_past_signals_file()
+
+        # generate live trading sheet
+        live_trading_sheet = self._generate_live_trading_sheet()
+
+        # send files by email
+
 
     def _generate_past_signals_file(self):
+        # generate the past signals file using PastSignalsGenerator
         pass
 
-    def _generate_cone_chart(self):
+    def _generate_live_trading_sheet(self):
+        # create missing arguments
+        # use values saved in PastSignalsGenerator
+        pdf_exporter = PDFExporter(self._settings)
+
+        tearsheet = LiveTradingSheet(self._settings,
+                                     pdf_exporter,
+                                     self.backtest_tms,
+                                     leverage,
+                                     is_tms_analysis,
+                                     "Live trading sheet demo - Benchmark")
+        tearsheet.build_document()
+        tearsheet.save()
         pass
 
     def end_of_day_update(self, timestamp: datetime = None):
@@ -126,3 +148,4 @@ class LiveTradingMonitor(DummyMonitor):
     def _close_csv_file(self):
         if self._csv_file is not None:  # close the csv file
             self._csv_file.close()
+

@@ -14,11 +14,10 @@ from qf_lib.backtesting.trading_session.backtest_trading_session_builder import 
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import str_to_ticker, Ticker
 from qf_lib.common.utils.excel.excel_exporter import ExcelExporter
-from qf_lib.plotting.charts.cone_chart_oos import ConeChartOOS
 from qf_lib.settings import Settings
 
 
-class LiveMonitorHelper(object):
+class PastSignalsGenerator(object):
 
     def __init__(self, container: Container, live_start_date: datetime, initial_risk: float,
                  all_tickers: Sequence[Ticker], model_type_tickers_dict: Dict[Type[AlphaModel], Sequence[Ticker]]):
@@ -29,6 +28,7 @@ class LiveMonitorHelper(object):
         self.initial_risk = initial_risk
         self.all_tickers_used = all_tickers
 
+        # the settings below should match exactly the setting of the live trading observed
         session_builder = BacktestTradingSessionBuilder(self.live_start_date, self.end_date)
         session_builder.set_position_sizer(InitialRiskPositionSizer, self.initial_risk)
         session_builder.set_monitor_type(DummyMonitor)
@@ -47,6 +47,7 @@ class LiveMonitorHelper(object):
         self.signals_df = None
         self.exposures_df = None
         self.fractions_at_risk_df = None
+        self.backtest_tms = None
 
     def collect_backtest_result(self):
         self.backtest_ts.start_trading()
@@ -56,6 +57,7 @@ class LiveMonitorHelper(object):
 
         portfolio_tms = self.backtest_ts.portfolio.get_portfolio_timeseries()
         portfolio_tms.index = portfolio_tms.index.date  # remove time part
+        self.backtest_tms = portfolio_tms
         self.exposures_df["c/c return"] = portfolio_tms.to_simple_returns()
 
     def generate_past_signals_file(self):
@@ -85,11 +87,6 @@ class LiveMonitorHelper(object):
 
             xlx_exporter.export_container(df, xlx_file_path, include_column_names=True, sheet_name=column)
         return path
-
-    def generate_cone_chart(self):
-        # oos_series = ...
-        # chart = ConeChartOOS(oos_series, is_mean_return, is_sigma)
-        pass
 
 
 

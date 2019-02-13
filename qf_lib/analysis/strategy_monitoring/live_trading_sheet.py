@@ -37,7 +37,6 @@ class LiveTradingSheet(AbstractDocument):
 
     def build_document(self):
         self._add_header()
-        self._perf_and_cone()
         self._add_dd_and_leverage()
 
         if self.benchmark_tms is None:
