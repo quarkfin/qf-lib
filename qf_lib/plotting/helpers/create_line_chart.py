@@ -60,10 +60,10 @@ def create_line_chart(data_list: List[Union[QFSeries, DataElementDecorator]], na
 
     # Retrieve necessary data.
     for data in data_list:
-        assert isinstance(data, (QFSeries, DataElementDecorator))
+        assert isinstance(data, (pandas.Series, DataElementDecorator))
         # Add the current series with a label taken from ``names_list``.
         data_element = data
-        if isinstance(data_element, QFSeries):
+        if isinstance(data_element, pandas.Series):
             data_element = DataElementDecorator(data)
         line_id = data_element.key
         line_chart.add_decorator(data_element)

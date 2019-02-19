@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Union
+from typing import Union, Callable
 
 import numpy as np
 import pandas as pd
@@ -19,7 +19,7 @@ class QFSeries(pd.Series, TimeIndexedContainer):
     @property
     def _constructor(self):
         return QFSeries
-    
+
     @property
     def _constructor_expanddim(self):
         from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
@@ -188,7 +188,8 @@ class QFSeries(pd.Series, TimeIndexedContainer):
 
         return result
 
-    def rolling_window(self, window_size: int, func, step=1, optimised=False):
+    def rolling_window(self, window_size: int, func: Callable[[Union["QFSeries", np.ndarray]], float], step: int=1,
+                       optimised: bool=False):
         """
         Looks at a number of windows of size ``window_size`` and transforms the data in those windows based on the
         specified ``func``.
@@ -197,16 +198,16 @@ class QFSeries(pd.Series, TimeIndexedContainer):
 
         Parameters
         ----------
-        window_size: int
+        window_size
             The size of the window to look at specified as the number of data points.
-        func: Function[QFSeries or ndarray] -> float
+        func
             The function to call during each iteration. When ``other`` is ``None`` this function should take one
             ``QFSeries`` and return a value (Usually a number such as a ``float``). Otherwise, this function should take
             two ``QFSeries`` arguments and return a value.
-        step: int, default 1.
+        step
             The amount of data points to step through after each iteration, i.e. how much to move the window by in
             each iteration.
-        optimised: boolean, default ``False``.
+        optimised
             Whether the more efficient pandas algorithm should be used for the rolling window application.
             Note: This has some limitations: The ``step`` must be 1 and ``func`` will get an ``ndarray``
             parameter which only contains values and no index.
