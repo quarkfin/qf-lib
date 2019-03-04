@@ -94,8 +94,7 @@ class Portfolio(object):
 
         self.dates.append(self.timer.now())
         self.portfolio_values.append(self.net_liquidation)
-        leverage_today = self.gross_value_of_positions / self.net_liquidation
-        self._leverage.append(leverage_today)
+        self._leverage.append(self.gross_value_of_positions / self.net_liquidation)
 
     def _remove_positions_assigned_to_acquired_companies(self, contract_to_ticker_dict, current_prices_series):
         remove = [c for c in self.open_positions_dict if np.isnan(current_prices_series[contract_to_ticker_dict[c]])]
