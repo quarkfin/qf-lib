@@ -3,10 +3,6 @@ from unittest import TestCase
 import matplotlib.pyplot as plt
 
 from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
-from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
-from qf_lib.common.utils.excel.excel_exporter import ExcelExporter
-from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
-from qf_lib.settings import Settings
 
 plt.ion()  # required for dynamic chart, good to keep this at the beginning of imports
 
@@ -66,12 +62,7 @@ def main():
     start_date = str_to_date("2010-01-01")
     end_date = str_to_date("2011-01-01")
 
-    data_provider = container.resolve(GeneralPriceProvider)  # type: GeneralPriceProvider
-    settings = container.resolve(Settings)  # type: Settings
-    pdf_exporter = container.resolve(PDFExporter)  # type: PDFExporter
-    excel_exporter = container.resolve(ExcelExporter)  # type: ExcelExporter
-
-    session_builder = BacktestTradingSessionBuilder(data_provider, settings, pdf_exporter, excel_exporter)
+    session_builder = container.resolve(BacktestTradingSessionBuilder)  # type: BacktestTradingSessionBuilder
     session_builder.set_backtest_name('Simple_MA')
     session_builder.set_initial_cash(1000000)
     ts = session_builder.build(start_date, end_date)
