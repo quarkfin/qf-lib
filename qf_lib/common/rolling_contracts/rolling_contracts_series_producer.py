@@ -119,7 +119,8 @@ class RollingContractsSeriesProducer(object):
 
             # remove price and first time to expiration for every contract except for the first one. Otherwise there
             # would be two data points on rolling dates
-            # TODO think if the following code shouldn't be removed,
+
+            # Think if the following code shouldn't be removed,
             # so that there would be 2 data points on rolling dates
             if i > 0:
                 partial_prices_df = partial_prices_df.iloc[1:]

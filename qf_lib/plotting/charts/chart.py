@@ -243,7 +243,6 @@ class Chart(object):
     def extract_series_data(self):
         """
         Extract data from data element decorators added to the chart.
-        TODO: Look in to removing this bad boi
         """
         result = []
         series = self.get_data_element_decorators()
@@ -315,7 +314,7 @@ class Chart(object):
         regular_decorators = []
         data_element_decorators = []
 
-        # TODO this method of assuring that LegendDecorator.decorate() is being called at the end is not the best way
+        # this method of assuring that LegendDecorator.decorate() is being called at the end is not the best way
         # to do it. It introduces a dependency of Chart on the LegendDecorator.
         for decorator in self._decorators.values():
             if isinstance(decorator, LegendDecorator):

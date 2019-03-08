@@ -84,12 +84,11 @@ class Portfolio(object):
         current_prices_series = self.data_handler.get_last_available_price(tickers=all_tickers_in_portfolio)
 
         self._remove_positions_assigned_to_acquired_companies(contract_to_ticker_dict, current_prices_series)
-        # todo replace current_prices_series with ticker acquisition dict
 
         for contract, position in self.open_positions_dict.items():
             ticker = contract_to_ticker_dict[contract]
             security_price = current_prices_series[ticker]
-            position.update_price(bid_price=security_price, ask_price=security_price)  # TODO: Model with Bid/Ask
+            position.update_price(bid_price=security_price, ask_price=security_price)
             self.net_liquidation += position.market_value
             self.gross_value_of_positions += abs(position.market_value)
 

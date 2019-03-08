@@ -5,7 +5,8 @@ from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
 
 
-def close_open_gap(prices_df: PricesDataFrame, initial_price: int = 1, transaction_cost_percentage: float = 0, transaction_cost_value: float = 0) -> PricesSeries:
+def close_open_gap(prices_df: PricesDataFrame, initial_price: int = 1, transaction_cost_percentage: float = 0,
+                   transaction_cost_value: float = 0) -> PricesSeries:
     """
 
     Parameters
@@ -45,8 +46,8 @@ def close_open_gap(prices_df: PricesDataFrame, initial_price: int = 1, transacti
         buy_price = c0 + transaction_cost_value
 
     elif transaction_cost_percentage > 0:
-        sell_price = o1 * (1 - transaction_cost_percentage/100)
-        buy_price = c0 * (1 + transaction_cost_percentage/100)
+        sell_price = o1 * (1 - transaction_cost_percentage / 100)
+        buy_price = c0 * (1 + transaction_cost_percentage / 100)
 
     ret_tms = (sell_price / buy_price) - 1
     ret_tms = cast_series(ret_tms.iloc[1:], SimpleReturnsSeries)
