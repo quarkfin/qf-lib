@@ -29,7 +29,8 @@ def create_dd_probability_chart(prices_tms: QFSeries, bear_market_definition: fl
 
     chart = LineChart()
     chart.add_decorator(ScatterDecorator(examined_dds * 100, percentage_ending_in_bear_market, edgecolors='black'))
-    chart.add_decorator(TitleDecorator("Percentage of drawdowns ending in bear market"))
+    chart.add_decorator(TitleDecorator("Percentage of drawdowns going beyond {:2.0f}%".
+                                       format(bear_market_definition * 100)))
     axis_dec = AxesLabelDecorator("examined drawdown [%]",
                                   "chance that drawdown will go beyond {:2.0f}% in [%]".format(
                                       bear_market_definition * 100))
