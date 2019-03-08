@@ -34,9 +34,6 @@ class RegularDateTimeRule(object):
         # then we should go to the next month etc.
         time_adjustment = None
 
-        # no need to make any adjustment for weekday, because RelativeDelta will always give the next occurrence
-        # of next weekday
-
         if self.trigger_time.year is not None:
             # nothing can be done if the year is important. No way of getting next occurrence (there will never be
             # the same year again)
@@ -48,6 +45,8 @@ class RegularDateTimeRule(object):
             time_adjustment = RelativeDelta(years=1)
         elif self.trigger_time.day is not None:
             time_adjustment = RelativeDelta(months=1)
+        elif self.trigger_time.weekday is not None:
+            time_adjustment = RelativeDelta(weeks=1)
         elif self.trigger_time.hour is not None:
             time_adjustment = RelativeDelta(days=1)
         elif self.trigger_time.minute is not None:
