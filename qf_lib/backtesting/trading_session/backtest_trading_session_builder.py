@@ -86,7 +86,7 @@ class BacktestTradingSessionBuilder(object):
         self._data_provider = data_provider
 
     def set_monitor_type(self, monitor_type: Type[AbstractMonitor]):
-        assert monitor_type is AbstractMonitor
+        assert issubclass(monitor_type, AbstractMonitor)
         self._monitor_type = monitor_type
 
     def set_logging_level(self, logging_level: int):
