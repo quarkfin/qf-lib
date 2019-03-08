@@ -34,7 +34,6 @@ class TestMultiFactorPortfolio(TestCase):
         expected_weights_vals[19] = 0.1521
 
         self.assertTrue(np.allclose(expected_weights_vals, actual_weights.values, rtol=0, atol=5e-02))
-        # TODO absolute tolerance should be 1e-02
 
     def test_get_weights_with_upper_limits(self):
         portfolio = MultiFactorPortfolio(self.assets_df, self.parameters, upper_constraint=0.1)
@@ -55,7 +54,6 @@ class TestMultiFactorPortfolio(TestCase):
         expected_weights_vals[19] = 0.1000
 
         self.assertTrue(np.allclose(expected_weights_vals, actual_weights.values, rtol=0, atol=5e-02))
-        # TODO absolute tolerance should be 1e-02
 
 
 if __name__ == '__main__':

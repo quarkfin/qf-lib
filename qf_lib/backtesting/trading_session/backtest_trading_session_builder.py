@@ -2,8 +2,6 @@ import logging
 from datetime import datetime
 from typing import List, Tuple, Type
 
-from dic.container import Container
-
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
 from qf_lib.backtesting.backtest_result.backtest_result import BacktestResult
 from qf_lib.backtesting.broker.backtest_broker import BacktestBroker
@@ -19,10 +17,8 @@ from qf_lib.backtesting.execution_handler.simulated.simulated_execution_handler 
 from qf_lib.backtesting.execution_handler.simulated.slippage.base import Slippage
 from qf_lib.backtesting.execution_handler.simulated.slippage.price_based_slippage import PriceBasedSlippage
 from qf_lib.backtesting.monitoring.abstract_monitor import AbstractMonitor
-from qf_lib.backtesting.monitoring.backtest_monitor import BacktestMonitor
 from qf_lib.backtesting.monitoring.dummy_monitor import DummyMonitor
 from qf_lib.backtesting.monitoring.light_backtest_monitor import LightBacktestMonitor
-from qf_lib.backtesting.monitoring.live_trading_monitor import LiveTradingMonitor
 from qf_lib.backtesting.order.orderfactory import OrderFactory
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.backtesting.portfolio.portfolio_handler import PortfolioHandler
@@ -38,17 +34,14 @@ from qf_lib.common.utils.logging.logging_config import setup_logging
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
 from qf_lib.data_providers.price_data_provider import DataProvider
-from qf_lib.publishers.email_publishing.email_publisher import EmailPublisher
 from qf_lib.settings import Settings
 
 
 class BacktestTradingSessionBuilder(object):
 
-    def __init__(self, start_date: datetime, end_date: datetime):
+    def __init__(self, data_provider: GeneralPriceProvider, settings: Settings, pdf_exporter: PDFExporter,
+                 excel_exporter: ExcelExporter):
         self._logger = qf_logger.getChild(self.__class__.__name__)
-
-        self._start_date = start_date
-        self._end_date = end_date
 
         self._backtest_name = "Backtest Results"
         self._initial_cash = 100000
@@ -59,7 +52,11 @@ class BacktestTradingSessionBuilder(object):
         self._slippage_model = PriceBasedSlippage(0.0)
         self._position_sizer_type = SimplePositionSizer
         self._position_sizer_param = None
-        self._data_provider = None
+
+        self._data_provider = data_provider
+        self._settings = settings
+        self._pdf_exporter = pdf_exporter
+        self._excel_exporter = excel_exporter
 
     def set_backtest_name(self, name: str):
         assert not any(char in name for char in ('/\\?%*:|"<>'))
@@ -89,7 +86,7 @@ class BacktestTradingSessionBuilder(object):
         self._data_provider = data_provider
 
     def set_monitor_type(self, monitor_type: Type[AbstractMonitor]):
-        assert monitor_type in (BacktestMonitor, LightBacktestMonitor, LiveTradingMonitor, DummyMonitor)
+        assert monitor_type is AbstractMonitor
         self._monitor_type = monitor_type
 
     def set_logging_level(self, logging_level: int):
@@ -125,22 +122,15 @@ class BacktestTradingSessionBuilder(object):
         ])
         return event_manager
 
-    def build(self, container: Container) -> BacktestTradingSession:
-        if not self._data_provider:
-            self._data_provider = container.resolve(GeneralPriceProvider)   # type: GeneralPriceProvider
-        self._settings = container.resolve(Settings)                        # type: Settings
-        self._pdf_exporter = container.resolve(PDFExporter)                 # type: PDFExporter
-        self._excel_exporter = container.resolve(ExcelExporter)             # type: ExcelExporter
-        self._email_publisher = container.resolve(EmailPublisher)           # type: EmailPublisher
-
-        self._timer = SettableTimer(self._start_date)
+    def build(self, start_date: datetime, end_date: datetime) -> BacktestTradingSession:
+        self._timer = SettableTimer(start_date)
         self._notifiers = Notifiers(self._timer)
         self._events_manager = self._create_event_manager(self._timer, self._notifiers)
 
         self._data_handler = DataHandler(self._data_provider, self._timer)
 
         self._portfolio = Portfolio(self._data_handler, self._initial_cash, self._timer, self._contract_ticker_mapper)
-        self._backtest_result = BacktestResult(self._portfolio, self._backtest_name, self._start_date, self._end_date)
+        self._backtest_result = BacktestResult(self._portfolio, self._backtest_name, start_date, end_date)
         self._monitor = self._monitor_setup()
 
         self._portfolio_handler = PortfolioHandler(self._portfolio, self._monitor, self._notifiers.scheduler)
@@ -151,7 +141,7 @@ class BacktestTradingSessionBuilder(object):
 
         self._time_flow_controller = BacktestTimeFlowController(self._notifiers.scheduler, self._events_manager,
                                                                 self._timer, self._notifiers.empty_queue_event_notifier,
-                                                                self._end_date)
+                                                                end_date)
 
         self._broker = BacktestBroker(self._portfolio, self._execution_handler)
         self._order_factory = OrderFactory(self._broker, self._data_handler, self._contract_ticker_mapper)
@@ -165,8 +155,8 @@ class BacktestTradingSessionBuilder(object):
                 "\tBacktest Name: {}".format(self._backtest_name),
                 "\tData Provider: {}".format(self._data_provider.__class__.__name__),
                 "\tContract - Ticker Mapper: {}".format(self._contract_ticker_mapper.__class__.__name__),
-                "\tStart Date: {}".format(self._start_date),
-                "\tEnd Date: {}".format(self._end_date),
+                "\tStart Date: {}".format(start_date),
+                "\tEnd Date: {}".format(end_date),
                 "\tInitial Cash: {:.2f}".format(self._initial_cash)
             ])
         )
@@ -188,8 +178,8 @@ class BacktestTradingSessionBuilder(object):
 
         ts = BacktestTradingSession(
             contract_ticker_mapper=self._contract_ticker_mapper,
-            start_date=self._start_date,
-            end_date=self._end_date,
+            start_date=start_date,
+            end_date=end_date,
             position_sizer=self._position_sizer,
             data_handler=self._data_handler,
             timer=self._timer,
@@ -205,8 +195,6 @@ class BacktestTradingSessionBuilder(object):
     def _monitor_setup(self):
         if self._monitor_type is DummyMonitor:
             return DummyMonitor()
-        elif self._monitor_type is LiveTradingMonitor:
-            return LiveTradingMonitor(self._settings, self._pdf_exporter, self._excel_exporter, self._email_publisher)
         return self._monitor_type(self._backtest_result, self._settings, self._pdf_exporter, self._excel_exporter)
 
     def _position_sizer_setup(self):

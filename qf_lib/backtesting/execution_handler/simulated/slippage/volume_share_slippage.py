@@ -63,7 +63,6 @@ class VolumeShareSlippage(Slippage):
 
         slippage_prices[fill_volumes == 0] = np.nan
 
-        # TODO handle situation in which the Order with a big volume (exceeding the volume_limit) is split into 2 orders
         # limit should still hold
 
         return slippage_prices, fill_volumes
