@@ -1,5 +1,6 @@
 import threading
 from collections import Sequence
+from mpl_toolkits.mplot3d import Axes3D   # important to keep this line for figure.add_subplot(1, 1, 1, projection='3d')
 
 import matplotlib
 import matplotlib.pyplot as plt
