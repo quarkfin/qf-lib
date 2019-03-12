@@ -3,6 +3,7 @@ from datetime import datetime
 from io import TextIOWrapper
 from os import path, makedirs
 from typing import List
+from dic.container import Container
 
 from pandas import Series
 
@@ -10,6 +11,7 @@ from qf_lib.analysis.strategy_monitoring.live_trading_sheet import LiveTradingSh
 from qf_lib.backtesting.events.notifiers import Notifiers
 from qf_lib.backtesting.events.time_event.after_market_close_event import AfterMarketCloseEvent
 from qf_lib.backtesting.monitoring.dummy_monitor import DummyMonitor
+from qf_lib.backtesting.monitoring.past_signals_generator import PastSignalsGenerator
 from qf_lib.backtesting.transaction import Transaction
 from qf_lib.common.utils.dateutils.date_to_string import date_to_str
 from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
@@ -24,128 +26,78 @@ class LiveTradingMonitor(DummyMonitor):
     This Monitor will be used to monitor live trading activities
     """
 
-    def __init__(self, notifiers: Notifiers, settings: Settings, pdf_exporter: PDFExporter,
-                 excel_exporter: ExcelExporter, email_publisher: EmailPublisher):
-        self._settings = settings
-        self._pdf_exporter = pdf_exporter
-        self._excel_exporter = excel_exporter
-        self._email_publisher = email_publisher
-        self._report_dir = "live_trading"
-        self._csv_file = self._init_csv_file("Live_Trading_Trades")
-        self._csv_writer = csv.writer(self._csv_file)
+    def __init__(self, notifiers: Notifiers, containter: Container):
+        self.container = container
         self.notifiers = notifiers
         self.notifiers.scheduler.subscribe(AfterMarketCloseEvent, listener=self)
 
     def on_after_market_close(self, after_close_event: AfterMarketCloseEvent):
-        pass
-        # generate past signals
-        past_signals_file = self._generate_past_signals_file()
-
-        # generate live trading sheet
-        live_trading_sheet = self._generate_live_trading_sheet()
-
-        # send files by email
-
-
-    def _generate_past_signals_file(self):
-        # generate the past signals file using PastSignalsGenerator
-        pass
-
-    def _generate_live_trading_sheet(self):
-        # create missing arguments
-        # use values saved in PastSignalsGenerator
-        pdf_exporter = PDFExporter(self._settings)
-
-        tearsheet = LiveTradingSheet(self._settings,
-                                     pdf_exporter,
-                                     self.backtest_tms,
-                                     leverage,
-                                     is_tms_analysis,
-                                     "Live trading sheet demo - Benchmark")
-        tearsheet.build_document()
-        tearsheet.save()
-        pass
+        self.end_of_day_update()
 
     def end_of_day_update(self, timestamp: datetime = None):
         """
-        Generates #todo: what does it generate?
-         and sends it by email
+        Generate daily pdf with backtest monitoring and past signals excel file and sends it by email
         """
-        attachments_paths = [
-            self._export_test_file(timestamp)
-        ]
-
+        attachments_paths = self._generate_files()
         self._publish_by_email(attachments_paths, timestamp)
 
-    def _export_test_file(self, timestamp):
-        # todo: export an actual file here
-        xlsx_filename = '{}_test_file.xlsx'.format(timestamp.date())
-        relative_file_path = path.join(self._report_dir, "test", xlsx_filename)
-        test_tms = Series(name='test_tms', index=[0, 1, 2], data=['a', 'b', 'c'])
-        return self._excel_exporter.export_container(test_tms, relative_file_path, include_column_names=True)
+    def _generate_files(self):
+        signal_generator = PastSignalsGenerator(self.container,
+                                                live_start_date,
+                                                initial_risk,
+                                                all_tickers,
+                                                model_type_tickers_dict)
+        signal_generator.collect_backtest_result()
+        past_signals_file_path = signal_generator.generate_past_signals_file()
+
+        live_trading_sheet = LiveTradingSheet(settings=self._settings,
+                                              pdf_exporter=self.container.resolve(PDFExporter),
+                                              strategy_tms=signal_generator.backtest_tms,
+                                              strategy_leverage_tms=signal_generator.leverage_tms,
+                                              is_tms_analysis=is_tms_analysis,
+                                              title="Live trading sheet demo - Benchmark")
+        live_trading_sheet.build_document()
+        live_trading_sheet_path = live_trading_sheet.save()
+
+        return [past_signals_file_path, live_trading_sheet_path]
 
     def _publish_by_email(self, attachments_dirs: List[str], timestamp):
-        class User(object):
-            def __init__(self, name, surname, email_address=None):
+
+        class EmailUser(object):
+            def __init__(self, name, email_address):
                 self.name = name
-                self.surname = surname
-                if email_address:
-                    self.email_address = email_address
-                else:
-                    self.email_address = name.lower() + '.' + surname.lower() + "@cern.ch"
+                self.email_address = email_address
 
         date_str = date_to_str(timestamp.date())
         template_path = 'live_trading_report.html'
+
         users = {
-            User("Olga", "Kalinowska")
-            # ,User("Jacek", "Witkowski")
+            EmailUser("Marcin", "marcin.borratynski@cern.ch"),
+            # EmailUser("Olga", "olga.kalinowska@cern.ch"),
         }
+
+        email_publisher = self.container.resolve(EmailPublisher)
+
         for user in users:
-            self._email_publisher.publish(
+            email_publisher.publish(
                 mail_to=user.email_address,
-                subject="Test Message " + date_str,
+                subject="Live Trading Summary: " + date_str,
                 template_path=template_path,
                 attachments=attachments_dirs,
                 context={'user': user, 'date': date_str}
             )
 
-    def record_transaction(self, transaction: Transaction):
-        """
-        Print the trade to the CSV file
-        """
-        self._csv_writer.writerow([
-            transaction.time,
-            transaction.contract.symbol,
-            transaction.quantity,
-            transaction.price,
-            transaction.commission
-        ])
 
-    def _init_csv_file(self, file_name_template: str) -> TextIOWrapper:
-        """
-        Creates a new csv file for every backtest run, writes the header and returns the path to the file.
-        """
-        output_dir = path.join(get_starting_dir_abs_path(), self._settings.output_directory, self._report_dir)
-        if not path.exists(output_dir):
-            makedirs(output_dir)
 
-        csv_filename = "{}.csv".format(file_name_template)
-        file_path = path.expanduser(path.join(output_dir, csv_filename))
+        # get prices for days when benchmark was traded
+        benchmark_close_tms = self.data_provider.get_price(self.mqp_settings.benchmark_ticker, PriceField.Close, start_date, end_date).dropna()
+        benchmark_close_tms = benchmark_close_tms.dropna()
+        benchmark_close_tms = benchmark_close_tms.tail(self.mqp_settings.portfolio_generation_window_size)
 
-        # Write new file header
-        fieldnames = ["Timestamp", "Contract", "Quantity", "Price", "Commission"]
+        index_members_close_df = self.data_provider.get_price(
+            tickers_universe, PriceField.Close, start_date, end_date)
+        index_members_close_df = index_members_close_df.loc[benchmark_close_tms.index, :]
 
-        if path.exists(file_path):
-            file_handler = open(file_path, 'a', newline='')
-        else:
-            file_handler = open(file_path, 'a', newline='')
-            # add header if file is just created
-            writer = csv.DictWriter(file_handler, fieldnames=fieldnames)
-            writer.writeheader()
-
-        return file_handler
-
-    def _close_csv_file(self):
-        if self._csv_file is not None:  # close the csv file
-            self._csv_file.close()
-
+        # convert to returns
+        benchmark_rets_tms = benchmark_close_tms.to_simple_returns()
+        index_members_rets_df = index_members_close_df.to_simple_returns()

@@ -14,7 +14,6 @@ from qf_lib.backtesting.trading_session.backtest_trading_session_builder import 
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import str_to_ticker, Ticker
 from qf_lib.common.utils.excel.excel_exporter import ExcelExporter
-from qf_lib.settings import Settings
 
 
 class PastSignalsGenerator(object):
@@ -22,18 +21,17 @@ class PastSignalsGenerator(object):
     def __init__(self, container: Container, live_start_date: datetime, initial_risk: float,
                  all_tickers: Sequence[Ticker], model_type_tickers_dict: Dict[Type[AlphaModel], Sequence[Ticker]]):
         self.container = container
-        self.settings = self.container.resolve(Settings)
         self.live_start_date = live_start_date
         self.end_date = datetime.now()
         self.initial_risk = initial_risk
         self.all_tickers_used = all_tickers
 
         # the settings below should match exactly the setting of the live trading observed
-        session_builder = BacktestTradingSessionBuilder(self.live_start_date, self.end_date)
+        session_builder = self.container.resolve(BacktestTradingSessionBuilder)
         session_builder.set_position_sizer(InitialRiskPositionSizer, self.initial_risk)
         session_builder.set_monitor_type(DummyMonitor)
 
-        backtest_ts = session_builder.build(self.container)
+        backtest_ts = session_builder.build(self.live_start_date, self.end_date)
         backtest_ts.use_data_preloading(self.all_tickers_used)
 
         self.backtest_ts = backtest_ts
@@ -48,6 +46,7 @@ class PastSignalsGenerator(object):
         self.exposures_df = None
         self.fractions_at_risk_df = None
         self.backtest_tms = None
+        self.leverage_tms = None
 
     def collect_backtest_result(self):
         self.backtest_ts.start_trading()
@@ -60,11 +59,15 @@ class PastSignalsGenerator(object):
         self.backtest_tms = portfolio_tms
         self.exposures_df["c/c return"] = portfolio_tms.to_simple_returns()
 
+        leverage_tms = self.backtest_ts.portfolio.leverage()
+        leverage_tms.index = leverage_tms.index.date  # remove time part
+        self.exposures_df["leverage"] = leverage_tms
+
     def generate_past_signals_file(self):
         # ===== summary export =====
         file_name_template = datetime.now().strftime("%Y_%m_%d-%H%M {}".format('past_signals.xlsx'))
         xlx_file_path = join('past_signals', file_name_template)
-        xlx_exporter = ExcelExporter(self.settings)
+        xlx_exporter = self.container.resolve(ExcelExporter)
         path = xlx_exporter.export_container(self.exposures_df, xlx_file_path, include_column_names=True)
 
         # ===== detailed data collection and export =====
