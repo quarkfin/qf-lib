@@ -5,8 +5,8 @@ import matplotlib as plt
 
 from qf_lib.analysis.common.abstract_document import AbstractDocument
 from qf_lib.analysis.timeseries_analysis.timeseries_analysis import TimeseriesAnalysis
-from qf_lib.analysis.timeseries_analysis.timeseries_analysis_dto import TimeseriesAnalysisDTO
 from qf_lib.common.enums.frequency import Frequency
+from qf_lib.common.utils.returns.is_return_stats import InSampleReturnStats
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.plotting.charts.cone_chart_oos import ConeChartOOS
 from qf_lib.settings import Settings
@@ -20,20 +20,35 @@ class LiveTradingSheet(AbstractDocument):
     def __init__(self, settings: Settings, pdf_exporter,
                  strategy_tms: QFSeries,
                  strategy_leverage_tms: QFSeries,
-                 is_tms_analysis: TimeseriesAnalysisDTO,
+                 is_stats: InSampleReturnStats,
                  title: str = "Live Trading Sheet",
                  benchmark_tms: QFSeries=None):
+        """
+
+        Parameters
+        ----------
+        settings
+            settings of the project
+        pdf_exporter
+            tool that creates the pdf with the result
+        strategy_tms
+            timeseries of the live trading of the strategy
+        strategy_leverage_tms
+            timeseries of the leverage during the live trading period
+        is_stats
+            statistics of the In Sample period of the strategy
+        title
+            title of the document
+        benchmark_tms
+            timeseries of the benchmark corresponding to the strategy_tms
+        """
 
         super().__init__(settings, pdf_exporter, title)
         self.strategy_tms = strategy_tms
         self.strategy_leverage_tms = strategy_leverage_tms
         self.benchmark_tms = benchmark_tms
-        self.is_tms_analysis = is_tms_analysis
+        self.is_stats = is_stats
         self.frequency = Frequency.DAILY
-
-        # set column name for stats table
-        if not hasattr(self.is_tms_analysis, 'returns_tms'):
-            self.is_tms_analysis.returns_tms.name = "In-Sample Results"
 
     def build_document(self):
         self._add_header()
@@ -41,9 +56,9 @@ class LiveTradingSheet(AbstractDocument):
         self._add_dd_and_leverage()
 
         if self.benchmark_tms is None:
-            ta_list = [TimeseriesAnalysis(self.strategy_tms, self.frequency), self.is_tms_analysis]
+            ta_list = [TimeseriesAnalysis(self.strategy_tms, self.frequency)]
         else:
-            ta_list = [TimeseriesAnalysis(self.strategy_tms, self.frequency), self.is_tms_analysis,
+            ta_list = [TimeseriesAnalysis(self.strategy_tms, self.frequency),
                        TimeseriesAnalysis(self.benchmark_tms, self.frequency)]
         self._add_statistics_table(ta_list)
 
@@ -56,7 +71,7 @@ class LiveTradingSheet(AbstractDocument):
         grid.add_chart(perf_chart)
 
         cone_chart = ConeChartOOS(self.strategy_tms,
-                                  self.is_tms_analysis.mean_log_ret, self.is_tms_analysis.std_of_log_ret)
+                                  self.is_stats.mean_log_ret, self.is_stats.std_of_log_ret)
         grid.add_chart(cone_chart)
         self.document.add_element(grid)
 

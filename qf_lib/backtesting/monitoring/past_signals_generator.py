@@ -1,6 +1,6 @@
 from datetime import datetime
 from os.path import join
-from typing import Sequence, Dict, Type
+from typing import Dict, Type, List
 
 import pandas as pd
 from dic.container import Container
@@ -16,10 +16,19 @@ from qf_lib.common.tickers.tickers import str_to_ticker, Ticker
 from qf_lib.common.utils.excel.excel_exporter import ExcelExporter
 
 
+def get_all_tickers_used(model_type_tickers_dict: Dict[Type[AlphaModel], List[Ticker]]):
+    all_tickers = []
+    for model_type, traded_tickers_list in model_type_tickers_dict.items():
+        non_traded_tickers = list(model_type.settings.tickers_dict.values())
+        all_tickers = all_tickers + traded_tickers_list + non_traded_tickers
+    result_list = list(set(all_tickers))  # remove potential duplicates
+    return result_list
+
+
 class PastSignalsGenerator(object):
 
     def __init__(self, container: Container, live_start_date: datetime, initial_risk: float,
-                 all_tickers: Sequence[Ticker], model_type_tickers_dict: Dict[Type[AlphaModel], Sequence[Ticker]]):
+                 model_type_tickers_dict: Dict[Type[AlphaModel], List[Ticker]]):
         """
 
         Parameters
@@ -30,16 +39,14 @@ class PastSignalsGenerator(object):
             date from which we will recalculate all the signals
         initial_risk
             value of initial risk for all the models
-        all_tickers
-            sequence with all tickers accessed or traded by the models
         model_type_tickers_dict
-            dict of model -> tickers traded by the model
+            dict of model type -> tickers traded by the model
         """
         self.container = container
         self.live_start_date = live_start_date
         self.end_date = datetime.now()
         self.initial_risk = initial_risk
-        self.all_tickers_used = all_tickers
+        self.model_type_tickers_dict = model_type_tickers_dict
 
         # the settings below should match exactly the setting of the live trading observed
         session_builder = self.container.resolve(BacktestTradingSessionBuilder)
@@ -47,7 +54,8 @@ class PastSignalsGenerator(object):
         session_builder.set_monitor_type(DummyMonitor)
 
         backtest_ts = session_builder.build(self.live_start_date, self.end_date)
-        backtest_ts.use_data_preloading(self.all_tickers_used)
+        all_tickers = get_all_tickers_used(self.model_type_tickers_dict)
+        backtest_ts.use_data_preloading(all_tickers)
 
         self.backtest_ts = backtest_ts
         model_factory = AlphaModelFactory(backtest_ts.data_handler)
@@ -105,10 +113,4 @@ class PastSignalsGenerator(object):
 
             xlx_exporter.export_container(df, xlx_file_path, include_column_names=True, sheet_name=column)
         return path
-
-
-
-
-
-
 

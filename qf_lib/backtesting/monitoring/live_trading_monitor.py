@@ -40,7 +40,6 @@ class LiveTradingMonitor(DummyMonitor):
         signal_generator = PastSignalsGenerator(container=self.container,
                                                 live_start_date=self.trading_settings.live_start_date,
                                                 initial_risk=self.trading_settings.initial_risk,
-                                                all_tickers=self.trading_settings.all_tickers,
                                                 model_type_tickers_dict=self.trading_settings.model_type_tickers_dict)
         signal_generator.collect_backtest_result()
         past_signals_file_path = signal_generator.generate_past_signals_file()
@@ -49,7 +48,7 @@ class LiveTradingMonitor(DummyMonitor):
                                               pdf_exporter=self.container.resolve(PDFExporter),
                                               strategy_tms=signal_generator.backtest_tms,
                                               strategy_leverage_tms=signal_generator.leverage_tms,
-                                              is_tms_analysis=self.trading_settings.is_tms_analysis,
+                                              is_stats=self.trading_settings.is_returns_stats,
                                               title=self.trading_settings.title)
 
         live_trading_sheet.build_document()

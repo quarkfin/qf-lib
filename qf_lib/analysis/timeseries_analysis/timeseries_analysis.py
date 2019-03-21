@@ -60,9 +60,6 @@ class TimeseriesAnalysis(TimeseriesAnalysisDTO):
         skewness
         kurtosis
         kelly
-
-        mean_ret                         - mean log return expressed in the frequency corresponding to data samples
-        std                              - std of log returns expressed in the frequency corresponding to data samples
     """
 
     def __init__(self, returns_timeseries: QFSeries, frequency: Frequency):
@@ -87,7 +84,6 @@ class TimeseriesAnalysis(TimeseriesAnalysisDTO):
         self._calculate_ratios()
         self._calculate_risk_stats()
         self._calculate_returns_stats()
-        self._calculate_log_ret_and_std()
 
     # ========= Methods presenting and aggregating results =========
 
@@ -366,7 +362,3 @@ class TimeseriesAnalysis(TimeseriesAnalysisDTO):
         self.skewness = self.returns_tms.skew()
         self.kurtosis = self.returns_tms.kurt()
 
-    def _calculate_log_ret_and_std(self):
-        log_ret_tms = self.returns_tms.to_log_returns()
-        self.mean_ret = log_ret_tms.mean()
-        self.std = log_ret_tms.std()
