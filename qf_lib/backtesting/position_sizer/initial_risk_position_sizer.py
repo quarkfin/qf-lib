@@ -44,7 +44,7 @@ class InitialRiskPositionSizer(PositionSizer):
         assert is_finite_number(target_percentage), "target_percentage has to be a finite number"
 
         market_order_list = self._order_factory.target_percent_orders({contract: target_percentage},
-                                                                      MarketOrder(), TimeInForce.DAY)
+                                                                      MarketOrder(), TimeInForce.OPG)
         if len(market_order_list) == 0:
             return None
 
