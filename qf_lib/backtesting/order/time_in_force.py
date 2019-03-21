@@ -7,7 +7,7 @@ class TimeInForce(Enum):
     Order stays open until it is cancelled.
     """
 
-    DAY = 2
+    DAY = 2,
     """
     Order stays open for the rest of the day.
     """
