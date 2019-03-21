@@ -18,15 +18,19 @@ class InitialRiskPositionSizer(PositionSizer):
     """
 
     def __init__(self, broker: Broker, data_handler: DataHandler, order_factory: OrderFactory,
-                 contract_ticker_mapper: ContractTickerMapper, initial_risk: float):
+                 contract_ticker_mapper: ContractTickerMapper, initial_risk: float, max_target_percentage=1.5):
         """
-        initial_risk - should be set once for all signals. It corresponds to the value that we are willing to lose
-        on single trade. For example: initial_risk = 0.02, means that we are willing to lose 2% of portfolio value in
-        single trade
+        initial_risk
+            should be set once for all signals. It corresponds to the value that we are willing to lose
+            on single trade. For example: initial_risk = 0.02, means that we are willing to lose 2% of portfolio value in
+            single trade
+        max_target_percentage
+            max leverage that is accepted by the position sizer.
         """
         super().__init__(broker, data_handler, order_factory, contract_ticker_mapper)
 
         self._initial_risk = initial_risk
+        self.max_target_percentage = max_target_percentage
         self.logger.info("Initial Risk: {}".format(initial_risk))
 
     def _generate_market_order(self, contract: Contract, signal: Signal):
@@ -56,9 +60,8 @@ class InitialRiskPositionSizer(PositionSizer):
         Sometimes the target percentage can be excessive to be executed by the broker (might exceed margin requirement)
         Cap the target percentage to the max value defined in this function
         """
-        max_target_percentage = 1.5
-        if initial_target_percentage > max_target_percentage:
+        if initial_target_percentage > self.max_target_percentage:
             self.logger.info("Target Percentage: {} above the maximum of {}. Setting the target percentage to {}"
-                             .format(initial_target_percentage, max_target_percentage, max_target_percentage))
-            return max_target_percentage
+                             .format(initial_target_percentage, self.max_target_percentage, self.max_target_percentage))
+            return self.max_target_percentage
         return initial_target_percentage

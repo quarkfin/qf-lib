@@ -56,8 +56,30 @@ class TestPositionSizer(unittest.TestCase):
         stop_quantity = -(self.initial_position + quantity)
         self.assertEqual(orders[1], Order(self.contract, stop_quantity, StopOrder(stop_price), TimeInForce.GTC))
 
-    def test_initial_risk_position_sizer(self):
-        fraction_at_risk = 0.01
+    def test_initial_risk_position_sizer_with_cap(self):
+        """
+        Max leverage will be limited by position sizer to 1.5
+        """
+        fraction_at_risk = 0.01   # will give leverage of 2, that will be capped to 1.5
+        signal = Signal(self.ticker, Exposure.LONG, fraction_at_risk)
+        orders = self.initial_risk_position_sizer.size_signals([signal])
+
+        self.assertEqual(len(orders), 2)  # market order and stop order
+        portfolio_value = self.initial_position / self.initial_allocation
+        max_leverage = self.initial_risk_position_sizer.max_target_percentage
+        target_quantity = int(np.floor(portfolio_value * max_leverage))
+        additional_contracts = target_quantity - self.initial_position
+        self.assertEqual(orders[0], Order(self.contract, additional_contracts, MarketOrder(), TimeInForce.OPG))
+
+        stop_price = self.last_price * (1 - fraction_at_risk)
+        stop_quantity = -(self.initial_position + additional_contracts)
+        self.assertEqual(orders[1], Order(self.contract, stop_quantity, StopOrder(stop_price), TimeInForce.GTC))
+
+    def test_initial_risk_position_sizer_without_cap(self):
+        """
+        Max leverage will not be limited by position sizer
+        """
+        fraction_at_risk = 0.23
         signal = Signal(self.ticker, Exposure.LONG, fraction_at_risk)
         orders = self.initial_risk_position_sizer.size_signals([signal])
 
@@ -70,6 +92,7 @@ class TestPositionSizer(unittest.TestCase):
         stop_price = self.last_price * (1 - fraction_at_risk)
         stop_quantity = -(self.initial_position + additional_contracts)
         self.assertEqual(orders[1], Order(self.contract, stop_quantity, StopOrder(stop_price), TimeInForce.GTC))
+
 
     def test_out_signal(self):
         fraction_at_risk = 0.02
