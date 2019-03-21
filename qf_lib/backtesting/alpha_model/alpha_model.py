@@ -13,9 +13,26 @@ class AlphaModelSettings(object):
     """
     Holds parameters of parametrized alpha models
     """
-    def __init__(self, parameters: Sequence[float]=None, risk_estimation_factor: float=None):
+    def __init__(self, parameters: Sequence[float]=None, risk_estimation_factor: float=None, tickers_dict=None):
+        """
+
+        Parameters
+        ----------
+        parameters
+            parameters of the alpha model that are used in the logic. number of params depends on the model.
+            (for example: len of moving averages)
+        risk_estimation_factor
+            parameter for stop loss calculations
+        tickers_dict
+            dict of ticker_name -> ticker. Should contain all tickers used by the model to calculate signal.
+             Note: these are not the tickers of instruments that we want to trade.
+             These are tickers of instruments that give us some information about the market. For example VIX index.
+        """
         self.parameters = parameters
         self.risk_estimation_factor = risk_estimation_factor
+        if tickers_dict is None:
+            tickers_dict = {}
+        self.tickers_dict = tickers_dict
 
 
 class AlphaModel(object, metaclass=ABCMeta):

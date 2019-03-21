@@ -20,6 +20,21 @@ class PastSignalsGenerator(object):
 
     def __init__(self, container: Container, live_start_date: datetime, initial_risk: float,
                  all_tickers: Sequence[Ticker], model_type_tickers_dict: Dict[Type[AlphaModel], Sequence[Ticker]]):
+        """
+
+        Parameters
+        ----------
+        container
+            container with utils like PDF Generator, Excel Generator and others
+        live_start_date
+            date from which we will recalculate all the signals
+        initial_risk
+            value of initial risk for all the models
+        all_tickers
+            sequence with all tickers accessed or traded by the models
+        model_type_tickers_dict
+            dict of model -> tickers traded by the model
+        """
         self.container = container
         self.live_start_date = live_start_date
         self.end_date = datetime.now()

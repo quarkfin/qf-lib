@@ -25,9 +25,9 @@ class ConeChartOOS(Chart):
         oos_series
             data to be plotted using ConeChartOOS - only the Out of sample data
         is_mean_return:
-            mean daily return of the strategy In Sample
+            mean daily log return of the strategy In Sample
         is_sigma:
-            std of daily returns of the strategy In Sample
+            std of daily log returns of the strategy In Sample
         cone_opacity
             opacity of the cone
         cone_stds
@@ -76,19 +76,23 @@ class ConeChartOOS(Chart):
         ax.set_title('Performance vs. Expectation')
         ax.set_xlim(0, self.oos_series.size)
 
+        self._insert_valuation_text_box(cone, strategy_tms)
+
+    def _insert_valuation_text_box(self, cone, strategy_tms):
         # add text box with average expectation over 20 days and overall horizon
         one_sigma_df = cone.calculate_aggregated_cone_oos_only(self.oos_series, self.is_mean_return, self.is_sigma, 1)
         one_sigma_tms = one_sigma_df['Expectation']
-        valuation_tms = (strategy_tms-1) / (one_sigma_tms-1)  # type: QFSeries
+        valuation_tms = (strategy_tms - 1) / (one_sigma_tms - 1)  # type: QFSeries
         valuation_total = valuation_tms.mean()
-        total_days = valuation_tms.size - 1
+        total_days = valuation_tms.size - 1  # first element is 0 days
 
-        if valuation_tms.size > 20:
-            valuation20d = valuation_tms.head(20).mean()
+        selected_short_frame = 20
+
+        if total_days > selected_short_frame:
+            valuation20d = valuation_tms.head(selected_short_frame + 1).mean()
             textstr = 'Valuation 20D = {:.2f}\nValuation {}D = {:.2f}'.format(valuation20d, total_days, valuation_total)
         else:
             textstr = 'Valuation {}D = {:.2f}'.format(total_days, valuation_total)
-
         props = dict(boxstyle='square', facecolor='white', alpha=0.5, edgecolor='grey')
         font_size = mpl.rcParams['legend.fontsize']
         self.axes.text(0.05, 0.95, textstr, transform=self.axes.transAxes, bbox=props,

@@ -123,8 +123,8 @@ class AnalyticalCone:
         Parameters
         ----------
         oos_series: series that is plotted on the cone - corresponds to the oos returns
-        is_mean_return: mean daily return of the strategy In Sample
-        is_sigma: std of daily returns of the strategy In Sample
+        is_mean_return: mean daily log return of the strategy In Sample
+        is_sigma: std of daily log returns of the strategy In Sample
         number_of_std: corresponds to the randomness of the stochastic process. reflects number of standard deviations
             to get expected values for. For example 1.0 means 1 standard deviation above the expected value.
 

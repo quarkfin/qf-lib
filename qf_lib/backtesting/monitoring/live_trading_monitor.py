@@ -1,24 +1,18 @@
-import csv
 from datetime import datetime
-from io import TextIOWrapper
-from os import path, makedirs
 from typing import List
-from dic.container import Container
 
-from pandas import Series
+from dic.container import Container
 
 from qf_lib.analysis.strategy_monitoring.live_trading_sheet import LiveTradingSheet
 from qf_lib.backtesting.events.notifiers import Notifiers
 from qf_lib.backtesting.events.time_event.after_market_close_event import AfterMarketCloseEvent
 from qf_lib.backtesting.monitoring.dummy_monitor import DummyMonitor
 from qf_lib.backtesting.monitoring.past_signals_generator import PastSignalsGenerator
-from qf_lib.backtesting.transaction import Transaction
+from qf_lib.backtesting.monitoring.settings_for_live_trading import LiveTradingSettings
 from qf_lib.common.utils.dateutils.date_to_string import date_to_str
 from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
-from qf_lib.common.utils.excel.excel_exporter import ExcelExporter
 from qf_lib.publishers.email_publishing.email_publisher import EmailPublisher
 from qf_lib.settings import Settings
-from qf_lib.starting_dir import get_starting_dir_abs_path
 
 
 class LiveTradingMonitor(DummyMonitor):
@@ -26,9 +20,10 @@ class LiveTradingMonitor(DummyMonitor):
     This Monitor will be used to monitor live trading activities
     """
 
-    def __init__(self, notifiers: Notifiers, containter: Container):
-        self.container = container
+    def __init__(self, notifiers: Notifiers, container: Container, settings_for_live_trading: LiveTradingSettings):
         self.notifiers = notifiers
+        self.container = container
+        self.trading_settings = settings_for_live_trading
         self.notifiers.scheduler.subscribe(AfterMarketCloseEvent, listener=self)
 
     def on_after_market_close(self, after_close_event: AfterMarketCloseEvent):
@@ -42,20 +37,21 @@ class LiveTradingMonitor(DummyMonitor):
         self._publish_by_email(attachments_paths, timestamp)
 
     def _generate_files(self):
-        signal_generator = PastSignalsGenerator(self.container,
-                                                live_start_date,
-                                                initial_risk,
-                                                all_tickers,
-                                                model_type_tickers_dict)
+        signal_generator = PastSignalsGenerator(container=self.container,
+                                                live_start_date=self.trading_settings.live_start_date,
+                                                initial_risk=self.trading_settings.initial_risk,
+                                                all_tickers=self.trading_settings.all_tickers,
+                                                model_type_tickers_dict=self.trading_settings.model_type_tickers_dict)
         signal_generator.collect_backtest_result()
         past_signals_file_path = signal_generator.generate_past_signals_file()
 
-        live_trading_sheet = LiveTradingSheet(settings=self._settings,
+        live_trading_sheet = LiveTradingSheet(settings=self.container.resolve(Settings),
                                               pdf_exporter=self.container.resolve(PDFExporter),
                                               strategy_tms=signal_generator.backtest_tms,
                                               strategy_leverage_tms=signal_generator.leverage_tms,
-                                              is_tms_analysis=is_tms_analysis,
-                                              title="Live trading sheet demo - Benchmark")
+                                              is_tms_analysis=self.trading_settings.is_tms_analysis,
+                                              title=self.trading_settings.title)
+
         live_trading_sheet.build_document()
         live_trading_sheet_path = live_trading_sheet.save()
 
@@ -87,17 +83,3 @@ class LiveTradingMonitor(DummyMonitor):
                 context={'user': user, 'date': date_str}
             )
 
-
-
-        # get prices for days when benchmark was traded
-        benchmark_close_tms = self.data_provider.get_price(self.mqp_settings.benchmark_ticker, PriceField.Close, start_date, end_date).dropna()
-        benchmark_close_tms = benchmark_close_tms.dropna()
-        benchmark_close_tms = benchmark_close_tms.tail(self.mqp_settings.portfolio_generation_window_size)
-
-        index_members_close_df = self.data_provider.get_price(
-            tickers_universe, PriceField.Close, start_date, end_date)
-        index_members_close_df = index_members_close_df.loc[benchmark_close_tms.index, :]
-
-        # convert to returns
-        benchmark_rets_tms = benchmark_close_tms.to_simple_returns()
-        index_members_rets_df = index_members_close_df.to_simple_returns()

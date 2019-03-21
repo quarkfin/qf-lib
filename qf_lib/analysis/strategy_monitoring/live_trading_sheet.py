@@ -56,7 +56,7 @@ class LiveTradingSheet(AbstractDocument):
         grid.add_chart(perf_chart)
 
         cone_chart = ConeChartOOS(self.strategy_tms,
-                                  self.is_tms_analysis.mean_ret, self.is_tms_analysis.std)
+                                  self.is_tms_analysis.mean_log_ret, self.is_tms_analysis.std_of_log_ret)
         grid.add_chart(cone_chart)
         self.document.add_element(grid)
 
