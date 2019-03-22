@@ -18,32 +18,32 @@ def get_data():
     end_date = str_to_date('2017-12-31')
     live_date = str_to_date('2016-01-01')
 
-    strategy = data_provider.get_price(tickers=QuandlTicker('AAPL', 'WIKI'),
-                                       fields=PriceField.Close, start_date=start_date, end_date=end_date)
-    benchmark = data_provider.get_price(tickers=QuandlTicker('IBM', 'WIKI'),
-                                        fields=PriceField.Close, start_date=start_date, end_date=end_date)
+    dummy_strategy_tms = data_provider.get_price(tickers=QuandlTicker('AAPL', 'WIKI'),
+                                                 fields=PriceField.Close, start_date=start_date, end_date=end_date)
+    dummy_benchmark_tms = data_provider.get_price(tickers=QuandlTicker('IBM', 'WIKI'),
+                                                  fields=PriceField.Close, start_date=start_date, end_date=end_date)
 
-    strategy.name = "Live Trading"
-    benchmark.name = "In-Sample Results"
-    return strategy, benchmark, live_date
+    dummy_strategy_tms.name = "Live Trading"
+    dummy_benchmark_tms.name = "In-Sample Results"
+    return dummy_strategy_tms, dummy_benchmark_tms, live_date
 
 
 this_dir_path = os.path.dirname(os.path.abspath(__file__))
-strategy, benchmark, live_date = cached_value(get_data, os.path.join(this_dir_path, 'live_trading_sheet.cache'))
+strategy_tms, benchmark_tms, live_date = cached_value(get_data, os.path.join(this_dir_path, 'live_trading_sheet.cache'))
 
 
 settings = container.resolve(Settings)  # type: Settings
 pdf_exporter = container.resolve(PDFExporter)  # type: PDFExporter
 
 is_tms_stats = InSampleReturnStats(0.0005810136908445734, 0.012825939240219972)
-tearsheet = LiveTradingSheet(settings, pdf_exporter, strategy, strategy, is_tms_stats, "Live Trading Sheet demo")
+tearsheet = LiveTradingSheet(settings, pdf_exporter, strategy_tms, strategy_tms, is_tms_stats, "Live Trading Sheet demo")
 tearsheet.build_document()
 tearsheet.save()
 
-benchmark.name = "Benchmark"
-leverage = strategy  # does not make sense, but just to plot something
-tearsheet = LiveTradingSheet(settings, pdf_exporter, strategy, leverage, is_tms_stats,
-                             "Live trading sheet demo - Benchmark", benchmark_tms=benchmark)
+benchmark_tms.name = "Benchmark"
+leverage = strategy_tms  # does not make sense, but just to plot something
+tearsheet = LiveTradingSheet(settings, pdf_exporter, strategy_tms, leverage, is_tms_stats,
+                             "Live trading sheet demo - Benchmark", benchmark_tms=benchmark_tms)
 tearsheet.build_document()
 tearsheet.save()
 

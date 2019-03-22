@@ -6,8 +6,7 @@ class TimeseriesAnalysisDTO(object):
         self.end_date                  = None
 
         self.total_return              = None
-        self.cagr                      = None        # annualised return
-
+        self.cagr                      = None       # Compounded Annual Growth Rate = (End/Begining)^(1/#ofYeares)–1
         self.annualised_vol            = None
         self.annualised_upside_vol     = None
         self.annualised_downside_vol   = None

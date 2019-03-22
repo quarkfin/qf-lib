@@ -1,5 +1,5 @@
 from abc import abstractmethod, ABCMeta
-from typing import Sequence
+from typing import Sequence, Dict
 
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
 from qf_lib.backtesting.alpha_model.signal import Signal
@@ -13,7 +13,8 @@ class AlphaModelSettings(object):
     """
     Holds parameters of parametrized alpha models
     """
-    def __init__(self, parameters: Sequence[float]=None, risk_estimation_factor: float=None, tickers_dict=None):
+    def __init__(self, parameters: Sequence[float]=None, risk_estimation_factor: float=None,
+                 tickers_dict: Dict[str, Ticker]=None):
         """
 
         Parameters
@@ -25,8 +26,8 @@ class AlphaModelSettings(object):
             parameter for stop loss calculations
         tickers_dict
             dict of ticker_name -> ticker. Should contain all tickers used by the model to calculate signal.
-             Note: these are not the tickers of instruments that we want to trade.
-             These are tickers of instruments that give us some information about the market. For example VIX index.
+            Note: these are not the tickers of instruments that we want to trade.
+            These are tickers of instruments that give us some information about the market. For example VIX index.
         """
         self.parameters = parameters
         self.risk_estimation_factor = risk_estimation_factor
