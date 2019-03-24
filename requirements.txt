@@ -17,5 +17,6 @@ beautifulsoup4==4.6.3
 mockito==1.1.1
 xarray==0.11.0
 cvxopt==1.2.2
-patsy==0.5.1  # necessary for statsmodels to work properly
+patsy==0.5.1          # necessary for statsmodels to work properly
 TA-Lib==0.4.17
+dic==1.5.2b1          # container
