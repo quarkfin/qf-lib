@@ -1,5 +1,5 @@
 from datetime import datetime
-from os import makedirs
+from os import makedirs, os
 from os.path import exists, isfile, join, dirname
 from typing import Any, Union
 
@@ -22,7 +22,7 @@ class ExcelExporter(object):
 
     def export_container(self, container, file_path: str, write_mode: WriteMode=WriteMode.CREATE_IF_DOESNT_EXIST,
                          starting_cell: str='A1', sheet_name: str=None, include_index: bool=True,
-                         include_column_names: bool=False) -> Union[bytes, str]:
+                         include_column_names: bool=False, remove_old_file=False) -> Union[bytes, str]:
         """
         Exports the container (Series, DataFrame) to the excel file.
         Returns the absolute file path of the exported file.
@@ -47,10 +47,15 @@ class ExcelExporter(object):
         include_column_names
             determines whether the column names should be written together with the data. For series containers the
             column names are always "Index" and "Values".
+        remove_old_file
+            if true it first deletes the old file before creating new
         """
         starting_row, starting_column = row_and_column(starting_cell)
 
         file_path = join(get_starting_dir_abs_path(), self.settings.output_directory, file_path)
+        # Make sure an old version of this file is removed.
+        if remove_old_file and os.path.exists(file_path):
+            os.remove(file_path)
 
         work_book = self.get_workbook(file_path, write_mode)
         work_sheet = self.get_worksheet(work_book, sheet_name)
