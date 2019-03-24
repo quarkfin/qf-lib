@@ -18,3 +18,4 @@ mockito==1.1.1
 xarray==0.11.0
 cvxopt==1.2.2
 patsy==0.5.1  # necessary for statsmodels to work properly
+TA-Lib==0.4.17
