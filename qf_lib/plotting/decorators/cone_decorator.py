@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Union, Sequence
 
-from qf_lib.common.utils.returns.analytical_cone import AnalyticalCone
+from qf_lib.common.utils.confidence_interval.analytical_cone import AnalyticalCone
 from qf_lib.containers.series.prices_series import PricesSeries, QFSeries
 from qf_lib.plotting.charts.chart import Chart
 from qf_lib.plotting.decorators.chart_decorator import ChartDecorator

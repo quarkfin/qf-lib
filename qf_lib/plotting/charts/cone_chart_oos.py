@@ -1,8 +1,9 @@
-import matplotlib as mpl
 from itertools import cycle
 from typing import Sequence, List
 
-from qf_lib.common.utils.returns.analytical_cone import AnalyticalCone
+import matplotlib as mpl
+
+from qf_lib.common.utils.confidence_interval.analytical_cone_oos import AnalyticalConeOOS
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.plotting.charts.chart import Chart
 from qf_lib.plotting.decorators.data_element_decorator import DataElementDecorator
@@ -46,7 +47,7 @@ class ConeChartOOS(Chart):
     def plot(self, figsize=None):
         self._setup_axes_if_necessary(figsize)
 
-        cone = AnalyticalCone()
+        cone = AnalyticalConeOOS()
         cone_data_frame = cone.calculate_aggregated_cone_oos_only(
             self.oos_series, self.is_mean_return, self.is_sigma, 0)
 
