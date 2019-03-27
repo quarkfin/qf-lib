@@ -103,7 +103,7 @@ class VolatilityForecast(object):  # todo: make all other scripts compatible
         # take the last value (most recent forecast)
         forecasted_value = forecasts_series[-1]
         # forecasted_value corresponds to variance. Convert to volatility
-        forecasted_vol = np.sqrt(forecasted_value)  # ** (1.0/float(self.vol_process.))  # todo: works only for power=2
+        forecasted_vol = np.sqrt(forecasted_value)  # todo: works only for power=2
         return forecasted_vol
 
     def _get_ARCH_model(self, returns: SimpleReturnsSeries, vol_process: VolatilityProcess):
