@@ -1,7 +1,8 @@
-from typing import List, Dict
+from typing import List, Dict, Sequence
 
 import numpy as np
 
+from qf_lib.backtesting.alpha_model.signal import Signal
 from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.portfolio.position import Position
 from qf_lib.backtesting.trading_session.trading_session import TradingSession
@@ -11,7 +12,7 @@ from qf_lib.backtesting.order.execution_style import MarketOrder, StopOrder
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.backtesting.events.time_event.before_market_open_event import BeforeMarketOpenEvent
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
-from qf_lib.containers.series.qf_series import QFSeries
+from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 
 
 class TradingStrategy(object):
@@ -19,7 +20,7 @@ class TradingStrategy(object):
     Puts together models and all settings around it and generates orders on before market open
     """
 
-    def __init__(self, ts: TradingSession, model_tickers_dict: Dict[AlphaModel, List[Ticker]], use_stop_losses=True):
+    def __init__(self, ts: TradingSession, model_tickers_dict: Dict[AlphaModel, Sequence[Ticker]], use_stop_losses=True):
         """
         Parameters
         ----------
@@ -38,20 +39,22 @@ class TradingStrategy(object):
 
         self._model_tickers_dict = model_tickers_dict
         self._use_stop_losses = use_stop_losses
-        self.logger = qf_logger.getChild(self.__class__.__name__)
-
-        self.signals_tms = QFSeries(name="signals")
+        self.signals_df = QFDataFrame()  # rows indexed by date and columns by "Ticker@AlphaModel" string
 
         ts.notifiers.scheduler.subscribe(BeforeMarketOpenEvent, listener=self)
+        self.logger = qf_logger.getChild(self.__class__.__name__)
+        self._log_configuration()
 
     def on_before_market_open(self, _: BeforeMarketOpenEvent=None):
-        self.logger.info("on_before_market_open - Signal Generation Started")
+        self.logger.info("on_before_market_open - Signals Generation Started")
         signals = self._calculate_signals()
+        self.logger.info("on_before_market_open - Signals Generation Finished")
 
-        self.logger.info("on_before_market_open - Signal Generation Finished, Placing Orders")
+        self._save_signals(signals)
 
+        self.logger.info("on_before_market_open - Placing Orders")
         self._place_orders(signals)
-        self.logger.info("on_before_market_open - Order Placed")
+        self.logger.info("on_before_market_open - Orders Placed")
 
     def _calculate_signals(self):
         current_positions = self._broker.get_positions()
@@ -65,12 +68,7 @@ class TradingStrategy(object):
                 current_exposure = self._get_current_exposure(contract, current_positions)
                 signal = model.get_signal(ticker, current_exposure)
                 signals.append(signal)
-                self.logger.info(signal)
 
-        for signal in signals:
-            self.logger.info(signal)
-
-        self.signals_tms[self._timer.now().date()] = signals  # save signals
         return signals
 
     def _place_orders(self, signals):
@@ -89,6 +87,12 @@ class TradingStrategy(object):
             self.logger.info("Placing stop orders")
             self._broker.place_orders(stop_orders)
 
+    def _save_signals(self, signals: List[Signal]):
+        for signal in signals:
+            self.logger.info(signal)
+            column = signal.ticker.as_string() + "@" + signal.alpha_model.__class__.__name__
+            self.signals_df.loc[self._timer.now().date(), column] = signal  # save signals
+
     @staticmethod
     def _get_current_exposure(contract: Contract, current_positions: List[Position]) -> Exposure:
         matching_position_quantities = [position.quantity()
@@ -98,3 +102,10 @@ class TradingStrategy(object):
         quantity = next(iter(matching_position_quantities), 0)
         current_exposure = Exposure(np.sign(quantity))
         return current_exposure
+
+    def _log_configuration(self):
+        self.logger.info("TradingStrategy configuration:")
+        for model, tickers in self._model_tickers_dict.items():
+            self.logger.info('Model: {}'.format(str(model)))
+            for ticker in tickers:
+                self.logger.info('\t Ticker: {}'.format(ticker.as_string()))

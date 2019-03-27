@@ -17,7 +17,6 @@ from qf_lib.backtesting.execution_handler.simulated.simulated_execution_handler 
 from qf_lib.backtesting.execution_handler.simulated.slippage.base import Slippage
 from qf_lib.backtesting.execution_handler.simulated.slippage.price_based_slippage import PriceBasedSlippage
 from qf_lib.backtesting.monitoring.abstract_monitor import AbstractMonitor
-from qf_lib.backtesting.monitoring.backtest_monitor import BacktestMonitor
 from qf_lib.backtesting.monitoring.dummy_monitor import DummyMonitor
 from qf_lib.backtesting.monitoring.light_backtest_monitor import LightBacktestMonitor
 from qf_lib.backtesting.order.orderfactory import OrderFactory
@@ -87,7 +86,7 @@ class BacktestTradingSessionBuilder(object):
         self._data_provider = data_provider
 
     def set_monitor_type(self, monitor_type: Type[AbstractMonitor]):
-        assert monitor_type is BacktestMonitor or monitor_type is LightBacktestMonitor or monitor_type is DummyMonitor
+        assert issubclass(monitor_type, AbstractMonitor)
         self._monitor_type = monitor_type
 
     def set_logging_level(self, logging_level: int):

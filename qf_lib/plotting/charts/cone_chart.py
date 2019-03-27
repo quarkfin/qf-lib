@@ -1,10 +1,11 @@
 from datetime import datetime
 from itertools import cycle
-from typing import Sequence
+from typing import Sequence, List
 
-from qf_lib.common.utils.returns.analytical_cone import AnalyticalCone
+from qf_lib.common.utils.confidence_interval.analytical_cone import AnalyticalCone
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.plotting.charts.chart import Chart
+from qf_lib.plotting.decorators.data_element_decorator import DataElementDecorator
 
 
 class ConeChart(Chart):
@@ -70,3 +71,6 @@ class ConeChart(Chart):
         ax.set_ylabel('Current valuation')
         ax.set_title('Performance vs. Expectation')
         ax.set_xlim(0, self.nr_of_data_points)
+
+    def apply_data_element_decorators(self, data_element_decorators: List["DataElementDecorator"]):
+        pass

@@ -1,7 +1,7 @@
 from datetime import datetime
 from os import makedirs
 from os.path import exists, isfile, join, dirname
-from typing import Any
+from typing import Any, Union
 
 import numpy
 from openpyxl import Workbook, load_workbook
@@ -22,9 +22,10 @@ class ExcelExporter(object):
 
     def export_container(self, container, file_path: str, write_mode: WriteMode=WriteMode.CREATE_IF_DOESNT_EXIST,
                          starting_cell: str='A1', sheet_name: str=None, include_index: bool=True,
-                         include_column_names: bool=False) -> None:
+                         include_column_names: bool=False) -> Union[bytes, str]:
         """
         Exports the container (Series, DataFrame) to the excel file.
+        Returns the absolute file path of the exported file.
 
         Parameters
         ----------
@@ -57,6 +58,7 @@ class ExcelExporter(object):
         self.write_to_worksheet(container, work_sheet, starting_row, starting_column, include_index,
                                 include_column_names)
         work_book.save(file_path)
+        return file_path
 
     def write_cell(self, file_path: str, cell_reference: str, value: Any,
                    write_mode: WriteMode=WriteMode.CREATE_IF_DOESNT_EXIST, sheet_name: str=None):

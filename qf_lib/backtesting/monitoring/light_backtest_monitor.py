@@ -52,10 +52,8 @@ class LightBacktestMonitor(BacktestMonitor):
         portfolio_tms = self.backtest_result.portfolio.get_portfolio_timeseries()
         portfolio_tms.name = self.backtest_result.backtest_name
 
-        leverage = self.backtest_result.portfolio.leverage()
-
         self._export_PDF_with_charts(portfolio_tms)
-        self._export_leverage_analysis(leverage, portfolio_tms)
+        self._export_leverage_analysis(portfolio_tms, self.backtest_result.portfolio.leverage())
         self._export_tms_to_excel(portfolio_tms)
         self._print_stats_to_console(portfolio_tms)
 
@@ -76,15 +74,6 @@ class LightBacktestMonitor(BacktestMonitor):
                                                   starting_cell='A1', include_column_names=True)
         except Exception as ex:
             self.logger.error("Error while exporting to Excel: " + str(ex))
-
-    def _export_leverage_analysis(self, leverage, portfolio_tms):
-        try:
-            leverage_sheet = LeverageAnalysisSheet(
-                self._settings, self._pdf_exporter, leverage, title=portfolio_tms.name)
-            leverage_sheet.build_document()
-            leverage_sheet.save(self._report_dir)
-        except Exception as ex:
-            self.logger.error("Error while exporting to PDF: " + str(ex))
 
     def _export_PDF_with_charts(self, portfolio_tms):
         try:

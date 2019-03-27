@@ -13,7 +13,7 @@ from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.cryptocurrency.cryptocurrency_data_provider import CryptoCurrencyDataProvider
 
 
-@unittest.skip("CryptoCurrencyDataProvider needs to be fixed")
+@unittest.skip("CryptoCurrencyDataProvider needs update")
 class TestCryptoCurrency(unittest.TestCase):
     START_DATE = str_to_date('2016-01-01')
     END_DATE = str_to_date('2017-02-02')

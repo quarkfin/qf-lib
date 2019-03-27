@@ -19,8 +19,11 @@ from qf_lib.backtesting.contract.contract import Contract
 class IBBroker(Broker):
     def __init__(self):
         self.logger = ib_logger.getChild(self.__class__.__name__)
+        # lock that synchronizes entries into the functions and
+        # makes sure we have a synchronous communication with client
         self.lock = Lock()
-        self.waiting_time = 60  # expressed in seconds
+        self.waiting_time = 30  # expressed in seconds
+        # lock that informs us that wrapper received the response
         self.action_event_lock = Event()
         self.wrapper = IBWrapper(self.action_event_lock)
         self.client = EClient(wrapper=self.wrapper)
@@ -33,6 +36,7 @@ class IBBroker(Broker):
         # - thread of the wrapper
         thread = Thread(target=self.client.run)
         thread.start()
+
         # this will be released after the client initialises and wrapper receives the nextValidOrderId
         if not self._wait_for_results():
             raise ConnectionError("IB Broker was not initialized correctly")
