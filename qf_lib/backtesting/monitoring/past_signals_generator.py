@@ -47,23 +47,7 @@ class PastSignalsGenerator(object):
         self.end_date = datetime.now()
         self.initial_risk = initial_risk
         self.model_type_tickers_dict = model_type_tickers_dict
-
-        # the settings below should match exactly the setting of the live trading observed
-        session_builder = self.container.resolve(BacktestTradingSessionBuilder)
-        session_builder.set_position_sizer(InitialRiskPositionSizer, self.initial_risk)
-        session_builder.set_monitor_type(DummyMonitor)
-
-        backtest_ts = session_builder.build(self.live_start_date, self.end_date)
-        all_tickers = get_all_tickers_used(self.model_type_tickers_dict)
-        backtest_ts.use_data_preloading(all_tickers)
-
-        self.backtest_ts = backtest_ts
-        model_factory = AlphaModelFactory(backtest_ts.data_handler)
-        model_tickers_dict = {}
-        for model_type, tickers in model_type_tickers_dict.items():
-            model = model_factory.make_parametrized_model(model_type)
-            model_tickers_dict[model] = tickers
-        self.strategy = TradingStrategy(self.backtest_ts, model_tickers_dict)
+        self.strategy = self._set_up_trading_strategy(model_type_tickers_dict)
 
         self.signals_df = None
         self.exposures_df = None
@@ -84,6 +68,7 @@ class PastSignalsGenerator(object):
 
         leverage_tms = self.backtest_ts.portfolio.leverage()
         leverage_tms.index = leverage_tms.index.date  # remove time part
+        self.leverage_tms = leverage_tms
         self.exposures_df["leverage"] = leverage_tms
 
     def generate_past_signals_file(self):
@@ -114,3 +99,19 @@ class PastSignalsGenerator(object):
             xlx_exporter.export_container(df, xlx_file_path, include_column_names=True, sheet_name=column)
         return path
 
+    def _set_up_trading_strategy(self, model_type_tickers_dict):
+        # the settings below should match exactly the setting of the live trading observed
+        session_builder = self.container.resolve(BacktestTradingSessionBuilder)
+        session_builder.set_position_sizer(InitialRiskPositionSizer, self.initial_risk)
+        session_builder.set_monitor_type(DummyMonitor)
+        backtest_ts = session_builder.build(self.live_start_date, self.end_date)
+        all_tickers = get_all_tickers_used(self.model_type_tickers_dict)
+        backtest_ts.use_data_preloading(all_tickers)
+        self.backtest_ts = backtest_ts
+        model_factory = AlphaModelFactory(backtest_ts.data_handler)
+        model_tickers_dict = {}
+        for model_type, tickers in model_type_tickers_dict.items():
+            model = model_factory.make_parametrized_model(model_type)
+            model_tickers_dict[model] = tickers
+        strategy = TradingStrategy(self.backtest_ts, model_tickers_dict)
+        return strategy

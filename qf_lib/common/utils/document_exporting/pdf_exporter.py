@@ -33,7 +33,7 @@ class PDFExporter(DocumentExporter):
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
     def generate(self, documents: List[Document], export_dir: str, filename: str,
-                 include_table_of_contents=False, css_file_names: List[str] = None) -> List[str]:
+                 include_table_of_contents=False, css_file_names: List[str] = None) -> str:
         """
         Merged all documents into one and then exports the merged document to a PDF file in the given directory.
 
@@ -61,8 +61,11 @@ class PDFExporter(DocumentExporter):
         the absolute path to the output PDF file that was saved
         """
         css_file_paths = []
-        result = []
         documents = [self._merge_documents(documents, filename)]
+
+        # Find the output directory
+        output_dir = self.get_output_dir(export_dir)
+        output_filename = os.path.join(output_dir, filename)
 
         for document in documents:
             if include_table_of_contents:
@@ -71,9 +74,6 @@ class PDFExporter(DocumentExporter):
             # Generate the full document HTML
             self.logger.info("Generating HTML for PDF...")
             html = document.generate_html()
-
-            # Find the output directory
-            output_dir = self.get_output_dir(export_dir)
 
             # Automatically include all the css files in the `document_css/base` directory
             base_css = os.listdir(os.path.join(self._document_css_dir, self.BASE_CSS_DIR_NAME))
@@ -91,9 +91,7 @@ class PDFExporter(DocumentExporter):
             html = HTML(string=html)
 
             # Write out the PDF.
-            output_filename = os.path.join(output_dir, filename)
             self.logger.info("Rendering PDF in {}...".format(output_filename))
             html.write_pdf(output_filename, css_file_paths)
-            result.append(output_filename)
 
-        return result
+        return output_filename

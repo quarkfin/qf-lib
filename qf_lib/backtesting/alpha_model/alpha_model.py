@@ -141,3 +141,6 @@ class AlphaModel(object, metaclass=ABCMeta):
         prices_df = self.data_handler.historical_price(ticker, fields, num_of_bars_needed)
         fraction_at_risk = average_true_range(prices_df, normalized=True) * self.risk_estimation_factor
         return fraction_at_risk
+
+    def __str__(self):
+        return self.__class__.__name__

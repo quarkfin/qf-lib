@@ -27,7 +27,7 @@ class LiveTradingMonitor(DummyMonitor):
         self.notifiers.scheduler.subscribe(AfterMarketCloseEvent, listener=self)
 
     def on_after_market_close(self, after_close_event: AfterMarketCloseEvent):
-        self.end_of_day_update()
+        self.end_of_day_update(after_close_event.time)
 
     def end_of_day_update(self, timestamp: datetime = None):
         """

@@ -46,15 +46,15 @@ class TradingStrategy(object):
         self._log_configuration()
 
     def on_before_market_open(self, _: BeforeMarketOpenEvent=None):
-        self.logger.info("on_before_market_open - Signal Generation Started")
+        self.logger.info("on_before_market_open - Signals Generation Started")
         signals = self._calculate_signals()
-        self.logger.info("on_before_market_open - Signal Generation Finished")
+        self.logger.info("on_before_market_open - Signals Generation Finished")
 
         self._save_signals(signals)
 
         self.logger.info("on_before_market_open - Placing Orders")
         self._place_orders(signals)
-        self.logger.info("on_before_market_open - Order Placed")
+        self.logger.info("on_before_market_open - Orders Placed")
 
     def _calculate_signals(self):
         current_positions = self._broker.get_positions()
