@@ -9,8 +9,9 @@ from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
 
 
 class VolatilityForecast(object):  # todo: make all other scripts compatible
-    def __init__(self, returns_tms: SimpleReturnsSeries, vol_process: VolatilityProcess, window_len: int = 2016,
-                 horizon: int = 1, method: str = 'analytic', annualise: bool = True, frequency: Frequency = None):
+    def __init__(self, returns_tms: SimpleReturnsSeries, vol_process: VolatilityProcess,
+                 window_len: int = 20, horizon: int = 1, method: str = 'analytic',
+                 annualise: bool = True, frequency: Frequency = Frequency.DAILY):
         """
         Creates class used for vol forecasting: describes the volatility forecast configuration as well as the input
         and output data (output is created and assigned by calling one of the class methods).
