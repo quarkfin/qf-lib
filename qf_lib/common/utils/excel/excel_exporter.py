@@ -1,5 +1,5 @@
 from datetime import datetime
-from os import makedirs, os
+from os import makedirs, path, remove
 from os.path import exists, isfile, join, dirname
 from typing import Any, Union
 
@@ -54,8 +54,8 @@ class ExcelExporter(object):
 
         file_path = join(get_starting_dir_abs_path(), self.settings.output_directory, file_path)
         # Make sure an old version of this file is removed.
-        if remove_old_file and os.path.exists(file_path):
-            os.remove(file_path)
+        if remove_old_file and path.exists(file_path):
+            remove(file_path)
 
         work_book = self.get_workbook(file_path, write_mode)
         work_sheet = self.get_worksheet(work_book, sheet_name)

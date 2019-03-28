@@ -2,6 +2,8 @@ from unittest import TestCase
 
 import matplotlib.pyplot as plt
 
+from demo_scripts.demo_configuration.demo_ioc import container
+from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
 
 plt.ion()  # required for dynamic chart, good to keep this at the beginning of imports
@@ -10,7 +12,6 @@ from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.backtesting.order.execution_style import MarketOrder
 from qf_lib.common.tickers.tickers import BloombergTicker
-from qf_common.config.ioc import container
 from qf_lib.backtesting.events.time_event.before_market_open_event import BeforeMarketOpenEvent
 from qf_lib.backtesting.trading_session.backtest_trading_session import BacktestTradingSession
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
@@ -50,9 +51,9 @@ class SimpleMAStrategy(object):
         contract = self.contract_ticker_mapper.ticker_to_contract(self.ticker)
 
         if short_ma_price >= long_ma_price:
-            orders = self.order_factory.target_percent_orders({contract: 1.0}, MarketOrder())
+            orders = self.order_factory.target_percent_orders({contract: 1.0}, MarketOrder(), TimeInForce.GTC)
         else:
-            orders = self.order_factory.target_percent_orders({contract: 0.0}, MarketOrder())
+            orders = self.order_factory.target_percent_orders({contract: 0.0}, MarketOrder(), TimeInForce.GTC)
 
         self.broker.cancel_all_open_orders()
         self.broker.place_orders(orders)
