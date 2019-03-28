@@ -18,3 +18,5 @@ mockito==1.1.1
 xarray==0.11.0
 cvxopt==1.2.2
 patsy==0.5.1  # necessary for statsmodels to work properly
+requests==2.21.0
+Pillow==5.4.1 # Sustitute for PIL library
