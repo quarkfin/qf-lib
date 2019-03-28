@@ -45,8 +45,9 @@ class LiveTradingSheet(AbstractDocument):
 
         super().__init__(settings, pdf_exporter, title)
         self.strategy_tms = strategy_tms
-        self.strategy_leverage_tms = strategy_leverage_tms
         self.benchmark_tms = benchmark_tms
+        self._add_default_names_if_needed(strategy_tms)
+        self.strategy_leverage_tms = strategy_leverage_tms
         self.is_stats = is_stats
         self.frequency = Frequency.DAILY
 
@@ -94,3 +95,9 @@ class LiveTradingSheet(AbstractDocument):
         filename = "%Y_%m_%d-%H%M {}.pdf".format(self.title)
         filename = datetime.now().strftime(filename)
         return self.pdf_exporter.generate([self.document], output_sub_dir, filename)
+
+    def _add_default_names_if_needed(self, strategy_tms):
+        if strategy_tms.name is None:
+            self.strategy_tms.name = "Live Trading Performance"
+        if self.benchmark_tms is not None and self.benchmark_tms.name is None:
+            self.benchmark_tms.name = "Benchmark"

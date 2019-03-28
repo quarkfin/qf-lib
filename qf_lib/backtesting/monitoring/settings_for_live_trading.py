@@ -12,7 +12,7 @@ class LiveTradingSettings(object):
 
         self.live_start_date = live_start_date
         self.initial_risk = initial_risk
-        self.model_type_tickers_dict = model_type_tickers_dict,
+        self.model_type_tickers_dict = model_type_tickers_dict
         self.is_returns_stats = is_returns_stats
         self.title = title
 
