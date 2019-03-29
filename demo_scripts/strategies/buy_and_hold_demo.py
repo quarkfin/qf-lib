@@ -1,14 +1,15 @@
 import matplotlib.pyplot as plt
 
+from qf_lib.backtesting.order.time_in_force import TimeInForce
+
+plt.ion()  # required for dynamic chart, keep before other imports
+
+from demo_scripts.demo_configuration.demo_ioc import container
 from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
-
-plt.ion()  # required for dynamic chart
-
 from qf_lib.backtesting.broker.broker import Broker
 from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.order.execution_style import MarketOrder
 from qf_lib.common.tickers.tickers import BloombergTicker
-from qf_common.config.ioc import container
 from qf_lib.backtesting.events.time_event.before_market_open_event import BeforeMarketOpenEvent
 from qf_lib.backtesting.events.time_event.scheduler import Scheduler
 from qf_lib.backtesting.order.orderfactory import OrderFactory
@@ -37,7 +38,7 @@ class BuyAndHoldStrategy(object):
 
     def calculate_signals(self):
         if not self.invested:
-            orders = self.order_factory.percent_orders({self.CONTRACT: 1.0}, MarketOrder())
+            orders = self.order_factory.percent_orders({self.CONTRACT: 1.0}, MarketOrder(), TimeInForce.GTC)
 
             self.broker.place_orders(orders)
             self.invested = True
