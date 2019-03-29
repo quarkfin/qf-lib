@@ -3,7 +3,7 @@ from typing import List, Type
 
 import numpy as np
 
-from qf_common.config.ioc import container
+from demo_scripts.demo_configuration.demo_ioc import container
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
 from qf_lib.backtesting.alpha_models_testers.alpha_model_factory import AlphaModelFactory
 from qf_lib.backtesting.alpha_models_testers.initial_risk_stats import InitialRiskStatsFactory

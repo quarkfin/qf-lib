@@ -54,6 +54,7 @@ class TradeAnalysisSheet(object):
         self.end_date = end_date
         self.nr_of_assets_traded = nr_of_assets_traded
         self.returns_of_trades = SimpleReturnsSeries(self.trades_df[TradeField.Return])
+        self.returns_of_trades.name = "Returns of Trades"
         self.title = title
 
         self.document = Document(title)

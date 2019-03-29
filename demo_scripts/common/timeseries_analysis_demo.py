@@ -1,6 +1,6 @@
 import pandas as pd
 
-from qf_common.config.ioc import container
+from demo_scripts.demo_configuration.demo_ioc import container
 from qf_lib.analysis.timeseries_analysis.timeseries_analysis import TimeseriesAnalysis
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
