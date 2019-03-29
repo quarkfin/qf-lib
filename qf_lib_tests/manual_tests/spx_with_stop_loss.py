@@ -2,6 +2,7 @@ from unittest import TestCase
 
 import matplotlib.pyplot as plt
 
+from qf_lib.backtesting.execution_handler.simulated.commission_models.ib_commission_model import IBCommissionModel
 from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
 
 plt.ion()  # required for dynamic chart, good to keep this at the beginning of imports
@@ -58,6 +59,7 @@ def main():
     session_builder = container.resolve(BacktestTradingSessionBuilder)  # type: BacktestTradingSessionBuilder
     session_builder.set_backtest_name('SPY w. stop ' + str(SpxWithStopLoss.percentage))
     session_builder.set_initial_cash(1000000)
+    session_builder.set_commission_model(IBCommissionModel())
     ts = session_builder.build(start_date, end_date)
     ts.use_data_preloading(SpxWithStopLoss.ticker, RelativeDelta(days=40))
 
