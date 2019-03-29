@@ -1,6 +1,6 @@
 import os
 
-from qf_common.config.ioc import container
+from demo_scripts.demo_configuration.demo_ioc import container
 from qf_lib.analysis.tearsheets.tearsheet_with_benchmark import TearsheetWithBenchmark
 from qf_lib.analysis.tearsheets.tearsheet_without_benchmark import TearsheetWithoutBenchmark
 from qf_lib.common.enums.price_field import PriceField
