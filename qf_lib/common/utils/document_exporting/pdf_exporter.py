@@ -19,7 +19,6 @@ class PDFExporter(DocumentExporter):
     """
 
     DEFAULT_CSS_DIR_NAME = 'default_css'
-    BASE_CSS_DIR_NAME = "base"
 
     def __init__(self, settings: Settings):
         super().__init__(settings)
@@ -76,9 +75,9 @@ class PDFExporter(DocumentExporter):
             html = document.generate_html()
 
             # Automatically include all the css files in the `document_css/base` directory
-            base_css = os.listdir(os.path.join(self._document_css_dir, self.BASE_CSS_DIR_NAME))
+            base_css = os.listdir(self._document_css_dir)
             for name in base_css:
-                path = os.path.join(self._document_css_dir, self.BASE_CSS_DIR_NAME, name)
+                path = os.path.join(self._document_css_dir, name)
                 if os.path.isfile(path):
                     css_file_paths.append(CSS(path))
 
