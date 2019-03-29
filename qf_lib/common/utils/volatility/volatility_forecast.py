@@ -69,7 +69,7 @@ class VolatilityForecast(object):  # todo: make all other scripts compatible
         #     returns = returns * multiplier
 
         volatility_tms = self.returns_tms.rolling_window(self.window_len, self._calculate_single_value)
-        volatility_tms = volatility_tms.shift(self.horizon)
+        # volatility_tms = volatility_tms.shift(self.horizon)  # todo
         volatility_tms = volatility_tms.dropna()
 
         if self.annualise:
