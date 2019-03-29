@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 import matplotlib.pyplot as plt
 
-from qf_common.config.ioc import container
+from demo_scripts.demo_configuration.demo_ioc import container
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
