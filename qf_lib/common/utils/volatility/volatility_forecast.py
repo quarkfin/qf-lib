@@ -1,4 +1,3 @@
-import numpy as np
 from arch.univariate import ConstantMean, Normal
 from arch.univariate.volatility import VolatilityProcess
 
@@ -63,7 +62,7 @@ class VolatilityForecast(object):  # todo: make all other scripts compatible
         Forecasted value of the volatility.
         """
 
-        assert self.forecasted_volatility is None, "Forecast can be calculated "
+        assert self.forecasted_volatility is None, "This forecast was already calculated."
 
         # if multiply_by_const:  # todo
         #     returns = returns * multiplier
@@ -103,8 +102,8 @@ class VolatilityForecast(object):  # todo: make all other scripts compatible
         forecasts_series = forecasts.variance[column_str]
         # take the last value (most recent forecast)
         forecasted_value = forecasts_series[-1]
-        # forecasted_value corresponds to variance. Convert to volatility
-        forecasted_vol = np.sqrt(forecasted_value)  # todo: works only for power=2
+        # if power=2, forecasted_value corresponds to variance. Convert to volatility
+        forecasted_vol = forecasted_value ** (1/float(am.volatility.power))
         return forecasted_vol
 
     def _get_ARCH_model(self, returns: SimpleReturnsSeries, vol_process: VolatilityProcess):
