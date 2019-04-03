@@ -7,7 +7,7 @@ from qf_lib.containers.series.log_returns_series import LogReturnsSeries
 from qf_lib.containers.series.qf_series import QFSeries
 
 
-class VolatilityForecast(object):  # todo: make all other scripts compatible
+class VolatilityForecast(object):
     def __init__(self, returns_tms: QFSeries, vol_process: VolatilityProcess, method: str = 'analytic',
                  horizon: int = 1, annualise: bool = True, frequency: Frequency = Frequency.DAILY):
         """
