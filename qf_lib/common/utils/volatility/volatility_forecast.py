@@ -3,8 +3,8 @@ from arch.univariate.volatility import VolatilityProcess
 
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.utils.miscellaneous.annualise_with_sqrt import annualise_with_sqrt
+from qf_lib.containers.series.log_returns_series import LogReturnsSeries
 from qf_lib.containers.series.qf_series import QFSeries
-from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
 
 
 class VolatilityForecast(object):  # todo: make all other scripts compatible
@@ -21,7 +21,7 @@ class VolatilityForecast(object):  # todo: make all other scripts compatible
         Parameters
         ----------
         returns_tms
-            series of simple returns of the asset
+            series of returns of the asset
         vol_process
             volatility process used for forecasting. For example EGARCH(p=p, o=o, q=q)
         window_len
@@ -51,7 +51,7 @@ class VolatilityForecast(object):  # todo: make all other scripts compatible
         self.returns_tms = returns_tms.to_log_returns()
         self.forecasted_volatility = None  # will be assigned in the calculate_timeseries() method
 
-    def calculate_timeseries(self, multiplier: int=1) -> QFSeries:
+    def calculate_timeseries(self, multiplier: int = 1) -> QFSeries:
         """
         Calculates volatility forecast for single asset. It is expressed in the frequency of returns.
         Value is calculated based on the configuration as in the object attributes. The result of the calculation
@@ -59,7 +59,7 @@ class VolatilityForecast(object):  # todo: make all other scripts compatible
 
         Returns
         -------
-        Forecasted value of the volatility.
+        Timeseries of forecasted volatility.
         """
 
         assert self.forecasted_volatility is None, "This forecast was already calculated."
@@ -74,7 +74,7 @@ class VolatilityForecast(object):  # todo: make all other scripts compatible
         self.forecasted_volatility = volatility_tms
         return volatility_tms
 
-    def _calculate_single_value(self, returns: SimpleReturnsSeries) -> float:
+    def _calculate_single_value(self, returns: LogReturnsSeries) -> float:
         """
         Calculates volatility forecast for single asset. Value is NOT annualised.
         It is expressed in the frequency of returns
@@ -96,11 +96,11 @@ class VolatilityForecast(object):  # todo: make all other scripts compatible
         forecasts_series = forecasts.variance[column_str]
         # take the last value (most recent forecast)
         forecasted_value = forecasts_series[-1]
-        # if power=2, forecasted_value corresponds to variance. Convert to volatility
-        forecasted_vol = forecasted_value ** (1/float(am.volatility.power))
+        # convert to volatility (if power=2, forecasted_value corresponds to variance, etc.)
+        forecasted_vol = forecasted_value ** (1 / float(am.volatility.power))
         return forecasted_vol
 
-    def _get_ARCH_model(self, returns: SimpleReturnsSeries, vol_process: VolatilityProcess):
+    def _get_ARCH_model(self, returns: LogReturnsSeries, vol_process: VolatilityProcess):
         am = ConstantMean(returns)
         am.volatility = vol_process
         am.distribution = Normal()
