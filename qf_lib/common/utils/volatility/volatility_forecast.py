@@ -8,7 +8,7 @@ from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
 
 
 class VolatilityForecast(object):  # todo: make all other scripts compatible
-    def __init__(self, returns_tms: SimpleReturnsSeries, vol_process: VolatilityProcess,
+    def __init__(self, returns_tms: QFSeries, vol_process: VolatilityProcess,
                  window_len: int = 20, horizon: int = 1, method: str = 'analytic',
                  annualise: bool = True, frequency: Frequency = Frequency.DAILY):
         """
@@ -16,7 +16,7 @@ class VolatilityForecast(object):  # todo: make all other scripts compatible
         and output data (output is created and assigned by calling one of the class methods).
 
         An instance of this class should describe one specific forecast and store its parameters.
-        Parameters should NOT be modified after calling calculate_timeseries() method.  # todo: find a way to prevent it
+        Parameters should NOT be modified after calling calculate_timeseries() method.
 
         Parameters
         ----------
@@ -48,10 +48,10 @@ class VolatilityForecast(object):  # todo: make all other scripts compatible
         self.annualise = annualise
         self.frequency = frequency
 
-        self.returns_tms = returns_tms
+        self.returns_tms = returns_tms.to_log_returns()
         self.forecasted_volatility = None  # will be assigned in the calculate_timeseries() method
 
-    def calculate_timeseries(self) -> QFSeries:
+    def calculate_timeseries(self, multiplier: int=1) -> QFSeries:
         """
         Calculates volatility forecast for single asset. It is expressed in the frequency of returns.
         Value is calculated based on the configuration as in the object attributes. The result of the calculation
@@ -63,19 +63,13 @@ class VolatilityForecast(object):  # todo: make all other scripts compatible
         """
 
         assert self.forecasted_volatility is None, "This forecast was already calculated."
-
-        # if multiply_by_const:  # todo
-        #     returns = returns * multiplier
-
-        volatility_tms = self.returns_tms.rolling_window(self.window_len, self._calculate_single_value)
-        # volatility_tms = volatility_tms.shift(self.horizon)  # todo
+        returns_tms = self.returns_tms * multiplier
+        volatility_tms = returns_tms.rolling_window(self.window_len, self._calculate_single_value)
         volatility_tms = volatility_tms.dropna()
+        volatility_tms = volatility_tms / multiplier
 
         if self.annualise:
             volatility_tms = annualise_with_sqrt(volatility_tms, self.frequency)
-
-        # if multiply_by_const:  # todo
-        #     vol = vol / multiplier
 
         self.forecasted_volatility = volatility_tms
         return volatility_tms
