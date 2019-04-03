@@ -70,10 +70,11 @@ class VolatilityForecast(object):  # todo: make all other scripts compatible
 
         assert self.forecasted_volatility is None, "The forecast was already calculated."
         assert window_len is not None, "For timeseries calculation the rolling window length must be specified."
+        self.window_len = window_len
         assert multiplier >= 1
 
         returns_tms = self.returns_tms * multiplier
-        volatility_tms = returns_tms.rolling_window(self.window_len, self._calculate_single_value)
+        volatility_tms = returns_tms.rolling_window(window_len, self._calculate_single_value)
         volatility_tms = volatility_tms.dropna()
         volatility_tms = volatility_tms / multiplier
 

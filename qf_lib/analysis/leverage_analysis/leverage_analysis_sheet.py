@@ -3,7 +3,7 @@ from os import path
 
 import matplotlib as plt
 
-from qf_lib.analysis.tearsheets.abstract_tearsheet import AbstractTearsheet
+from qf_lib.analysis.common.abstract_document import AbstractDocument
 from qf_lib.common.utils.document_exporting import ParagraphElement, ChartElement
 from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.containers.series.qf_series import QFSeries
@@ -11,7 +11,7 @@ from qf_lib.plotting.decorators.axes_position_decorator import AxesPositionDecor
 from qf_lib.settings import Settings
 
 
-class LeverageAnalysisSheet(AbstractTearsheet):
+class LeverageAnalysisSheet(AbstractDocument):
     """
     Creates a PDF containing a visual representation of leverage changes over time
     """
@@ -23,7 +23,7 @@ class LeverageAnalysisSheet(AbstractTearsheet):
         title
             title of the document, will be a part of the filename. Do not use special characters
         """
-        super().__init__(settings, pdf_exporter, leverage, title=title)
+        super().__init__(settings, pdf_exporter, title=title)
         self.leverage = leverage
 
     def build_document(self):
