@@ -25,14 +25,15 @@ class MultiFactorPortfolio(Portfolio):
     - max drawdown of the portfolio (minimizing).
     """
 
-    def __init__(self, input_dataframe: QFDataFrame, parameters: PortfolioParameters,
+    def __init__(self, input_dataframe: QFDataFrame, covariance_matrix: pd.DataFrame, parameters: PortfolioParameters,
                  upper_constraint: Union[float, Sequence[float]] = None):
         self.assets_returns_df = input_dataframe.to_simple_returns()
+        self.covariance_matrix = covariance_matrix
         self.parameters = parameters
         self.upper_constraint = upper_constraint
 
     def get_weights(self) -> pd.Series:
-        P = self.assets_returns_df.cov()
+        P = self.covariance_matrix
 
         variance = self.assets_returns_df.var()
         mean = self.assets_returns_df.mean()
