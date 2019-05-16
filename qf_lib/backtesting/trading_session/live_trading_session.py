@@ -6,6 +6,7 @@ from qf_lib.backtesting.events.event_manager import EventManager
 from qf_lib.backtesting.events.notifiers import Notifiers
 from qf_lib.backtesting.events.time_flow_controller import LiveSessionTimeFlowController
 from qf_lib.backtesting.monitoring.live_trading_monitor import LiveTradingMonitor
+from qf_lib.backtesting.monitoring.settings_for_live_trading import LiveTradingSettings
 from qf_lib.backtesting.order.orderfactory import OrderFactory
 from qf_lib.backtesting.position_sizer.initial_risk_position_sizer import InitialRiskPositionSizer
 from qf_lib.backtesting.trading_session.trading_session import TradingSession
@@ -15,6 +16,7 @@ from qf_lib.common.utils.excel.excel_exporter import ExcelExporter
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.data_providers.bloomberg import BloombergDataProvider
 from qf_lib.interactive_brokers.ib_broker import IBBroker
+from qf_lib.publishers.email_publishing.email_publisher import EmailPublisher
 from qf_lib.settings import Settings
 
 
@@ -23,7 +25,7 @@ class LiveTradingSession(TradingSession):
     Encapsulates the settings and components for Live Trading
     """
 
-    def __init__(self, trading_session_name: str, container: Container, initial_risk:float):
+    def __init__(self, trading_session_name: str, container: Container, live_trading_settings: LiveTradingSettings):
         """
         Set up the configuration of all elements.
         """
@@ -35,6 +37,7 @@ class LiveTradingSession(TradingSession):
         self.data_provider = container.resolve(BloombergDataProvider)   # type: BloombergDataProvider
         self.pdf_exporter = container.resolve(PDFExporter)              # type: PDFExporter
         self.excel_exporter = container.resolve(ExcelExporter)          # type: ExcelExporter
+        self.email_publisher = container.resolve(EmailPublisher)        # type: EmailPublisher
 
         self.timer = RealTimer()
         self.notifiers = Notifiers(self.timer)
@@ -44,13 +47,15 @@ class LiveTradingSession(TradingSession):
                                                                   self.notifiers.empty_queue_event_notifier)
 
         self.data_handler = DataHandler(self.data_provider, self.timer)
-        self.monitor = LiveTradingMonitor(self.settings, self.pdf_exporter, self.excel_exporter)
+
+        self.monitor = LiveTradingMonitor(self.notifiers, container, live_trading_settings)
         self.broker = IBBroker()
 
         self.contract_ticker_mapper = VolStrategyContractTickerMapper()
         self.order_factory = OrderFactory(self.broker, self.data_handler, self.contract_ticker_mapper)
         self.position_sizer = InitialRiskPositionSizer(self.broker, self.data_handler, self.order_factory,
-                                                       self.contract_ticker_mapper, initial_risk=initial_risk)
+                                                       self.contract_ticker_mapper,
+                                                       live_trading_settings.initial_risk)
 
         self.logger.info(
             "\n".join([
@@ -69,7 +74,8 @@ class LiveTradingSession(TradingSession):
                 "\tBroker: {}".format(self.broker.__class__.__name__),
                 "\tContract-Ticker Mapper: {}".format(self.contract_ticker_mapper.__class__.__name__),
                 "\tOrder Factory: {}".format(self.order_factory.__class__.__name__),
-                "\tPosition Sizer: {}".format(self.position_sizer.__class__.__name__)
+                "\tPosition Sizer: {}".format(self.position_sizer.__class__.__name__),
+                "\tSettings Live Trading: {}".format(str(live_trading_settings))
             ])
         )
 

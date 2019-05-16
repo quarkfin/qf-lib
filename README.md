@@ -1,9 +1,16 @@
 # Installation
 It is assumed that you have already installed Python 3.6.
 
+## Development
+
+The project has been developed using PyCharm and this is a suggested IDE for further development.
+
+
 ## Windows
 
-There are two ways to install the project for Windows. The easy way is to use the `install.ps1` script, which handles all the program requirements. If you don't want to use this script, an alternative method is described in the [Without Script](#without-script) section.
+There are two ways to install the project for Windows. The easy way is to use the `install.ps1` script,
+which handles all the program requirements. If you don't want to use this script, an alternative method is described
+in the [Without Script](#without-script) section.
 
 ### With Script
 

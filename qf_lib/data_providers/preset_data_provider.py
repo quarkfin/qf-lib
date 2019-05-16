@@ -73,8 +73,12 @@ class PresetDataProvider(DataProvider):
         if uncached_fields:
             raise ValueError("Fields: {} are not available in the Data Bundle".format(fields))
 
-        if start_date < self._start_date or end_date > self._end_date:
-            raise ValueError("Requested dates are outside of the cached period")
+        if start_date < self._start_date:
+            raise ValueError("Requested start date {} is before data bundle start date {}".
+                             format(start_date, self._start_date))
+        if end_date.date() > self._end_date.date():  # look only at date part since time of _end_date os always 0:00
+            raise ValueError("Requested end date {} is after data bundle end date {}".
+                             format(end_date, self._end_date))
 
     def get_history(self, tickers: Union[Ticker, Sequence[Ticker]],
                     fields: Union[str, Sequence[str]],

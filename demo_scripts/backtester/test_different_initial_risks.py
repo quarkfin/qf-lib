@@ -1,14 +1,15 @@
 from time import time
-from typing import List
+from typing import List, Type
 
 import numpy as np
 
-from geneva_analytics.backtesting.alpha_models.vol_long_short.vol_long_short import VolLongShort
-from qf_common.config.ioc import container
+from demo_scripts.demo_configuration.demo_ioc import container
+from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
 from qf_lib.backtesting.alpha_models_testers.alpha_model_factory import AlphaModelFactory
 from qf_lib.backtesting.alpha_models_testers.initial_risk_stats import InitialRiskStatsFactory
 from qf_lib.backtesting.alpha_models_testers.scenarios_generator import ScenariosGenerator
 from qf_lib.backtesting.monitoring.backtest_monitor import BacktestMonitor
+from qf_lib.backtesting.monitoring.past_signals_generator import get_all_tickers_used
 from qf_lib.backtesting.position_sizer.initial_risk_position_sizer import InitialRiskPositionSizer
 from qf_lib.backtesting.strategy.trading_strategy import TradingStrategy
 from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
@@ -16,50 +17,35 @@ from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 
 
-def calc_trade_returns(trades):
-    return [(t.exit_price / t.entry_price - 1) * np.sign(t.quantity) for t in trades]
-
-
-def get_trade_rets_values(init_risk: float) -> List[float]:
-    model_type = VolLongShort
-    param_set = (4.5, 2, 4)
-    stop_loss_param = 1.25
-
-    trading_tickers = [
-        BloombergTicker('SVXY US Equity')
-    ]
-
-    # if some additional data is needed, the extra tickers should be specified below; if not, leave empty:
-    data_tickers = [
-        BloombergTicker('SPX Index'),
-        BloombergTicker('VIX Index')
-    ]
-
+def get_trade_rets_values(init_risk: float, alpha_model_type: Type[AlphaModel]) -> List[float]:
     start_date = str_to_date('2013-01-01')
     end_date = str_to_date('2016-12-31')
 
-    session_builder = BacktestTradingSessionBuilder(start_date, end_date)
-    session_builder.set_alpha_model_backtest_name(model_type, param_set, trading_tickers)
+    session_builder = container.resolve(BacktestTradingSessionBuilder)  # type: BacktestTradingSessionBuilder
     session_builder.set_position_sizer(InitialRiskPositionSizer, init_risk)
     session_builder.set_monitor_type(BacktestMonitor)
     session_builder.set_backtest_name("Initial Risk Testing - {}".format(init_risk))
-    ts = session_builder.build(container)
-    ts.use_data_preloading(trading_tickers + data_tickers)
+    ts = session_builder.build(start_date, end_date)
 
     model_factory = AlphaModelFactory(ts.data_handler)
-    model = model_factory.make_model(model_type, *param_set, risk_estimation_factor=stop_loss_param)
-    model_tickers_dict = {model: trading_tickers}
+    model = model_factory.make_parametrized_model(alpha_model_type)
+    model_tickers_dict = {model: [BloombergTicker('SVXY US Equity')]}
+
     TradingStrategy(ts, model_tickers_dict, use_stop_losses=True)
+
+    ts.use_data_preloading(get_all_tickers_used(model_tickers_dict))
     ts.start_trading()
     trades = ts.portfolio.get_trades()
-    return calc_trade_returns(trades)
+    returns_of_trades = [(t.exit_price / t.entry_price - 1) * np.sign(t.quantity) for t in trades]
+    return returns_of_trades
 
 
 def main():
-    scenarios_generator = ScenariosGenerator()
+    alpha_model_type = None  # Set Alpha model that you wish to test
     stats_factory = InitialRiskStatsFactory(max_accepted_dd=0.1, target_return=0.02)
     initial_risks_list = [0.001, 0.005, 0.01, 0.02, 0.03, 0.05, 0.1]
 
+    scenarios_generator = ScenariosGenerator()
     scenarios_df_list = []
 
     nr_of_param_sets = len(initial_risks_list)
@@ -69,7 +55,7 @@ def main():
     param_set_ctr = 1
     for init_risk in initial_risks_list:
         start_time = time()
-        trade_rets_values = get_trade_rets_values(init_risk)
+        trade_rets_values = get_trade_rets_values(init_risk, alpha_model_type)
         scenarios_df = scenarios_generator.make_scenarios(
             trade_rets_values, scenarios_length=100, num_of_scenarios=10000
         )

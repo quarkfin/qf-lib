@@ -1,6 +1,6 @@
 import pandas as pd
 
-from qf_common.config.ioc import container
+from demo_scripts.demo_configuration.demo_ioc import container
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.enums.quandl_db_type import QuandlDBType
 from qf_lib.common.tickers.tickers import QuandlTicker

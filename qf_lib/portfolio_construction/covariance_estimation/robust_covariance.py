@@ -18,7 +18,7 @@ class RobustCovariance(object):
         """
         self.returns = simple_returns
 
-    def calculate_covariance(self, vol_process: VolatilityProcess, horizon:int, method:str='analytic') -> DataFrame:
+    def calculate_covariance(self, vol_process: VolatilityProcess, horizon: int, method: str = 'analytic') -> DataFrame:
         """
         Calculates the covariance matrix using foretasted volatility for each asset and
         rank correlation between the assets. Covariance matrix contains NOT annualised values.
@@ -47,9 +47,9 @@ class RobustCovariance(object):
         return cov_matrix
 
     def _calculate_expected_volatilities(self, vol_process, horizon, method):
-        vol_forecast_array = np.zeros(self.returns.shape[1]) # size = nr o assets
+        vol_forecast_array = np.zeros(self.returns.shape[1])  # size = nr o assets
         for i, asset in enumerate(self.returns):
             asset_returns = self.returns[asset]
-            vol_forecast = VolatilityForecast(asset_returns)
-            vol_forecast_array[i] = vol_forecast.calculate_vol_forecast(vol_process, horizon, method)
+            vol_forecast = VolatilityForecast(asset_returns, vol_process, method, horizon, annualise=False)
+            vol_forecast_array[i] = vol_forecast.calculate_single_forecast()
         return vol_forecast_array

@@ -1,14 +1,15 @@
 import matplotlib.pyplot as plt
 
-from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
+from qf_lib.backtesting.order.time_in_force import TimeInForce
 
 plt.ion()  # required for dynamic chart, good to keep this at the beginning of imports
 
+from demo_scripts.demo_configuration.demo_ioc import container
+from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.backtesting.order.execution_style import MarketOrder
 from qf_lib.common.tickers.tickers import BloombergTicker
-from qf_common.config.ioc import container
 from qf_lib.backtesting.events.time_event.before_market_open_event import BeforeMarketOpenEvent
 from qf_lib.backtesting.trading_session.backtest_trading_session import BacktestTradingSession
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
@@ -48,9 +49,9 @@ class SimpleMAStrategy(object):
         contract = self.contract_ticker_mapper.ticker_to_contract(self.ticker)
 
         if short_ma_price >= long_ma_price:
-            orders = self.order_factory.target_percent_orders({contract: 1.0}, MarketOrder())
+            orders = self.order_factory.target_percent_orders({contract: 1.0}, MarketOrder(), TimeInForce.DAY)
         else:
-            orders = self.order_factory.target_percent_orders({contract: 0.0}, MarketOrder())
+            orders = self.order_factory.target_percent_orders({contract: 0.0}, MarketOrder(), TimeInForce.DAY)
 
         self.broker.cancel_all_open_orders()
         self.broker.place_orders(orders)
@@ -60,9 +61,9 @@ def main():
     start_date = str_to_date("2010-01-01")
     end_date = str_to_date("2010-03-01")
 
-    session_builder = BacktestTradingSessionBuilder(start_date, end_date)
+    session_builder = container.resolve(BacktestTradingSessionBuilder)  # type: BacktestTradingSessionBuilder
     session_builder.set_backtest_name('Simple_MA')
-    ts = session_builder.build(container)
+    ts = session_builder.build(start_date, end_date)
     ts.use_data_preloading(SimpleMAStrategy.ticker, RelativeDelta(days=40))
 
     SimpleMAStrategy(ts)

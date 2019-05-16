@@ -1,5 +1,6 @@
 from typing import List, Tuple, Sequence, Union
 
+from qf_lib.analysis.timeseries_analysis.timeseries_analysis_dto import TimeseriesAnalysisDTO
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.utils.dateutils.date_to_string import date_to_str
 from qf_lib.common.utils.document_exporting.element.table import Table
@@ -20,9 +21,10 @@ from qf_lib.common.utils.returns.simple_to_log_return import simple_to_log_retur
 from qf_lib.common.utils.volatility.get_volatility import get_volatility
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
+from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
 
 
-class TimeseriesAnalysis(object):
+class TimeseriesAnalysis(TimeseriesAnalysisDTO):
     """
     Used for analysing a timeseries of returns. Calculates and aggregates different statistics of the timeseries
 
@@ -69,8 +71,9 @@ class TimeseriesAnalysis(object):
         frequency: Frequency
             Corresponds to the frequency od data samples in the seres.
         """
+        super().__init__()
 
-        self.returns_tms = returns_timeseries.to_simple_returns()  # by default series is a series of simple returns
+        self.returns_tms = returns_timeseries.to_simple_returns()   # type: SimpleReturnsSeries
         self.frequency = frequency
         self.start_date = self.returns_tms.first_valid_index()
         self.end_date = self.returns_tms.index[-1]
@@ -358,3 +361,4 @@ class TimeseriesAnalysis(object):
 
         self.skewness = self.returns_tms.skew()
         self.kurtosis = self.returns_tms.kurt()
+

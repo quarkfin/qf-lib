@@ -23,14 +23,13 @@ class HistogramChart(Chart):
             Options to pass to the ``hist`` function.
         """
         super().__init__(start_x=None, end_x=None)
-        self._series = series.copy()
+        self._series = series
         self.plot_settings = plot_settings
         self._num_of_bins = bins
         self._best_fit = best_fit
 
     def plot(self, figsize=None):
         self._setup_axes_if_necessary(figsize)
-        self._series.name = str(self._series.name)
         # Plot the horizontal bar chart.
         n, bins, patches = self.axes.hist(self._series, bins=self._num_of_bins, ec='white',
                                           **self.plot_settings)

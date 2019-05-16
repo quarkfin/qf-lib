@@ -23,7 +23,6 @@ from qf_lib.starting_dir import get_starting_dir_abs_path
 class TickerScreener(object):
     """
     Class enables generation of the PDF document containing evaluation of trades on individual tickers
-    TODO: Implementation not finished
     """
 
     def __init__(self, backtest_summary: BacktestSummary,  settings: Settings, pdf_exporter: PDFExporter):

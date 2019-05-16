@@ -1,7 +1,7 @@
 from datetime import datetime
-from os import makedirs
+from os import makedirs, path, remove
 from os.path import exists, isfile, join, dirname
-from typing import Any
+from typing import Any, Union
 
 import numpy
 from openpyxl import Workbook, load_workbook
@@ -22,9 +22,10 @@ class ExcelExporter(object):
 
     def export_container(self, container, file_path: str, write_mode: WriteMode=WriteMode.CREATE_IF_DOESNT_EXIST,
                          starting_cell: str='A1', sheet_name: str=None, include_index: bool=True,
-                         include_column_names: bool=False) -> None:
+                         include_column_names: bool=False, remove_old_file=False) -> Union[bytes, str]:
         """
         Exports the container (Series, DataFrame) to the excel file.
+        Returns the absolute file path of the exported file.
 
         Parameters
         ----------
@@ -46,10 +47,15 @@ class ExcelExporter(object):
         include_column_names
             determines whether the column names should be written together with the data. For series containers the
             column names are always "Index" and "Values".
+        remove_old_file
+            if true it first deletes the old file before creating new
         """
         starting_row, starting_column = row_and_column(starting_cell)
 
         file_path = join(get_starting_dir_abs_path(), self.settings.output_directory, file_path)
+        # Make sure an old version of this file is removed.
+        if remove_old_file and path.exists(file_path):
+            remove(file_path)
 
         work_book = self.get_workbook(file_path, write_mode)
         work_sheet = self.get_worksheet(work_book, sheet_name)
@@ -57,6 +63,7 @@ class ExcelExporter(object):
         self.write_to_worksheet(container, work_sheet, starting_row, starting_column, include_index,
                                 include_column_names)
         work_book.save(file_path)
+        return file_path
 
     def write_cell(self, file_path: str, cell_reference: str, value: Any,
                    write_mode: WriteMode=WriteMode.CREATE_IF_DOESNT_EXIST, sheet_name: str=None):

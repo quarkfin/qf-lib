@@ -3,18 +3,8 @@ Thi sets up the layout of the PDF and adds some header and footer info */
 @page {
   margin: 0.8cm 0.7cm;
 
-  @top-right {
-    content: "CERN Pension Fund";
-    color: #7d7d7d;
-  }
-
   @bottom-right {
     content: "Page " counter(page) " of " counter(pages);
-    color: #7d7d7d;
-  }
-
-  @bottom-left {
-    content: "For Internal Use Only";
     color: #7d7d7d;
   }
 
@@ -36,6 +26,11 @@ h1 {
   page-break-before: auto !important;
   margin-top: 0;
   margin-bottom: 0;
+  font-size: 1.8em;
+}
+
+h2 {
+  font-size: 1.5em;
 }
 
 /* Create a breakpage */

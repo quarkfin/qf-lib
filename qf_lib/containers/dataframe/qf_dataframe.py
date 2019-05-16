@@ -211,7 +211,9 @@ class QFDataFrame(pd.DataFrame, TimeIndexedContainer):
         if isinstance(result_values, np.ndarray):
             result_values = result_values.tolist()
 
-        result_values = [result_values[0]] + result_values
+        if result_values:
+            result_values = [result_values[0]] + result_values
+
         return iter(result_values)
 
     def _assert_is_valid_values_list(self, values):

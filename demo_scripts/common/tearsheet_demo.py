@@ -1,6 +1,6 @@
 import os
 
-from qf_common.config.ioc import container
+from demo_scripts.demo_configuration.demo_ioc import container
 from qf_lib.analysis.tearsheets.tearsheet_with_benchmark import TearsheetWithBenchmark
 from qf_lib.analysis.tearsheets.tearsheet_without_benchmark import TearsheetWithoutBenchmark
 from qf_lib.common.enums.price_field import PriceField
@@ -16,7 +16,7 @@ def get_data():
     data_provider = container.resolve(QuandlDataProvider)  # type: QuandlDataProvider
     start_date = str_to_date('2010-01-01')
     end_date = str_to_date('2017-12-31')
-    live_date = str_to_date('2016-01-01')
+    live_date = str_to_date('2015-01-01')
 
     strategy = data_provider.get_price(tickers=QuandlTicker('AAPL', 'WIKI'),
                                        fields=PriceField.Close, start_date=start_date, end_date=end_date)
@@ -30,7 +30,7 @@ def get_data():
 
 
 this_dir_path = os.path.dirname(os.path.abspath(__file__))
-strategy, benchmark, live_date = cached_value(get_data, os.path.join(this_dir_path, 'tearsheet4.cache'))
+strategy, benchmark, live_date = cached_value(get_data, os.path.join(this_dir_path, 'tearsheet5.cache'))
 
 
 settings = container.resolve(Settings)  # type: Settings

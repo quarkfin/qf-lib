@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-from qf_common.config.ioc import container
+from demo_scripts.demo_configuration.demo_ioc import container
 from qf_lib.common.enums.matplotlib_location import Location
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import QuandlTicker

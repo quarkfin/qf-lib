@@ -1,16 +1,15 @@
 from unittest import TestCase
-
 import matplotlib.pyplot as plt
-
-from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
-
 plt.ion()  # required for dynamic chart, good to keep this at the beginning of imports
 
+from qf_lib.backtesting.execution_handler.simulated.commission_models.ib_commission_model import IBCommissionModel
+from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
+from demo_scripts.demo_configuration.demo_ioc import container
+from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
 from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.backtesting.order.execution_style import MarketOrder, StopOrder
 from qf_lib.common.tickers.tickers import BloombergTicker
-from qf_common.config.ioc import container
 from qf_lib.backtesting.events.time_event.before_market_open_event import BeforeMarketOpenEvent
 from qf_lib.backtesting.trading_session.backtest_trading_session import BacktestTradingSession
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
@@ -55,10 +54,11 @@ def main():
     start_date = str_to_date("2017-01-01")
     end_date = str_to_date("2018-01-01")
 
-    session_builder = BacktestTradingSessionBuilder(start_date, end_date)
+    session_builder = container.resolve(BacktestTradingSessionBuilder)  # type: BacktestTradingSessionBuilder
     session_builder.set_backtest_name('SPY w. stop ' + str(SpxWithStopLoss.percentage))
     session_builder.set_initial_cash(1000000)
-    ts = session_builder.build(container)
+    session_builder.set_commission_model(IBCommissionModel())
+    ts = session_builder.build(start_date, end_date)
     ts.use_data_preloading(SpxWithStopLoss.ticker, RelativeDelta(days=40))
 
     SpxWithStopLoss(ts)

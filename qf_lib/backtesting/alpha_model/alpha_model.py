@@ -1,4 +1,5 @@
 from abc import abstractmethod, ABCMeta
+from typing import Sequence, Dict
 
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
 from qf_lib.backtesting.alpha_model.signal import Signal
@@ -8,7 +9,40 @@ from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.miscellaneous.average_true_range import average_true_range
 
 
+class AlphaModelSettings(object):
+    """
+    Holds parameters of parametrized alpha models
+    """
+    def __init__(self, parameters: Sequence[float]=None, risk_estimation_factor: float=None,
+                 tickers_dict: Dict[str, Ticker]=None):
+        """
+
+        Parameters
+        ----------
+        parameters
+            parameters of the alpha model that are used in the logic. number of params depends on the model.
+            (for example: len of moving averages)
+        risk_estimation_factor
+            parameter for stop loss calculations
+        tickers_dict
+            dict of ticker_name -> ticker. Should contain all tickers used by the model to calculate signal.
+            Note: these are not the tickers of instruments that we want to trade.
+            These are tickers of instruments that give us some information about the market. For example VIX index.
+        """
+        self.parameters = parameters
+        self.risk_estimation_factor = risk_estimation_factor
+        if tickers_dict is None:
+            tickers_dict = {}
+        self.tickers_dict = tickers_dict
+
+
 class AlphaModel(object, metaclass=ABCMeta):
+    """
+    Base class for all alpha models
+    """
+
+    settings = None  # type: AlphaModelSettings
+    "holds parameters of a parametrized model used in production"
 
     def __init__(self, risk_estimation_factor: float, data_handler: DataHandler):
         """
@@ -107,3 +141,6 @@ class AlphaModel(object, metaclass=ABCMeta):
         prices_df = self.data_handler.historical_price(ticker, fields, num_of_bars_needed)
         fraction_at_risk = average_true_range(prices_df, normalized=True) * self.risk_estimation_factor
         return fraction_at_risk
+
+    def __str__(self):
+        return self.__class__.__name__

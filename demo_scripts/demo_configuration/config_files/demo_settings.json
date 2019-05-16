@@ -1,5 +1,5 @@
 {
-  "company_name": "Sample Company Name",
+  "company_name": "QF-Lib",
   "logo_path": "input/logo.jpg",
   "bloomberg": {
     "host": "localhost",
@@ -14,5 +14,6 @@
     "tls": true,
     "sender": "sample_user@some.domain.pl"
   },
-  "haver_path": "C:/absolute/path-to-haver-data"
+  "haver_path": "C:/absolute/path-to-haver-data",
+  "document_css_directory": "modules/qf-lib/qf_lib/common/utils/document_exporting/default_css"
 }

@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-import qf_common.config.ioc as ioc
+from demo_scripts.demo_configuration.demo_ioc import container
 from qf_lib.common.enums.matplotlib_location import Location
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import QuandlTicker
@@ -11,7 +11,7 @@ from qf_lib.plotting.decorators.axes_label_decorator import AxesLabelDecorator
 from qf_lib.plotting.decorators.data_element_decorator import DataElementDecorator
 from qf_lib.plotting.decorators.legend_decorator import LegendDecorator
 
-data_provider = ioc.container.resolve(GeneralPriceProvider)
+data_provider = container.resolve(GeneralPriceProvider)
 start_date = str_to_date('1996-01-01')
 end_date = str_to_date('2014-01-01')
 

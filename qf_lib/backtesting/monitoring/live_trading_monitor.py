@@ -1,84 +1,84 @@
-# it is important to import the matplotlib first and then switch the interactive/dynamic mode on.
-import csv
 from datetime import datetime
-from io import TextIOWrapper
-from os import path, makedirs
+from typing import List
 
-from qf_lib.backtesting.monitoring.abstract_monitor import AbstractMonitor
-from qf_lib.backtesting.transaction import Transaction
+from dic.container import Container
+
+from qf_lib.analysis.strategy_monitoring.live_trading_sheet import LiveTradingSheet
+from qf_lib.backtesting.events.notifiers import Notifiers
+from qf_lib.backtesting.events.time_event.after_market_close_event import AfterMarketCloseEvent
+from qf_lib.backtesting.monitoring.dummy_monitor import DummyMonitor
+from qf_lib.backtesting.monitoring.past_signals_generator import PastSignalsGenerator
+from qf_lib.backtesting.monitoring.settings_for_live_trading import LiveTradingSettings
+from qf_lib.common.utils.dateutils.date_to_string import date_to_str
 from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
-from qf_lib.common.utils.excel.excel_exporter import ExcelExporter
+from qf_lib.publishers.email_publishing.email_publisher import EmailPublisher
 from qf_lib.settings import Settings
-from qf_lib.starting_dir import get_starting_dir_abs_path
 
 
-class LiveTradingMonitor(AbstractMonitor):
+class LiveTradingMonitor(DummyMonitor):
     """
     This Monitor will be used to monitor live trading activities
     """
 
-    def __init__(self, settings: Settings, pdf_exporter: PDFExporter, excel_exporter: ExcelExporter):
-        self._settings = settings
-        self._pdf_exporter = pdf_exporter
-        self._excel_exporter = excel_exporter
-        self._report_dir = "live_trading"
-        self._csv_file = self._init_csv_file("Live_Trading_Trades")
-        self._csv_writer = csv.writer(self._csv_file)
+    def __init__(self, notifiers: Notifiers, container: Container, settings_for_live_trading: LiveTradingSettings):
+        self.notifiers = notifiers
+        self.container = container
+        self.trading_settings = settings_for_live_trading
+        self.notifiers.scheduler.subscribe(AfterMarketCloseEvent, listener=self)
 
-    def end_of_trading_update(self, _: datetime = None):
-        """
-        Close the CSV file
-        """
-        self._close_csv_file()
+    def on_after_market_close(self, after_close_event: AfterMarketCloseEvent):
+        self.end_of_day_update(after_close_event.time)
 
     def end_of_day_update(self, timestamp: datetime = None):
         """
-        Do nothing
+        Generate daily pdf with backtest monitoring and past signals excel file and sends it by email
         """
-        pass
+        attachments_paths = self._generate_files()
+        self._publish_by_email(attachments_paths, timestamp)
 
-    def real_time_update(self, timestamp: datetime = None):
-        """
-        Do nothing
-        """
-        pass
+    def _generate_files(self):
+        signal_generator = PastSignalsGenerator(container=self.container,
+                                                live_start_date=self.trading_settings.live_start_date,
+                                                initial_risk=self.trading_settings.initial_risk,
+                                                model_type_tickers_dict=self.trading_settings.model_type_tickers_dict)
+        signal_generator.collect_backtest_result()
+        past_signals_file_path = signal_generator.generate_past_signals_file()
 
-    def record_transaction(self, transaction: Transaction):
-        """
-        Print the trade to the CSV file
-        """
-        self._csv_writer.writerow([
-            transaction.time,
-            transaction.contract.symbol,
-            transaction.quantity,
-            transaction.price,
-            transaction.commission
-        ])
+        live_trading_sheet = LiveTradingSheet(settings=self.container.resolve(Settings),
+                                              pdf_exporter=self.container.resolve(PDFExporter),
+                                              strategy_tms=signal_generator.backtest_tms,
+                                              strategy_leverage_tms=signal_generator.leverage_tms,
+                                              is_stats=self.trading_settings.is_returns_stats,
+                                              title=self.trading_settings.title)
 
-    def _init_csv_file(self, file_name_template: str) -> TextIOWrapper:
-        """
-        Creates a new csv file for every backtest run, writes the header and returns the path to the file.
-        """
-        output_dir = path.join(get_starting_dir_abs_path(), self._settings.output_directory, self._report_dir)
-        if not path.exists(output_dir):
-            makedirs(output_dir)
+        live_trading_sheet.build_document()
+        live_trading_sheet_path = live_trading_sheet.save()
 
-        csv_filename = "{}.csv".format(file_name_template)
-        file_path = path.expanduser(path.join(output_dir, csv_filename))
+        return [past_signals_file_path, live_trading_sheet_path]
 
-        # Write new file header
-        fieldnames = ["Timestamp", "Contract", "Quantity", "Price", "Commission"]
+    def _publish_by_email(self, attachments_dirs: List[str], timestamp):
 
-        if path.exists(file_path):
-            file_handler = open(file_path, 'a', newline='')
-        else:
-            file_handler = open(file_path, 'a', newline='')
-            # add header if file is just created
-            writer = csv.DictWriter(file_handler, fieldnames=fieldnames)
-            writer.writeheader()
+        class EmailUser(object):
+            def __init__(self, name, email_address):
+                self.name = name
+                self.email_address = email_address
 
-        return file_handler
+        date_str = date_to_str(timestamp.date())
+        template_path = 'live_trading_report.html'
 
-    def _close_csv_file(self):
-        if self._csv_file is not None:  # close the csv file
-            self._csv_file.close()
+        users = {
+            EmailUser("Marcin", "marcin.borratynski@cern.ch"),
+            # EmailUser("Olga", "olga.kalinowska@cern.ch"),
+        }
+
+        email_publisher = self.container.resolve(EmailPublisher)
+
+        for user in users:
+            email_publisher.publish(
+                mail_to=user.email_address,
+                subject="Live Trading Summary: " + date_str,
+                template_path=template_path,
+                attachments=attachments_dirs,
+                context={'user': user, 'date': date_str}
+            )
+
