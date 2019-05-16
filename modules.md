@@ -22,7 +22,28 @@ the analysis results. Examples of some documents created using these components 
 
 
 ### common
-
+The package contains all the generic tools:
+- **enums** - predefined constants that are used in multiple project components
+- **exceptions** - additional exception types which are specific to this project
+- **risk_parity_boxes** - TODO w is this
+- **rolling_contracts** - TODO w is this
+- **tickers** - classes representing tickers of different kinds, ex. BloombergTicker or QuandlTicker
+- **timeseries_analysis** - aggregating different measures of the timeseries such as total return, volatility, 
+sharpe ratio and many others
+- **utils** - various tools:
+    - *close_open_gap* - analysing the price jumps during the break after market close and before market open
+    - *confidence_interval* - TODO w is this
+    - *dateutils* - manipulating the dates (e.g. change format, get the end of month date)
+    - *document_exporting* - templates, styles and components used to export the results and save them as files
+    - *excel* - exporting and importing data to/from Excel files
+    - *factorization* - TODO w is this
+    - *logging* - making entries in the system log (all messages should be printed through loggers)
+    - *miscellaneous* - everything that is hard to categorize
+    - *numberutils* - processing numbers (e.g. checking if a variable is a finite number)
+    - **ratios** - calculating financial ratios (measurements like Sharpe Ratio or Omega Ratio)
+    - **returns** - measurements of returns (e.g. drawdowns, linear regression, CVar) and tools for manipulating them 
+    (e.g. aggregating, calculating compound annual growth rates, converting simple returns to log-returns)
+    - **volatility** - calculating volatility (e.g. intraday_volatility, total volatility, rolling volatility)
 
 ### containers
 Data structures that extend the functionality of `pandas Series`, `pandas DataFrame` and `numpy DataArray` containers 
