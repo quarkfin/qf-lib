@@ -31,6 +31,7 @@ To run a backtest:
 - (optionally) preload price data and add use them in the `TradingSession`,
 - create a `TradingStrategy`,
 - call `start_trading()` method on the `TradingSession`.
+An example script is available at `demo_scripts/backtester/run_alpha_model_backtest_demo.py`.
 
 The module contains the following tools:
 - **alpha_model** - a part of the Strategy responsible for calculating Signals. Each Signal contains information such as
