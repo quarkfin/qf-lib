@@ -3,14 +3,14 @@ from unittest import TestCase
 
 import numpy as np
 
+from qf_lib.common.utils.returns.max_drawdown import max_drawdown
 from qf_lib_tests.unit_tests.portfolio_construction.utils import assets_df
+from qf_lib.portfolio_construction.portfolio_models.multifactor_portfolio import MultiFactorPortfolio, \
+    PortfolioParameters
 
 try:
     import cvxopt
-
     cvxopt_missing = False
-    from qf_lib.portfolio_construction.portfolio_models.multifactor_portfolio import MultiFactorPortfolio, \
-        PortfolioParameters
 except ImportError:
     cvxopt_missing = True
 
@@ -23,7 +23,11 @@ class TestMultiFactorPortfolio(TestCase):
         cls.parameters = PortfolioParameters(0.0001, 0.25, 0.25, 0.5)
 
     def test_get_weights(self):
-        portfolio = MultiFactorPortfolio(self.assets_df, self.assets_df.cov(), self.parameters)
+        portfolio = MultiFactorPortfolio(self.assets_df.cov(),
+                                         self.assets_df.var(),
+                                         self.assets_df.mean(),
+                                         max_drawdown(self.assets_df),
+                                         self.parameters)
         actual_weights = portfolio.get_weights()
 
         expected_weights_vals = np.zeros(20)
@@ -36,7 +40,12 @@ class TestMultiFactorPortfolio(TestCase):
         self.assertTrue(np.allclose(expected_weights_vals, actual_weights.values, rtol=0, atol=5e-02))
 
     def test_get_weights_with_upper_limits(self):
-        portfolio = MultiFactorPortfolio(self.assets_df, self.assets_df.cov(), self.parameters, upper_constraint=0.1)
+        portfolio = MultiFactorPortfolio(self.assets_df.cov(),
+                                         self.assets_df.var(),
+                                         self.assets_df.mean(),
+                                         max_drawdown(self.assets_df),
+                                         self.parameters,
+                                         upper_constraint=0.1)
         actual_weights = portfolio.get_weights()
 
         expected_weights_vals = np.zeros(20)
