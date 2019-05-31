@@ -107,13 +107,13 @@ class VolatilityForecast(object):
 
         returns_tms = self.returns_tms * multiplier
         volatility_tms = self._calculate_single_value(returns_tms)
-        volatility_tms = volatility_tms / multiplier
+        volatility_value = volatility_tms / multiplier
 
         if self.annualise:
-            volatility_tms = annualise_with_sqrt(volatility_tms, self.frequency)
+            volatility_value = annualise_with_sqrt(volatility_value, self.frequency)
 
-        self.forecasted_volatility = volatility_tms
-        return volatility_tms
+        self.forecasted_volatility = volatility_value
+        return volatility_value
 
     def _calculate_single_value(self, returns: LogReturnsSeries) -> float:
         am = self._get_ARCH_model(returns, self.vol_process)
