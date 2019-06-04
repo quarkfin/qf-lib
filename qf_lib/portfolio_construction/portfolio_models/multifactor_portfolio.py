@@ -28,7 +28,7 @@ class MultiFactorPortfolio(Portfolio):
         self.covariance_matrix = covariance_matrix
         self.variance = variance
         self.mean = mean
-        self.max_dd = max_drawdown
+        self.max_dd = max_drawdown  # dd is expressed in positive numbers, for example 0.32 means max dd of 32%
         self.parameters = parameters
         self.upper_constraint = upper_constraint
 
