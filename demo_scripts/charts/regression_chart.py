@@ -7,8 +7,8 @@ from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
 from qf_lib.plotting.charts.regression_chart import RegressionChart
 
-start_date = str_to_date('2000-01-01')
-end_date = str_to_date('2014-01-01')
+start_date = str_to_date('2014-01-01')
+end_date = str_to_date('2018-01-01')
 
 data_provider = container.resolve(GeneralPriceProvider)
 benchmark_tms = data_provider.get_price(QuandlTicker('AAPL', 'WIKI'), PriceField.Close, start_date, end_date)

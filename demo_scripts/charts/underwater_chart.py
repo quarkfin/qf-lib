@@ -7,8 +7,8 @@ from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
 from qf_lib.plotting.charts.underwater_chart import UnderwaterChart
 
-start_date = str_to_date('1996-01-01')
-end_date = str_to_date('2014-01-01')
+start_date = str_to_date('2010-01-01')
+end_date = str_to_date('2019-01-01')
 live_start_date = str_to_date('2012-01-01')
 
 data_provider = container.resolve(GeneralPriceProvider)
