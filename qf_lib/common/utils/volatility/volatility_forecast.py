@@ -106,8 +106,8 @@ class VolatilityForecast(object):
         assert multiplier >= 1
 
         returns_tms = self.returns_tms * multiplier
-        volatility_tms = self._calculate_single_value(returns_tms)
-        volatility_value = volatility_tms / multiplier
+        volatility_value = self._calculate_single_value(returns_tms)
+        volatility_value = volatility_value / multiplier
 
         if self.annualise:
             volatility_value = annualise_with_sqrt(volatility_value, self.frequency)
