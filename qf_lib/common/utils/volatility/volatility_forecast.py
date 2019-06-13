@@ -84,7 +84,7 @@ class VolatilityForecast(object):
         self.forecasted_volatility = volatility_tms
         return volatility_tms
 
-    def calculate_single_forecast(self, multiplier: int = 1) -> float:
+    def calculate_single_forecast(self, multiplier: int = 1000) -> float:
         """
         Calculates volatility forecast for single asset. It is expressed in the frequency of returns.
         Value is calculated based on the configuration as in the object attributes. The result of the calculation
