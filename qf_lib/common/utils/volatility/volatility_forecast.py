@@ -84,7 +84,7 @@ class VolatilityForecast(object):
         self.forecasted_volatility = volatility_tms
         return volatility_tms
 
-    def calculate_single_forecast(self, multiplier: int = 1) -> float:
+    def calculate_single_forecast(self, multiplier: int = 1000) -> float:
         """
         Calculates volatility forecast for single asset. It is expressed in the frequency of returns.
         Value is calculated based on the configuration as in the object attributes. The result of the calculation
@@ -106,14 +106,14 @@ class VolatilityForecast(object):
         assert multiplier >= 1
 
         returns_tms = self.returns_tms * multiplier
-        volatility_tms = self._calculate_single_value(returns_tms)
-        volatility_tms = volatility_tms / multiplier
+        volatility_value = self._calculate_single_value(returns_tms)
+        volatility_value = volatility_value / multiplier
 
         if self.annualise:
-            volatility_tms = annualise_with_sqrt(volatility_tms, self.frequency)
+            volatility_value = annualise_with_sqrt(volatility_value, self.frequency)
 
-        self.forecasted_volatility = volatility_tms
-        return volatility_tms
+        self.forecasted_volatility = volatility_value
+        return volatility_value
 
     def _calculate_single_value(self, returns: LogReturnsSeries) -> float:
         am = self._get_ARCH_model(returns, self.vol_process)
