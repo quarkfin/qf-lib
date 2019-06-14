@@ -11,11 +11,9 @@ class BlackLitterman(object):
     def __init__(self, hist_cov: DataFrame, weights: Series, sample_size, sharpe:float=0.5):
         """
         Creates a n object allowing calculation of the distribution of the returns using Black Litterman model
-        The model is operating in the frequency of the data provided. If for example hist_cov is built using monthly data
-        than the output is also expressed as monthly values.
 
         hist_cov:
-            covariance matrix of historical excess reeturns of assets
+            covariance matrix of historical excess returns of assets; should be annualized
         weights:
             weights of assets in the market cap index
         sample_size:
