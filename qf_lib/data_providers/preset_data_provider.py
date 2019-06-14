@@ -84,7 +84,19 @@ class PresetDataProvider(DataProvider):
                     fields: Union[str, Sequence[str]],
                     start_date: datetime, end_date: datetime = None, **kwargs
                     ) -> Union[QFSeries, QFDataFrame, QFDataArray]:
-        raise NotImplementedError()
+
+        tickers, got_single_ticker = convert_to_list(tickers, Ticker)
+        fields, got_single_field = convert_to_list(fields, str)
+        got_single_date = start_date is not None and (start_date == end_date)
+
+        if self._check_data_availability:
+            self._check_if_cached_data_available(tickers, fields, start_date, end_date)
+
+        data_array = self._data_bundle.loc[start_date:end_date, tickers, fields]
+        normalized_result = normalize_data_array(data_array, tickers, fields, got_single_date, got_single_ticker,
+                                                 got_single_field, use_prices_types=False)
+
+        return normalized_result
 
     def supported_ticker_types(self) -> Set[Type[Ticker]]:
         return self._ticker_types
