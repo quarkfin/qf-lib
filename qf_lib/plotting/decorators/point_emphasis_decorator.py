@@ -1,4 +1,5 @@
 import datetime
+import math
 from typing import Any, Tuple
 
 import pandas
@@ -9,7 +10,7 @@ from qf_lib.plotting.decorators.simple_legend_item import SimpleLegendItem
 
 class PointEmphasisDecorator(ChartDecorator, SimpleLegendItem):
     def __init__(self, series_data_element, coordinates: Tuple[Any, Any], color: str=None, decimal_points: int=2,
-                 label_format='  {1:g}', key=None, use_secondary_axes: bool=False, move_point=True, font_size=15):
+                 label_format='  {:.4g}', key=None, use_secondary_axes: bool=False, move_point=True, font_size=15):
         """
         Creates a new marker for `series_data_element` for `x=series_index`. For a timeseries, you can specify
         the time that you wish to be emphasised.
@@ -27,14 +28,15 @@ class PointEmphasisDecorator(ChartDecorator, SimpleLegendItem):
             number of decimal points that should be shown in the point's label
         label_format: str, optional
             A format string specifying how the label should be displayed. Takes two parameters: the index and value.
+            useful values: ' {:0.1E}',  '  {:0.1f}'
         key: str, optional
             see: ChartDecorator.__init__#key
         use_secondary_axes
             determines whether this PointEmphasis belongs on the secondary axis.
         """
+        # label_format = ' {:0.1E}'
         ChartDecorator.__init__(self, key)
         SimpleLegendItem.__init__(self)
-
         assert isinstance(series_data_element.data, pandas.Series)
 
         assert not pandas.isnull(coordinates[0])
@@ -64,10 +66,7 @@ class PointEmphasisDecorator(ChartDecorator, SimpleLegendItem):
         self.legend_artist = ax.plot([x], [y], 'o', color=self._color)[0]
 
         # Format label based on specified format string.
-        if isinstance(x, datetime.datetime):
-            label = self._label_format.format(x, round(y, self._decimal_points))
-        else:
-            label = self._label_format.format(round(x, self._decimal_points), round(y, self._decimal_points))
+        label = self._label_format.format(y)
 
         if self.move_point:
             # Calculate where the text should be positioned.

@@ -45,7 +45,7 @@ class AnalyticalCone(AnalyticalConeBase):
         # for each day OOS calculate the expected value at different point in time using the _get_expected_value()
         # function that gives expectation in single point in time.
         expected_values = list(map(lambda nr_of_days:
-                                   self._get_expected_value(mu, sigma, initial_price, nr_of_days, number_of_std),
+                                   self.get_expected_value(mu, sigma, initial_price, nr_of_days, number_of_std),
                                    days_oos))
 
         # We need to add last IS index value to connect the cone to the line. It will correspond to 0 days cone
@@ -100,7 +100,7 @@ class AnalyticalCone(AnalyticalConeBase):
             # calculate expectation
             number_of_steps = len(oos_log_returns)
             starting_price = 1  # we take 1 as a base value
-            total_expected_return = self._get_expected_value(mean_return, sigma, starting_price, number_of_steps, number_of_std)
+            total_expected_return = self.get_expected_value(mean_return, sigma, starting_price, number_of_steps, number_of_std)
 
             # writing to the array starting from the last array element and then moving towards the first one
             strategy_values[-i - 1] = total_strategy_return

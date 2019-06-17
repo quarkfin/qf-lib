@@ -45,8 +45,8 @@ class AnalyticalConeOOS(AnalyticalConeBase):
             # calculate expectation
             number_of_steps = len(oos_log_returns)
             starting_price = 1  # we take 1 as a base value
-            total_expected_return = self._get_expected_value(is_mean_return, is_sigma, starting_price,
-                                                             number_of_steps, number_of_std)
+            total_expected_return = self.get_expected_value(is_mean_return, is_sigma, starting_price,
+                                                            number_of_steps, number_of_std)
 
             # writing to the array starting from the last array element and then moving towards the first one
             strategy_values[-i - 1] = total_strategy_return
