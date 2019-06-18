@@ -14,7 +14,7 @@ live_start_date = str_to_date('2012-01-01')
 data_provider = container.resolve(GeneralPriceProvider)
 spy_tms = data_provider.get_price(QuandlTicker('AAPL', 'WIKI'), PriceField.Close, start_date, end_date)
 
-cone_chart = ConeChart(data=spy_tms, nr_of_data_points=800, is_end_date=live_start_date)
+cone_chart = ConeChart(data=spy_tms, nr_of_data_points=200, is_end_date=live_start_date)
 cone_chart.plot()
 
 plt.show(block=True)
