@@ -39,8 +39,7 @@ class DataPresenter(object):
     Class used for presenting the data stored in the FactorizationDataModel.
     """
 
-    def __init__(self, model: DataModel,
-                 ticker_to_security_name_dict: Mapping[str, str],
+    def __init__(self, model: DataModel, ticker_to_security_name_dict: Mapping[str, str],
                  enet_factors_identifier: ElasticNetFactorsIdentifier = None):
         """
         Parameters
@@ -262,10 +261,8 @@ class DataPresenter(object):
         names = [self._get_security_name(ticker) for ticker in self.model.correlation_matrix.columns.values]
         heatmap_chart = HeatMapChart(data, min_value=-1, max_value=1)
 
-        heatmap_chart.add_decorator(
-            AxisTickLabelsDecorator(axis=Axis.X, labels=names))
-        heatmap_chart.add_decorator(
-            AxisTickLabelsDecorator(axis=Axis.Y, labels=reversed(names)))
+        heatmap_chart.add_decorator(AxisTickLabelsDecorator(axis=Axis.X, labels=names))
+        heatmap_chart.add_decorator(AxisTickLabelsDecorator(axis=Axis.Y, labels=reversed(names)))
         heatmap_chart.add_decorator(ValuesAnnotations())
         heatmap_chart.add_decorator(ColorBar())
         heatmap_chart.add_decorator(TitleDecorator("Correlation matrix"))
@@ -417,5 +414,5 @@ class DataPresenter(object):
     def _get_security_name(self, ticker):
         if not isinstance(ticker, str):
             ticker = ticker.as_string()
-        
+
         return self.ticker_to_security_name_dict.get(ticker, ticker)

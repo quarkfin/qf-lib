@@ -9,16 +9,16 @@ def annualise_total_return(total_return: float, period_length_in_years: float, r
 
     Parameters
     ----------
-    total_return: float
+    total_return
         return over the whole period expressed as number
-    period_length_in_years: float
+    period_length_in_years
         time to achieve the total return, expressed in years
-    returns_type: type
+    returns_type
         type of the returns
 
     Returns
     -------
-    annualised_return: float
+    annualised_return
         Annualised Rate of Return as number
     """
     assert issubclass(returns_type, ReturnsSeries)

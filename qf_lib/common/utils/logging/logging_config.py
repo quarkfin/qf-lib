@@ -10,7 +10,6 @@ from qf_lib.starting_dir import get_starting_dir_abs_path
 
 
 def setup_logging(level, console_logging=True, log_dir=None, log_file_base_name=""):
-
     _inner_setup_logging(qf_logger, level, console_logging, log_dir, "QF_" + log_file_base_name)
     _inner_setup_logging(ib_logger, level, console_logging, log_dir, "IB_" + log_file_base_name)
 

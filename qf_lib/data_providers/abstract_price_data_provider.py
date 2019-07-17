@@ -19,9 +19,9 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
     single data base, for example: Quandl, Bloomberg, Yahoo.)
     """
 
-    def get_price(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
-                  start_date: datetime, end_date: datetime=None) \
-            -> Union[None, PricesSeries, PricesDataFrame, QFDataArray]:
+    def get_price(
+            self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
+            start_date: datetime, end_date: datetime = None) -> Union[None, PricesSeries, PricesDataFrame, QFDataArray]:
         if start_date == end_date:
             raise NotImplementedError("Single date queries are not supported yet")
 
@@ -49,7 +49,7 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
         return container
 
     @abstractmethod
-    def price_field_to_str_map(self, ticker: Ticker=None) -> Dict[PriceField, str]:
+    def price_field_to_str_map(self, ticker: Ticker = None) -> Dict[PriceField, str]:
         """"
         Method has to be implemented in each data provider in order to be able to use get_price.
         Returns dictionary containing mapping between PriceField and corresponding string that has to be used by
@@ -58,7 +58,7 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
         Ticker is optional and might be use by particular data providers to create appropriate dictionary
         """
 
-    def str_to_price_field_map(self, ticker: Ticker=None) -> Dict[str, PriceField]:
+    def str_to_price_field_map(self, ticker: Ticker = None) -> Dict[str, PriceField]:
         """"
         Inverse of price_field_to_str_map.
         """
@@ -66,8 +66,9 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
         inv_dict = {v: k for k, v in field_str_dict.items()}
         return inv_dict
 
-    def _map_field_to_str(self, tickers: Union[Ticker, Sequence[Ticker]],
-                          fields: Union[None, PriceField, Sequence[PriceField]]) -> Union[None, str, Sequence[str]]:
+    def _map_field_to_str(
+            self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[None, PriceField, Sequence[PriceField]]) \
+            -> Union[None, str, Sequence[str]]:
         """"
         The method maps enum to sting that is recognised by the specific database.
 

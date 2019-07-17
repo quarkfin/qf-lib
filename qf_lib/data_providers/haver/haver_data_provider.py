@@ -17,6 +17,7 @@ from qf_lib.settings import Settings
 
 try:
     import Haver
+
     is_haver_installed = True
 except ImportError:
     is_haver_installed = False
@@ -24,7 +25,6 @@ except ImportError:
 
 
 class HaverDataProvider(AbstractPriceDataProvider):
-
     get_lock = threading.Lock()
 
     def __init__(self, settings: Settings):
@@ -33,18 +33,19 @@ class HaverDataProvider(AbstractPriceDataProvider):
 
         Parameters
         ----------
-        db_location - A path to the directory containing the Haver database.
+        db_location
+            path to the directory containing the Haver database
         """
         self.db_location = settings.haver_path
         self.connected = False
 
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
-    def get_history(self, tickers: Union[HaverTicker, Sequence[HaverTicker]], fields=None, start_date: datetime=None,
-                    end_date: datetime=None, **kwargs) -> Union[QFSeries, QFDataFrame, QFDataArray]:
+    def get_history(self, tickers: Union[HaverTicker, Sequence[HaverTicker]], fields=None, start_date: datetime = None,
+                    end_date: datetime = None, **kwargs) -> Union[QFSeries, QFDataFrame, QFDataArray]:
         """
-        fields:
-            field should None as each ticker corresponds to one timeseries and there is no such thing as a field in
+        fields
+            should None as each ticker corresponds to one timeseries and there is no such thing as a field in
             the Haver DB.
 
         this method will never return a QFDataArray.

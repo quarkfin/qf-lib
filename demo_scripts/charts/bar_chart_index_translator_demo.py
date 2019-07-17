@@ -16,22 +16,26 @@ labels_to_locations_dict = {
     'd': 6
 }
 
-colors = ['orange'] + ['forestgreen']*3
-
-# using automatic mapping between labels and locations
-bar_chart2 = BarChart(orientation=Orientation.Horizontal, index_translator=IndexTranslator(),
-                      thickness=1.0, color=colors, align='center')
-bar_chart2.add_decorator(DataElementDecorator(pd.Series(data=[1, 2, 3, 4], index=index)))
-bar_chart2.add_decorator(DataElementDecorator(pd.Series(data=[3, 1, 2, 4], index=index)))
-bar_chart2.plot()
+colors = ['orange'] + ['forestgreen'] * 3
 
 
-# using custom mapping between labels and locations
-bar_chart = BarChart(orientation=Orientation.Horizontal, index_translator=IndexTranslator(labels_to_locations_dict),
-                     thickness=1.0, color=colors, align='center')
-bar_chart.add_decorator(DataElementDecorator(pd.Series(data=[1, 2, 3, 4], index=index)))
-bar_chart.add_decorator(DataElementDecorator(pd.Series(data=[3, 1, 2, 4], index=index)))
-bar_chart.plot()
+def main():
+    # using automatic mapping between labels and locations
+    bar_chart2 = BarChart(orientation=Orientation.Horizontal, index_translator=IndexTranslator(),
+                          thickness=1.0, color=colors, align='center')
+    bar_chart2.add_decorator(DataElementDecorator(pd.Series(data=[1, 2, 3, 4], index=index)))
+    bar_chart2.add_decorator(DataElementDecorator(pd.Series(data=[3, 1, 2, 4], index=index)))
+    bar_chart2.plot()
+
+    # using custom mapping between labels and locations
+    bar_chart = BarChart(orientation=Orientation.Horizontal, index_translator=IndexTranslator(labels_to_locations_dict),
+                         thickness=1.0, color=colors, align='center')
+    bar_chart.add_decorator(DataElementDecorator(pd.Series(data=[1, 2, 3, 4], index=index)))
+    bar_chart.add_decorator(DataElementDecorator(pd.Series(data=[3, 1, 2, 4], index=index)))
+    bar_chart.plot()
+
+    plt.show(block=True)
 
 
-plt.show(block=True)
+if __name__ == '__main__':
+    main()

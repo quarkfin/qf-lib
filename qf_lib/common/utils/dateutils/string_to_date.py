@@ -3,7 +3,7 @@ import datetime
 from qf_lib.common.utils.dateutils.date_format import DateFormat
 
 
-def str_to_date(string_date: str, date_format: DateFormat=DateFormat.ISO) -> datetime.datetime:
+def str_to_date(string_date: str, date_format: DateFormat = DateFormat.ISO) -> datetime.datetime:
     """
     Converts string into date object.
 

@@ -19,7 +19,7 @@ class FactorizationManager(object):
     """
 
     def __init__(self, analysed_tms: QFSeries, regressors_df: QFDataFrame, frequency: Frequency,
-                 factors_identifier: FactorsIdentifier, is_fit_intercept: bool=True):
+                 factors_identifier: FactorsIdentifier, is_fit_intercept: bool = True):
         """
         Parameters
         ----------
@@ -43,10 +43,10 @@ class FactorizationManager(object):
         self.factors_identifier = factors_identifier
         self.is_fit_intercept = is_fit_intercept
 
-        self.used_regressors_ = None      # data frame of regressors used in the model
-        self.used_fund_returns_ = None    # analysed timeseries without dates unused in the regression
-        self.coefficients_vector_ = None  # vector of coefficients for each regressor used in the model
-        self.intercept_ = None            # the independent term in a linear model
+        self.used_regressors_ = None        # data frame of regressors used in the model
+        self.used_fund_returns_ = None      # analysed timeseries without dates unused in the regression
+        self.coefficients_vector_ = None    # vector of coefficients for each regressor used in the model
+        self.intercept_ = None              # the independent term in a linear model
 
     def extract_data_for_analysis(self) -> Tuple[QFDataFrame, QFSeries]:
         """
@@ -57,7 +57,7 @@ class FactorizationManager(object):
         selected_regressors_df
             Dataframe containing only those regressors which are useful for modeling fund's timeseries
         common_analysed_tms
-            Timeseries of fund which is preprocessed (cleaned data).
+            Timeseries of fund which is preprocessed (cleaned data)
         """
         common_regressors_df, common_analysed_tms = self._preprocess_data(self.analysed_tms, self.regressors_df)
         selected_regressors_df = \

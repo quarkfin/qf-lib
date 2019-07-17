@@ -3,8 +3,8 @@ from typing import List
 from numpy import sign
 
 from qf_lib.backtesting.contract.contract import Contract
-from qf_lib.backtesting.transaction import Transaction
 from qf_lib.backtesting.portfolio.position import Position
+from qf_lib.backtesting.portfolio.transaction import Transaction
 
 
 class BacktestPosition(Position):
@@ -15,17 +15,17 @@ class BacktestPosition(Position):
         self.is_closed = False
         """Determines if the positions has been closed"""
 
-        self.transactions = []     # type: List[Transaction]
+        self.transactions = []  # type: List[Transaction]
         """List of all transactions for the asset"""
 
         self.number_of_shares = 0  # type: int
         """ Number of shares held currently in the portfolio. Positive value means this is a Long position
         Negative value corresponds to a Short position"""
 
-        self.current_price = 0.0   # type: float
+        self.current_price = 0.0  # type: float
         """ Current price of the asset used for market value calculation. Includes the Bid-Ask spread"""
 
-        self.direction = 0         # type: int
+        self.direction = 0  # type: int
         """ Direction of the position: Long = 1, Short = -1, Not defined = 0"""
 
     @property
@@ -111,18 +111,18 @@ class BacktestPosition(Position):
             return 0
         return cost / shares
 
-    def unrealised_pnl(self):
+    def unrealised_pnl(self) -> float:
         """
-        Calculate the unrealised pln of the position based on the market value.
+        Calculate the unrealised pnl of the position based on the market value.
         """
         return self.market_value - self.cost_basis()
 
-    def realized_pnl(self):
+    def realized_pnl(self) -> float:
         """
-        Calculate the realized pln of the position.
+        Calculate the realized pnl of the position.
         """
 
-        quantity = 0   # how many shares we have in given point of time while looping through transactions
+        quantity = 0  # how many shares we have in given point of time while looping through transactions
         avg_buy_price = 0.0
         avg_sell_price = 0.0
         realized_pnl = 0.0
@@ -167,7 +167,7 @@ class BacktestPosition(Position):
         return realized_pnl
 
     @staticmethod
-    def _calculate_cost_of_transaction(transaction: Transaction):
+    def _calculate_cost_of_transaction(transaction: Transaction) -> float:
         """
         Calculates how much we paid to buy assets or how much we received for selling assets (including commission)
         For the proceeds of the assets we sold it returns a negative number
@@ -178,4 +178,3 @@ class BacktestPosition(Position):
 
     def _check_if_open(self):
         assert not self.is_closed, "The position has already been closed"
-

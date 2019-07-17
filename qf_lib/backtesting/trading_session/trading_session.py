@@ -1,12 +1,12 @@
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
 
 from qf_lib.backtesting.broker.broker import Broker
-from qf_lib.backtesting.contract_to_ticker_conversion.base import ContractTickerMapper
+from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.events.event_manager import EventManager
 from qf_lib.backtesting.events.notifiers import Notifiers
 from qf_lib.backtesting.monitoring.abstract_monitor import AbstractMonitor
-from qf_lib.backtesting.order.orderfactory import OrderFactory
+from qf_lib.backtesting.order.order_factory import OrderFactory
 from qf_lib.backtesting.position_sizer.position_sizer import PositionSizer
 from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger

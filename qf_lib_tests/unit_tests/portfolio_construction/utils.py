@@ -1,7 +1,7 @@
 from os.path import dirname, join
 
-from qf_lib.common.utils.excel.excel_importer import ExcelImporter
 from qf_lib.containers.dataframe.simple_returns_dataframe import SimpleReturnsDataFrame
+from qf_lib.documents_utils.excel.excel_importer import ExcelImporter
 
 
 def _get_assets_df():

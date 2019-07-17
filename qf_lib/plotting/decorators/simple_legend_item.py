@@ -5,10 +5,7 @@ class SimpleLegendItem(object):
     """
 
     def __init__(self):
-        self.legend_artist = None
         """
-            type: matplotlib.artist.Artist
-
-            Object which holds a reference to matplotlib's object which can be plotted on the chart (so called
-            Artist).
+        Object which holds a reference to matplotlib's object which can be plotted on the chart (so called Artist).
         """
+        self.legend_artist = None  # type: matplotlib.artist.Artist

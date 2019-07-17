@@ -1,5 +1,5 @@
 from datetime import datetime
-from math import sqrt, exp
+from math import exp
 
 import numpy as np
 from pandas import Int64Index
@@ -17,16 +17,18 @@ class AnalyticalCone(AnalyticalConeBase):
         self.series = series
         self.log_returns_tms = series.to_log_returns()
 
-    def calculate_simple_cone(self, live_start_date: datetime, number_of_std: float)-> PricesSeries:
+    def calculate_simple_cone(self, live_start_date: datetime, number_of_std: float) -> PricesSeries:
         """
         Creates a simple cone starting from a given date using the solution to the stochastic equation:
         S(t) = S(0)*exp( (mu-0.5*sigma^2)*t + sigma*N(0,1)*sqrt(t) )
 
         Parameters
         ----------
-        number_of_std: corresponds to the randomness of the stochastic process. reflects number of standard deviations
+        live_start_date
+            datetime or string with date, corresponds to the cone start date
+        number_of_std
+            corresponds to the randomness of the stochastic process. reflects number of standard deviations
             to get expected values for. For example 1.0 means 1 standard deviation above the expected value.
-        live_start_date: datetime or string with date, corresponds to the cone start date
 
         Returns
         -------
@@ -40,13 +42,12 @@ class AnalyticalCone(AnalyticalConeBase):
         sigma = is_log_tms.std()
 
         days_oos = range(len(oos_log_tms) + 1)  # a list [0, 1, 2, ... N]
-        initial_price = self.series.asof(is_log_tms.index[-1])   # price at last in-sample date
+        initial_price = self.series.asof(is_log_tms.index[-1])  # price at last in-sample date
 
         # for each day OOS calculate the expected value at different point in time using the _get_expected_value()
         # function that gives expectation in single point in time.
-        expected_values = list(map(lambda nr_of_days:
-                                   self.get_expected_value(mu, sigma, initial_price, nr_of_days, number_of_std),
-                                   days_oos))
+        expected_values = list(map(
+            lambda nr_of_days: self.get_expected_value(mu, sigma, initial_price, nr_of_days, number_of_std), days_oos))
 
         # We need to add last IS index value to connect the cone to the line. It will correspond to 0 days cone
         index = oos_log_tms.index.copy()
@@ -54,7 +55,8 @@ class AnalyticalCone(AnalyticalConeBase):
 
         return PricesSeries(index=index, data=expected_values)
 
-    def calculate_aggregated_cone(self, nr_of_days_to_evaluate: int, is_end_date: datetime, number_of_std: float) -> QFDataFrame:
+    def calculate_aggregated_cone(
+            self, nr_of_days_to_evaluate: int, is_end_date: datetime, number_of_std: float) -> QFDataFrame:
         """
         Evaluates many simple cones and saves the end values of every individual simple cone.
         While using a simple cone (e.g. LineChart with Cone decorator) the results of the evaluation may be very
@@ -65,10 +67,13 @@ class AnalyticalCone(AnalyticalConeBase):
 
         Parameters
         ----------
-        number_of_std: corresponds to the randomness of the stochastic process. reflects number of standard deviations
+        nr_of_days_to_evaluate
+            max number of days in the past, from when all the cones are evaluated
+        is_end_date
+            the end od in-sample date. Makes sure that in-sample doesn't move with the cone.
+        number_of_std
+            corresponds to the randomness of the stochastic process. reflects number of standard deviations
             to get expected values for. For example 1.0 means 1 standard deviation above the expected value.
-        nr_of_days_to_evaluate: max number of days in the past, from when all the cones are evaluated
-        is_end_date: the end od in-sample date. Makes sure that in-sample doesn't move with the cone.
 
         Returns
         -------
@@ -100,7 +105,8 @@ class AnalyticalCone(AnalyticalConeBase):
             # calculate expectation
             number_of_steps = len(oos_log_returns)
             starting_price = 1  # we take 1 as a base value
-            total_expected_return = self.get_expected_value(mean_return, sigma, starting_price, number_of_steps, number_of_std)
+            total_expected_return = self.get_expected_value(
+                mean_return, sigma, starting_price, number_of_steps, number_of_std)
 
             # writing to the array starting from the last array element and then moving towards the first one
             strategy_values[-i - 1] = total_strategy_return

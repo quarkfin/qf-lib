@@ -8,15 +8,17 @@ from matplotlib.ticker import FormatStrFormatter, MaxNLocator
 from qf_lib.common.enums.plotting_mode import PlottingMode
 from qf_lib.common.enums.trade_field import TradeField
 from qf_lib.common.utils.dateutils.to_days import to_days
-from qf_lib.common.utils.document_exporting import Document, GridElement, ParagraphElement
-from qf_lib.common.utils.document_exporting.element.page_header import PageHeaderElement
-from qf_lib.common.utils.document_exporting.element.table import Table
-from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.common.utils.miscellaneous.constants import DAYS_PER_YEAR_AVG
 from qf_lib.common.utils.returns.annualise_total_return import annualise_total_return
 from qf_lib.common.utils.returns.max_drawdown import max_drawdown
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
+from qf_lib.documents_utils.document_exporting.document import Document
+from qf_lib.documents_utils.document_exporting.element.grid import GridElement
+from qf_lib.documents_utils.document_exporting.element.page_header import PageHeaderElement
+from qf_lib.documents_utils.document_exporting.element.paragraph import ParagraphElement
+from qf_lib.documents_utils.document_exporting.element.table import Table
+from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.plotting.charts.chart import Chart
 from qf_lib.plotting.charts.histogram_chart import HistogramChart
 from qf_lib.plotting.charts.line_chart import LineChart

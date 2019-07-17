@@ -9,11 +9,11 @@ class TimeIndexedContainer(object):
 
         Returns
         -------
-        top_frequent_delta: pd.Timedelta
+        top_frequent_delta
             the most frequent difference between 2 consecutive dates in the index (if there is more than one top
             frequent difference then all of the top frequent differences will be combined into one by calculating
             the mean of top frequent differences).
-        relative_frequency: float
+        relative_frequency
             relative number of occurrences as number from range (0,1>, where 1 means that 100% of time deltas is equal
             to the top_frequent_deltas, thus all time deltas are the same.
 

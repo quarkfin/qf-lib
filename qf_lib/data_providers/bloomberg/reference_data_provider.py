@@ -51,4 +51,3 @@ class ReferenceDataProvider(object):
                     tickers_fields_container.loc[ticker, field_name] = value
 
         return tickers_fields_container
-

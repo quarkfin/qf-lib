@@ -11,17 +11,23 @@ start_date = str_to_date('1996-01-01')
 end_date = str_to_date('2012-03-01')
 live_start_date = str_to_date('2012-01-01')
 
-data_provider = container.resolve(GeneralPriceProvider)
-tms = data_provider.get_price(QuandlTicker('AAPL', 'WIKI'), PriceField.Close, start_date, end_date)
 
-tms = tms.to_log_returns()
-is_tms = tms.loc[tms.index < live_start_date]
-oos_tms = tms.loc[tms.index >= live_start_date]
+def main():
+    data_provider = container.resolve(GeneralPriceProvider)
+    tms = data_provider.get_price(QuandlTicker('AAPL', 'WIKI'), PriceField.Close, start_date, end_date)
 
-is_mean_return = is_tms.mean()
-is_sigma = is_tms.std()
+    tms = tms.to_log_returns()
+    is_tms = tms.loc[tms.index < live_start_date]
+    oos_tms = tms.loc[tms.index >= live_start_date]
 
-cone_chart = ConeChartOOS(oos_tms, is_mean_return, is_sigma)
-cone_chart.plot()
+    is_mean_return = is_tms.mean()
+    is_sigma = is_tms.std()
 
-plt.show(block=True)
+    cone_chart = ConeChartOOS(oos_tms, is_mean_return, is_sigma)
+    cone_chart.plot()
+
+    plt.show(block=True)
+
+
+if __name__ == '__main__':
+    main()

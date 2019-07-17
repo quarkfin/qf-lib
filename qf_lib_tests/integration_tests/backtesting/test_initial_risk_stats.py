@@ -5,7 +5,7 @@ from unittest import TestCase
 import pandas as pd
 from pandas.util.testing import assert_frame_equal
 
-from qf_lib.backtesting.alpha_models_testers.initial_risk_stats import InitialRiskStatsFactory
+from qf_lib.backtesting.fast_alpha_model_tester.initial_risk_stats import InitialRiskStatsFactory
 
 
 class TestInitialRiskStatsFactory(TestCase):

@@ -1,7 +1,7 @@
-from qf_lib.containers.series.qf_series import QFSeries
+from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
 
 
-def omega_ratio(qf_series: QFSeries, threshold: float = 0) -> float:
+def omega_ratio(returns_tms: SimpleReturnsSeries, threshold: float = 0) -> float:
     """
     Omega Ratio - The Omega Ratio is a measure of performance that doesn't assume a normal distribution of returns.
     The Omega ratio is a relative measure of the likelihood of achieving a given return, such as a minimum
@@ -15,17 +15,17 @@ def omega_ratio(qf_series: QFSeries, threshold: float = 0) -> float:
 
     Parameters
     ----------
-    qf_series: QFSeries
-        series of prices/returns
-    threshold: float
+    returns_tms
+        time series of price returns
+    threshold
         threshold (e.g. benchmark return or target return) for the portfolio
 
     Returns
     -------
-    omega_ratio: float
+    omega_ratio
         Omega Ratio calculated for threshold
     """
-    returns_tms = qf_series.to_simple_returns()
+    returns_tms = returns_tms.to_simple_returns()
     downside = 0
     upside = 0
 

@@ -1,7 +1,7 @@
-from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.common.utils.factorization.data_models.data_model import DataModel
 from qf_lib.common.utils.factorization.data_models.data_model_input import DataModelInput
 from qf_lib.common.utils.factorization.data_models.rolling_window_estimation import RollingWindowsEstimator
+from qf_lib.containers.series.qf_series import QFSeries
 
 
 class RollingDataModel(object):
@@ -93,11 +93,9 @@ class RollingDataModel(object):
         self.risk_contribs_df = models_series_.apply(lambda model: model.risk_contribution)
 
         self.factors_performance_attributions_df = models_series_.apply(
-            lambda model: model.factors_performance_attribution_ret
-        )
+            lambda model: model.factors_performance_attribution_ret)
         self.unexplained_performance_attributions_tms = models_series_.apply(
-            lambda model: model.unexplained_performance_attribution_ret
-        )
+            lambda model: model.unexplained_performance_attribution_ret)
 
         # select correlations of different series with analysed timeseries
         self.correlations_df = models_series_.apply(lambda model: model.correlation_matrix.iloc[-1, :-1])

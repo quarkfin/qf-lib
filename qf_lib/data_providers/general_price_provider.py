@@ -24,17 +24,17 @@ class GeneralPriceProvider(DataProvider):
     The main class that should be used in order to access prices of financial instruments.
     """
 
-    def __init__(self, bloomberg: BloombergDataProvider=None, quandl: QuandlDataProvider=None,
-                 haver: HaverDataProvider=None, cryptocurrency: CryptoCurrencyDataProvider=None):
+    def __init__(self, bloomberg: BloombergDataProvider = None, quandl: QuandlDataProvider = None,
+                 haver: HaverDataProvider = None, cryptocurrency: CryptoCurrencyDataProvider = None):
         self._ticker_type_to_data_provider_dict = {}  # type: Dict[Type[Ticker], DataProvider]
 
         for provider in [bloomberg, quandl, haver, cryptocurrency]:
             if provider is not None:
                 self._register_data_provider(provider)
 
-    def get_price(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
-                  start_date: datetime, end_date: datetime=None) \
-            -> Union[None, PricesSeries, PricesDataFrame, QFDataArray]:
+    def get_price(
+            self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
+            start_date: datetime, end_date: datetime = None) -> Union[None, PricesSeries, PricesDataFrame, QFDataArray]:
         """"
         Implements the functionality of AbstractPriceDataProvider using duck-typing.
         """
@@ -43,9 +43,9 @@ class GeneralPriceProvider(DataProvider):
 
         return normalized_result
 
-    def get_history(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[str, Sequence[str]],
-                    start_date: datetime, end_date: datetime = None, **kwargs) \
-            -> Union[QFSeries, QFDataFrame, QFDataArray]:
+    def get_history(
+            self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[str, Sequence[str]], start_date: datetime,
+            end_date: datetime = None, **kwargs) -> Union[QFSeries, QFDataFrame, QFDataArray]:
         """"
         Implements the functionality of DataProvider using duck-typing.
         """
@@ -84,8 +84,8 @@ class GeneralPriceProvider(DataProvider):
                 partial_results.append(partial_result)
 
         result = QFDataArray.concat(partial_results, dim=TICKERS)
-        normalized_result = normalize_data_array(result, tickers, fields, got_single_date, got_single_ticker,
-                                                 got_single_field, use_prices_types)
+        normalized_result = normalize_data_array(
+            result, tickers, fields, got_single_date, got_single_ticker, got_single_field, use_prices_types)
         return normalized_result
 
     def _register_data_provider(self, price_provider: DataProvider):
@@ -99,7 +99,6 @@ class GeneralPriceProvider(DataProvider):
         data_provider = self._ticker_type_to_data_provider_dict.get(ticker_class, None)
         if data_provider is None:
             raise LookupError(
-                "Unknown ticker type: {}. No appropriate data provider found".format(str(ticker_class))
-            )
+                "Unknown ticker type: {}. No appropriate data provider found".format(str(ticker_class)))
 
         return data_provider

@@ -1,5 +1,5 @@
 from itertools import cycle
-from typing import List
+from typing import List, Tuple
 
 import matplotlib as mpl
 
@@ -11,8 +11,8 @@ class LineChart(Chart):
     Simple line chart. It can plot both QFSeries and DataFrames.
     """
 
-    def __init__(self, start_x: any=None, end_x: any=None,
-                 upper_y: any=None, lower_y: any=None, log_scale: bool=False, rotate_x_axis=False):
+    def __init__(self, start_x: any = None, end_x: any = None, upper_y: any = None, lower_y: any = None,
+                 log_scale: bool = False, rotate_x_axis=False):
         """
         Creates a new LineChart instance.
 
@@ -25,7 +25,7 @@ class LineChart(Chart):
         self.log_scale = log_scale
         self._rotate_x_axis = rotate_x_axis
 
-    def plot(self, figsize=None) -> None:
+    def plot(self, figsize: Tuple[float, float] = None) -> None:
         self._setup_axes_if_necessary(figsize)
 
         if self.log_scale:
@@ -57,5 +57,3 @@ class LineChart(Chart):
 
             handle = axes.plot(trimmed_series, **plot_settings)[0]
             data_element.legend_artist = handle
-
-

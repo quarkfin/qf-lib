@@ -4,7 +4,7 @@ from qf_lib.common.enums.price_field import PriceField
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 
 
-def average_true_range(prices_df: PricesDataFrame, normalized: bool=False) -> float:
+def average_true_range(prices_df: PricesDataFrame, normalized: bool = False) -> float:
     """
 
     Parameters

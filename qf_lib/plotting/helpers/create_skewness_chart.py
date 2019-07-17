@@ -17,8 +17,10 @@ def create_skewness_chart(series: QFSeries, title: str = None) -> LineChart:
 
     Parameters
     ----------
-    series_list - A list of ``QFSeries`` or ``DataElementDecorator``s to plot on the chart.
-    title - The title of the graph, specify ``None`` if you don't want the chart to show a title.
+    series
+        ``QFSeries`` to plot on the chart.
+    title
+        title of the graph, specify ``None`` if you don't want the chart to show a title.
 
     Returns
     -------

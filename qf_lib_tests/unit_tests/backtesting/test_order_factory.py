@@ -5,11 +5,10 @@ import pandas as pd
 from mockito import mock, when
 
 from qf_lib.backtesting.contract.contract import Contract
-from qf_lib.backtesting.contract_to_ticker_conversion.bloomberg_mapper import \
-    DummyBloombergContractTickerMapper
+from qf_lib.backtesting.contract.contract_to_ticker_conversion.bloomberg_mapper import DummyBloombergContractTickerMapper
 from qf_lib.backtesting.order.execution_style import MarketOrder, StopOrder
 from qf_lib.backtesting.order.order import Order
-from qf_lib.backtesting.order.orderfactory import OrderFactory
+from qf_lib.backtesting.order.order_factory import OrderFactory
 from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.common.tickers.tickers import BloombergTicker
 

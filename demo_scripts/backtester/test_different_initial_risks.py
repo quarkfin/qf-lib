@@ -4,14 +4,14 @@ from typing import List, Type
 import numpy as np
 
 from demo_scripts.demo_configuration.demo_ioc import container
+from qf_lib.backtesting.alpha_model.all_tickers_used import get_all_tickers_used
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
-from qf_lib.backtesting.alpha_models_testers.alpha_model_factory import AlphaModelFactory
-from qf_lib.backtesting.alpha_models_testers.initial_risk_stats import InitialRiskStatsFactory
-from qf_lib.backtesting.alpha_models_testers.scenarios_generator import ScenariosGenerator
+from qf_lib.backtesting.alpha_model.alpha_model_factory import AlphaModelFactory
+from qf_lib.backtesting.alpha_model.alpha_model_strategy import AlphaModelStrategy
+from qf_lib.backtesting.fast_alpha_model_tester.initial_risk_stats import InitialRiskStatsFactory
+from qf_lib.backtesting.fast_alpha_model_tester.scenarios_generator import ScenariosGenerator
 from qf_lib.backtesting.monitoring.backtest_monitor import BacktestMonitor
-from qf_lib.backtesting.monitoring.past_signals_generator import get_all_tickers_used
 from qf_lib.backtesting.position_sizer.initial_risk_position_sizer import InitialRiskPositionSizer
-from qf_lib.backtesting.strategy.trading_strategy import TradingStrategy
 from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
@@ -31,7 +31,7 @@ def get_trade_rets_values(init_risk: float, alpha_model_type: Type[AlphaModel]) 
     model = model_factory.make_parametrized_model(alpha_model_type)
     model_tickers_dict = {model: [BloombergTicker('SVXY US Equity')]}
 
-    TradingStrategy(ts, model_tickers_dict, use_stop_losses=True)
+    AlphaModelStrategy(ts, model_tickers_dict, use_stop_losses=True)
 
     ts.use_data_preloading(get_all_tickers_used(model_tickers_dict))
     ts.start_trading()

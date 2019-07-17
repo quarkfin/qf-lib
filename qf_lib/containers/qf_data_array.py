@@ -13,11 +13,10 @@ from qf_lib.containers.dimension_names import FIELDS, TICKERS, DATES
 
 class QFDataArray(xr.DataArray):
 
-    def __init__(self, data, coords=None, dims=None, name=None,
-                 attrs=None, encoding=None, fastpath=False):
+    def __init__(self, data, coords=None, dims=None, name=None, attrs=None, encoding=None, fastpath=False):
         """
         Use the class method `create()` for creating QFDataArrays.
-        DON"T CREATE QFDataArrays using __init__() method (don't create it like this: QFDataArray()).
+        DO NOT CREATE QFDataArrays using __init__() method (don't create it like this: QFDataArray()).
         The __init__ method should be used only by xr.DataArray internal methods.
         """
         if not fastpath:
@@ -82,7 +81,7 @@ class QFDataArray(xr.DataArray):
         return QFDataArray(data, coordinates, dimensions, name)
 
     @classmethod
-    def from_xr_data_array(cls, xr_data_array: xr.DataArray):
+    def from_xr_data_array(cls, xr_data_array: xr.DataArray) -> "QFDataArray":
         """
         Converts regular xr.DataArray into QFDataArray.
 
@@ -96,13 +95,13 @@ class QFDataArray(xr.DataArray):
         QFDataArray
         """
         xr_data_array = xr_data_array.transpose(DATES, TICKERS, FIELDS)
-        qf_data_array = QFDataArray.create(xr_data_array.dates, xr_data_array.tickers, xr_data_array.fields,
-                                           xr_data_array.data, xr_data_array.name)
+        qf_data_array = QFDataArray.create(
+            xr_data_array.dates, xr_data_array.tickers, xr_data_array.fields, xr_data_array.data, xr_data_array.name)
         return qf_data_array
 
     @classmethod
     def concat(cls, objs, dim=None, data_vars='all', coords='different', compat='equals', positions=None,
-               indexers=None, mode=None, concat_over=None):
+               indexers=None, mode=None, concat_over=None) -> "QFDataArray":
         """
         Concatenates different xr.DataArrays and then converts the result to QFDataArray.
 
@@ -111,8 +110,7 @@ class QFDataArray(xr.DataArray):
         docstring for xr.concat()
         """
         result = xr.concat(
-            objs, dim, data_vars, coords, compat, positions, indexers, mode, concat_over
-        )  # type: xr.DataArray
+            objs, dim, data_vars, coords, compat, positions, indexers, mode, concat_over)  # type: xr.DataArray
         result = QFDataArray.from_xr_data_array(result)
 
         return result

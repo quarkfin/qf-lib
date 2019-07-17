@@ -91,7 +91,7 @@ class DataModel(object):
         self.autocorrelation = None
         """ Extension of Durbin-Watson test to add many lags (1-5).  0 - not autocorrelated, 1 - autocorrelated. """
 
-        self.heteroscedasticity = None
+        self.heteroskedasticity = None
         """ Probability of a hypothesis that the error variance doesn't depend on input data (regressors). """
 
         self.correlation_matrix = None
@@ -130,12 +130,11 @@ class DataModel(object):
 
         regressors_df = self.input_data.regressors_df
         analysed_tms = self.input_data.analysed_tms
-        self.risk_contribution = RiskContributionAnalysis.get_risk_contribution(regressors_df, self.coefficients,
-                                                                                analysed_tms)
+        self.risk_contribution = RiskContributionAnalysis.get_risk_contribution(
+            regressors_df, self.coefficients, analysed_tms)
 
         factors_perf_attrib, unexplained_perf_attrib = ReturnAttributionAnalysis.get_factor_return_attribution(
-            analysed_tms, self.fitted_tms, regressors_df, self.coefficients, self.intercept
-        )
+            analysed_tms, self.fitted_tms, regressors_df, self.coefficients, self.intercept)
         self.factors_performance_attribution_ret = factors_perf_attrib
         self.unexplained_performance_attribution_ret = unexplained_perf_attrib
 
@@ -143,7 +142,7 @@ class DataModel(object):
         self.condition_number = cond(regressors_df.values)
         self._setup_r_square_of_each_predictor()
         self._setup_autocorrelation(residuals)
-        _, _, _, self.heteroscedasticity = het_breuschpagan(residuals, self.fit_model.model.exog)
+        _, _, _, self.heteroskedasticity = het_breuschpagan(residuals, self.fit_model.model.exog)
         self._setup_cooks_distance(self.fit_model)
 
     @property
@@ -222,8 +221,8 @@ class DataModel(object):
 
         coeffs_in_sample, intercept_in_sample = self._get_model_params(fit)
 
-        portfolio_returns = self._get_weighted_portfolio_rets(returns=regressors_df, weights=coeffs_in_sample,
-                                                              intercept=intercept_in_sample)
+        portfolio_returns = self._get_weighted_portfolio_rets(
+            returns=regressors_df, weights=coeffs_in_sample, intercept=intercept_in_sample)
         self.in_sample_and_out_sample_returns = portfolio_returns
 
     def _get_weighted_portfolio_rets(self, returns, weights, intercept):

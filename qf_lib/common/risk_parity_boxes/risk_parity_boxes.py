@@ -143,9 +143,7 @@ class RiskParityBoxesFactory(object):
 
     def _get_assets_data(self, end_date, start_date):
         # download data
-        asset_prices_df = self.bbg_data_provider.get_price(
-            self.all_tickers, PriceField.Close, start_date, end_date
-        )
+        asset_prices_df = self.bbg_data_provider.get_price(self.all_tickers, PriceField.Close, start_date, end_date)
         asset_prices_df = cast_dataframe(asset_prices_df, output_type=PricesDataFrame)
 
         # trim

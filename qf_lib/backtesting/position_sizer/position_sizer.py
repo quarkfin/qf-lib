@@ -5,11 +5,11 @@ from typing import List, Sequence
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
 from qf_lib.backtesting.alpha_model.signal import Signal
 from qf_lib.backtesting.broker.broker import Broker
-from qf_lib.backtesting.contract_to_ticker_conversion.base import ContractTickerMapper
+from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.order.execution_style import StopOrder
 from qf_lib.backtesting.order.order import Order
-from qf_lib.backtesting.order.orderfactory import OrderFactory
+from qf_lib.backtesting.order.order_factory import OrderFactory
 from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.numberutils.is_finite_number import is_finite_number
@@ -100,12 +100,10 @@ class PositionSizer(object, metaclass=ABCMeta):
                 raise ValueError("More than one signal for ticker {}".format(ticker.as_string()))
 
     @staticmethod
-    def _round_stop_price(stop_price: float):
+    def _round_stop_price(stop_price: float) -> float:
         """
         The stop price has to be expressed in the format that matches the minimum price variation of a contract.
         For example 10.123 is not a valid stop price for a contract with minimum price variation of 0.01
         It is assumed that contracts have minimum price variation of 0.01 and the stop price is rounded to 2 decimals.
         """
         return round(stop_price, 2)
-
-

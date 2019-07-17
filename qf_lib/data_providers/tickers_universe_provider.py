@@ -8,7 +8,7 @@ from qf_lib.common.tickers.tickers import Ticker
 class TickersUniverseProvider(object, metaclass=ABCMeta):
     """
     An interface for providers of tickers' universe data - list of Tickers included
-    in an index at a specified date.
+    in the index at a specified date.
     """
 
     @abstractmethod

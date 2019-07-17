@@ -24,7 +24,7 @@ class MaxDiversificationPortfolio(Portfolio):
     }
 
     def __init__(self, cov_matrix: QFDataFrame, std_of_assets: QFSeries,
-                 upper_constraint: Union[float, Sequence[float]]=None):
+                 upper_constraint: Union[float, Sequence[float]] = None):
         self.cov_matrix = cov_matrix
         self.std_of_assets = std_of_assets
         self.upper_constraint = upper_constraint
@@ -77,7 +77,8 @@ class MaxDiversificationPortfolio(Portfolio):
         epsilon = 1e-06
         weights_sum = weights.sum()
         if abs(weights_sum - 1) > epsilon:
-            self.logger.warning("Warning: sum of all weights is not equal to 1. sum(weights) = {:f}".format(weights_sum))
+            self.logger.warning(
+                "Warning: sum of all weights is not equal to 1. sum(weights) = {:f}".format(weights_sum))
             self.logger.info('Adjusting weights...')
             weights = weights / weights_sum
 

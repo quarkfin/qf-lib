@@ -7,7 +7,7 @@ import pandas as pd
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.miscellaneous.periods_list import periods_list_from_bool_series
 from qf_lib.containers.series.qf_series import QFSeries
-from qf_lib.testing_tools.containers_comparison import assert_lists_equal
+from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_lists_equal
 
 
 class TestPeriodsList(TestCase):

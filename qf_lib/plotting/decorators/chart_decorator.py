@@ -7,7 +7,8 @@ class ChartDecorator(object):
     after the main chart has been plotted. To use a decorator you need to create it first and then add it to the chart
     using the Chart.add_decorator(ChartDecorator) method.
     """
-    def __init__(self, key: str=None):
+
+    def __init__(self, key: str = None):
         """
         key: str, optional
             Key is the identifier of the decorator. It must be unique to each decorator across the chart. If `None`

@@ -3,7 +3,7 @@ import numpy as np
 from qf_lib.containers.series.qf_series import QFSeries
 
 
-def tail_events(benchmark_tms: QFSeries, examined_tms: QFSeries, tail_percentile: float) -> QFSeries:
+def tail_events(benchmark_tms: QFSeries, examined_tms: QFSeries, tail_percentile: float) -> [QFSeries, QFSeries]:
     """
     Gets tail events of the benchmark and corresponding events in the examined timeseries. Both benchmark_tms
     and examined_tms must be of the same length. Moreover, events on each position in both series must be corresponding.
@@ -13,18 +13,18 @@ def tail_events(benchmark_tms: QFSeries, examined_tms: QFSeries, tail_percentile
 
     Parameters
     ----------
-    benchmark_tms: QFSeries
+    benchmark_tms
         timeseries corresponding to the benchmark
-    examined_tms: QFSeries
+    examined_tms
         timeseries corresponding to the examined asset
-    tail_percentile: float
+    tail_percentile
         Percentile to compute. Must be a number from range [0,100]
 
     Returns
     -------
-    benchmark_tail_tms: QFSeries
+    benchmark_tail_tms
         tail events of the benchmark
-    examined_tail_tms: QFSeries
+    examined_tail_tms
         events from the examined series corresponding to the benchmark's tail events
     """
     assert benchmark_tms.index.equals(examined_tms.index)

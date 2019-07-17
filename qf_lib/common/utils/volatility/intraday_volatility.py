@@ -4,23 +4,19 @@ from qf_lib.containers.series.returns_series import ReturnsSeries
 
 
 def intraday_volatility(returns: ReturnsSeries, interval_in_minutes: int) -> float:
-    # Think how it can be merged with another function for computing volatility from returns
-    # Test
-    # second thing: the function is not used anywhere (not even in Matlab), maybe it can be deleted
-    # third thing: maybe the interval could be inferred from returns dates
     """
     Calculates annualised volatility from intraday samples of given interval.
 
     Parameters
     ----------
-    returns: ReturnsSeries
+    returns
         timeseries of intraday returns
-    interval_in_minutes: int
+    interval_in_minutes
         interval between samples (in minutes)
 
     Returns
     -------
-    intraday_volatility: float
+    intraday_volatility
         annualized intraday volatility calculated from intraday returns
     """
     unannualized_volatility = std(returns.values)

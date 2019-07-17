@@ -17,7 +17,7 @@ class BeforeMarketOpenEvent(RegularTimeEvent):
 
     @classmethod
     def trigger_time(cls) -> RelativeDelta:
-        return RelativeDelta(** cls._trigger_time)
+        return RelativeDelta(**cls._trigger_time)
 
     @classmethod
     def next_trigger_time(cls, now: datetime) -> datetime:

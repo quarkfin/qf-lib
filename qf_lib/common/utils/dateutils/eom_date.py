@@ -2,17 +2,17 @@ import calendar
 import datetime
 
 
-def eom_date(date: datetime.datetime=None, year: int=None, month: int=None) -> datetime.datetime:
+def eom_date(date: datetime.datetime = None, year: int = None, month: int = None) -> datetime.datetime:
     """
     Tells what is the last date of the month for given date or for given year and a month.
 
     Parameters
     ----------
-    date: datetime, optional
+    date
         date for which the corresponding last date of the month should be returned
-    year: int, optional
+    year
         year containing the month for which last date of the month should be returned
-    month: int, optional
+    month
         number of month (1 -> January, 2-> February, ...) for which the last date of the month will be returned
 
     Returns

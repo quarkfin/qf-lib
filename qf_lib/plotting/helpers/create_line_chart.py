@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import List, Union, Any
 
 import pandas
@@ -12,11 +13,12 @@ from qf_lib.plotting.decorators.span_decorator import SpanDecorator
 from qf_lib.plotting.decorators.title_decorator import TitleDecorator
 
 
-def create_line_chart(data_list: List[Union[QFSeries, DataElementDecorator]], names_list, title: str=None,
-                      recession_series: QFSeries = None,
-                      horizontal_lines_list=None, vertical_lines_list=None, disable_dot=False,
-                      start_x=None, end_x=None, upper_y=None, lower_y=None,
-                      dot_decimal_points=2, recession_name: str=None) -> LineChart:
+def create_line_chart(
+        data_list: List[Union[QFSeries, DataElementDecorator]], names_list, title: str = None,
+        recession_series: QFSeries = None, horizontal_lines_list: List[float] = None,
+        vertical_lines_list: List[float] = None, disable_dot: bool = False, start_x: datetime = None,
+        end_x: datetime = None, upper_y: float = None, lower_y: float = None, dot_decimal_points: int = 2,
+        recession_name: str = None) -> LineChart:
     """
     Creates a new line chart based on the settings specified.
 
@@ -25,21 +27,34 @@ def create_line_chart(data_list: List[Union[QFSeries, DataElementDecorator]], na
 
     Parameters
     ----------
-    series_list - A list of ``QFSeries`` or ``DataElementDecorator``s to plot on the chart.
-    names_list - A list of strings specifying the labels for the series, horizontal and vertical lines respectively.
-                 ``None`` can be specified for labels to not display it for a specific series, or line.
-    title - The title of the graph, specify ``None`` if you don't want the chart to show a title.
-    recession_series - A ``QFSeries`` specifying where recessions occurred on the chart, will be highlighted using
-                       grey rectangles on the graph.
-    horizontal_lines_list - An optional list of values where a horizontal line should be drawn.
-    vertical_lines_list - An optional list of values where a vertical line should be drawn.
-    disable_dot - Whether a marker on the last point should be disabled.
-    start_x - The date where plotting should begin.
-    end_x - The date where plotting should end.
-    start_y - The upper bound y-axis value at which plotting should begin.
-    end_y - The lower bound y-axis value at which plotting should begin.
-    dot_decimal_points - How many decimal places to show after the decimal points when drawing text for "dot".
-    recession_name - A string specifying the recession label. If "None" or missing, will not be included.
+    data_list
+        A list of ``QFSeries`` or ``DataElementDecorator``s to plot on the chart.
+    names_list
+        A list of strings specifying the labels for the series, horizontal and vertical lines respectively. ``None``
+        can be specified for labels to not display it for a specific series, or line.
+    title
+        The title of the graph, specify ``None`` if you don't want the chart to show a title.
+    recession_series
+        A ``QFSeries`` specifying where recessions occurred on the chart, will be highlighted using grey rectangles
+        on the graph.
+    horizontal_lines_list
+        An optional list of values where a horizontal line should be drawn.
+    vertical_lines_list
+        An optional list of values where a vertical line should be drawn.
+    disable_dot
+        Whether a marker on the last point should be disabled.
+    start_x
+        The date where plotting should begin.
+    end_x
+        The date where plotting should end.
+    upper_y
+        The upper bound y-axis value at which plotting should begin.
+    lower_y
+        The lower bound y-axis value at which plotting should begin.
+    dot_decimal_points
+        How many decimal places to show after the decimal points when drawing text for "dot".
+    recession_name
+        A string specifying the recession label. If "None" or missing, will not be included.
 
     Returns
     -------
@@ -69,21 +84,20 @@ def create_line_chart(data_list: List[Union[QFSeries, DataElementDecorator]], na
         line_chart.add_decorator(data_element)
 
         # Retrieve the last data point.
-        point_to_emphasise = (_get_last_valid_value(data_element.data.index),
-                              _get_last_valid_value(data_element.data.values))
+        point_to_emphasise = \
+            (_get_last_valid_value(data_element.data.index), _get_last_valid_value(data_element.data.values))
 
         series_label = _get_name(names_list, names_index)
         if series_label is not None:
-            legend_decorator.add_entry(data_element, series_label +
-                                       " [{}]".format(point_to_emphasise[0].strftime("%b %y")))
+            legend_decorator.add_entry(
+                data_element, series_label + " [{}]".format(point_to_emphasise[0].strftime("%b %y")))
 
         names_index += 1
         if not disable_dot:
             # Emphasise the last data point.
-            point_emphasis = PointEmphasisDecorator(data_element, point_to_emphasise,
-                                                    decimal_points=dot_decimal_points,
-                                                    key="point_emphasis_{}".format(line_id),
-                                                    use_secondary_axes=data_element.use_secondary_axes)
+            point_emphasis = PointEmphasisDecorator(
+                data_element, point_to_emphasise, decimal_points=dot_decimal_points,
+                key="point_emphasis_{}".format(line_id), use_secondary_axes=data_element.use_secondary_axes)
             line_chart.add_decorator(point_emphasis)
 
     # Create a title.
@@ -126,7 +140,7 @@ def create_line_chart(data_list: List[Union[QFSeries, DataElementDecorator]], na
 
 
 def _get_last_valid_value(list: List[Any]) -> Any:
-    i = len(list)-1
+    i = len(list) - 1
     while i >= 0:
         if not pandas.isnull(list[i]):
             return list[i]
@@ -136,7 +150,7 @@ def _get_last_valid_value(list: List[Any]) -> Any:
 
 
 def _get_name(names, index: int) -> str:
-    if index > len(names)-1:
+    if index > len(names) - 1:
         raise IndexError("Could not find Legend name at index {}. Pass `None` if you do not wish to "
                          "specify it.".format(index))
     return names[index]

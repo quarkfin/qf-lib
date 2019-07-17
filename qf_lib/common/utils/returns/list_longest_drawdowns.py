@@ -1,8 +1,11 @@
+from datetime import datetime
+from typing import Tuple, List
+
 from qf_lib.common.utils.returns.drawdown_tms import drawdown_tms
 from qf_lib.containers.series.qf_series import QFSeries
 
 
-def list_longest_drawdowns(prices_tms: QFSeries, count: int):
+def list_longest_drawdowns(prices_tms: QFSeries, count: int) -> List[Tuple[datetime, datetime]]:
     """
     Analyses the specified series and finds the top ``count`` longest drawdowns.
 

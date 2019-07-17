@@ -1,21 +1,27 @@
+from typing import Union
+
+from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
+from qf_lib.containers.series.qf_series import QFSeries
+
+
 class RollingWindowsEstimator(object):
     """
     Class for estimating parameters of rolling windows.
     """
 
     @classmethod
-    def estimate_rolling_window_size(cls, container):
+    def estimate_rolling_window_size(cls, container: Union[QFDataFrame, QFSeries]) -> int:
         """
         Estimates the size of the rolling window based on the number of samples.
 
         Parameters
         ----------
-        container: QFDataFrame or QFSeries
+        container
             container with data analysed using rolling window
 
         Returns
         -------
-        window_size: int
+        window_size
             the calculated size of the rolling window
         """
         num_of_samples = container.shape[0]
@@ -38,18 +44,18 @@ class RollingWindowsEstimator(object):
         return window_size
 
     @classmethod
-    def estimate_rolling_window_step(cls, container):
+    def estimate_rolling_window_step(cls, container: Union[QFDataFrame, QFSeries]) -> int:
         """
         Estimates the step of the rolling window based on the number of samples.
 
         Parameters
         ----------
-        container: QFDataFrame or QFSeries
+        container
             container with data analysed using rolling window
 
         Returns
         -------
-        window_step: int
+        window_step
             the calculated step (shift) of the rolling window
         """
         num_of_samples = container.shape[0]

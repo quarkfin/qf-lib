@@ -1,7 +1,7 @@
 from typing import Sequence, Any
 
 
-def rolling_window_slices(index: Sequence[Any], size: Any, step: int=1) -> Sequence[slice]:
+def rolling_window_slices(index: Sequence[Any], size: Any, step: int = 1) -> Sequence[slice]:
     slices = []
     last_idx_value = index[-1]
 

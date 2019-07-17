@@ -18,10 +18,10 @@ from qf_lib.plotting.decorators.span_decorator import SpanDecorator
 from qf_lib.plotting.decorators.title_decorator import TitleDecorator
 
 
-def create_bar_chart(series_list: List[QFSeries], names_list, title: str, lines: List[QFSeries],
-                     recession_series: QFSeries = None,
-                     start_x: datetime=None, end_x: datetime=None, quarterly: bool=False,
-                     date_label_format: Tuple[str, str]=("%Y", "%y Q{}"), recession_name: str=None) -> BarChart:
+def create_bar_chart(
+        series_list: List[QFSeries], names_list, title: str, lines: List[QFSeries], recession_series: QFSeries = None,
+        start_x: datetime = None, end_x: datetime = None, quarterly: bool = False,
+        date_label_format: Tuple[str, str] = ("%Y", "%y Q{}"), recession_name: str = None) -> BarChart:
     """
     Creates a new bar chart based on the settings specified.
 
@@ -53,8 +53,8 @@ def create_bar_chart(series_list: List[QFSeries], names_list, title: str, lines:
     -------
     BarChart
     """
-    assert len(names_list) > len(lines)+1, "Not all labels have been specified. " \
-                                           "Specify one in the list for each series and line."
+    assert len(names_list) > len(lines) + 1, \
+        "Not all labels have been specified. Specify one in the list for each series and line."
 
     bar_chart = BarChart(orientation=Orientation.Vertical, start_x=start_x, end_x=end_x,
                          thickness=60 if quarterly else 20, align="center")
@@ -80,10 +80,10 @@ def create_bar_chart(series_list: List[QFSeries], names_list, title: str, lines:
     line_decorators = []
     for i in range(0, len(lines)):
         # Grab colors from the end so that they do not clash with the bars.
-        color = style_colors[(len(style_colors)-i % len(style_colors))-1]
+        color = style_colors[(len(style_colors) - i % len(style_colors)) - 1]
         # Add a series line decorator for each line.
-        line_decorator = SeriesLineDecorator(lines[i][start_x:end_x], key="series_line_" + str(i), linewidth=4,
-                                             color=color)
+        line_decorator = SeriesLineDecorator(
+            lines[i][start_x:end_x], key="series_line_" + str(i), linewidth=4, color=color)
         line_decorators.append(line_decorator)
 
         bar_chart.add_decorator(line_decorator)
@@ -125,7 +125,6 @@ def create_bar_chart(series_list: List[QFSeries], names_list, title: str, lines:
         bar_chart.add_decorator(axes_formatter)
 
         # Set the tick locator.
-        x_major = None
         if years > 10:
             x_major = YearLocator()
         else:

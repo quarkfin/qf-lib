@@ -1,6 +1,6 @@
 import datetime
 from itertools import cycle
-from typing import List, Any
+from typing import List, Any, Tuple
 
 from qf_lib.common.enums.orientation import Orientation
 from qf_lib.plotting.charts.chart import Chart
@@ -9,9 +9,9 @@ from qf_lib.plotting.helpers.index_translator import IndexTranslator
 
 
 class BarChart(Chart):
-    def __init__(self, orientation: Orientation, stacked: bool=True, index_translator: IndexTranslator=None,
-                 thickness: float=0.8, start_x: datetime.datetime=None, end_x: datetime.datetime=None,
-                 upper_y: float=None, lower_y: float=None, **plot_settings):
+    def __init__(self, orientation: Orientation, stacked: bool = True, index_translator: IndexTranslator = None,
+                 thickness: float = 0.8, start_x: datetime.datetime = None, end_x: datetime.datetime = None,
+                 upper_y: float = None, lower_y: float = None, **plot_settings):
         """
         Creates a new bar chart with the specified ``orientation``.
 
@@ -35,7 +35,7 @@ class BarChart(Chart):
             The upper bound of the y-axis.
         lower_y
             The lower bound of the y-axis.
-        plot_settings: Keyword arguments
+        plot_settings
             Keyword arguments to pass to the ``plot`` function.
         """
         Chart.__init__(self, start_x, end_x, upper_y, lower_y)
@@ -46,7 +46,7 @@ class BarChart(Chart):
         self._thickness = thickness
         self._plot_settings = plot_settings
 
-    def plot(self, figsize=None):
+    def plot(self, figsize: Tuple[float, float] = None):
         self._setup_axes_if_necessary(figsize)
 
         self._draw_central_axis()

@@ -1,6 +1,6 @@
 from datetime import datetime
 from itertools import cycle
-from typing import Sequence, List
+from typing import Sequence, List, Tuple
 
 from qf_lib.common.utils.confidence_interval.analytical_cone import AnalyticalCone
 from qf_lib.containers.series.qf_series import QFSeries
@@ -17,8 +17,8 @@ class ConeChart(Chart):
     will be 1 day.
     """
 
-    def __init__(self, data: QFSeries, nr_of_data_points: int, is_end_date: datetime, cone_opacity: float=0.3,
-                 cone_stds: Sequence[float]=(1.0, 2.0)):
+    def __init__(self, data: QFSeries, nr_of_data_points: int, is_end_date: datetime, cone_opacity: float = 0.3,
+                 cone_stds: Sequence[float] = (1.0, 2.0)):
         """
         Parameters
         ----------
@@ -42,7 +42,7 @@ class ConeChart(Chart):
         self.assert_is_qfseries(data)
         self.data = data
 
-    def plot(self, figsize=None):
+    def plot(self, figsize: Tuple[float, float] = None):
         self._setup_axes_if_necessary(figsize)
 
         cone = AnalyticalCone(self.data)
@@ -64,8 +64,8 @@ class ConeChart(Chart):
 
             upper_bound = upper_df['Expectation']
             lower_bound = lower_df['Expectation']
-            ax.fill_between(cone_data_frame.index, lower_bound, upper_bound,
-                            color=next(cone_colors), alpha=self.cone_opacity)
+            ax.fill_between(
+                cone_data_frame.index, lower_bound, upper_bound, color=next(cone_colors), alpha=self.cone_opacity)
 
         ax.set_xlabel('Days in the past')
         ax.set_ylabel('Current valuation')

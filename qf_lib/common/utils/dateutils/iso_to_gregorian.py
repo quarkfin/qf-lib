@@ -21,4 +21,4 @@ def iso_to_gregorian(iso_year: int, iso_week: int, iso_day: int):
     """
     fourth_jan = datetime.date(iso_year, 1, 4)
     _, fourth_jan_week, fourth_jan_day = fourth_jan.isocalendar()
-    return fourth_jan + datetime.timedelta(days=iso_day-fourth_jan_day, weeks=iso_week-fourth_jan_week)
+    return fourth_jan + datetime.timedelta(days=iso_day - fourth_jan_day, weeks=iso_week - fourth_jan_week)

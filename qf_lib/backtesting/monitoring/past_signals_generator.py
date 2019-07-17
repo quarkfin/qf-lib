@@ -5,24 +5,16 @@ from typing import Dict, Type, List
 import pandas as pd
 from dic.container import Container
 
+from qf_lib.backtesting.alpha_model.all_tickers_used import get_all_tickers_used
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
-from qf_lib.backtesting.alpha_models_testers.alpha_model_factory import AlphaModelFactory
+from qf_lib.backtesting.alpha_model.alpha_model_factory import AlphaModelFactory
+from qf_lib.backtesting.alpha_model.alpha_model_strategy import AlphaModelStrategy
 from qf_lib.backtesting.monitoring.dummy_monitor import DummyMonitor
 from qf_lib.backtesting.position_sizer.initial_risk_position_sizer import InitialRiskPositionSizer
-from qf_lib.backtesting.strategy.trading_strategy import TradingStrategy
 from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import str_to_ticker, Ticker
-from qf_lib.common.utils.excel.excel_exporter import ExcelExporter
-
-
-def get_all_tickers_used(model_type_tickers_dict: Dict[Type[AlphaModel], List[Ticker]]):
-    all_tickers = []
-    for model_type, traded_tickers_list in model_type_tickers_dict.items():
-        non_traded_tickers = list(model_type.settings.tickers_dict.values())
-        all_tickers = all_tickers + traded_tickers_list + non_traded_tickers
-    result_list = list(set(all_tickers))  # remove potential duplicates
-    return result_list
+from qf_lib.documents_utils.excel.excel_exporter import ExcelExporter
 
 
 class PastSignalsGenerator(object):
@@ -105,13 +97,16 @@ class PastSignalsGenerator(object):
         session_builder.set_position_sizer(InitialRiskPositionSizer, self.initial_risk)
         session_builder.set_monitor_type(DummyMonitor)
         backtest_ts = session_builder.build(self.live_start_date, self.end_date)
+
         all_tickers = get_all_tickers_used(self.model_type_tickers_dict)
         backtest_ts.use_data_preloading(all_tickers)
         self.backtest_ts = backtest_ts
+
         model_factory = AlphaModelFactory(backtest_ts.data_handler)
         model_tickers_dict = {}
         for model_type, tickers in model_type_tickers_dict.items():
             model = model_factory.make_parametrized_model(model_type)
             model_tickers_dict[model] = tickers
-        strategy = TradingStrategy(self.backtest_ts, model_tickers_dict)
+
+        strategy = AlphaModelStrategy(self.backtest_ts, model_tickers_dict)
         return strategy

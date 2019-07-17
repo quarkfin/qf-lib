@@ -10,7 +10,7 @@ from qf_lib.plotting.decorators.axis_tick_labels_decorator import AxisTickLabels
 from qf_lib.plotting.decorators.title_decorator import TitleDecorator
 
 
-def create_return_quantiles(returns: QFSeries, live_start_date: datetime=None, x_axis_labels_rotation=20) \
+def create_return_quantiles(returns: QFSeries, live_start_date: datetime = None, x_axis_labels_rotation: int = 20) \
         -> BoxplotChart:
     """
     Creates a new return quantiles boxplot chart based on the returns specified.
@@ -19,10 +19,11 @@ def create_return_quantiles(returns: QFSeries, live_start_date: datetime=None, x
 
     Parameters
     ----------
-    returns: QFSeries
+    returns
         The returns series to plot on the chart.
-    live_start_date: string, optional, example format "2014-05-23".
+    live_start_date
         The live start date that will determine whether a swarm plot should be rendered.
+    x_axis_labels_rotation
 
     Returns
     -------

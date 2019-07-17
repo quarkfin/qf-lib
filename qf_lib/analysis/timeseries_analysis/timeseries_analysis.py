@@ -3,7 +3,6 @@ from typing import List, Tuple, Sequence, Union
 from qf_lib.analysis.timeseries_analysis.timeseries_analysis_dto import TimeseriesAnalysisDTO
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.utils.dateutils.date_to_string import date_to_str
-from qf_lib.common.utils.document_exporting.element.table import Table
 from qf_lib.common.utils.miscellaneous.annualise_with_sqrt import annualise_with_sqrt
 from qf_lib.common.utils.miscellaneous.kelly import kelly
 from qf_lib.common.utils.ratios.calmar_ratio import calmar_ratio
@@ -22,6 +21,7 @@ from qf_lib.common.utils.volatility.get_volatility import get_volatility
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
+from qf_lib.documents_utils.document_exporting.element.table import Table
 
 
 class TimeseriesAnalysis(TimeseriesAnalysisDTO):
@@ -73,7 +73,7 @@ class TimeseriesAnalysis(TimeseriesAnalysisDTO):
         """
         super().__init__()
 
-        self.returns_tms = returns_timeseries.to_simple_returns()   # type: SimpleReturnsSeries
+        self.returns_tms = returns_timeseries.to_simple_returns()  # type: SimpleReturnsSeries
         self.frequency = frequency
         self.start_date = self.returns_tms.first_valid_index()
         self.end_date = self.returns_tms.index[-1]
@@ -106,21 +106,21 @@ class TimeseriesAnalysis(TimeseriesAnalysisDTO):
 
         new_table.set_column_names(["Statistic", name])
         for item in self._get_results_list():
-            row_name = item[1]+" ["+item[3]+"]"
+            row_name = item[1] + " [" + item[3] + "]"
             if item[3] == '':
                 row_name = item[1]
-            
+
             new_table.add_row([row_name, Table.Cell(item[2])])
 
         if len(table.rows) != 0:
             new_table = table.combine(new_table)
-        
+
         table.set_column_names(new_table.get_column_names())
         table.rows = new_table.rows
 
     @staticmethod
     def values_in_table(ta_collection: Union['TimeseriesAnalysis', Sequence['TimeseriesAnalysis']],
-                        asset_names: Union[None, str, Sequence[str]]=None) -> str:
+                        asset_names: Union[None, str, Sequence[str]] = None) -> str:
         """
         ta_collection
             single TimeseriesAnalysis object or a collection of TimeseriesAnalysis objects
@@ -176,7 +176,7 @@ class TimeseriesAnalysis(TimeseriesAnalysisDTO):
         return result
 
     @staticmethod
-    def table_for_df(df: QFDataFrame, frequency: Frequency=Frequency.DAILY) -> str:
+    def table_for_df(df: QFDataFrame, frequency: Frequency = Frequency.DAILY) -> str:
         """
         df
             DataFrame of returns or prices of assets to be analysed
@@ -361,4 +361,3 @@ class TimeseriesAnalysis(TimeseriesAnalysisDTO):
 
         self.skewness = self.returns_tms.skew()
         self.kurtosis = self.returns_tms.kurt()
-

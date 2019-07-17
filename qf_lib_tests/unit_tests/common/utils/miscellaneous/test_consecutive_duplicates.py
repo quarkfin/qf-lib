@@ -5,7 +5,7 @@ import pandas as pd
 
 from qf_lib.common.utils.miscellaneous.consecutive_duplicates import drop_consecutive_duplicates, Method
 from qf_lib.containers.series.qf_series import QFSeries
-from qf_lib.testing_tools.containers_comparison import assert_series_equal
+from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_series_equal
 
 
 class TestConsecutiveDuplicates(TestCase):

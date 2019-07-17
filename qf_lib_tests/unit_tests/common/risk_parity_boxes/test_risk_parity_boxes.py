@@ -10,7 +10,7 @@ from qf_lib.common.tickers.tickers import str_to_ticker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
-from qf_lib.testing_tools.containers_comparison import assert_series_equal
+from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_series_equal
 
 
 class TestRiskParityBoxesFactory(TestCase):

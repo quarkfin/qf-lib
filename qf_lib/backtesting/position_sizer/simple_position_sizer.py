@@ -11,8 +11,8 @@ class SimplePositionSizer(PositionSizer):
 
     def _generate_market_order(self, contract, signal: Signal):
         target_percentage = signal.suggested_exposure.value
-        market_order_list = self._order_factory.target_percent_orders({contract: target_percentage},
-                                                                      MarketOrder(), TimeInForce.OPG)
+        market_order_list = self._order_factory.target_percent_orders(
+            {contract: target_percentage}, MarketOrder(), TimeInForce.OPG)
 
         if len(market_order_list) == 0:
             return None

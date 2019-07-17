@@ -3,11 +3,13 @@ from datetime import datetime
 from qf_lib.analysis.tearsheets.abstract_tearsheet import AbstractTearsheet
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.plotting_mode import PlottingMode
-from qf_lib.common.utils.document_exporting import ParagraphElement, GridElement, ChartElement
-from qf_lib.common.utils.document_exporting.element.new_page import NewPageElement
 from qf_lib.common.utils.volatility.get_volatility import get_volatility
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
+from qf_lib.documents_utils.document_exporting.element.chart import ChartElement
+from qf_lib.documents_utils.document_exporting.element.grid import GridElement
+from qf_lib.documents_utils.document_exporting.element.new_page import NewPageElement
+from qf_lib.documents_utils.document_exporting.element.paragraph import ParagraphElement
 from qf_lib.plotting.charts.line_chart import LineChart
 from qf_lib.plotting.decorators.axes_formatter_decorator import PercentageFormatter, AxesFormatterDecorator
 from qf_lib.plotting.decorators.axes_position_decorator import AxesPositionDecorator
@@ -53,6 +55,7 @@ class TearsheetWithoutBenchmark(AbstractTearsheet):
 
     def _add_ret_distribution_and_qq(self):
         grid = GridElement(mode=PlottingMode.PDF, figsize=self.half_image_size, dpi=self.dpi)
+
         # Distribution of Monthly Returns
         chart = create_returns_distribution(self.strategy_series)
         grid.add_chart(chart)

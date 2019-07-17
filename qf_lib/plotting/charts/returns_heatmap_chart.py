@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import seaborn as sns
 from matplotlib import cm
 
@@ -20,7 +22,7 @@ class ReturnsHeatmapChart(Chart):
         super().__init__()
         self._returns = returns
 
-    def plot(self, figsize=None):
+    def plot(self, figsize: Tuple[float, float] = None):
         self._setup_axes_if_necessary(figsize)
 
         ret_table = get_aggregate_returns(self._returns, Frequency.MONTHLY, multi_index=True).unstack().round(3)

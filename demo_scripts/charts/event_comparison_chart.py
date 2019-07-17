@@ -13,13 +13,20 @@ from qf_lib.plotting.helpers.create_event_comparison_chart import create_event_c
 start_date = str_to_date('1996-01-01')
 live_start_date = str_to_date('2012-01-01')
 
-data_provider = container.resolve(GeneralPriceProvider)
-prices_tms = data_provider.get_price(QuandlTicker('AAPL', 'WIKI'), PriceField.Close, start_date)
 
-event_dates_list = [datetime(2000, 1, 1), datetime(2003, 1, 1), datetime(2006, 1, 1), datetime(2009, 1, 1)]
+def main():
+    data_provider = container.resolve(GeneralPriceProvider)
+    prices_tms = data_provider.get_price(QuandlTicker('AAPL', 'WIKI'), PriceField.Close, start_date)
 
-event_chart = create_event_comparison_chart(prices_tms, event_dates_list, 'Beginning of the year', samples_before=100,
-                                            samples_after=200, rebase_method=RebaseMethod.divide)
-event_chart.plot()
+    event_dates_list = [datetime(2000, 1, 1), datetime(2003, 1, 1), datetime(2006, 1, 1), datetime(2009, 1, 1)]
 
-plt.show(block=True)
+    event_chart = create_event_comparison_chart(
+        prices_tms, event_dates_list, 'Beginning of the year',
+        samples_before=100, samples_after=200, rebase_method=RebaseMethod.divide)
+    event_chart.plot()
+
+    plt.show(block=True)
+
+
+if __name__ == '__main__':
+    main()

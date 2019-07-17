@@ -18,7 +18,7 @@ def max_drawdown(input_data: Union[QFSeries, QFDataFrame]) -> Union[float, pd.Se
 
     Returns
     -------
-    max_drawdown: float
+    max_drawdown
         maximal drawdown for the given timeseries of prices expressed as the percentage value (e.g. 0.5 corresponds
         to the 50% drawdown)
     """

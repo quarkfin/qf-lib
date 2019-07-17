@@ -3,7 +3,6 @@ from qf_lib.containers.series.qf_series import QFSeries
 
 
 class RollingAnalysisFactory(object):
-
     @classmethod
     def calculate_analysis(cls, strategy_tms: QFSeries, benchmark_tms: QFSeries):
         """
@@ -30,14 +29,11 @@ class RollingAnalysisFactory(object):
 
             step = int(window * 0.2)
 
-            strategy_rolling = df[strategy_name].rolling_window(
-                window, lambda x: x.total_cumulative_return(), step)
-            benchmark_rolling = df[benchmark_name].rolling_window(
-                window, lambda x: x.total_cumulative_return(), step)
+            strategy_rolling = df[strategy_name].rolling_window(window, lambda x: x.total_cumulative_return(), step)
+            benchmark_rolling = df[benchmark_name].rolling_window(window, lambda x: x.total_cumulative_return(), step)
 
             outperforming = strategy_rolling > benchmark_rolling
-            percentage_outperforming = len(
-                strategy_rolling[outperforming]) / len(strategy_rolling)
+            percentage_outperforming = len(strategy_rolling[outperforming]) / len(strategy_rolling)
 
             dto = RollingAnalysisDTO(
                 period=window_info[1],

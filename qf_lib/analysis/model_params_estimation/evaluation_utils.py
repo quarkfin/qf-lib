@@ -1,14 +1,16 @@
 from math import sqrt
 from typing import List, Sequence
 
-from qf_lib.backtesting.alpha_models_testers.backtest_summary import BacktestSummary
+from qf_lib.backtesting.fast_alpha_model_tester.backtest_summary import BacktestSummary
 from qf_lib.common.enums.trade_field import TradeField
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.date_to_string import date_to_str
-from qf_lib.common.utils.document_exporting import Document, ParagraphElement, HeadingElement
-from qf_lib.common.utils.document_exporting.element.new_page import NewPageElement
 from qf_lib.common.utils.returns.sqn import sqn_for100trades, avg_nr_of_trades_per1y, trade_based_cagr, \
     trade_based_max_drawdown
+from qf_lib.documents_utils.document_exporting.document import Document
+from qf_lib.documents_utils.document_exporting.element.heading import HeadingElement
+from qf_lib.documents_utils.document_exporting.element.new_page import NewPageElement
+from qf_lib.documents_utils.document_exporting.element.paragraph import ParagraphElement
 
 
 def add_backtest_description(document: Document, backtest_result: BacktestSummary, param_names: List[str]):

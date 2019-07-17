@@ -1,6 +1,7 @@
 import unittest
 from unittest import TestCase
 
+from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_dataframes_equal
 from qf_lib_tests.unit_tests.common.utils.factorization.factorization_test_utils import get_analysed_tms_and_regressors
 
 from qf_lib.common.utils.factorization.factors_identification.elastic_net_factors_identifier \
@@ -9,7 +10,6 @@ from qf_lib.common.utils.factorization.factors_identification.elastic_net_factor
     ElasticNetFactorsIdentifierSimplified
 from qf_lib.common.utils.factorization.factors_identification.stepwise_factor_identifier \
     import StepwiseFactorsIdentifier
-from qf_lib.testing_tools.containers_comparison import assert_dataframes_equal
 
 
 class TestFactorsIdentifier(TestCase):

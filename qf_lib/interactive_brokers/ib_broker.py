@@ -6,6 +6,7 @@ from ibapi.contract import Contract as IBContract
 from ibapi.order import Order as IBOrder
 
 from qf_lib.backtesting.broker.broker import Broker
+from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.order.execution_style import MarketOrder, StopOrder
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.time_in_force import TimeInForce
@@ -13,7 +14,6 @@ from qf_lib.backtesting.portfolio.position import Position
 from qf_lib.common.exceptions.broker_exceptions import BrokerException, OrderCancellingException
 from qf_lib.common.utils.logging.qf_parent_logger import ib_logger
 from qf_lib.interactive_brokers.ib_wrapper import IBWrapper
-from qf_lib.backtesting.contract.contract import Contract
 
 
 class IBBroker(Broker):

@@ -1,12 +1,5 @@
-from abc import ABCMeta, abstractmethod
-from typing import Optional
-
-from ibapi.client import OrderId
 from ibapi.contract import Contract
 from ibapi.order import Order
-from ibapi.order_state import OrderState
-
-from qf_lib.common.tickers.tickers import Ticker
 
 
 def wse_stock(symbol: str):
@@ -41,6 +34,3 @@ def stop_order(action: str, quantity: float, stop_price: float):
     order.tif = "GTC"
     order.auxPrice = stop_price
     return order
-
-
-

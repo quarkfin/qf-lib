@@ -27,8 +27,8 @@ class ElasticNetFactorsIdentifier(FactorsIdentifier):
     from the min. MSE). If number of regressors is smaller, then coefficients for min. MSE are taken.
     """
 
-    def __init__(self, max_number_of_regressors: int=10, epsilon: float=0.05, l1_ratio: float=1,
-                 number_of_alphas: int=75, is_intercept: bool=True, graphic_debug: bool=False):
+    def __init__(self, max_number_of_regressors: int = 10, epsilon: float = 0.05, l1_ratio: float = 1,
+                 number_of_alphas: int = 75, is_intercept: bool = True, graphic_debug: bool = False):
         """
         Parameters
         ----------
@@ -106,8 +106,8 @@ class ElasticNetFactorsIdentifier(FactorsIdentifier):
         selected_regressors_df = regressors_df.iloc[:, np.sort(included_coefficients_idx)]
 
         if self.graphic_debug:
-            self.coeffs_chart, self.mse_chart = self._plot_graphic_debug_info(alphas, coeffs_path, mean_square_errors,
-                                                                              solutions_idx, index_min_se)
+            self.coeffs_chart, self.mse_chart = self._plot_graphic_debug_info(
+                alphas, coeffs_path, mean_square_errors, solutions_idx, index_min_se)
 
         return selected_regressors_df
 

@@ -6,18 +6,16 @@ from qf_lib.containers.series.qf_series import QFSeries
 
 
 class DataCleaner(object):
-    """
-    Cleans data which is partially incomplete, e.g. has gaps
-    """
-
-    def __init__(self, dataframe: SimpleReturnsDataFrame, threshold=0.05):
+    def __init__(self, dataframe: SimpleReturnsDataFrame, threshold: float = 0.05):
         """
+        Cleans data which is partially incomplete, e.g. has gaps
+
         Parameters
         ----------
-        dataframe: pd.DataFrame
-            dataframe with series in columns. If one column has more missing values than the threshold, it is removed
-            from the result Dataframe completely.
-        threshold: float, optional
+        dataframe
+            DataFrame of simple returns. If one column has more missing values than the threshold, it is removed
+            from the result.
+        threshold
             top limit of missing data. If the amount of missing data in a series exceeds this limit, the series will be
             removed. It is a relative value (e.g. 0.02, which corresponds to 2% of the data from the series).
         """
@@ -28,19 +26,19 @@ class DataCleaner(object):
         self.start_late_columns = {}  # Columns which start late together with their start date.
         self.columns_with_holes = []  # Columns which have one or more NaN values in them.
 
-    def proxy_using_value(self, proxy_value):
+    def proxy_using_value(self, proxy_value: float) -> SimpleReturnsDataFrame:
         """
         Removes columns from the DataFrame which have too many missing values. Then, the missing data in the remaining
-        columns is completed using a given proxy_vlaue.
+        columns is completed using a given proxy_value.
 
         Parameters
         ----------
-        proxy_value: float
+        proxy_value
             value with which all the missing data should be filled
 
         Returns
         -------
-        result_dataframe: pd.DataFrame
+        result_dataframe
             completed dataframe without missing data
         """
         result_dataframe = self.dataframe.copy(deep=True)
@@ -51,7 +49,7 @@ class DataCleaner(object):
 
         return result_dataframe
 
-    def proxy_using_regression(self, benchmark_tms: QFSeries, columns_type: type):
+    def proxy_using_regression(self, benchmark_tms: QFSeries, columns_type: type) -> SimpleReturnsDataFrame:
         """
         Removes columns from the DataFrame which have too many missing values. Then, the missing data in the remaining
         columns is completed using regression with the benchmark.
@@ -65,7 +63,7 @@ class DataCleaner(object):
 
         Returns
         -------
-        result_dataframe: pd.DataFrame
+        result_dataframe
             completed dataframe. However it can still contain missing data, because sometimes it is not possible to
             complete all data using regression (e.g. for data that is missing in the original series there is
             no corresponding benchmark value).

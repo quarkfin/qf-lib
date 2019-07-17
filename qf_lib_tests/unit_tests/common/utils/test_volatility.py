@@ -7,7 +7,7 @@ from qf_lib.common.utils.volatility.get_volatility import get_volatility
 from qf_lib.common.utils.volatility.rolling_volatility import rolling_volatility
 from qf_lib.containers.series.log_returns_series import LogReturnsSeries
 from qf_lib.containers.series.qf_series import QFSeries
-from qf_lib.testing_tools.containers_comparison import assert_series_equal
+from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_series_equal
 
 
 class TestVolatilityUtils(TestCase):

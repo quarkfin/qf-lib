@@ -11,13 +11,13 @@ from qf_lib.starting_dir import get_starting_dir_abs_path
 plt.ion()  # required for dynamic chart
 
 import csv
-from qf_lib.common.utils.excel.excel_exporter import ExcelExporter
-from qf_lib.backtesting.transaction import Transaction
-from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
+from qf_lib.documents_utils.excel.excel_exporter import ExcelExporter
+from qf_lib.backtesting.portfolio.transaction import Transaction
+from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.settings import Settings
 from datetime import datetime
 from os import path, makedirs
-from qf_lib.backtesting.backtest_result.backtest_result import BacktestResult
+from qf_lib.backtesting.monitoring.backtest_result import BacktestResult
 from qf_lib.backtesting.monitoring.abstract_monitor import AbstractMonitor
 from qf_lib.analysis.tearsheets.tearsheet_without_benchmark import TearsheetWithoutBenchmark
 
@@ -75,8 +75,8 @@ class BacktestMonitor(AbstractMonitor):
     def _export_tms_to_excel(self, portfolio_tms):
         xlsx_filename = "{}.xlsx".format(self._file_name_template)
         relative_file_path = path.join(self._report_dir, "timeseries", xlsx_filename)
-        self._excel_exporter.export_container(portfolio_tms, relative_file_path,
-                                              starting_cell='A1', include_column_names=True)
+        self._excel_exporter.export_container(
+            portfolio_tms, relative_file_path, starting_cell='A1', include_column_names=True)
 
     def _export_leverage_analysis(self, portfolio_tms: QFSeries, leverage: QFSeries):
         try:

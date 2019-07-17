@@ -1,11 +1,12 @@
-from typing import Optional
+from typing import Optional, Union, Sequence
 
 import numpy as np
 
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 
 
-def prepare_upper_bounds_vector(assets_number, upper_constraints) -> Optional[np.ndarray]:
+def prepare_upper_bounds_vector(
+        assets_number: int, upper_constraints: Union[float, Sequence[float]]) -> Optional[np.ndarray]:
     if upper_constraints is None:
         return None
     elif isinstance(upper_constraints, float):

@@ -14,9 +14,8 @@ class ReturnAttributionAnalysis(object):
     """
 
     @classmethod
-    def get_factor_return_attribution(
-        cls, fund_tms: QFSeries, fit_tms: QFSeries, regressors_df: QFDataFrame, coefficients: pd.Series, alpha: float
-    ) -> Tuple[pd.Series, float]:
+    def get_factor_return_attribution(cls, fund_tms: QFSeries, fit_tms: QFSeries, regressors_df: QFDataFrame,
+                                      coefficients: pd.Series, alpha: float) -> Tuple[pd.Series, float]:
         """
         Returns performance attribution for each factor in given regressors and also calculates the unexplained return.
         """

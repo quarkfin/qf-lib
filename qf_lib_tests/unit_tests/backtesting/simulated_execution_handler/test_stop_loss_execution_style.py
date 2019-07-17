@@ -5,20 +5,21 @@ import pandas as pd
 from mockito import mock, verify, spy, when, verifyZeroInteractions
 
 from qf_lib.backtesting.contract.contract import Contract
-from qf_lib.backtesting.contract_to_ticker_conversion.bloomberg_mapper import DummyBloombergContractTickerMapper
-from qf_lib.backtesting.execution_handler.simulated.commission_models.fixed_commission_model import FixedCommissionModel
-from qf_lib.backtesting.execution_handler.simulated.simulated_execution_handler import SimulatedExecutionHandler
-from qf_lib.backtesting.execution_handler.simulated.slippage.price_based_slippage import PriceBasedSlippage
+from qf_lib.backtesting.contract.contract_to_ticker_conversion.bloomberg_mapper import \
+    DummyBloombergContractTickerMapper
+from qf_lib.backtesting.execution_handler.commission_models.fixed_commission_model import FixedCommissionModel
+from qf_lib.backtesting.execution_handler.simulated_execution_handler import SimulatedExecutionHandler
+from qf_lib.backtesting.execution_handler.slippage.price_based_slippage import PriceBasedSlippage
 from qf_lib.backtesting.monitoring.abstract_monitor import AbstractMonitor
 from qf_lib.backtesting.order.execution_style import StopOrder
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.time_in_force import TimeInForce
-from qf_lib.backtesting.transaction import Transaction
+from qf_lib.backtesting.portfolio.transaction import Transaction
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.dateutils.timer import SettableTimer
-from qf_lib.testing_tools.containers_comparison import assert_lists_equal
+from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_lists_equal
 
 
 class _MonitorMock(AbstractMonitor):

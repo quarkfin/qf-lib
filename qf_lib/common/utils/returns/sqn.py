@@ -6,8 +6,8 @@ from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.trade_field import TradeField
 from qf_lib.common.utils.dateutils.to_days import to_days
 from qf_lib.common.utils.miscellaneous.constants import DAYS_PER_YEAR_AVG
-from qf_lib.common.utils.returns.max_drawdown import max_drawdown
 from qf_lib.common.utils.returns.cagr import cagr
+from qf_lib.common.utils.returns.max_drawdown import max_drawdown
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
 

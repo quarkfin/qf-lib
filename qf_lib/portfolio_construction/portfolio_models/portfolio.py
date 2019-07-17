@@ -32,7 +32,7 @@ class Portfolio(metaclass=abc.ABCMeta):
         return qf_logger.getChild(cls.__name__)
 
     @classmethod
-    def constant_weights(cls, assets_rets_df: SimpleReturnsDataFrame, weights: pd.Series)\
+    def constant_weights(cls, assets_rets_df: SimpleReturnsDataFrame, weights: pd.Series) \
             -> Tuple[SimpleReturnsSeries, QFDataFrame]:
         """
         Calculates the time series of portfolio returns (given the weights of portfolio's assets). Weights of assets
@@ -74,7 +74,7 @@ class Portfolio(metaclass=abc.ABCMeta):
         return portfolio_rets_tms, allocation_df
 
     @classmethod
-    def drifting_weights(cls, assets_rets_df: SimpleReturnsDataFrame, weights: pd.Series)\
+    def drifting_weights(cls, assets_rets_df: SimpleReturnsDataFrame, weights: pd.Series) \
             -> Tuple[SimpleReturnsSeries, QFDataFrame]:
         """
         Calculates the time series of portfolio returns (given the initial weights of portfolio's assets).
@@ -119,13 +119,13 @@ class Portfolio(metaclass=abc.ABCMeta):
         allocation_matrix *= weights_sum
         allocation_matrix = allocation_matrix[:-1, :]
 
-        allocation_df = QFDataFrame(index=assets_rets_df.index.copy(), columns=assets_rets_df.columns.copy(),
-                                    data=allocation_matrix)
+        allocation_df = QFDataFrame(
+            index=assets_rets_df.index.copy(), columns=assets_rets_df.columns.copy(), data=allocation_matrix)
 
         return portfolio_rets, allocation_df
 
     @classmethod
-    def different_allocations_tms(cls, assets_rets_df: SimpleReturnsDataFrame, allocations_df: QFDataFrame)\
+    def different_allocations_tms(cls, assets_rets_df: SimpleReturnsDataFrame, allocations_df: QFDataFrame) \
             -> SimpleReturnsSeries:
         """
         Calculates the time series of portfolio returns given the allocations on each date. The portfolio returns
@@ -143,9 +143,9 @@ class Portfolio(metaclass=abc.ABCMeta):
         portfolio_rets_tms
             timeseries of portfolio's returns
         """
-        assert np.all(assets_rets_df.columns.values == allocations_df.columns.values),\
+        assert np.all(assets_rets_df.columns.values == allocations_df.columns.values), \
             "Different column values for assets and allocation matrix"
-        assert np.all(assets_rets_df.index.values == allocations_df.index.values),\
+        assert np.all(assets_rets_df.index.values == allocations_df.index.values), \
             "Different dates for assets and allocation matrix"
 
         # get indices of rows for which: sum of weights is greater than 1. The result of where is a tuple (for a vector
@@ -171,9 +171,9 @@ class Portfolio(metaclass=abc.ABCMeta):
         Calculates the one-over-n weights for given tickers.
         """
         num_of_tickers = len(tickers)
-        weight_of_each_asset = 1/num_of_tickers
+        weight_of_each_asset = 1 / num_of_tickers
 
-        weights_values = [weight_of_each_asset]*num_of_tickers
+        weights_values = [weight_of_each_asset] * num_of_tickers
         weights = pd.Series(index=pd.Index(tickers, name=TICKERS), data=weights_values)
 
         return weights

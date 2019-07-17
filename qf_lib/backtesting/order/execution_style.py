@@ -1,4 +1,3 @@
-
 class ExecutionStyle(object):
 
     def __str__(self):

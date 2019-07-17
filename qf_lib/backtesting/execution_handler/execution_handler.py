@@ -58,4 +58,3 @@ class ExecutionHandler(metaclass=abc.ABCMeta):
         Cancel all open Orders.
         """
         raise NotImplementedError("Should implement cancel_all_open_orders()")
-

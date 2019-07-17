@@ -27,8 +27,7 @@ class RollingContractsSeriesProducer(object):
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
     def get_rolling_contracts_data(self, real_contracts_prices_da: QFDataArray, rolling_dates: pd.DatetimeIndex,
-                                   contract_numbers: Sequence[int] = (1,)) \
-            -> Dict[int, RollingContractData]:
+                                   contract_numbers: Sequence[int] = (1,)) -> Dict[int, RollingContractData]:
         """
         Takes DataFrame of real contracts and creates a dictionary mapping contracts number to RollingContractData.
 
@@ -37,7 +36,6 @@ class RollingContractsSeriesProducer(object):
         real_contracts_prices_da
             dataframe with prices of real contracts (e.g. UXZ06, UXF07 and UXG07). First axis is time, second is
             the ticker of a real contract and third one is the PriceField (OHLCV).
-
             NOTICE:
             Order of columns matter! It should correspond to the order of contracts expiration dates.
 
@@ -73,8 +71,8 @@ class RollingContractsSeriesProducer(object):
 
         return nonfuture_rolling_dates
 
-    def _remove_unnecessary_data(self, real_contracts_prices_da: QFDataArray, rolling_dates: pd.DatetimeIndex) \
-            -> PricesDataFrame:
+    def _remove_unnecessary_data(
+            self, real_contracts_prices_da: QFDataArray, rolling_dates: pd.DatetimeIndex) -> PricesDataFrame:
         """
         Removes data which isn't necessary for calculating the rolling series from real contracts dataframe
         and returns the dataframe without unnecessary data.
@@ -86,8 +84,8 @@ class RollingContractsSeriesProducer(object):
 
         return real_contracts_prices_da
 
-    def _get_single_rolling_contract_info(self, real_contracts_prices_da: PricesDataFrame,
-                                          rolling_dates: pd.DatetimeIndex, contract_number: int) \
+    def _get_single_rolling_contract_info(
+            self, real_contracts_prices_da: PricesDataFrame, rolling_dates: pd.DatetimeIndex, contract_number: int) \
             -> RollingContractData:
         now = self.timer.now()
 
@@ -173,10 +171,11 @@ class RollingContractsSeriesProducer(object):
             real_contract_ticker = real_contracts_prices_df.name  # type: Ticker
             warning_msg = "Missing data for a period [{start_date:s},{end_date:s}]. Data available only " \
                           "for a period [{first_available_date:s},{last_available_date:s}] " \
-                          "Contract name: {contract_name:s}".format(
-                           start_date=date_to_str(start_date), end_date=date_to_str(end_date),
-                           first_available_date=date_to_str(first_available_date),
-                           last_available_date=date_to_str(last_available_date),
-                           contract_name=real_contract_ticker.as_string())
+                          "Contract name: {contract_name:s}" \
+                .format(start_date=date_to_str(start_date),
+                        end_date=date_to_str(end_date),
+                        first_available_date=date_to_str(first_available_date),
+                        last_available_date=date_to_str(last_available_date),
+                        contract_name=real_contract_ticker.as_string())
 
             self.logger.warning(warning_msg)

@@ -12,16 +12,16 @@ class LogReturnsSeries(ReturnsSeries):
     @property
     def _constructor(self):
         return LogReturnsSeries
-    
+
     @property
     def _constructor_expanddim(self):
         from qf_lib.containers.dataframe.log_returns_dataframe import LogReturnsDataFrame
         return LogReturnsDataFrame
 
-    def to_log_returns(self):
+    def to_log_returns(self) -> "LogReturnsSeries":
         return self
 
-    def to_simple_returns(self):
+    def to_simple_returns(self) -> "SimpleReturnsSeries":
         from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
 
         simple_rets_values = [exp(log_ret) - 1 for log_ret in self.values]

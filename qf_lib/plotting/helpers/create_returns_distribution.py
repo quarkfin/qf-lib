@@ -13,7 +13,7 @@ from qf_lib.plotting.decorators.line_decorators import VerticalLineDecorator
 from qf_lib.plotting.decorators.title_decorator import TitleDecorator
 
 
-def create_returns_distribution(returns: QFSeries, frequency: Frequency=Frequency.MONTHLY) -> HistogramChart:
+def create_returns_distribution(returns: QFSeries, frequency: Frequency = Frequency.MONTHLY) -> HistogramChart:
     """
     Creates a new returns distribution histogram with the specified frequency.
 

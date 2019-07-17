@@ -1,5 +1,5 @@
 from itertools import cycle
-from typing import Sequence, List
+from typing import Sequence, List, Tuple
 
 import matplotlib as mpl
 
@@ -18,14 +18,14 @@ class ConeChartOOS(Chart):
     will be 1 day.
     """
 
-    def __init__(self, oos_series: QFSeries, is_mean_return: float, is_sigma: float, cone_opacity: float=0.3,
-                 cone_stds: Sequence[float]=(1.0, 2.0)):
+    def __init__(self, oos_series: QFSeries, is_mean_return: float, is_sigma: float, cone_opacity: float = 0.3,
+                 cone_stds: Sequence[float] = (1.0, 2.0)):
         """
         Parameters
         ----------
         oos_series
             data to be plotted using ConeChartOOS - only the Out of sample data
-        is_mean_return:
+        is_mean_return
             mean daily log return of the strategy In Sample
         is_sigma:
             std of daily log returns of the strategy In Sample
@@ -44,7 +44,7 @@ class ConeChartOOS(Chart):
         self.cone_opacity = cone_opacity
         self.cone_stds = cone_stds
 
-    def plot(self, figsize=None):
+    def plot(self, figsize: Tuple[float, float] = None):
         self._setup_axes_if_necessary(figsize)
 
         cone = AnalyticalConeOOS()
@@ -69,8 +69,8 @@ class ConeChartOOS(Chart):
 
             upper_bound = upper_df['Expectation']
             lower_bound = lower_df['Expectation']
-            ax.fill_between(cone_data_frame.index, lower_bound, upper_bound,
-                            color=next(cone_colors), alpha=self.cone_opacity)
+            ax.fill_between(
+                cone_data_frame.index, lower_bound, upper_bound, color=next(cone_colors), alpha=self.cone_opacity)
 
         ax.set_xlabel('Days in the past')
         ax.set_ylabel('Current valuation')
@@ -96,9 +96,8 @@ class ConeChartOOS(Chart):
             textstr = 'Valuation {}D = {:.2f}'.format(total_days, valuation_total)
         props = dict(boxstyle='square', facecolor='white', alpha=0.5, edgecolor='grey')
         font_size = mpl.rcParams['legend.fontsize']
-        self.axes.text(0.05, 0.95, textstr, transform=self.axes.transAxes, bbox=props,
-                       verticalalignment='top', fontsize=font_size)
+        self.axes.text(
+            0.05, 0.95, textstr, transform=self.axes.transAxes, bbox=props, verticalalignment='top', fontsize=font_size)
 
     def apply_data_element_decorators(self, data_element_decorators: List["DataElementDecorator"]):
         pass
-

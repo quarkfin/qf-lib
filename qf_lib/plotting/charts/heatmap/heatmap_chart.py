@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Tuple
 
 import matplotlib as mpl
 import pandas as pd
@@ -7,8 +7,8 @@ from qf_lib.plotting.charts.chart import Chart
 
 
 class HeatMapChart(Chart):
-    def __init__(self, data: pd.DataFrame, color_map=None, min_value: float=None, max_value: float=None,
-                 start_x: Any=None, end_x: Any=None):
+    def __init__(self, data: pd.DataFrame, color_map=None, min_value: float = None, max_value: float = None,
+                 start_x: Any = None, end_x: Any = None):
         """
         Parameters
         ----------
@@ -34,7 +34,7 @@ class HeatMapChart(Chart):
         self.color_mesh_ = None
         """ Mesh generated during plotting. """
 
-    def plot(self, figsize=None):
+    def plot(self, figsize: Tuple[float, float] = None):
         self._setup_axes_if_necessary(figsize)
         self._draw_heatmap()
         self._set_ticks()
@@ -42,8 +42,8 @@ class HeatMapChart(Chart):
         self._apply_decorators()
 
     def _draw_heatmap(self):
-        self.color_mesh_ = self.axes.pcolormesh(self.data, cmap=self.color_map,
-                                                vmin=self.min_value, vmax=self.max_value)
+        self.color_mesh_ = self.axes.pcolormesh(
+            self.data, cmap=self.color_map, vmin=self.min_value, vmax=self.max_value)
         self.color_mesh_.update_scalarmappable()  # update info about colors in the mesh
 
     def _set_ticks(self):

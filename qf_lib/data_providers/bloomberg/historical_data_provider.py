@@ -30,10 +30,8 @@ class HistoricalDataProvider(object):
         self._session = session
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
-    def get(
-            self, tickers: Sequence[str], fields: Sequence[str], start_date: datetime, end_date: datetime,
-            frequency: Frequency, currency: str, override_name: str, override_value: Any
-    ) -> QFDataArray:
+    def get(self, tickers: Sequence[str], fields: Sequence[str], start_date: datetime, end_date: datetime,
+            frequency: Frequency, currency: str, override_name: str, override_value: Any) -> QFDataArray:
         """
         Gets historical data from Bloomberg.
         """
@@ -104,8 +102,7 @@ class HistoricalDataProvider(object):
                 check_security_data_for_errors(security_data)
 
                 field_data_array = security_data.getElement(FIELD_DATA)
-                field_data_list = \
-                    [field_data_array.getValueAsElement(i) for i in range(field_data_array.numValues())]
+                field_data_list = [field_data_array.getValueAsElement(i) for i in range(field_data_array.numValues())]
                 dates = [pd.to_datetime(x.getElementAsDatetime(DATE)) for x in field_data_list]
 
                 data = np.empty((len(dates), len(requested_fields)))
@@ -115,8 +112,7 @@ class HistoricalDataProvider(object):
 
                 for field_name in requested_fields:
                     dates_fields_values.loc[:, field_name] = [
-                        self._get_float_or_nan(data_of_date_elem, field_name) for data_of_date_elem in field_data_list
-                    ]
+                        self._get_float_or_nan(data_of_date_elem, field_name) for data_of_date_elem in field_data_list]
 
                 tickers_data_dict[ticker] = dates_fields_values
 

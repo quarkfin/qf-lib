@@ -4,11 +4,12 @@ from typing import List
 
 from qf_lib.analysis.timeseries_analysis.timeseries_analysis import TimeseriesAnalysis
 from qf_lib.common.enums.plotting_mode import PlottingMode
-from qf_lib.common.utils.document_exporting import Document, GridElement
-from qf_lib.common.utils.document_exporting.element.page_header import PageHeaderElement
-from qf_lib.common.utils.document_exporting.element.table import Table
-from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.containers.series.qf_series import QFSeries
+from qf_lib.documents_utils.document_exporting.document import Document
+from qf_lib.documents_utils.document_exporting.element.grid import GridElement
+from qf_lib.documents_utils.document_exporting.element.page_header import PageHeaderElement
+from qf_lib.documents_utils.document_exporting.element.table import Table
+from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.plotting.charts.line_chart import LineChart
 from qf_lib.plotting.charts.underwater_chart import UnderwaterChart
 from qf_lib.plotting.decorators.axes_label_decorator import AxesLabelDecorator
@@ -98,7 +99,7 @@ class AbstractDocument(metaclass=ABCMeta):
 
         return chart
 
-    def _get_leverage_chart(self, leverage: QFSeries, rotate_x_axis:bool=False):
+    def _get_leverage_chart(self, leverage: QFSeries, rotate_x_axis: bool = False):
         chart = LineChart(rotate_x_axis=rotate_x_axis)
 
         series_elem = DataElementDecorator(leverage)

@@ -8,7 +8,7 @@ from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.containers.qf_data_array import QFDataArray
-from qf_lib.testing_tools.containers_comparison import assert_dataframes_equal
+from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_dataframes_equal
 
 
 class TestQFDataArrayAsOf(TestCase):

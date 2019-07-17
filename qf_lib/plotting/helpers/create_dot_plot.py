@@ -10,7 +10,8 @@ from qf_lib.plotting.decorators.point_emphasis_decorator import PointEmphasisDec
 from qf_lib.plotting.decorators.title_decorator import TitleDecorator
 
 
-def create_dot_plot(series1, series2, x_label, y_label, start_x: float = None, end_x: float = None) -> LineChart:
+def create_dot_plot(series1: pd.Series, series2: pd.Series, x_label: str, y_label: str,
+                    start_x: float = None, end_x: float = None) -> LineChart:
     # Combine the series.
     combined = QFDataFrame(pd.concat([series1, series2], axis=1))
     combined_series = QFSeries(data=combined.iloc[:, 0].values, index=combined.iloc[:, 1].values)
@@ -37,15 +38,15 @@ def create_dot_plot(series1, series2, x_label, y_label, start_x: float = None, e
     no_nans = combined_series.dropna()
     point_to_emphasise = (no_nans.index[len(no_nans) - 1],
                           no_nans.values[len(no_nans) - 1])
-    point_emphasis_decorator = PointEmphasisDecorator(data_element, point_to_emphasise, color="#CC1414",
-                                                      decimal_points=1, label_format="")
+    point_emphasis_decorator = PointEmphasisDecorator(
+        data_element, point_to_emphasise, color="#CC1414", decimal_points=1, label_format="")
     line_chart.add_decorator(point_emphasis_decorator)
 
     # Create a legend.
     legend_decorator = LegendDecorator()
     last_date = series1.dropna().index.max()
-    legend_decorator.add_entry(point_emphasis_decorator, "Latest ({:g}, {:g}) [{}]".
-                               format(point_to_emphasise[0], point_to_emphasise[1], last_date.strftime("%b %y")))
+    legend_decorator.add_entry(point_emphasis_decorator, "Latest ({:g}, {:g}) [{}]".format(
+        point_to_emphasise[0], point_to_emphasise[1], last_date.strftime("%b %y")))
     line_chart.add_decorator(legend_decorator)
 
     return line_chart

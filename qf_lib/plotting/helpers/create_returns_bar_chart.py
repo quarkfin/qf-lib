@@ -15,7 +15,7 @@ from qf_lib.plotting.decorators.line_decorators import VerticalLineDecorator
 from qf_lib.plotting.decorators.title_decorator import TitleDecorator
 
 
-def create_returns_bar_chart(returns: QFSeries, frequency: Frequency=Frequency.YEARLY) -> BarChart:
+def create_returns_bar_chart(returns: QFSeries, frequency: Frequency = Frequency.YEARLY) -> BarChart:
     """
     Constructs a new returns bar chart based on the returns specified. By default a new annual returns bar chart will
     be created.
@@ -40,8 +40,8 @@ def create_returns_bar_chart(returns: QFSeries, frequency: Frequency=Frequency.Y
     chart.add_decorator(AxisTickLabelsDecorator(labels=y_labels, axis=Axis.Y, tick_values=y_labels))
 
     # Add an average line.
-    avg_line = VerticalLineDecorator(aggregate_returns.values.mean(), color=colors[1],
-                                     key="avg_line", linestyle="--", alpha=0.8)
+    avg_line = VerticalLineDecorator(
+        aggregate_returns.values.mean(), color=colors[1], key="avg_line", linestyle="--", alpha=0.8)
     chart.add_decorator(avg_line)
 
     # Add a legend.

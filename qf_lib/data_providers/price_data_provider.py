@@ -17,9 +17,9 @@ class DataProvider(object, metaclass=ABCMeta):
     """
 
     @abstractmethod
-    def get_price(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
-                  start_date: datetime, end_date: datetime=None) \
-            -> Union[None, PricesSeries, PricesDataFrame, QFDataArray]:
+    def get_price(
+            self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
+            start_date: datetime, end_date: datetime = None) -> Union[None, PricesSeries, PricesDataFrame, QFDataArray]:
         """
         Gets adjusted historical Prices (OPEN HIGH LOW CLOSE) and VOLUME
 
@@ -37,7 +37,7 @@ class DataProvider(object, metaclass=ABCMeta):
 
         Returns
         -------
-        historical_data:
+        historical_data
             If possible the result will be squeezed so that instead of returning QFDataArray (3-D structure),
             data of lower dimensionality will be returned.
 
@@ -52,9 +52,9 @@ class DataProvider(object, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def get_history(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[None, str, Sequence[str]],
-                    start_date: datetime, end_date: datetime = None, **kwargs) \
-            -> Union[QFSeries, QFDataFrame, QFDataArray]:
+    def get_history(
+            self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[None, str, Sequence[str]],
+            start_date: datetime, end_date: datetime = None, **kwargs) -> Union[QFSeries, QFDataFrame, QFDataArray]:
         """
         Gets historical attributes(fields) of different securities(tickers).
 

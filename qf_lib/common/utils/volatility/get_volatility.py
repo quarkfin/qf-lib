@@ -3,7 +3,7 @@ from qf_lib.common.utils.miscellaneous.annualise_with_sqrt import annualise_with
 from qf_lib.containers.series.qf_series import QFSeries
 
 
-def get_volatility(qf_series: QFSeries, frequency: Frequency=None, annualise: bool=True) -> float:
+def get_volatility(qf_series: QFSeries, frequency: Frequency = None, annualise: bool = True) -> float:
     """
     Calculates a volatility for the given series of returns or prices. If a PricesSeries is given,
     the calculation window is shorter by 1 due to the initial conversion into returns.
@@ -21,7 +21,7 @@ def get_volatility(qf_series: QFSeries, frequency: Frequency=None, annualise: bo
 
     Returns
     -------
-    volatility:
+    volatility
         volatility for the whole series.
     """
     returns_tms = qf_series.to_log_returns()

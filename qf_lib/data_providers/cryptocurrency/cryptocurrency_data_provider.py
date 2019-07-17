@@ -28,9 +28,9 @@ class CryptoCurrencyDataProvider(AbstractPriceDataProvider):
         self.logger = qf_logger.getChild(self.__class__.__name__)
         self.earliest_api_date = datetime(2013, 4, 28)
 
-    def get_history(self, tickers: Union[CcyTicker, Sequence[CcyTicker]],
-                    fields: Union[None, str, Sequence[str]] = None,
-                    start_date: datetime = None, end_date: datetime = None, **kwargs) \
+    def get_history(
+            self, tickers: Union[CcyTicker, Sequence[CcyTicker]], fields: Union[None, str, Sequence[str]] = None,
+            start_date: datetime = None, end_date: datetime = None, **kwargs) \
             -> Union[QFSeries, QFDataFrame, QFDataArray]:
         tickers, got_single_ticker = convert_to_list(tickers, CcyTicker)
         got_single_date = start_date is not None and (start_date == end_date)
@@ -50,8 +50,8 @@ class CryptoCurrencyDataProvider(AbstractPriceDataProvider):
             fields = get_fields_from_tickers_data_dict(tickers_data_dict)
 
         result_data_array = tickers_dict_to_data_array(tickers_data_dict, tickers, fields)
-        result = normalize_data_array(result_data_array, tickers, fields,
-                                      got_single_date, got_single_ticker, got_single_field)
+        result = normalize_data_array(
+            result_data_array, tickers, fields, got_single_date, got_single_ticker, got_single_field)
         return result
 
     def supported_ticker_types(self):
@@ -63,11 +63,11 @@ class CryptoCurrencyDataProvider(AbstractPriceDataProvider):
             PriceField.High: 'High',
             PriceField.Low: 'Low',
             PriceField.Close: 'Close',
-            PriceField.Volume: 'Volume'
-        }
+            PriceField.Volume: 'Volume'}
 
-    def _get_single_ticker(self, ticker: CcyTicker, fields: Sequence[str],
-                           start_date: datetime, end_date: datetime, session: Session) -> Optional[pd.DataFrame]:
+    def _get_single_ticker(
+            self, ticker: CcyTicker, fields: Sequence[str], start_date: datetime, end_date: datetime, session: Session) \
+            -> Optional[pd.DataFrame]:
         """
         Contacts the API and gets the price data for a single ticker
         """
@@ -79,15 +79,13 @@ class CryptoCurrencyDataProvider(AbstractPriceDataProvider):
         elif start_date < self.earliest_api_date:
             self.logger.warning(
                 "This date is earlier than the earliest records on the API. Using the earliest possible date "
-                "instead (2013-04-28)"
-            )
+                "instead (2013-04-28)")
 
         data_url = "http://coinmarketcap.com/currencies/{ticker_str}/historical-data/?" \
                    "start={start_date_str}&end={end_date_str}".format(
-                        ticker_str=ticker.as_string(),
-                        start_date_str=start_date.strftime("%Y%m%d"),
-                        end_date_str=end_date.strftime("%Y%m%d")
-                   )
+                    ticker_str=ticker.as_string(),
+                    start_date_str=start_date.strftime("%Y%m%d"),
+                    end_date_str=end_date.strftime("%Y%m%d"))
 
         request = session.get(data_url)
 
@@ -107,8 +105,7 @@ class CryptoCurrencyDataProvider(AbstractPriceDataProvider):
         if table is None:
             raise AttributeError(
                 "No data was found for the ticker. This could be an error on the API, or they may have changed their "
-                "layout format."
-            )
+                "layout format.")
         headersHTML = table.findAll('th')
 
         column_names = [header.string.replace('*', '') for header in headersHTML]

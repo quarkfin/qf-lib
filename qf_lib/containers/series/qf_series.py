@@ -26,32 +26,32 @@ class QFSeries(pd.Series, TimeIndexedContainer):
         from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
         return QFDataFrame
 
-    def to_log_returns(self):
+    def to_log_returns(self) -> "LogReturnsSeries":
         """
         Converts timeseries to the timeseries of logarithmic returns. First date of prices in the returns timeseries
         won't be present.
 
         Returns
         -------
-        returns_tms: LogReturnsSeries
+        returns_tms
             timeseries of log returns
         """
         raise NotImplementedError()
 
-    def to_simple_returns(self):
+    def to_simple_returns(self) -> "SimpleReturnsSeries":
         """
         Converts timeseries to the timeseries of simple returns. First date of prices in the returns timeseries won't
         be present.
 
         Returns
         -------
-        returns_tms: SimpleReturnsSeries
+        returns_tms
             timeseries of simple returns
         """
         raise NotImplementedError()
 
     def to_prices(self, initial_price: float = None, suggested_initial_date: Union[datetime, int, float] = None,
-                  frequency: Frequency = None):
+                  frequency: Frequency = None) -> "PricesSeries":
         """
         Converts a timeseries into series of prices. The timeseries of prices returned will have an extra date
         at the beginning (in comparison to the returns' timeseries). The difference between the extra
@@ -62,22 +62,22 @@ class QFSeries(pd.Series, TimeIndexedContainer):
 
         Parameters
         ----------
-        initial_price: float, optional
+        initial_price
             initial price of the timeseries. If no price will be specified, then it will be assumed to be 1.
-        suggested_initial_date: datetime, optional
+        suggested_initial_date
             the first date or initial value for the prices series. It won't be necessarily the first date of the price
             series (e.g. if the method is run on the PricesSeries then it won't be used).
-        frequency: Frequency, optional
+        frequency
             the frequency of the returns' timeseries. It is used to infer the initial date for the prices series.
 
         Returns
         -------
-        prices: PricesSeries
+        prices
             series of prices
         """
         raise NotImplementedError()
 
-    def min_max_normalized(self, original_min_value=None, original_max_value=None):
+    def min_max_normalized(self, original_min_value: float = None, original_max_value: float = None) -> "QFSeries":
         """
         Normalizes the data using min-max scaling: it maps all the data to the [0;1] range, so that 0 corresponds
         to the minimal value in the original series and 1 corresponds to the maximal value. It is also possible
@@ -86,14 +86,14 @@ class QFSeries(pd.Series, TimeIndexedContainer):
 
         Parameters
         ----------
-        original_min_value: float, optional
+        original_min_value
             value which should correspond to 0 after applying the normalization
-        original_max_value: float, optional
+        original_max_value
             value which should correspond to 1 after applying the normalization
 
         Returns
         -------
-        normalized_series: QFSeries
+        normalized_series
             series of normalized values
         """
         # assert that user specified either both min and max values or none of them
@@ -109,13 +109,13 @@ class QFSeries(pd.Series, TimeIndexedContainer):
 
         return self._constructor(data=normalized_values, index=self.index.copy()).__finalize__(self)
 
-    def exponential_average(self, lambda_coeff: float = 0.94):
+    def exponential_average(self, lambda_coeff: float = 0.94) -> "QFSeries":
         """
         Calculates the exponential average of a series.
 
         Parameters
         ----------
-        lambda_coeff: float, optional
+        lambda_coeff
             lambda coefficient
 
         Returns
@@ -134,7 +134,8 @@ class QFSeries(pd.Series, TimeIndexedContainer):
 
         return smoothed_series
 
-    def rolling_window_with_benchmark(self, benchmark, window_size: int, func, step=1):
+    def rolling_window_with_benchmark(self, benchmark: "QFSeries", window_size: int,
+                                      func: Callable[["QFSeries"], float], step: int = 1) -> "QFSeries":
         """
         Looks at a number of windows of size ``window_size`` and transforms the data in those windows based on the
         specified ``func``.
@@ -144,14 +145,14 @@ class QFSeries(pd.Series, TimeIndexedContainer):
 
         Parameters
         ----------
-        benchmark: QFSeries
+        benchmark
             The benchmark to compare to.
-        window_size: int
+        window_size
             The size of the window to look at specified as the number of data points.
-        func: Function[QFSeries] -> float
+        func
             The function to call during each iteration. When ``other`` is ``None`` this function should take
             two ``QFSeries`` arguments and return a value. (Usually a number such as a ``float``).
-        step: int, default 1.
+        step
             The amount of data points to step through after each iteration, i.e. how much to move the window by in
             each iteration.
 
@@ -189,8 +190,8 @@ class QFSeries(pd.Series, TimeIndexedContainer):
 
         return result
 
-    def rolling_window(self, window_size: int, func: Callable[[Union["QFSeries", np.ndarray]], float], step: int=1,
-                       optimised: bool=False):
+    def rolling_window(self, window_size: int, func: Callable[[Union["QFSeries", np.ndarray]], float], step: int = 1,
+                       optimised: bool = False) -> "QFSeries":
         """
         Looks at a number of windows of size ``window_size`` and transforms the data in those windows based on the
         specified ``func``.

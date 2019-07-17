@@ -1,5 +1,5 @@
 from qf_lib.backtesting.contract.contract import Contract
-from qf_lib.backtesting.transaction import Transaction
+from qf_lib.backtesting.portfolio.transaction import Transaction
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 
 time = str_to_date("2010-01-01")
@@ -8,6 +8,11 @@ quantity = 13
 price = 100.5
 commission = 1.2
 
-transaction = Transaction(time, ticker, quantity, price, commission)
 
-print(transaction)
+def main():
+    transaction = Transaction(time, ticker, quantity, price, commission)
+    print(transaction)
+
+
+if __name__ == '__main__':
+    main()

@@ -7,15 +7,16 @@ from typing import Callable, Any, Sequence
 import matplotlib.pyplot as plt
 
 from qf_lib.analysis.model_params_estimation.evaluation_utils import add_backtest_description, BacktestSummaryEvaluator
-from qf_lib.backtesting.alpha_models_testers.backtest_summary import BacktestSummary
+from qf_lib.backtesting.fast_alpha_model_tester.backtest_summary import BacktestSummary
 from qf_lib.common.enums.axis import Axis
 from qf_lib.common.enums.plotting_mode import PlottingMode
 from qf_lib.common.tickers.tickers import Ticker
-from qf_lib.common.utils.document_exporting import Document, GridElement
-from qf_lib.common.utils.document_exporting.element.page_header import PageHeaderElement
-from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
+from qf_lib.documents_utils.document_exporting.document import Document
+from qf_lib.documents_utils.document_exporting.element.grid import GridElement
+from qf_lib.documents_utils.document_exporting.element.page_header import PageHeaderElement
+from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.plotting.charts.heatmap.heatmap_chart import HeatMapChart
 from qf_lib.plotting.charts.heatmap.values_annotations import ValuesAnnotations
 from qf_lib.plotting.charts.line_chart import LineChart

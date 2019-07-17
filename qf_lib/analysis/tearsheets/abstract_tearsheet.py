@@ -9,12 +9,12 @@ from qf_lib.analysis.common.abstract_document import AbstractDocument
 from qf_lib.analysis.timeseries_analysis.timeseries_analysis import TimeseriesAnalysis
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.plotting_mode import PlottingMode
-from qf_lib.common.utils.document_exporting import ChartElement, GridElement
-from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.containers.series.qf_series import QFSeries
+from qf_lib.documents_utils.document_exporting.element.chart import ChartElement
+from qf_lib.documents_utils.document_exporting.element.grid import GridElement
+from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.plotting.charts.cone_chart import ConeChart
 from qf_lib.plotting.charts.returns_heatmap_chart import ReturnsHeatmapChart
-from qf_lib.plotting.decorators.axes_position_decorator import AxesPositionDecorator
 from qf_lib.plotting.helpers.create_return_quantiles import create_return_quantiles
 from qf_lib.plotting.helpers.create_returns_bar_chart import create_returns_bar_chart
 from qf_lib.plotting.helpers.create_skewness_chart import create_skewness_chart
@@ -23,9 +23,7 @@ from qf_lib.settings import Settings
 
 class AbstractTearsheet(AbstractDocument, metaclass=ABCMeta):
     """
-    Creates a PDF 'one-pager' as often
-    found in institutional strategy performance reports.
-
+    Creates a PDF 'one-pager' as often found in institutional strategy performance reports.
     Includes an equity curve, drawdown curve, monthly returns, heatmap, yearly returns summary and other statistics
 
     Can be used with or without the benchmark
@@ -68,12 +66,10 @@ class AbstractTearsheet(AbstractDocument, metaclass=ABCMeta):
             nr_of_data_points = len(self.strategy_series.loc[self.live_date:])
         else:
             # use the 1Y of data or half of the series depending of what is shorter
-            nr_of_data_points = min(
-                [self.frequency.value, round(len(self.strategy_series) / 2)])
+            nr_of_data_points = min([self.frequency.value, round(len(self.strategy_series) / 2)])
             is_end_date = self.strategy_series.index[-nr_of_data_points]
 
-        cone_chart = ConeChart(
-            data=self.strategy_series, nr_of_data_points=nr_of_data_points, is_end_date=is_end_date)
+        cone_chart = ConeChart(data=self.strategy_series, nr_of_data_points=nr_of_data_points, is_end_date=is_end_date)
         grid.add_chart(cone_chart)
 
         # Returns quantiles

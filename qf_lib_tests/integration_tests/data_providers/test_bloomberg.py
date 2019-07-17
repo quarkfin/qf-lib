@@ -12,7 +12,7 @@ from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.bloomberg import BloombergDataProvider
-from qf_lib.testing_tools.containers_comparison import assert_series_equal
+from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_series_equal
 from qf_lib_tests.unit_tests.config.test_settings import get_test_settings
 
 settings = get_test_settings()

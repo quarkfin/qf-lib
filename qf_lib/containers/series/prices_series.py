@@ -10,8 +10,7 @@ class PricesSeries(QFSeries):
     Series of prices (e.g. prices of the SPY).
     """
 
-    def __init__(self, data=None, index=None, dtype=None, name=None,
-                 copy=False, fastpath=False):
+    def __init__(self, data=None, index=None, dtype=None, name=None, copy=False, fastpath=False):
         super().__init__(data, index, dtype, name, copy, fastpath)
 
     @property
@@ -23,7 +22,7 @@ class PricesSeries(QFSeries):
         from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
         return PricesDataFrame
 
-    def to_log_returns(self):
+    def to_log_returns(self) -> "LogReturnsSeries":
         from qf_lib.containers.series.log_returns_series import LogReturnsSeries
 
         return_values = []
@@ -36,7 +35,7 @@ class PricesSeries(QFSeries):
 
         return LogReturnsSeries(index=dates, data=return_values).__finalize__(self)
 
-    def to_simple_returns(self):
+    def to_simple_returns(self) -> "SimpleReturnsSeries":
         from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
 
         return_values = []
@@ -49,11 +48,12 @@ class PricesSeries(QFSeries):
 
         return SimpleReturnsSeries(index=dates, data=return_values).__finalize__(self)
 
-    def to_prices(self, initial_price: float = None, suggested_initial_date: datetime = None, frequency=None):
+    def to_prices(self, initial_price: float = None, suggested_initial_date: datetime = None, frequency=None) \
+            -> ["PricesSeries"]:
         if initial_price is None:
             return self.copy()
 
-        return self/self[0] * initial_price
+        return self / self[0] * initial_price
 
     def total_cumulative_return(self) -> float:
         return self.values[-1] / self.values[0] - 1.0

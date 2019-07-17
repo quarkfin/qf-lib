@@ -45,5 +45,4 @@ class Signal(object):
                "\tExpected Move:      {} \n" \
                "\tFraction at Risk:   {} \n" \
                "\tAlpha Model:        {}".format(self.ticker, self.suggested_exposure, self.confidence,
-                                                 self.expected_move, self.fraction_at_risk,
-                                                 str(self.alpha_model))
+                                                 self.expected_move, self.fraction_at_risk, str(self.alpha_model))

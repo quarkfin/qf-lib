@@ -10,17 +10,21 @@ from qf_lib.containers.series.qf_series import QFSeries
 
 
 class AnalyticalConeOOS(AnalyticalConeBase):
-    def calculate_aggregated_cone_oos_only(self, oos_series: QFSeries, is_mean_return: float,
-                                           is_sigma: float, number_of_std: float) -> QFDataFrame:
+    def calculate_aggregated_cone_oos_only(
+            self, oos_series: QFSeries, is_mean_return: float, is_sigma: float, number_of_std: float) -> QFDataFrame:
         """
         This functions does not need the IS history, only the IS statistics.
 
         Parameters
         ----------
-        oos_series: series that is plotted on the cone - corresponds to the oos returns
-        is_mean_return: mean daily log return of the strategy In Sample
-        is_sigma: std of daily log returns of the strategy In Sample
-        number_of_std: corresponds to the randomness of the stochastic process. reflects number of standard deviations
+        oos_series
+            series that is plotted on the cone - corresponds to the oos returns
+        is_mean_return
+            mean daily log return of the strategy In Sample
+        is_sigma
+            std of daily log returns of the strategy In Sample
+        number_of_std
+            corresponds to the randomness of the stochastic process. reflects number of standard deviations
             to get expected values for. For example 1.0 means 1 standard deviation above the expected value.
 
         Returns
@@ -45,8 +49,8 @@ class AnalyticalConeOOS(AnalyticalConeBase):
             # calculate expectation
             number_of_steps = len(oos_log_returns)
             starting_price = 1  # we take 1 as a base value
-            total_expected_return = self.get_expected_value(is_mean_return, is_sigma, starting_price,
-                                                            number_of_steps, number_of_std)
+            total_expected_return = self.get_expected_value(
+                is_mean_return, is_sigma, starting_price, number_of_steps, number_of_std)
 
             # writing to the array starting from the last array element and then moving towards the first one
             strategy_values[-i - 1] = total_strategy_return

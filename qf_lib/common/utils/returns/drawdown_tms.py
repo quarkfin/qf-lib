@@ -26,7 +26,7 @@ def drawdown_tms(input_data: InputData) -> InputData:
     prices_tms = input_data.to_prices()
 
     max_price_tms = prices_tms.cummax()
-    drawdowns = 1 - prices_tms/max_price_tms
+    drawdowns = 1 - prices_tms / max_price_tms
 
     if isinstance(input_data, QFSeries):
         drawdowns = cast_series(drawdowns, QFSeries)

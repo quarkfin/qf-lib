@@ -4,10 +4,11 @@ from qf_lib.analysis.rolling_analysis.rolling_analysis import RollingAnalysisFac
 from qf_lib.analysis.tearsheets.abstract_tearsheet import AbstractTearsheet
 from qf_lib.common.enums.grid_proportion import GridProportion
 from qf_lib.common.enums.plotting_mode import PlottingMode
-from qf_lib.common.utils.document_exporting import ParagraphElement, GridElement
-from qf_lib.common.utils.document_exporting.element.new_page import NewPageElement
-from qf_lib.common.utils.document_exporting.element.table import Table
 from qf_lib.containers.series.qf_series import QFSeries
+from qf_lib.documents_utils.document_exporting.element.grid import GridElement
+from qf_lib.documents_utils.document_exporting.element.new_page import NewPageElement
+from qf_lib.documents_utils.document_exporting.element.paragraph import ParagraphElement
+from qf_lib.documents_utils.document_exporting.element.table import Table
 from qf_lib.plotting.charts.regression_chart import RegressionChart
 from qf_lib.plotting.helpers.create_returns_distribution import create_returns_distribution
 from qf_lib.settings import Settings
@@ -62,13 +63,16 @@ class TearsheetWithBenchmark(AbstractTearsheet):
     def _add_rolling_table(self):
         dtos = RollingAnalysisFactory.calculate_analysis(self.strategy_series, self.benchmark_series)
 
-        result = Table([Table.ColumnCell("Rolling Return Period"),
-                        "Strategy Average", "Strategy Worst", Table.ColumnCell(
-                "Strategy Best"),
-                        "Benchmark Average", "Benchmark Worst", Table.ColumnCell(
-                "Benchmark Best"),
-                        Table.ColumnCell("% Strategy outperform Benchmark")],
-                       grid_proportion=GridProportion.Sixteen, css_class="table rolling-table")
+        column_names = [
+            Table.ColumnCell("Rolling Return Period"),
+            "Strategy Average",
+            "Strategy Worst",
+            Table.ColumnCell("Strategy Best"),
+            "Benchmark Average",
+            "Benchmark Worst",
+            Table.ColumnCell("Benchmark Best"),
+            Table.ColumnCell("% Strategy outperform Benchmark")]
+        result = Table(column_names, grid_proportion=GridProportion.Sixteen, css_class="table rolling-table")
 
         for dto in dtos:
             result.add_row([Table.Cell(dto.period, css_class="right-line"),

@@ -12,13 +12,17 @@ def sharpe_ratio(qf_series: QFSeries, frequency: Frequency, risk_free: float=0) 
 
     Parameters
     ----------
-    qf_series: financial series
-    frequency: frequency of the series
-    risk_free: risk free rate
+    qf_series
+        financial series
+    frequency
+        frequency of the series
+    risk_free
+        risk free rate
 
     Returns
     -------
-    sharpe_ratio: Sharpe Ratio for given series and frequency
+    sharpe_ratio
+        Sharpe Ratio for given series and frequency
     """
     annual_simple_return = cagr(qf_series, frequency)
     annual_log_return = np.log(annual_simple_return + 1)

@@ -8,7 +8,7 @@ from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.dataframe.simple_returns_dataframe import SimpleReturnsDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
-from qf_lib.testing_tools.containers_comparison import assert_dataframes_equal, assert_series_equal
+from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_dataframes_equal, assert_series_equal
 
 
 class TestDataFrames(TestCase):

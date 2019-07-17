@@ -1,8 +1,8 @@
 from typing import List
 
 
-def get_values_for_common_dates(*containers: "TimeIndexedContainer", remove_nans: bool = False
-                                ) -> List["TimeIndexedContainer"]:
+def get_values_for_common_dates(*containers: "TimeIndexedContainer", remove_nans: bool = False)\
+        -> List["TimeIndexedContainer"]:
     """
     Gets list/tuple of series/dataframes (possibly mixed) and finds the common dates for all of them. Then it returns
     corresponding series/dataframes as a list. All series and dataframes in the result list contain only values

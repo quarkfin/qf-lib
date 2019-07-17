@@ -3,18 +3,18 @@ from unittest import TestCase
 
 import pandas as pd
 
-from qf_lib.backtesting.contract_to_ticker_conversion.bloomberg_mapper import DummyBloombergContractTickerMapper
+from qf_lib.backtesting.contract.contract_to_ticker_conversion.bloomberg_mapper import DummyBloombergContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
-from qf_lib.backtesting.execution_handler.simulated.slippage.fixed_slippage import FixedSlippage
-from qf_lib.backtesting.execution_handler.simulated.slippage.price_based_slippage import PriceBasedSlippage
-from qf_lib.backtesting.execution_handler.simulated.slippage.volume_share_slippage import VolumeShareSlippage
+from qf_lib.backtesting.execution_handler.slippage.fixed_slippage import FixedSlippage
+from qf_lib.backtesting.execution_handler.slippage.price_based_slippage import PriceBasedSlippage
+from qf_lib.backtesting.execution_handler.slippage.volume_share_slippage import VolumeShareSlippage
 from qf_lib.backtesting.order.execution_style import MarketOrder
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.containers.dimension_names import TICKERS, FIELDS
-from qf_lib.testing_tools.containers_comparison import assert_lists_equal
+from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_lists_equal
 
 
 class TestSlippage(TestCase):

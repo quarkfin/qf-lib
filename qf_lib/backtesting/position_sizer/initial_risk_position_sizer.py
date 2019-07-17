@@ -1,10 +1,10 @@
 from qf_lib.backtesting.alpha_model.signal import Signal
 from qf_lib.backtesting.broker.broker import Broker
 from qf_lib.backtesting.contract.contract import Contract
-from qf_lib.backtesting.contract_to_ticker_conversion.base import ContractTickerMapper
+from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.order.execution_style import MarketOrder
-from qf_lib.backtesting.order.orderfactory import OrderFactory
+from qf_lib.backtesting.order.order_factory import OrderFactory
 from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.backtesting.position_sizer.position_sizer import PositionSizer
 from qf_lib.common.utils.numberutils.is_finite_number import is_finite_number
@@ -47,8 +47,8 @@ class InitialRiskPositionSizer(PositionSizer):
 
         assert is_finite_number(target_percentage), "target_percentage has to be a finite number"
 
-        market_order_list = self._order_factory.target_percent_orders({contract: target_percentage},
-                                                                      MarketOrder(), TimeInForce.OPG)
+        market_order_list = self._order_factory.target_percent_orders(
+            {contract: target_percentage}, MarketOrder(), TimeInForce.OPG)
         if len(market_order_list) == 0:
             return None
 

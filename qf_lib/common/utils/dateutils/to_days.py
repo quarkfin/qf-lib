@@ -16,4 +16,4 @@ def to_days(timedelta: Timedelta) -> float:
         number of days that corresponds to the given time delta
     """
 
-    return timedelta/Timedelta('1 days')
+    return timedelta / Timedelta('1 days')

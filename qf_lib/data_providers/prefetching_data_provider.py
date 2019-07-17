@@ -23,5 +23,4 @@ class PrefetchingDataProvider(PresetDataProvider):
         super().__init__(
             data=prefetched_data,
             start_date=start_date, end_date=end_date,
-            check_data_availability=check_data_availability
-        )
+            check_data_availability=check_data_availability)

@@ -8,6 +8,6 @@ class BrokerException(Exception):
 class OrderCancellingException(BrokerException):
     """
     Order couldn't be cancelled (e.g. because there was no Order of that id in the list of awaiting Orders
-    or the request to cancell it timed-out).
+    or the request to cancel it timed-out).
     """
     pass

@@ -151,9 +151,9 @@ class TestFactorization(TestCase):
         actual_value = self.data_model.autocorrelation
         self.assertTrue(np.array_equal(expected_value, actual_value))
 
-    def test_heteroscedasticity(self):
+    def test_heteroskedasticity(self):
         expected_value = 0.00964796935924
-        actual_value = self.data_model.heteroscedasticity
+        actual_value = self.data_model.heteroskedasticity
         self.assertAlmostEqual(actual_value, expected_value, places=12)
 
     def test_correlation_matrix(self):

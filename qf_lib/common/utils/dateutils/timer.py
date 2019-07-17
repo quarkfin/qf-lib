@@ -16,6 +16,7 @@ class RealTimer(Timer):
     """
     Timer which gives the real current time.
     """
+
     def now(self) -> datetime:
         return datetime.now()
 
@@ -24,6 +25,7 @@ class SettableTimer(Timer):
     """
     Timer object which doesn't give the real current time, but is "faking" it (current time can be set).
     """
+
     def __init__(self, initial_time: datetime = None):
         self.time = initial_time
 

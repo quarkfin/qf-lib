@@ -6,26 +6,30 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from qf_lib.analysis.model_params_estimation.evaluation_utils import add_backtest_description
-from qf_lib.backtesting.alpha_models_testers.backtest_summary import BacktestSummary
+from qf_lib.backtesting.fast_alpha_model_tester.backtest_summary import BacktestSummary
 from qf_lib.common.enums.trade_field import TradeField
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.to_days import to_days
-from qf_lib.common.utils.document_exporting import Document, ParagraphElement, HeadingElement
-from qf_lib.common.utils.document_exporting.element.page_header import PageHeaderElement
-from qf_lib.common.utils.document_exporting.element.table import Table
-from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.common.utils.miscellaneous.constants import DAYS_PER_YEAR_AVG
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
+from qf_lib.documents_utils.document_exporting.document import Document
+from qf_lib.documents_utils.document_exporting.element.heading import HeadingElement
+from qf_lib.documents_utils.document_exporting.element.page_header import PageHeaderElement
+from qf_lib.documents_utils.document_exporting.element.paragraph import ParagraphElement
+from qf_lib.documents_utils.document_exporting.element.table import Table
+from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.settings import Settings
 from qf_lib.starting_dir import get_starting_dir_abs_path
 
 
 class TickerScreener(object):
     """
+    TODO: class not implemented in full
+
     Class enables generation of the PDF document containing evaluation of trades on individual tickers
     """
 
-    def __init__(self, backtest_summary: BacktestSummary,  settings: Settings, pdf_exporter: PDFExporter):
+    def __init__(self, backtest_summary: BacktestSummary, settings: Settings, pdf_exporter: PDFExporter):
         self.backtest_summary = backtest_summary
         self.settings = settings
         self.pdf_exporter = pdf_exporter
@@ -63,7 +67,7 @@ class TickerScreener(object):
                 # ticker_eval.SQN = sqn(ticker_trades_df)
                 # ticker_eval.avg_nr_of_trades_1Y = avg_nr_of_trades_per1y()
 
-    def _add_table(self, tickers_eval_list: Collection[_TickerEvaluationResult]):
+    def _add_table(self, tickers_eval_list):
         table = Table(column_names=["Ticker", "Max SQN per 100 trades", "Avg #trades per 1Y for Max SQN"],
                       css_class="table stats-table")
 

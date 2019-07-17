@@ -9,12 +9,12 @@ def avg_drawdown_duration(prices_tms: QFSeries) -> float:
 
     Parameters
     ----------
-    prices_tms: QFSeries
+    prices_tms
         timeseries of prices
 
     Returns
     -------
-    avg_duration: float
+    avg_duration
         average duration of a drawdown for the given timeseries of prices expressed in days
     """
     from qf_lib.common.utils.returns.list_of_max_drawdowns import list_of_max_drawdowns
