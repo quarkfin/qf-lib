@@ -52,21 +52,21 @@ class DataHandler(DataProvider):
 
         tickers, _ = convert_to_list(tickers, Ticker)
         fields, _ = convert_to_list(fields, PriceField)
-        self.price_data_provider = PrefetchingDataProvider(self._initial_data_provider, tickers, fields,
-                                                           start_date, end_date)
+        self.price_data_provider = PrefetchingDataProvider(
+            self._initial_data_provider, tickers, fields, start_date, end_date)
         self.is_optimised = True
 
-    def historical_price(self, tickers: Union[Ticker, Sequence[Ticker]],
-                         fields: Union[PriceField, Sequence[PriceField]], nr_of_bars: int) \
-            -> Union[PricesSeries, PricesDataFrame, QFDataArray]:
+    def historical_price(
+            self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
+            nr_of_bars: int) -> Union[PricesSeries, PricesDataFrame, QFDataArray]:
         """
         Returns the latest available data samples corresponding to the nr_of_bars.
 
-        tickers:
+        tickers
             ticker or sequence of tickers of the securities
-        fields:
+        fields
             PriceField or sequence of PriceFields of the securities
-        nr_of_bars:
+        nr_of_bars
             number of data samples (bars) to be returned.
             Note: while requesting more than one ticker, some tickers may have fewer than n_of_bars data points
         """
@@ -85,10 +85,8 @@ class DataHandler(DataProvider):
             else:
                 tickers_as_strings = ", ".join(ticker.as_string() for ticker in tickers)
             raise ValueError("Not enough data points for \ntickers: {} \ndate: {}."
-                             "\n{} Data points requested, \n{} Data points available."
-                             .format(tickers_as_strings, latest_available_market_close, nr_of_bars,
-                                     num_of_dates_available)
-                             )
+                             "\n{} Data points requested, \n{} Data points available.".format(
+                tickers_as_strings, latest_available_market_close, nr_of_bars, num_of_dates_available))
 
         if isinstance(container, QFDataArray):
             return container.isel(dates=slice(-nr_of_bars, None))
@@ -96,7 +94,7 @@ class DataHandler(DataProvider):
             return container.tail(nr_of_bars)  # type: Union[PricesSeries, PricesDataFrame]
 
     def get_price(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
-                  start_date: datetime, end_date: datetime = None)-> Union[PricesSeries, PricesDataFrame, QFDataArray]:
+                  start_date: datetime, end_date: datetime = None) -> Union[PricesSeries, PricesDataFrame, QFDataArray]:
         """
         Runs DataProvider.get_price(...) but before makes sure that the query doesn't concern data from
         the future.
@@ -110,9 +108,9 @@ class DataHandler(DataProvider):
         end_date_without_look_ahead = self._get_end_date_without_look_ahead(end_date)
         return self.price_data_provider.get_price(tickers, fields, start_date, end_date_without_look_ahead)
 
-    def get_history(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[str, Sequence[str]],
-                    start_date: datetime, end_date: datetime = None, **kwargs) \
-            -> Union[QFSeries, QFDataFrame, QFDataArray]:
+    def get_history(
+            self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[str, Sequence[str]], start_date: datetime,
+            end_date: datetime = None, **kwargs) -> Union[QFSeries, QFDataFrame, QFDataArray]:
         """
         Runs DataProvider.get_history(...) but before makes sure that the query doesn't concern data from
         the future.
@@ -211,8 +209,8 @@ class DataHandler(DataProvider):
             end_date_without_look_ahead = latest_available_market_close
         return end_date_without_look_ahead
 
-    def _get_single_date_price(self, tickers: Union[Ticker, Sequence[Ticker]], nans_allowed: bool)\
-            -> Union[float, pd.Series]:
+    def _get_single_date_price(
+            self, tickers: Union[Ticker, Sequence[Ticker]], nans_allowed: bool) -> Union[float, pd.Series]:
         tickers, was_single_ticker_provided = convert_to_list(tickers, Ticker)
 
         # if an empty tickers list was supplied then return an empty result
@@ -269,12 +267,8 @@ class DataHandler(DataProvider):
         """
         original_dates = prices_data_array.dates.to_index()
 
-        market_open_datetimes = [
-            price_datetime + MarketOpenEvent.trigger_time() for price_datetime in original_dates
-        ]
-        market_close_datetimes = [
-            price_datetime + MarketCloseEvent.trigger_time() for price_datetime in original_dates
-        ]
+        market_open_datetimes = [price_datetime + MarketOpenEvent.trigger_time() for price_datetime in original_dates]
+        market_close_datetimes = [price_datetime + MarketCloseEvent.trigger_time() for price_datetime in original_dates]
 
         new_dates = market_open_datetimes + market_close_datetimes
 

@@ -3,23 +3,24 @@ from datetime import datetime
 from typing import List, Tuple, Type
 
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
-from qf_lib.backtesting.backtest_result.backtest_result import BacktestResult
 from qf_lib.backtesting.broker.backtest_broker import BacktestBroker
-from qf_lib.backtesting.contract_to_ticker_conversion.base import ContractTickerMapper
-from qf_lib.backtesting.contract_to_ticker_conversion.bloomberg_mapper import DummyBloombergContractTickerMapper
+from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
+from qf_lib.backtesting.contract.contract_to_ticker_conversion.bloomberg_mapper import \
+    DummyBloombergContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.events.event_manager import EventManager
 from qf_lib.backtesting.events.notifiers import Notifiers
 from qf_lib.backtesting.events.time_flow_controller import BacktestTimeFlowController
-from qf_lib.backtesting.execution_handler.simulated.commission_models.commission_model import CommissionModel
-from qf_lib.backtesting.execution_handler.simulated.commission_models.fixed_commission_model import FixedCommissionModel
-from qf_lib.backtesting.execution_handler.simulated.simulated_execution_handler import SimulatedExecutionHandler
-from qf_lib.backtesting.execution_handler.simulated.slippage.base import Slippage
-from qf_lib.backtesting.execution_handler.simulated.slippage.price_based_slippage import PriceBasedSlippage
+from qf_lib.backtesting.execution_handler.commission_models.commission_model import CommissionModel
+from qf_lib.backtesting.execution_handler.commission_models.fixed_commission_model import FixedCommissionModel
+from qf_lib.backtesting.execution_handler.simulated_execution_handler import SimulatedExecutionHandler
+from qf_lib.backtesting.execution_handler.slippage.base import Slippage
+from qf_lib.backtesting.execution_handler.slippage.price_based_slippage import PriceBasedSlippage
 from qf_lib.backtesting.monitoring.abstract_monitor import AbstractMonitor
+from qf_lib.backtesting.monitoring.backtest_result import BacktestResult
 from qf_lib.backtesting.monitoring.dummy_monitor import DummyMonitor
 from qf_lib.backtesting.monitoring.light_backtest_monitor import LightBacktestMonitor
-from qf_lib.backtesting.order.orderfactory import OrderFactory
+from qf_lib.backtesting.order.order_factory import OrderFactory
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.backtesting.portfolio.portfolio_handler import PortfolioHandler
 from qf_lib.backtesting.position_sizer.initial_risk_position_sizer import InitialRiskPositionSizer
@@ -28,12 +29,12 @@ from qf_lib.backtesting.position_sizer.simple_position_sizer import SimplePositi
 from qf_lib.backtesting.trading_session.backtest_trading_session import BacktestTradingSession
 from qf_lib.common.tickers.tickers import QuandlTicker, Ticker, BloombergTicker
 from qf_lib.common.utils.dateutils.timer import SettableTimer
-from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
-from qf_lib.common.utils.excel.excel_exporter import ExcelExporter
 from qf_lib.common.utils.logging.logging_config import setup_logging
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
 from qf_lib.data_providers.price_data_provider import DataProvider
+from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
+from qf_lib.documents_utils.excel.excel_exporter import ExcelExporter
 from qf_lib.settings import Settings
 
 
@@ -134,14 +135,13 @@ class BacktestTradingSessionBuilder(object):
         self._monitor = self._monitor_setup()
 
         self._portfolio_handler = PortfolioHandler(self._portfolio, self._monitor, self._notifiers.scheduler)
-        self._execution_handler = SimulatedExecutionHandler(self._data_handler, self._timer, self._notifiers.scheduler,
-                                                            self._monitor, self._commission_model,
-                                                            self._contract_ticker_mapper, self._portfolio,
-                                                            self._slippage_model)
+        self._execution_handler = SimulatedExecutionHandler(
+            self._data_handler, self._timer, self._notifiers.scheduler, self._monitor, self._commission_model,
+            self._contract_ticker_mapper, self._portfolio, self._slippage_model)
 
-        self._time_flow_controller = BacktestTimeFlowController(self._notifiers.scheduler, self._events_manager,
-                                                                self._timer, self._notifiers.empty_queue_event_notifier,
-                                                                end_date)
+        self._time_flow_controller = BacktestTimeFlowController(
+            self._notifiers.scheduler, self._events_manager, self._timer,
+            self._notifiers.empty_queue_event_notifier, end_date)
 
         self._broker = BacktestBroker(self._portfolio, self._execution_handler)
         self._order_factory = OrderFactory(self._broker, self._data_handler, self._contract_ticker_mapper)
@@ -199,8 +199,9 @@ class BacktestTradingSessionBuilder(object):
 
     def _position_sizer_setup(self):
         if self._position_sizer_param is None:
-            return self._position_sizer_type(self._broker, self._data_handler, self._order_factory,
-                                             self._contract_ticker_mapper)
+            return self._position_sizer_type(
+                self._broker, self._data_handler, self._order_factory, self._contract_ticker_mapper)
         else:
-            return self._position_sizer_type(self._broker, self._data_handler, self._order_factory,
-                                             self._contract_ticker_mapper, self._position_sizer_param)
+            return self._position_sizer_type(
+                self._broker, self._data_handler, self._order_factory, self._contract_ticker_mapper,
+                self._position_sizer_param)

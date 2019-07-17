@@ -1,4 +1,5 @@
 from itertools import cycle
+from typing import List
 
 from qf_lib.common.utils.returns.list_longest_drawdowns import list_longest_drawdowns
 from qf_lib.containers.series.qf_series import QFSeries
@@ -10,7 +11,8 @@ class TopDrawdownDecorator(ChartDecorator):
     """
     Highlights the top drawdowns in a specified series.
     """
-    def __init__(self, prices: QFSeries, count: int, colors=None, key=None):
+
+    def __init__(self, prices: QFSeries, count: int, colors: List[str] = None, key: str = None):
         """
         Construct a new TopDrawdownDecorator.
 
@@ -36,8 +38,7 @@ class TopDrawdownDecorator(ChartDecorator):
         self._series = prices
         self._count = count
 
-    def decorate(self, chart):
+    def decorate(self, chart: "Chart"):
 
         for drawdown in list_longest_drawdowns(self._series, self._count):
             chart.axes.axvspan(drawdown[0], drawdown[1], alpha=0.2, color=self._color)
-

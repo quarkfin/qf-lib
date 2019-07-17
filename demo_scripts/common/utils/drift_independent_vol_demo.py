@@ -18,48 +18,58 @@ from qf_lib.plotting.decorators.data_element_decorator import DataElementDecorat
 start_date = str_to_date('2016-01-01')
 end_date = datetime.now()
 
-data_provider = container.resolve(GeneralPriceProvider)
-ticker = QuandlTicker('AAPL', 'WIKI')
-fields = [PriceField.Open, PriceField.High, PriceField.Low, PriceField.Close]
-prices_df = data_provider.get_price(ticker, fields, start_date, end_date)
 
-vol = DriftIndependentVolatility.get_volatility(prices_df, Frequency.DAILY)
-print("drift_independent_vol = {}".format(vol))
+def _calculate_single_values(data_provider):
+    ticker = QuandlTicker('AAPL', 'WIKI')
+    fields = [PriceField.Open, PriceField.High, PriceField.Low, PriceField.Close]
+    prices_df = data_provider.get_price(ticker, fields, start_date, end_date)
 
-close_price_tms = prices_df[PriceField.Close]
-simple_vol = get_volatility(close_price_tms, Frequency.DAILY)
-print("simple_vol = {}".format(simple_vol))
+    di_vol = DriftIndependentVolatility.get_volatility(prices_df, Frequency.DAILY)
+    print("drift_independent_vol = {}".format(di_vol))
 
-########################################################################################################################
-
-print('\n\n\t--- Drift Independent Volatility Test in progress ---')
-
-ticker = QuandlTicker('MSFT', 'WIKI')
-fields = [PriceField.Open, PriceField.High, PriceField.Low, PriceField.Close]
-prices_df = data_provider.get_price(ticker, fields, start_date, end_date)  # type: PricesDataFrame
+    close_price_tms = prices_df[PriceField.Close]
+    simple_vol = get_volatility(close_price_tms, Frequency.DAILY)
+    print("simple_vol = {}".format(simple_vol))
 
 
-def simple_vol(close_tms):
-    return get_volatility(close_tms, Frequency.DAILY)
+def _calculate_timeseries(data_provider):
+    print('\n\n\t--- Drift Independent Volatility Test in progress ---')
+
+    def simple_vol(close_tms):
+        return get_volatility(close_tms, Frequency.DAILY)
+
+    def di_vol(ohlc_df):
+        return DriftIndependentVolatility.get_volatility(ohlc_df, Frequency.DAILY)
+
+    ticker = QuandlTicker('MSFT', 'WIKI')
+    fields = [PriceField.Open, PriceField.High, PriceField.Low, PriceField.Close]
+    prices_df = data_provider.get_price(ticker, fields, start_date, end_date)  # type: PricesDataFrame
+
+    window_len = 128
+
+    close_price_tms = prices_df[PriceField.Close]  # type: PricesSeries
+    simple_vols = close_price_tms.rolling_window(window_len, simple_vol)
+    print('Simple Volatility - start value:', simple_vols[0])
+
+    drift_independent_vols = prices_df.rolling_time_window(window_len, 1, di_vol)
+    print('Drift Independent Volatility - start value:', drift_independent_vols[0])
+
+    line_chart = LineChart()
+    sv_data = DataElementDecorator(simple_vols)
+    line_chart.add_decorator(sv_data)
+    div_data = DataElementDecorator(drift_independent_vols)
+    line_chart.add_decorator(div_data)
+    line_chart.plot()
+    print('\nPlot generated successfully.')
+    plt.show(block=True)
 
 
-def di_vol(prices_df):
-    return DriftIndependentVolatility.get_volatility(prices_df, Frequency.DAILY)
+def main():
+    data_provider = container.resolve(GeneralPriceProvider)
 
-window_len = 128
+    _calculate_single_values(data_provider)
+    _calculate_timeseries(data_provider)
 
-close_price_tms = prices_df[PriceField.Close]  # type: PricesSeries
-simple_vols = close_price_tms.rolling_window(window_len, simple_vol)
-drift_independent_vols = prices_df.rolling_time_window(window_len, 1, di_vol)
 
-print('Drift Independent Volatility - start value:', drift_independent_vols[0])
-print('Simple Volatility - start value:', simple_vols[0])
-
-line_chart = LineChart()
-sv_data = DataElementDecorator(simple_vols)
-line_chart.add_decorator(sv_data)
-div_data = DataElementDecorator(drift_independent_vols)
-line_chart.add_decorator(div_data)
-line_chart.plot()
-print('\nPlot generated successfully.')
-plt.show(block=True)
+if __name__ == '__main__':
+    main()

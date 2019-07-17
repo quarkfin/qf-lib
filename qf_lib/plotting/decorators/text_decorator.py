@@ -1,6 +1,7 @@
 from typing import Any
 
 from matplotlib import transforms
+from matplotlib.artist import Artist
 
 from qf_lib.plotting.decorators.chart_decorator import ChartDecorator
 from qf_lib.plotting.decorators.coordinate import Coordinate
@@ -11,7 +12,7 @@ class TextDecorator(ChartDecorator):
     Adds text to the Chart at given coordinates (e.g. the label for data point).
     """
 
-    def __init__(self, text: str, x: Coordinate, y: Coordinate, key: str=None, **plot_settings: Any) -> None:
+    def __init__(self, text: str, x: Coordinate, y: Coordinate, key: str = None, **plot_settings: Any) -> None:
         """
         Parameters
         ----------
@@ -48,7 +49,7 @@ class TextDecorator(ChartDecorator):
         text_artist = chart.axes.text(x=self.x.value, y=self.y.value, s=self.text, **plot_settings)
         self._update_axes_datalim(chart, text_artist)
 
-    def _update_axes_datalim(self, chart, text_artist):
+    def _update_axes_datalim(self, chart: "Chart", text_artist: Artist):
         """
         Extends the area of the Axes in a chart so that text is shown correctly (isn't clipped).
         """

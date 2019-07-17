@@ -7,8 +7,8 @@ from qf_lib.plotting.decorators.chart_decorator import ChartDecorator
 
 
 class AxesFormatterDecorator(ChartDecorator):
-    def __init__(self, x_major: Formatter=None, x_minor: Formatter=None, y_major: Formatter=None,
-                 y_minor: Formatter=None, use_secondary_axes=False, key=None):
+    def __init__(self, x_major: Formatter = None, x_minor: Formatter = None, y_major: Formatter = None,
+                 y_minor: Formatter = None, use_secondary_axes: bool = False, key: str = None):
         """
         Creates a new Axes Formatter decorator that changes the way tickers in the x/y-axis are displayed.
 
@@ -42,7 +42,7 @@ class PercentageFormatter(Formatter):
     Formats data as percentages on charts (e.g. 0.1 => 10%).
     """
 
-    def __init__(self, value_format: str=".0f"):
+    def __init__(self, value_format: str = ".0f"):
         self.value_format = value_format
 
     def __call__(self, x: Any, pos=None):

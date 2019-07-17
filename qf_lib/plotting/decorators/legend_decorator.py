@@ -13,11 +13,12 @@ class LegendDecorator(ChartDecorator):
     A decorator which draws a legend on the graph. The legend titles are automatically determined based on what was
     specified during decorator creation and series addition.
     """
-    def __init__(self, legend_placement: Location = Location.BEST, key=None):
+
+    def __init__(self, legend_placement: Location = Location.BEST, key: str = None):
         """
-        legend_placement: LegendPlacement, optional
+        legend_placement
             where the legend should be placed on the chart
-        key: object, optional
+        key
             the identifier of the decorator
         """
         super().__init__(key)
@@ -30,16 +31,16 @@ class LegendDecorator(ChartDecorator):
 
         Parameters
         ----------
-        item: SimpleLegendItem
+        item
             a decorator which should be described in the legend or the matplotlib's Artist object
-        label: str
+        label
             a label which should be assigned to a given decorator
         """
         if not isinstance(label, str):
             label = str(label)
         self.item_labels.append((item, label))
 
-    def decorate(self, chart) -> None:
+    def decorate(self, chart: "Chart") -> None:
         axes = chart.axes
         if chart.secondary_axes is not None:
             axes = chart.secondary_axes
@@ -61,7 +62,7 @@ class LegendDecorator(ChartDecorator):
 
         axes.legend(handles, labels, loc=self.legend_placement.code)
 
-    def decorate_html(self, chart, chart_id) -> str:
+    def decorate_html(self, chart: "Chart", chart_id: str) -> str:
         # For docs relating to this, see: http://api.highcharts.com/highcharts/legend
         template = Template("""
             window.chart_data["{{ chart_id }}"].legend_labels = {{ legend_labels }};

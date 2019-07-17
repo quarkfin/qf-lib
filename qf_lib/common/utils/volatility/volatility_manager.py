@@ -4,33 +4,41 @@ from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
 
 
-class VolatilityManager:
+class VolatilityManager(object):
     """
     VolatilityManager uses rolling window to asses the historical volatility of a series.
     It is then using the results to find appropriate weights to be held in time
     in order to keep the volatility constant over time.
     """
-    def __init__(self, series: QFSeries, frequency: Frequency=Frequency.DAILY):
+
+    def __init__(self, series: QFSeries, frequency: Frequency = Frequency.DAILY):
         """
         Parameters
         ----------
-        series: series to be volatility managed
-        frequency: frequency of the series that is passed
+        series
+            series to be volatility managed
+        frequency
+            frequency of the series that is passed
         """
         self.returns_tms = series.to_simple_returns()
         self.frequency = frequency
 
-    def get_managed_series(self, vol_level: float, window_size: int=20, lag: int=1,
-                           min_leverage: float=0.25, max_leverage: float=1) -> SimpleReturnsSeries:
+    def get_managed_series(self, vol_level: float, window_size: int = 20, lag: int = 1,
+                           min_leverage: float = 0.25, max_leverage: float = 1) -> SimpleReturnsSeries:
         """
         Parameters
         ----------
-        vol_level: volatility level to be maintained expressed in number. for example 0.2 means 20% volatility
-        window_size: length of the window to asses the volatility
-        lag: how many periods do we need in order to implement the reallocation. 
+        vol_level
+            volatility level to be maintained expressed in number. for example 0.2 means 20% volatility
+        window_size
+            length of the window to asses the volatility
+        lag
+            how many periods do we need in order to implement the reallocation.
             1 means that already on close of the current day we adjust for the realised volatility of that day
-        min_leverage: max leverage the the function is allowed to apply
-        max_leverage: min leverage the the function is allowed to apply
+        min_leverage
+            min leverage the the function is allowed to apply
+        max_leverage
+            max leverage the the function is allowed to apply
         Returns
         -------
         SimpleReturnsSeries containing returns of the series based on the input series passed in the constructor

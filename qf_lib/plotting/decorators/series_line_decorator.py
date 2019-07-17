@@ -1,3 +1,5 @@
+from typing import Any
+
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.plotting.decorators.chart_decorator import ChartDecorator
 from qf_lib.plotting.decorators.simple_legend_item import SimpleLegendItem
@@ -7,7 +9,8 @@ class SeriesLineDecorator(ChartDecorator, SimpleLegendItem):
     """
     A simple decorator that displays a single series, useful for charts that want a line overlay for example bar chart.
     """
-    def __init__(self, series: QFSeries, key=None, use_secondary_axes=False, **plot_settings):
+
+    def __init__(self, series: QFSeries, key: str = None, use_secondary_axes: bool = False, **plot_settings: Any):
         ChartDecorator.__init__(self, key)
         SimpleLegendItem.__init__(self)
         self._series = series

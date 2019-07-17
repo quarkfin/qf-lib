@@ -14,7 +14,7 @@ from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
-from qf_lib.testing_tools.containers_comparison import assert_series_equal, assert_dataframes_equal
+from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_series_equal, assert_dataframes_equal
 
 
 class Test_DataHandler_CurrentPrices(TestCase):

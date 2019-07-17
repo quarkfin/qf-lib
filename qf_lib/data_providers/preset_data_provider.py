@@ -18,8 +18,8 @@ class PresetDataProvider(DataProvider):
     Wrapper on QFDataArray which makes it a DataProvider.
     """
 
-    def __init__(self, data: QFDataArray, start_date: datetime, end_date: datetime,
-                 check_data_availability: bool = True):
+    def __init__(
+            self, data: QFDataArray, start_date: datetime, end_date: datetime, check_data_availability: bool = True):
         """
         Parameters
         ----------
@@ -44,10 +44,9 @@ class PresetDataProvider(DataProvider):
 
         self._ticker_types = {type(ticker) for ticker in data.tickers.values}
 
-    def get_price(self, tickers: Union[Ticker, Sequence[Ticker]],
-                  fields: Union[PriceField, Sequence[PriceField]],
-                  start_date: datetime, end_date: datetime = None
-                  ) -> Union[None, PricesSeries, PricesDataFrame, QFDataArray]:
+    def get_price(
+            self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
+            start_date: datetime, end_date: datetime = None) -> Union[None, PricesSeries, PricesDataFrame, QFDataArray]:
 
         tickers, got_single_ticker = convert_to_list(tickers, Ticker)
         fields, got_single_field = convert_to_list(fields, PriceField)
@@ -57,8 +56,8 @@ class PresetDataProvider(DataProvider):
             self._check_if_cached_data_available(tickers, fields, start_date, end_date)
 
         data_array = self._data_bundle.loc[start_date:end_date, tickers, fields]
-        normalized_result = normalize_data_array(data_array, tickers, fields, got_single_date, got_single_ticker,
-                                                 got_single_field, use_prices_types=True)
+        normalized_result = normalize_data_array(
+            data_array, tickers, fields, got_single_date, got_single_ticker, got_single_field, use_prices_types=True)
 
         return normalized_result
 

@@ -10,22 +10,22 @@ from qf_lib.plotting.decorators.data_element_decorator import DataElementDecorat
 from qf_lib.plotting.decorators.title_decorator import TitleDecorator
 
 
-def create_returns_similarity(strategy: QFSeries, benchmark: QFSeries, mean_normalization=True,
-                              std_normalization=True, frequency: Frequency=None) -> KDEChart:
+def create_returns_similarity(strategy: QFSeries, benchmark: QFSeries, mean_normalization: bool = True,
+                              std_normalization: bool = True, frequency: Frequency = None) -> KDEChart:
     """
     Creates a new returns similarity chart. The frequency is determined by the specified returns series.
 
     Parameters
     ----------
-    strategy:
+    strategy
         The strategy series to plot.
-    benchmark:
+    benchmark
         The benchmark series to plot.
-    mean_normalization:
+    mean_normalization
         Whether to perform mean normalization on the series data.
-    std_normalization:
+    std_normalization
         Whether to perform variance normalization on the series data.
-    frequency: 
+    frequency:
         Returns can be aggregated in to specific frequency before plotting the chart
     Returns
     -------
@@ -41,16 +41,16 @@ def create_returns_similarity(strategy: QFSeries, benchmark: QFSeries, mean_norm
         aggregate_strategy = strategy.to_simple_returns()
         aggregate_benchmark = benchmark.to_simple_returns()
 
-    scaled_strategy = preprocessing.scale(aggregate_strategy, with_mean=mean_normalization,
-                                          with_std=std_normalization)
-    strategy_data_element = DataElementDecorator(scaled_strategy, bw="scott", shade=True, label=strategy.name,
-                                                 color=colors[0])
+    scaled_strategy = preprocessing.scale(
+        aggregate_strategy, with_mean=mean_normalization, with_std=std_normalization)
+    strategy_data_element = DataElementDecorator(
+        scaled_strategy, bw="scott", shade=True, label=strategy.name, color=colors[0])
     chart.add_decorator(strategy_data_element)
 
-    scaled_benchmark = preprocessing.scale(aggregate_benchmark, with_mean=mean_normalization,
-                                           with_std=std_normalization)
-    benchmark_data_element = DataElementDecorator(scaled_benchmark, bw="scott", shade=True, label=benchmark.name,
-                                                  color=colors[1])
+    scaled_benchmark = preprocessing.scale(
+        aggregate_benchmark, with_mean=mean_normalization, with_std=std_normalization)
+    benchmark_data_element = DataElementDecorator(
+        scaled_benchmark, bw="scott", shade=True, label=benchmark.name, color=colors[1])
     chart.add_decorator(benchmark_data_element)
 
     # Add a title.

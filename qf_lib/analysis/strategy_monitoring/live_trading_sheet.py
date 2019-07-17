@@ -22,7 +22,7 @@ class LiveTradingSheet(AbstractDocument):
                  strategy_leverage_tms: QFSeries,
                  is_stats: InSampleReturnStats,
                  title: str = "Live Trading Sheet",
-                 benchmark_tms: QFSeries=None):
+                 benchmark_tms: QFSeries = None):
         """
 
         Parameters

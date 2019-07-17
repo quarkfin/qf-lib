@@ -1,4 +1,5 @@
 from collections import Sequence
+from typing import Tuple
 
 import matplotlib.mlab as mlab
 from scipy.stats import norm
@@ -7,7 +8,7 @@ from qf_lib.plotting.charts.chart import Chart
 
 
 class HistogramChart(Chart):
-    def __init__(self, series: Sequence, best_fit=False, bins=20, **plot_settings):
+    def __init__(self, series: Sequence, best_fit: bool = False, bins: int = 20, **plot_settings):
         """
         Constructs a new histogram based on the ``series`` specified.
 
@@ -17,9 +18,9 @@ class HistogramChart(Chart):
             The series to plot in the histogram.
         best_fit: boolean, default ``False``.
             Whether a best fit line should be drawn.
-        bins: int, default 20.
+        bins
             The amount of intervals to use for this histogram.
-        plot_settings: keyword arguments
+        plot_settings
             Options to pass to the ``hist`` function.
         """
         super().__init__(start_x=None, end_x=None)
@@ -28,11 +29,10 @@ class HistogramChart(Chart):
         self._num_of_bins = bins
         self._best_fit = best_fit
 
-    def plot(self, figsize=None):
+    def plot(self, figsize: Tuple[float, float] = None):
         self._setup_axes_if_necessary(figsize)
         # Plot the horizontal bar chart.
-        n, bins, patches = self.axes.hist(self._series, bins=self._num_of_bins, ec='white',
-                                          **self.plot_settings)
+        n, bins, patches = self.axes.hist(self._series, bins=self._num_of_bins, ec='white', **self.plot_settings)
 
         if self._best_fit:
             # Calculate the best fit for the data.

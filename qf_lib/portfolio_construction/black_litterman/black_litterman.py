@@ -8,19 +8,17 @@ from pandas import DataFrame, Series
 
 class BlackLitterman(object):
 
-    def __init__(self, hist_cov: DataFrame, weights: Series, sample_size, sharpe:float=0.5):
+    def __init__(self, hist_cov: DataFrame, weights: Series, sample_size: int, sharpe: float = 0.5):
         """
         Creates a n object allowing calculation of the distribution of the returns using Black Litterman model
-        The model is operating in the frequency of the data provided. If for example hist_cov is built using monthly data
-        than the output is also expressed as monthly values.
 
-        hist_cov:
-            covariance matrix of historical excess reeturns of assets
-        weights:
+        hist_cov
+            covariance matrix of historical excess returns of assets; should be annualized
+        weights
             weights of assets in the market cap index
-        sample_size:
+        sample_size
             number of simple returns used to estimate the historical covariance
-        sharpe:
+        sharpe
             average sharpe ratio of the market (by default value of 0.5 is used)
         """
         self.hist_cov = hist_cov
@@ -75,38 +73,45 @@ class BlackLitterman(object):
             N = self._omega.size
             omega = np.identity(N)
             for i in range(N):
-                omega[i,i] = self._omega[i]
+                omega[i, i] = self._omega[i]
             return omega
         return None
 
-    def add_absolute_view(self, asset_index:int, outperformance:float, view_vol:float):
+    def add_absolute_view(self, asset_index: int, outperformance: float, view_vol: float):
         """
         Adds a new view that will be taken into account in calculating the posterior
 
-        short_asset_index: index of the asset that we expect to outperform the market (indexing starts at 0)
-        outperformance: how much are we expecting one asset to outperform the market
-        view_vol: It is a volatility of the view.
+        short_asset_index
+            index of the asset that we expect to outperform the market (indexing starts at 0)
+        outperformance
+            how much are we expecting one asset to outperform the market
+        view_vol
+            volatility of the view.
             This is the measure of a standard deviation of the outperformance value.
             For example: 0.02 means that the real outperformance will be
                 provided outperformance +- 2% within one standard deviation confidence interval.
         """
         new_p_row = np.zeros((1, self.weights.size))
         new_p_row[0, asset_index] = 1
-        new_q_elem = np.ones((1,1)) * outperformance
-        new_omega_elem = np.ones(1) * view_vol * view_vol   # Omega corresponds to variance of view so use the vol^2
+        new_q_elem = np.ones((1, 1)) * outperformance
+        new_omega_elem = np.ones(1) * view_vol * view_vol  # Omega corresponds to variance of view so use the vol^2
         self._update_views(new_p_row, new_q_elem, new_omega_elem)
 
-    def add_relative_view(self, outperforming_asset_index:int, underperforming_asset_index:int,
-                          outperformance:float, view_vol:float):
+    def add_relative_view(self, outperforming_asset_index: int, underperforming_asset_index: int,
+                          outperformance: float, view_vol: float):
         """
         Adds a new view that will be taken into account in calculating the posterior
         The investor believs that outperforming_asset will outperform the underperforming_asset by outperformance
         with the volatility of the view of  view_vol
 
-        outperforming_asset_index: index of the asset that you believe will outperform (indexing starts at 0)
-        underperforming_asset_index: index of the asset that you believe will underperform (indexing starts at 0)
-        outperformance: how much are we expecting one asset to outperform the other
-        view_vol: It is a volatility of the outperformance.
+        outperforming_asset_index
+            index of the asset that you believe will outperform (indexing starts at 0)
+        underperforming_asset_index
+            index of the asset that you believe will underperform (indexing starts at 0)
+        outperformance
+            how much are we expecting one asset to outperform the other
+        view_vol
+            volatility of the outperformance.
             This is the measure of a standard deviation of the outperformance value.
             For example: 0.02 means that the real outperformance will be
                 provided outperformance +- 2% within one standard deviation confidence interval.
@@ -114,8 +119,8 @@ class BlackLitterman(object):
         new_p_row = np.zeros((1, self.weights.size))
         new_p_row[0, outperforming_asset_index] = 1
         new_p_row[0, underperforming_asset_index] = -1
-        new_q_elem = np.ones((1,1)) * outperformance
-        new_omega_elem = np.ones(1) * view_vol * view_vol   # Omega corresponds to variance of view so use the vol^2
+        new_q_elem = np.ones((1, 1)) * outperformance
+        new_omega_elem = np.ones(1) * view_vol * view_vol  # Omega corresponds to variance of view so use the vol^2
         self._update_views(new_p_row, new_q_elem, new_omega_elem)
 
     def calculate_prior(self) -> Tuple[Series, DataFrame]:
@@ -199,7 +204,7 @@ class BlackLitterman(object):
         vol = sqrt(self.weights.dot(self.hist_cov.dot(self.weights.T)))
         return vol
 
-    def _caltulate_tau(self, len_of_returns:int):
+    def _caltulate_tau(self, len_of_returns: int):
         """
         In many implementations it approximated by  1 / nr of observations, which corresponds to standard error
         That is the error of estimation of the covariance matrix

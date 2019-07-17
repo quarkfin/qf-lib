@@ -4,9 +4,9 @@ SingleValueT = TypeVar('SingleValueT')
 
 
 def convert_to_list(
-    value: Union[SingleValueT, Sequence[SingleValueT]],
-    type_of_single_value: Union[Type[SingleValueT], Sequence[Type[SingleValueT]]]
-) -> Tuple[Sequence[SingleValueT], bool]:
+        value: Union[SingleValueT, Sequence[SingleValueT]],
+        type_of_single_value: Union[Type[SingleValueT], Sequence[Type[SingleValueT]]]) \
+        -> Tuple[Sequence[SingleValueT], bool]:
     """
     Converts a given value to list if necessary and returns information if the conversion was necessary.
 

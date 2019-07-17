@@ -1,12 +1,12 @@
 from typing import Union, Sequence
 
 from qf_lib.backtesting.broker.backtest_broker import BacktestBroker
-from qf_lib.backtesting.contract_to_ticker_conversion.base import ContractTickerMapper
+from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.events.event_manager import EventManager
 from qf_lib.backtesting.events.notifiers import Notifiers
 from qf_lib.backtesting.monitoring.backtest_monitor import BacktestMonitor
-from qf_lib.backtesting.order.orderfactory import OrderFactory
+from qf_lib.backtesting.order.order_factory import OrderFactory
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.backtesting.position_sizer.position_sizer import PositionSizer
 from qf_lib.backtesting.trading_session.trading_session import TradingSession
@@ -52,5 +52,3 @@ class BacktestTradingSession(TradingSession):
             time_delta = RelativeDelta(years=1)
         data_history_start = self.start_date - time_delta
         self.data_handler.use_data_bundle(tickers, PriceField.ohlcv(), data_history_start, self.end_date)
-
-

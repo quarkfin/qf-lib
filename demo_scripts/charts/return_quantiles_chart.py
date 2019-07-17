@@ -13,16 +13,22 @@ start_date = str_to_date('1996-01-01')
 end_date = datetime.now()
 live_start_date = str_to_date('2012-01-01')
 
-data_provider = container.resolve(GeneralPriceProvider)
-prices_tms = data_provider.get_price(QuandlTicker('AAPL', 'WIKI'), PriceField.Close, start_date, end_date)
 
-chart = create_return_quantiles(prices_tms, live_start_date)
-chart.plot()
+def main():
+    data_provider = container.resolve(GeneralPriceProvider)
+    prices_tms = data_provider.get_price(QuandlTicker('AAPL', 'WIKI'), PriceField.Close, start_date, end_date)
 
-chart = create_return_quantiles(prices_tms)
-chart.plot()
+    chart = create_return_quantiles(prices_tms, live_start_date)
+    chart.plot()
 
-chart = create_return_quantiles(prices_tms, end_date)
-chart.plot()
+    chart = create_return_quantiles(prices_tms)
+    chart.plot()
 
-plt.show(block=True)
+    chart = create_return_quantiles(prices_tms, end_date)
+    chart.plot()
+
+    plt.show(block=True)
+
+
+if __name__ == '__main__':
+    main()

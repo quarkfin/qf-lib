@@ -27,7 +27,7 @@ def rand_recession(series):
         period_length_limit = min(period_length_limit, remaining_elements)
         period_length = random.randint(1, period_length_limit)
 
-        period = [int(is_recession)]*period_length
+        period = [int(is_recession)] * period_length
         recession_data += period
 
         current_length += period_length
@@ -37,24 +37,27 @@ def rand_recession(series):
     return recession_tms
 
 
-plt.style.use(['seaborn-poster', 'macrostyle'])
+def main():
+    plt.style.use(['seaborn-poster', 'macrostyle'])
 
-data = container.resolve(GeneralPriceProvider)
+    data = container.resolve(GeneralPriceProvider)
 
-start_date = str_to_date('2016-01-01')
-end_date = str_to_date('2016-11-20')
+    start_date = str_to_date('2016-01-01')
+    end_date = str_to_date('2016-11-20')
 
-spx_tms = data.get_price(QuandlTicker('AAPL', 'WIKI'), PriceField.Close, start_date, end_date)
-spx_tms = spx_tms.pct_change()
+    spx_tms = data.get_price(QuandlTicker('AAPL', 'WIKI'), PriceField.Close, start_date, end_date)
+    spx_tms = spx_tms.pct_change()
 
-recession = rand_recession(spx_tms)
-names = ["Quarter on quarter annualised,  (SA, Chained 2009, %)",
-         "Year on year  (SA, Chained 2009, %)", None]
+    recession = rand_recession(spx_tms)
+    names = ["Quarter on quarter annualised,  (SA, Chained 2009, %)",
+             "Year on year  (SA, Chained 2009, %)", None]
 
-chart = create_bar_chart([spx_tms], names,
-                         "US Real Gross Domestic Product Growth (%)", [spx_tms], recession, quarterly=False,
-                         start_x=datetime.datetime.strptime("2015", "%Y"))
-chart.plot()
+    chart = create_bar_chart([spx_tms], names,
+                             "US Real Gross Domestic Product Growth (%)", [spx_tms], recession, quarterly=False,
+                             start_x=datetime.datetime.strptime("2015", "%Y"))
+    chart.plot()
+    plt.show(block=True)
 
 
-plt.show(block=True)
+if __name__ == '__main__':
+    main()

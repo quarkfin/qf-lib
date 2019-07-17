@@ -1,12 +1,12 @@
 from datetime import datetime
 
 from qf_lib.backtesting.monitoring.abstract_monitor import AbstractMonitor
-from qf_lib.backtesting.transaction import Transaction
+from qf_lib.backtesting.portfolio.transaction import Transaction
 
 
 class DummyMonitor(AbstractMonitor):
 
-    def end_of_trading_update(self, timestamp: datetime=None):
+    def end_of_trading_update(self, timestamp: datetime = None):
         pass
 
     def end_of_day_update(self, timestamp: datetime):

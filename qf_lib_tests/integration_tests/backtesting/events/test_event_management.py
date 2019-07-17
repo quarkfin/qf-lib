@@ -17,7 +17,7 @@ from qf_lib.backtesting.events.time_flow_controller import BacktestTimeFlowContr
 from qf_lib.common.utils.dateutils.date_format import DateFormat
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.dateutils.timer import SettableTimer, Timer
-from qf_lib.testing_tools.containers_comparison import assert_lists_equal
+from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_lists_equal
 
 
 class DummyListener(AllEventListener, EmptyQueueEventListener, EndTradingEventListener):

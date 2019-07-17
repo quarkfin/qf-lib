@@ -7,7 +7,7 @@ import pandas as pd
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.containers.dataframe.simple_returns_dataframe import SimpleReturnsDataFrame
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
-from qf_lib.testing_tools.sample_column_names import generate_sample_column_names
+from qf_lib_tests.helpers.testing_tools.sample_column_names import generate_sample_column_names
 
 
 def get_analysed_tms_and_regressors(dates_span: int = 1000, num_of_regressors: int = 7,

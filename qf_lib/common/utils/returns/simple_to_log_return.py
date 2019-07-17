@@ -7,11 +7,12 @@ def simple_to_log_return(simple_return: float) -> float:
 
     Parameters
     ----------
-    simple_return: float
+    simple_return
+        simple return
 
     Returns
     -------
-    log_return: float
+    log_return
         logarithmic return
     """
 

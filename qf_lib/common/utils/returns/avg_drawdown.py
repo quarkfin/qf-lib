@@ -8,15 +8,14 @@ def avg_drawdown(prices_tms: QFSeries) -> float:
 
     Parameters
     ----------
-    prices_tms: QFSeries
+    prices_tms
         timeseries of prices
 
     Returns
     -------
-    avg_drawdown: float
+    avg_drawdown
         average drawdown for the given timeseries of prices expressed as the percentage value (e.g. 0.5 corresponds
         to the 50% drawdown)
     """
 
     return drawdown_tms(prices_tms).mean()
-

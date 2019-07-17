@@ -10,8 +10,8 @@ class RegularDateTimeRule(object):
     each first day of a month, etc.).
     """
 
-    def __init__(self, year: int=None, month: int=None, day: int=None, weekday: int=None, hour: int=None,
-                 minute: int=None, second: int=None, microsecond: int=None):
+    def __init__(self, year: int = None, month: int = None, day: int = None, weekday: int = None, hour: int = None,
+                 minute: int = None, second: int = None, microsecond: int = None):
 
         self.trigger_time = RelativeDelta(
             year=year, month=month, day=day, weekday=weekday, hour=hour, minute=minute,

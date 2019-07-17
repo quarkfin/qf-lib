@@ -8,23 +8,29 @@ from qf_lib.plotting.decorators.data_element_decorator import DataElementDecorat
 from qf_lib.plotting.decorators.legend_decorator import LegendDecorator
 from qf_lib.plotting.decorators.series_line_decorator import SeriesLineDecorator
 
-tms = QFSeries(data=[200, 20, 300, 40], index=[1, 2, 3, 4])
-tms2 = QFSeries(data=[80, 20, 100, 40], index=[1, 2, 3, 4])
-tms3 = QFSeries(data=[80, 20, 100, 40], index=[1, 2, 3, 4])
 
-bar_chart = BarChart(Orientation.Vertical)
-data_element = DataElementDecorator(tms)
-bar_chart.add_decorator(data_element)
+def main():
+    tms = QFSeries(data=[200, 20, 300, 40], index=[1, 2, 3, 4])
+    tms2 = QFSeries(data=[80, 20, 100, 40], index=[1, 2, 3, 4])
+    tms3 = QFSeries(data=[80, 20, 100, 40], index=[1, 2, 3, 4])
 
-data_element2 = DataElementDecorator(tms2)
-bar_chart.add_decorator(data_element2)
+    bar_chart = BarChart(Orientation.Vertical)
+    data_element = DataElementDecorator(tms)
+    bar_chart.add_decorator(data_element)
 
-bar_chart.add_decorator(SeriesLineDecorator(tms3, use_secondary_axes=True))
+    data_element2 = DataElementDecorator(tms2)
+    bar_chart.add_decorator(data_element2)
 
-legend = LegendDecorator(legend_placement=Location.BEST)
-legend.add_entry(data_element, 'Series 1')
-legend.add_entry(data_element2, 'Series 2')
-bar_chart.add_decorator(legend)
+    bar_chart.add_decorator(SeriesLineDecorator(tms3, use_secondary_axes=True))
 
-bar_chart.plot()
-plt.show(block=True)
+    legend = LegendDecorator(legend_placement=Location.BEST)
+    legend.add_entry(data_element, 'Series 1')
+    legend.add_entry(data_element2, 'Series 2')
+    bar_chart.add_decorator(legend)
+
+    bar_chart.plot()
+    plt.show(block=True)
+
+
+if __name__ == '__main__':
+    main()

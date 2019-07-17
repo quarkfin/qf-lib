@@ -13,12 +13,12 @@ def gain_to_pain_ratio(qf_series: QFSeries) -> float:
 
     Parameters
     ----------
-    qf_series: QFSeries
+    qf_series
         financial series
 
     Returns
     -------
-    pain_to_gain : float
+    pain_to_gain
         < 0 is bad
         > 1 is good
         > 1.5 is exceptionally good

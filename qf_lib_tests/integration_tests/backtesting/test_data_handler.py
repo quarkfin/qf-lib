@@ -13,7 +13,7 @@ from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.dimension_names import DATES, TICKERS
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.data_providers.bloomberg import BloombergDataProvider
-from qf_lib.testing_tools.containers_comparison import assert_series_equal, assert_same_index
+from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_series_equal, assert_same_index
 from qf_lib_tests.unit_tests.config.test_settings import get_test_settings
 
 settings = get_test_settings()

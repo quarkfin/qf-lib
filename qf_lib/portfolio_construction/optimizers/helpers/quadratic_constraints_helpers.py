@@ -4,17 +4,18 @@ from cvxopt.base import matrix, spmatrix, sparse
 
 from qf_lib.portfolio_construction.optimizers.helpers.common_constraint_helpers import prepare_upper_bounds_vector
 
+"""
+In quadratic solvers there are two types of constraints: equality constraints and inequality constraints.
 
-# In quadratic solvers there are two types of constraints: equality constraints and inequality constraints.
-#
-# Equality constraints are expressed in the form of: A*x == b, where A is a matrix (so called multiplier)
-# and b is a vector of values. A*x is a dot product of the multiplier and a vector of weights (which is the result
-# of the optimization process).
-#
-# Inequality constraints are expressed as: G*x <= h, where G is a matrix (multiplier) and h is a vector of values.
-# G*x is a dot product of matrix G and a weights' vector (x).
-#
-# For more information see: http://cvxopt.org/userguide/coneprog.html
+Equality constraints are expressed in the form of: A*x == b, where A is a matrix (so called multiplier)
+and b is a vector of values. A*x is a dot product of the multiplier and a vector of weights (which is the result
+of the optimization process).
+
+Inequality constraints are expressed as: G*x <= h, where G is a matrix (multiplier) and h is a vector of values.
+G*x is a dot product of matrix G and a weights' vector (x).
+
+For more information see: http://cvxopt.org/userguide/coneprog.html
+"""
 
 
 def sum_weights_equal_1_constraint(assets_number: int) -> Tuple[matrix, matrix]:
@@ -35,7 +36,7 @@ def each_weight_greater_than_0_constraint(assets_number: int) -> Tuple[matrix, m
     return G, h
 
 
-def upper_bound_constraint(assets_number: int, upper_constraints: Union[float, Sequence[float]])\
+def upper_bound_constraint(assets_number: int, upper_constraints: Union[float, Sequence[float]]) \
         -> Tuple[matrix, matrix]:
     """
     Creates a constraint which assures that no weight exceeds its upper bound value.
@@ -49,7 +50,7 @@ def upper_bound_constraint(assets_number: int, upper_constraints: Union[float, S
     return G, h
 
 
-def merge_constraints(multiplier_1: matrix, constr_values_1: matrix, multiplier_2: matrix, constr_values_2: matrix)\
+def merge_constraints(multiplier_1: matrix, constr_values_1: matrix, multiplier_2: matrix, constr_values_2: matrix) \
         -> Tuple[matrix, matrix]:
     """
     Combines two constraints into one constraint.

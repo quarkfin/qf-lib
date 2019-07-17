@@ -16,16 +16,16 @@ def _get_ioc_container():
     from qf_lib.common.rolling_contracts.rolling_contracts_series_producer import RollingContractsSeriesProducer
     from qf_lib.common.utils.dateutils.timer import RealTimer
     from qf_lib.common.utils.dateutils.timer import Timer
-    from qf_lib.common.utils.document_exporting.html_exporter import HTMLExporter
-    from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
-    from qf_lib.common.utils.excel.excel_exporter import ExcelExporter
-    from qf_lib.common.utils.excel.excel_importer import ExcelImporter
+    from qf_lib.documents_utils.document_exporting.html_exporter import HTMLExporter
+    from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
+    from qf_lib.documents_utils.excel.excel_exporter import ExcelExporter
+    from qf_lib.documents_utils.excel.excel_importer import ExcelImporter
     from qf_lib.data_providers.bloomberg import BloombergDataProvider
     from qf_lib.data_providers.cryptocurrency.cryptocurrency_data_provider import CryptoCurrencyDataProvider
     from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
     from qf_lib.data_providers.haver import HaverDataProvider
     from qf_lib.data_providers.quandl.quandl_data_provider import QuandlDataProvider
-    from qf_lib.publishers.email_publishing.email_publisher import EmailPublisher
+    from qf_lib.documents_utils.email_publishing.email_publisher import EmailPublisher
     from qf_lib.settings import Settings
 
     builder = ContainerBuilder()

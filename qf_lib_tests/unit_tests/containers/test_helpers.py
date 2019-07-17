@@ -4,7 +4,7 @@ from unittest import TestCase
 import pandas as pd
 
 from qf_lib.containers.helpers import rolling_window_slices
-from qf_lib.testing_tools.containers_comparison import assert_lists_equal
+from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_lists_equal
 
 
 class TestSeries(TestCase):

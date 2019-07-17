@@ -1,14 +1,13 @@
 import json
 import os
-from typing import Optional
-
 import os.path
+from typing import Optional
 
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 
 
 class Settings(object):
-    def __init__(self, settings_path: Optional[str], secret_path: Optional[str]=None, init_properties=True):
+    def __init__(self, settings_path: Optional[str], secret_path: Optional[str] = None, init_properties: bool = True):
         self.settings_path = settings_path
         self.secret_path = secret_path
         self.init_properties = init_properties
@@ -32,7 +31,7 @@ class Settings(object):
     def _load_config_dict(self):
         with open(self.settings_path, 'r') as file:
             public_settings = json.load(file)
-        
+
         if self.secret_path is not None and os.path.isfile(self.secret_path):
             with open(self.secret_path, 'r') as file:
                 secret_settings = json.load(file)
@@ -41,9 +40,8 @@ class Settings(object):
             secret_settings = json.loads(os.environ['QUANTFIN_SECRET'])
             self.logger.info("Using QUANTFIN_SECRET")
         else:
-            raise AttributeError(
-                "No secret settings were defined. Either set the QUANTFIN_SECRET environment"
-                " variable or get the secret_settings.json file.")
+            raise AttributeError("No secret settings were defined. Either set the QUANTFIN_SECRET environment"
+                                 " variable or get the secret_settings.json file.")
 
         return self._merge(public_settings, secret_settings)
 
@@ -53,8 +51,7 @@ class Settings(object):
         elif isinstance(merged_config, (list, tuple)) and isinstance(config, (list, tuple)):
             merged_config += config
         else:
-            raise ValueError(
-                "Cannot merge values: {} and {}".format(merged_config, config))
+            raise ValueError("Cannot merge values: {} and {}".format(merged_config, config))
 
         return merged_config
 

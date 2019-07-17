@@ -6,6 +6,7 @@ from qf_lib.plotting.charts.heatmap.heatmap_chart_decorator import HeatMapChartD
 
 class ValuesAnnotations(HeatMapChartDecorator):
     """ Adds annotations containing values for each square presented on the heat map. """
+
     def __init__(self, format_str='.2g', key=None, **plot_settings):
         """
         Parameters

@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 from datetime import datetime
 
-from qf_lib.backtesting.transaction import Transaction
+from qf_lib.backtesting.portfolio.transaction import Transaction
 
 
 class AbstractMonitor(metaclass=ABCMeta):

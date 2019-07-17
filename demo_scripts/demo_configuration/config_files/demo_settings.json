@@ -15,5 +15,5 @@
     "sender": "sample_user@some.domain.pl"
   },
   "haver_path": "C:/absolute/path-to-haver-data",
-  "document_css_directory": "modules/qf-lib/qf_lib/common/utils/document_exporting/default_css"
+  "document_css_directory": "modules/qf-lib/qf_lib/documents_utils/document_exporting/default_css"
 }

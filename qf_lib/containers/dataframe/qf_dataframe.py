@@ -265,8 +265,8 @@ class QFDataFrame(pd.DataFrame, TimeIndexedContainer):
         return result
 
     def rolling_time_window(
-            self, window_length: int, step: int, func: Callable[[Union["QFDataFrame", np.ndarray]], "QFSeries"]
-    ) -> Union[None, "QFSeries", "QFDataFrame"]:
+            self, window_length: int, step: int, func: Callable[[Union["QFDataFrame", np.ndarray]], "QFSeries"]) \
+            -> Union[None, "QFSeries", "QFDataFrame"]:
         """
         Runs a given function on each rolling window in the dataframe. The content of a rolling window is also
         a QFDataFrame thus the funciton which should be applied should accept a QFDataFrame as an argument.

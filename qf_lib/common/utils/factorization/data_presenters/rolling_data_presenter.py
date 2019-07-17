@@ -2,12 +2,12 @@ import pandas as pd
 from matplotlib.dates import DateFormatter
 
 from qf_lib.common.utils.dateutils.date_format import DateFormat
+from qf_lib.common.utils.factorization.data_models.rolling_data_model import RollingDataModel
 from qf_lib.plotting.charts.line_chart import LineChart
 from qf_lib.plotting.decorators.axes_formatter_decorator import AxesFormatterDecorator
 from qf_lib.plotting.decorators.data_element_decorator import DataElementDecorator
 from qf_lib.plotting.decorators.legend_decorator import LegendDecorator
 from qf_lib.plotting.decorators.title_decorator import TitleDecorator
-from qf_lib.common.utils.factorization.data_models.rolling_data_model import RollingDataModel
 
 
 class RollingDataPresenter(object):
@@ -22,10 +22,10 @@ class RollingDataPresenter(object):
         return 'Values are calculated based on {window_size:d} data samples rolling \n' \
                'with {num_of_samples:d} sample(s) shift. \n' \
                'Frequency of the data points is {frequency:s}. \n'.format(
-                    window_size=self.rolling_model.window_size_,
-                    num_of_samples=self.rolling_model.step_,
-                    frequency=str(self.rolling_model.input_data.frequency)
-                )
+            window_size=self.rolling_model.window_size_,
+            num_of_samples=self.rolling_model.step_,
+            frequency=str(self.rolling_model.input_data.frequency)
+        )
 
     def regression_coefficients_chart(self) -> LineChart:
         rolling_coeffs = self.rolling_model.coefficients_df

@@ -26,7 +26,7 @@ class MarketStressIndicator(object):
         self.weights = weights
         self.data_provider = data_provider
 
-    def get_indicator(self, years_rolling: float, start_date: datetime, end_date: datetime, step=1) -> QFSeries:
+    def get_indicator(self, years_rolling: float, start_date: datetime, end_date: datetime, step: int = 1) -> QFSeries:
         """
         years_rolling
             How may years of the history is used for to evaluate the single point
@@ -41,14 +41,14 @@ class MarketStressIndicator(object):
         -------
         Timeseries of market stress indicator
         """
-        underlying_start_date = start_date - timedelta(days=floor(years_rolling*365*1.1))
+        underlying_start_date = start_date - timedelta(days=floor(years_rolling * 365 * 1.1))
         data = self.data_provider.get_price(self.tickers, PriceField.Close, underlying_start_date, end_date)
         data = data.fillna(method='ffill')
         # data = data.dropna() # this line can be enabled but it will shift starting point by the years_rolling
 
-        window_size = floor(252*years_rolling)
-        stress_indicator_tms = data.rolling_time_window(window_length=window_size, step=step,
-                                                        func=self._rolling_stress_indicator)
+        window_size = floor(252 * years_rolling)
+        stress_indicator_tms = data.rolling_time_window(
+            window_length=window_size, step=step, func=self._rolling_stress_indicator)
 
         stress_indicator_tms = stress_indicator_tms.loc[start_date:]
         return stress_indicator_tms

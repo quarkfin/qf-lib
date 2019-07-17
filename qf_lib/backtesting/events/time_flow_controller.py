@@ -84,4 +84,3 @@ class LiveSessionTimeFlowController(TimeFlowController):
         waiting_time = time_of_next_time_event - now
         self.logger.info("Going to sleep for {} ".format(waiting_time))
         time.sleep(waiting_time.total_seconds())
-

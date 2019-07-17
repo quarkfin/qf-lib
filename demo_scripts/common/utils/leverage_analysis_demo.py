@@ -3,7 +3,7 @@ import pandas as pd
 from demo_scripts.demo_configuration.demo_ioc import container
 from qf_lib.analysis.leverage_analysis.leverage_analysis_sheet import LeverageAnalysisSheet
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
-from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
+from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.settings import Settings
 

@@ -58,8 +58,8 @@ class MaxSharpeRatioPortfolio(Portfolio):
             'maxiter': self.max_iter,
             'disp': False
         }
-        optimization_result = scipy.optimize.minimize(fun=minimised_func, x0=np.array([0]), method='L-BFGS-B',
-                                                      bounds=[(0, None)], options=options)
+        optimization_result = scipy.optimize.minimize(
+            fun=minimised_func, x0=np.array([0]), method='L-BFGS-B', bounds=[(0, None)], options=options)
 
         if not optimization_result.success:
             self.logger.warning("Unsuccessful optimization: " + optimization_result.message)

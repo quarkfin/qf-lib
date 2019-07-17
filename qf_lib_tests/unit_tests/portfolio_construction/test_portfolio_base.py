@@ -4,11 +4,11 @@ from unittest import TestCase
 
 import pandas as pd
 
-from qf_lib.common.utils.excel.excel_importer import ExcelImporter
+from qf_lib.documents_utils.excel.excel_importer import ExcelImporter
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
 from qf_lib.portfolio_construction.portfolio_models.portfolio import Portfolio
-from qf_lib.testing_tools.containers_comparison import assert_dataframes_equal, assert_series_equal
+from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_series_equal, assert_dataframes_equal
 from qf_lib_tests.unit_tests.portfolio_construction.utils import assets_df
 
 

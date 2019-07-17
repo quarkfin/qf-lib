@@ -5,7 +5,7 @@ import pandas as pd
 from qf_lib.common.utils.data_cleaner import DataCleaner
 from qf_lib.containers.dataframe.simple_returns_dataframe import SimpleReturnsDataFrame
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
-from qf_lib.testing_tools.containers_comparison import assert_dataframes_equal
+from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_dataframes_equal
 
 
 class TestDataCleaner(TestCase):

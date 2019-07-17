@@ -3,13 +3,13 @@ from os.path import dirname, join
 import numpy as np
 from pandas import DatetimeIndex, concat
 
-from qf_lib.common.utils.excel.excel_exporter import ExcelExporter
-from qf_lib.common.utils.excel.excel_files_comparator import ExcelFilesComparator
+from qf_lib.documents_utils.excel.excel_exporter import ExcelExporter
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
+from qf_lib.documents_utils.excel.excel_files_comparator import ExcelFilesComparator
 from qf_lib.get_sources_root import get_src_root
 from qf_lib.starting_dir import set_starting_dir_abs_path
-from qf_lib.testing_tools.test_case import TestCaseWithFileOutput
+from qf_lib_tests.helpers.testing_tools.test_case import TestCaseWithFileOutput
 from qf_lib_tests.unit_tests.common.utils.excel.constants import SINGLE_SHEET_ONE_SERIES, SINGLE_SHEET_TWO_SERIES, \
     TWO_SHEETS_TWO_SERIES, TWO_SHEETS_THREE_SERIES, SINGLE_SHEET_ONE_DATA_FRAME, SINGLE_SHEET_CUSTOM_INDEX_DATA_FRAME, \
     SINGLE_CELLS

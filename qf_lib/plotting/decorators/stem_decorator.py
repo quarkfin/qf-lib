@@ -11,8 +11,9 @@ class StemDecorator(ChartDecorator, SimpleLegendItem):
     """
     A simple decorator that displays a single series in a form of stems.
     """
-    def __init__(self, series: QFSeries, key=None, marker_props: Mapping[str, Any]=None,
-                 stemline_props: Mapping[str, Any]=None, baseline_props: Mapping[str, Any]=None):
+
+    def __init__(self, series: QFSeries, key: str = None, marker_props: Mapping[str, Any] = None,
+                 stemline_props: Mapping[str, Any] = None, baseline_props: Mapping[str, Any] = None):
         ChartDecorator.__init__(self, key)
         SimpleLegendItem.__init__(self)
         self._series = series

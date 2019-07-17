@@ -4,7 +4,7 @@ from datetime import datetime
 import pandas as pd
 from mockito import mock, when
 
-import qf_lib.testing_tools.containers_comparison as tt
+import qf_lib_tests.helpers.testing_tools.containers_comparison as tt
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta

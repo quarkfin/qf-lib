@@ -10,8 +10,8 @@ from qf_lib.plotting.decorators.chart_decorator import ChartDecorator
 class ConeDecorator(ChartDecorator):
 
     def __init__(self, series: QFSeries, live_start_date: datetime,
-                 cone_stds: Union[Sequence[Union[float, int]], float, int]=(1, 2),
-                 colors_alpha: float=0.25, key: str=None):
+                 cone_stds: Union[Sequence[Union[float, int]], float, int] = (1, 2),
+                 colors_alpha: float = 0.25, key: str = None):
         """
         Puts cone on top of the timeseries starting form given date.
 
@@ -31,7 +31,7 @@ class ConeDecorator(ChartDecorator):
         super().__init__(key)
         self._live_start_date = live_start_date
 
-        assert isinstance(series, PricesSeries),\
+        assert isinstance(series, PricesSeries), \
             "Cone can only work with PricesSeries. {} is not supported" % type(series)
         self.series = series
 
@@ -42,7 +42,7 @@ class ConeDecorator(ChartDecorator):
         self._cone_stds = cone_stds
         self._colors_alpha = colors_alpha
 
-    def decorate(self, chart) -> None:
+    def decorate(self, chart: "Chart") -> None:
         prices_tms = self.series
         cone = AnalyticalCone(prices_tms)
         ax = chart.axes

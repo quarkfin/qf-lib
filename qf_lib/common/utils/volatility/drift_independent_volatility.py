@@ -11,9 +11,9 @@ from qf_lib.containers.series.qf_series import QFSeries
 class DriftIndependentVolatility(object):
 
     @staticmethod
-    def get_volatility(ohlc: PricesDataFrame, frequency: Frequency=None, annualise: bool=True, alpha: float=None) -> float:
+    def get_volatility(
+            ohlc: PricesDataFrame, frequency: Frequency = None, annualise: bool = True, alpha: float = None) -> float:
         """
-
         Implementation of the algorithm described in 'Drift Independent Volatility Estimation Based on High, Low,
         Open and Close Prices', developed by Dennis Yang and Qiang Zhang, published in June 2000 issue of Journal
         of Business. The new estimator has the following nice properties:
@@ -24,22 +24,21 @@ class DriftIndependentVolatility(object):
 
         Parameters
         ----------
-        ohlc:
+        ohlc
             QFDataFrame consisting of four QFPricesSeries: open, high, low, close
-        frequency:
+        frequency
             the frequency of samples in the returns series; it is only obligatory to specify frequency if the annualise
             parameter is set to True, which is a default value
-        annualise:
+        annualise
             True if the volatility values should be annualised; False otherwise. If it is set to True, then it is obligatory
             to specify a frequency of the returns series.
-        alpha:
+        alpha
             expectation of u(u-c)+d(d-c) squared, values in range of (1.331, 1.5);
             authors of the algorithm suggest 1.34 in practice
 
         Returns
         -------
-        Drift Independent Volatility in type float
-
+        Drift Independent Volatility of type float
         """
         assert ohlc.num_of_rows >= 2
         assert not annualise or frequency is not None
@@ -49,7 +48,7 @@ class DriftIndependentVolatility(object):
         var_C = DriftIndependentVolatility._close_variance(ohlc)
         k = DriftIndependentVolatility._k_factor(ohlc, alpha)
 
-        variance = var_O + k*var_C + (1-k)*var_RS
+        variance = var_O + k * var_C + (1 - k) * var_RS
         volatility = np.sqrt(variance)
 
         if annualise:
@@ -150,5 +149,5 @@ class DriftIndependentVolatility(object):
         if alpha is None:
             alpha = 1.34  # value suggested by the authors
 
-        k = (alpha-1)/(alpha+(n+1)/(n-1))
+        k = (alpha - 1) / (alpha + (n + 1) / (n - 1))
         return k

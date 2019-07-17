@@ -11,7 +11,7 @@ from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
 
 
-def get_aggregate_returns(series: QFSeries, convert_to: Frequency, multi_index: bool=False) -> SimpleReturnsSeries:
+def get_aggregate_returns(series: QFSeries, convert_to: Frequency, multi_index: bool = False) -> SimpleReturnsSeries:
     """
     Aggregates returns by week, month, or year.
 
@@ -25,7 +25,7 @@ def get_aggregate_returns(series: QFSeries, convert_to: Frequency, multi_index: 
         Determines whether the grouping multi-index should be preserved.
     Returns
     -------
-        Aggregated returns.
+    Aggregated returns.
     """
     simple_rets = series.to_simple_returns()
     grouping = get_grouping_for_frequency(convert_to)

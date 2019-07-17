@@ -6,7 +6,7 @@ from pandas import date_range
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.utils.close_open_gap.close_open_gap import close_open_gap
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
-from qf_lib.testing_tools.containers_comparison import assert_lists_equal
+from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_lists_equal
 
 
 class TestCloseOpenGapUtils(TestCase):

@@ -1,3 +1,5 @@
+from typing import Tuple
+
 from matplotlib.dates import DateFormatter
 from matplotlib.ticker import MaxNLocator
 
@@ -12,7 +14,7 @@ class AnnualReturnsBarChart(Chart):
         super().__init__()
         self.strategy_tms = strategy_tms
 
-    def plot(self, figsize=None):
+    def plot(self, figsize: Tuple[float, float] = None):
         self._setup_axes_if_necessary(figsize)
         annual_returns_tms = self._prepare_data_to_plot()
         self._plot_data(annual_returns_tms)

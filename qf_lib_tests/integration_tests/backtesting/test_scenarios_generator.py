@@ -3,7 +3,7 @@ from unittest import TestCase
 
 import pandas as pd
 
-from qf_lib.backtesting.alpha_models_testers.scenarios_generator import ScenariosGenerator
+from qf_lib.backtesting.fast_alpha_model_tester.scenarios_generator import ScenariosGenerator
 from qf_lib.common.enums.trade_field import TradeField
 
 

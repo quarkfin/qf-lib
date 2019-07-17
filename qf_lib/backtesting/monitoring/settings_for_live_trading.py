@@ -9,7 +9,6 @@ from qf_lib.common.utils.returns.is_return_stats import InSampleReturnStats
 class LiveTradingSettings(object):
     def __init__(self, live_start_date: datetime, initial_risk: float,
                  model_type_tickers_dict: Dict[Type, List[Ticker]], is_returns_stats: InSampleReturnStats, title: str):
-
         self.live_start_date = live_start_date
         self.initial_risk = initial_risk
         self.model_type_tickers_dict = model_type_tickers_dict

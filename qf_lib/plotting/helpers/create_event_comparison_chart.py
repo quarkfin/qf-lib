@@ -12,26 +12,27 @@ from qf_lib.plotting.decorators.line_decorators import VerticalLineDecorator
 from qf_lib.plotting.decorators.title_decorator import TitleDecorator
 
 
-def create_event_comparison_chart(series: QFSeries, event_dates_list: Iterable[datetime], title: str, samples_before=100,
-                                  samples_after=200, rebase_method=RebaseMethod.divide) -> LineChart:
+def create_event_comparison_chart(
+        series: QFSeries, event_dates_list: Iterable[datetime], title: str, samples_before: int = 100,
+        samples_after: int = 200, rebase_method: RebaseMethod = RebaseMethod.divide) -> LineChart:
     """
     Creates a new chart based on a line chart. The chart puts all events at date = 0 and than compares the evolution
     of the series after the event date.
 
     Parameters
     ----------
-    series: QFSeries
+    series
         Series usually with values of an index or level of interest rates
-    event_dates_list: Iterable[datetime]
+    event_dates_list
         A list specifying the dates of the events that we would like to compare. Each date will create
         a new series in the chart
-    title: str
+    title
         The title of the graph, specify ``None`` if you don't want the chart to show a title.
-    samples_before: int
+    samples_before
         Number of samples shown on the chart that are before the event date
-    samples_after: int
+    samples_after
         Number of samples after the event date that are plotted on the chart
-    rebase_method: RebaseMethod
+    rebase_method
         Specifies the way in which the data is normalised at the date of the event.
         'divide'    will divide all the values by the value at the date of the event
         'subtract'  will subtract the value at the event from the whole sample

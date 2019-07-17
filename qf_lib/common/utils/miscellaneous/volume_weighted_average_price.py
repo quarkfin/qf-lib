@@ -5,23 +5,23 @@ from qf_lib.common.utils.numberutils.is_finite_number import is_finite_number
 from qf_lib.containers.series.prices_series import PricesSeries, QFSeries
 
 
-def volume_weighted_average_price(prices_tms: PricesSeries, volumes_tms: QFSeries, interval: Timedelta) -> QFSeries:
+def volume_weighted_average_price(prices_tms: PricesSeries, volumes_tms: QFSeries, interval: Timedelta) -> PricesSeries:
     """
     Aggregates prices in the prices_tms by calculating the average weighted price for each period. The average weighted
     prices are weighted by the volumes traded in each period.
 
     Parameters
     ----------
-    prices_tms: PricesSeries
+    prices_tms
         timeseries of prices which should be aggregated
-    volumes_tms: QFSeries
+    volumes_tms
         timeseries of volumes traded; must correspond to the prices_tms
-    interval: pd.Timedelta
+    interval
         the length of each period from which prices should be aggregated
 
     Returns
     -------
-    weighted_avg_price_tms: PricesSeries
+    weighted_avg_price_tms
         timeseries of aggregated prices; first datetimes are:
         first_price_datetime + interval, first_price_datetime + 2*interval, ..., first_price_datetime + i*interval,
         where first_price_datetime is the datetime of the first price in the original prices_tms
@@ -51,7 +51,7 @@ def volume_weighted_average_price(prices_tms: PricesSeries, volumes_tms: QFSerie
             # calculate volume-weighted average price
             weighted_price_sum = prices_in_window.dot(volumes_in_window)
             volume_sum = sum(volumes_in_window)
-            weighted_avg_price = weighted_price_sum/volume_sum
+            weighted_avg_price = weighted_price_sum / volume_sum
 
         # if the weighted average price is equal exactly 0, it means that there were missing data
         if is_finite_number(weighted_avg_price) and weighted_avg_price != 0:

@@ -1,6 +1,8 @@
 import threading
 from collections import Sequence
-from mpl_toolkits.mplot3d import Axes3D   # important to keep this line for figure.add_subplot(1, 1, 1, projection='3d')
+from typing import Tuple
+
+from mpl_toolkits.mplot3d import Axes3D  # important to keep this line for figure.add_subplot(1, 1, 1, projection='3d')
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -21,16 +23,19 @@ class SurfaceChart3D(object):
 
         Parameters
         ----------
-        x_vector: vector corresponding to points on X axis
-        y_vector: vector corresponding to points on Y axis
-        z_matrix: matrix with values. The shape of the Z matrix has to be [len(Y), len(X)]
+        x_vector
+            vector corresponding to points on X axis
+        y_vector
+            vector corresponding to points on Y axis
+        z_matrix
+            matrix with values. The shape of the Z matrix has to be [len(Y), len(X)]
             X values correspond to COLUMNS
             Y values correspond to ROWS
         """
 
         # convert vectors into matrices (necessary operation in order to plot)
         assert matplotlib.get_backend() == "TkAgg"
-        
+
         x = np.array(x_vector)
         y = np.array(y_vector)
         self.X, self.Y = np.meshgrid(x, y)
@@ -45,15 +50,16 @@ class SurfaceChart3D(object):
         self._z_label = None
         self._title_str = None
 
-    def plot(self, figsize=None, include_contour=False):
+    def plot(self, figsize: Tuple[float, float] = None, include_contour: bool = False):
         """
         Plots the chart. The underlying figure stays hidden until the show() method is called.
 
         Parameters
         ----------
-        figsize: Tuple(float, float)
+        figsize
             The figure size to draw the chart at in inches. This is a tuple of (width, height) passed directly
             to matplotlib's ``plot`` function. The values are expressed in inches.
+        include_contour
         """
 
         self._setup_axes_if_necessary(figsize)
@@ -99,7 +105,7 @@ class SurfaceChart3D(object):
         if self._title_str is not None:
             plt.title(self._title_str)
 
-    def _setup_axes_if_necessary(self, figsize=None):
+    def _setup_axes_if_necessary(self, figsize: Tuple[float, float] = None):
         if self.axes is None:
             figure = plt.figure(figsize=figsize)
             ax = figure.add_subplot(1, 1, 1, projection='3d')  # (nrows, ncols, axnum)

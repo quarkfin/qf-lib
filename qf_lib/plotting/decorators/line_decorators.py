@@ -1,6 +1,8 @@
 import datetime
+from typing import Any
 
 from jinja2 import Template
+from numpy import ScalarType
 
 from qf_lib.common.utils.miscellaneous.constants import HIGHCHART_COLORS, HIGHCHART_DASH_STYLES
 from qf_lib.plotting.decorators.chart_decorator import ChartDecorator
@@ -11,7 +13,8 @@ class HorizontalLineDecorator(ChartDecorator, SimpleLegendItem):
     """
     A simple decorator that displays a horizontal line.
     """
-    def __init__(self, y, color='k', key=None, **plot_settings):
+
+    def __init__(self, y: ScalarType, color: str = 'k', key: str = None, **plot_settings: Any):
         """
         Constructs a new horizontal line decorator. The ``plot_settings`` are passed directly to matplotlib's
         ``axhline``. See http://matplotlib.org/api/pyplot_api.html#matplotlib.pyplot.axhline for valid settings.
@@ -24,11 +27,11 @@ class HorizontalLineDecorator(ChartDecorator, SimpleLegendItem):
         self._color = color
         self.plot_settings = plot_settings
 
-    def decorate(self, chart) -> None:
+    def decorate(self, chart: "Chart") -> None:
         # Save the line ID so that the legend can make use of it.
         self.legend_artist = chart.axes.axhline(y=self._y, color=self._color, **self.plot_settings)
 
-    def decorate_html(self, chart, chart_id) -> str:
+    def decorate_html(self, chart: "Chart", chart_id: str) -> str:
         template = Template("""
             if (decorator_options.yAxis.plotLines === undefined) {
                 decorator_options.yAxis.plotLines = [];
@@ -57,7 +60,8 @@ class VerticalLineDecorator(ChartDecorator, SimpleLegendItem):
     """
     A simple decorator that displays a vertical line.
     """
-    def __init__(self, x, color='k', key=None, **plot_settings):
+
+    def __init__(self, x: ScalarType, color: str = 'k', key: str = None, **plot_settings: Any):
         """
         Constructs a new vertical line decorator. The ``plot_settings`` are passed directly to matplotlib's ``axvline``.
         See http://matplotlib.org/api/pyplot_api.html#matplotlib.pyplot.axvline for valid settings.
@@ -70,11 +74,11 @@ class VerticalLineDecorator(ChartDecorator, SimpleLegendItem):
         self._color = color
         self.plot_settings = plot_settings
 
-    def decorate(self, chart) -> None:
+    def decorate(self, chart: "Chart") -> None:
         # Save the line ID so that the legend can make use of it.
         self.legend_artist = chart.axes.axvline(x=self._x, color=self._color, **self.plot_settings)
 
-    def decorate_html(self, chart, chart_id) -> str:
+    def decorate_html(self, chart: "Chart", chart_id: str) -> str:
         template = Template("""
             if (decorator_options.xAxis.plotLines === undefined) {
                 decorator_options.xAxis.plotLines = [];
@@ -106,11 +110,12 @@ class DiagonalLineDecorator(ChartDecorator, SimpleLegendItem):
     """
     A simple decorator that displays a diagonal line.
     """
-    def __init__(self, key=None, **plot_settings):
+
+    def __init__(self, key: str = None, **plot_settings: Any):
         ChartDecorator.__init__(self, key)
         SimpleLegendItem.__init__(self)
         self.plot_settings = plot_settings
 
-    def decorate(self, chart) -> None:
+    def decorate(self, chart: "Chart") -> None:
         # Save the line ID so that the legend can make use of it.
         self.legend_artist = chart.axes.plot([0, 1], [0, 1], transform=chart.axes.transAxes, **self.plot_settings)

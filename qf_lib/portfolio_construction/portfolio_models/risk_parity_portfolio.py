@@ -23,9 +23,7 @@ class RiskParityPortfolio(Portfolio):
 
     def get_weights(self) -> pd.Series:
         num_of_assets = len(self.assets_returns_df.columns)
-        volatilities = np.array([
-            np.std(asset_tms) for _, asset_tms in self.assets_returns_df.iteritems()
-        ])
+        volatilities = np.array([np.std(asset_tms) for _, asset_tms in self.assets_returns_df.iteritems()])
 
         weights = np.ones(num_of_assets) / volatilities
         weights /= weights.sum()

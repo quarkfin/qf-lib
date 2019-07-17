@@ -1,9 +1,9 @@
 from sklearn.feature_selection import SelectFromModel
 from sklearn.linear_model import ElasticNetCV
 
+from qf_lib.common.utils.factorization.factors_identification.factors_identifier import FactorsIdentifier
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
-from qf_lib.common.utils.factorization.factors_identification.factors_identifier import FactorsIdentifier
 
 
 class ElasticNetFactorsIdentifierSimplified(FactorsIdentifier):
@@ -21,8 +21,8 @@ class ElasticNetFactorsIdentifierSimplified(FactorsIdentifier):
     from the min. MSE). If number of regressors is smaller, then coefficients for min. MSE are taken.
     """
 
-    def __init__(self, epsilon: float=0.05, l1_ratio: float=1,
-                 number_of_alphas: int=75, is_fit_intercept: bool=True):
+    def __init__(self, epsilon: float = 0.05, l1_ratio: float = 1,
+                 number_of_alphas: int = 75, is_fit_intercept: bool = True):
         """
         Parameters
         ----------

@@ -8,7 +8,7 @@ from qf_lib.common.timeseries_analysis.risk_contribution_analysis import RiskCon
 from qf_lib.containers.dataframe.cast_dataframe import cast_dataframe
 from qf_lib.containers.dataframe.simple_returns_dataframe import SimpleReturnsDataFrame
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
-from qf_lib.testing_tools.containers_comparison import assert_series_equal
+from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_series_equal
 
 
 class TestRiskContributionAnalysis(TestCase):

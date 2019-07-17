@@ -11,7 +11,7 @@ class Trade(object):
     """
 
     def __init__(self, time: datetime, contract: Contract, quantity: int, entry_price: float, exit_price: float,
-                 risk_as_percent: float=float('nan')):
+                 risk_as_percent: float = float('nan')):
         """
         time
             moment when we close the trade

@@ -1,7 +1,8 @@
-from typing import Union
+from typing import Union, Dict
 
 import pandas as pd
 
+from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.containers.dataframe.cast_dataframe import cast_dataframe
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
@@ -13,8 +14,8 @@ from qf_lib.containers.series.qf_series import QFSeries
 
 
 def normalize_data_array(
-    data_array, tickers, fields, got_single_date, got_single_ticker, got_single_field, use_prices_types=False
-) -> Union[QFSeries, QFDataFrame, QFDataArray, PricesSeries, PricesDataFrame]:
+        data_array, tickers, fields, got_single_date, got_single_ticker, got_single_field, use_prices_types=False) \
+        -> Union[QFSeries, QFDataFrame, QFDataArray, PricesSeries, PricesDataFrame]:
     """
     Post-processes the result of some DataProviders so that it satisfies the format of a result expected
     from DataProviders:
@@ -108,13 +109,14 @@ def cast_dataframe_to_proper_type(result):
     return casted_result
 
 
-def tickers_dict_to_data_array(tickers_data_dict, requested_tickers, requested_fields) -> QFDataArray:
+def tickers_dict_to_data_array(tickers_data_dict: Dict[Ticker, pd.DataFrame], requested_tickers, requested_fields) -> QFDataArray:
     """
     Converts a dictionary tickers->DateFrame to QFDataArray.
 
     Parameters
     ----------
-    tickers_data_dict: ticker -> DataFrame[dates, fields]
+    tickers_data_dict
+        Ticker -> DataFrame[dates, fields]
     requested_tickers
     requested_fields
 

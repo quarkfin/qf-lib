@@ -8,5 +8,6 @@ class EndTradingEvent(Event):
     """
     Occurs when the trading should stop (e.g. when the backtest should be terminated).
     """
+
     def __init__(self, time: Optional[datetime]) -> None:
         super().__init__(time)

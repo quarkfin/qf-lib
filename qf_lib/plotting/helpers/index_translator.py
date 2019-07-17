@@ -8,7 +8,8 @@ class IndexTranslator(object):
     """
     Object which automatically translates label-indexed data into number-indexed data.
     """
-    def __init__(self, labels_to_locations_dict: Mapping[str, Number]=None):
+
+    def __init__(self, labels_to_locations_dict: Mapping[str, Number] = None):
         """
         Parameters
         ----------

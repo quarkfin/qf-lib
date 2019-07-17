@@ -1,10 +1,10 @@
 from shutil import copyfile
 
 from os.path import join, dirname
-from qf_lib_tests.unit_tests.common.utils.excel.constants import SINGLE_SHEET_ONE_SERIES, SINGLE_SHEET_ONE_SERIES_2
 
-from qf_lib.common.utils.excel.excel_files_comparator import ExcelFilesComparator
-from qf_lib.testing_tools.test_case import TestCaseWithFileOutput
+from qf_lib.documents_utils.excel.excel_files_comparator import ExcelFilesComparator
+from qf_lib_tests.helpers.testing_tools.test_case import TestCaseWithFileOutput
+from qf_lib_tests.unit_tests.common.utils.excel.constants import SINGLE_SHEET_ONE_SERIES, SINGLE_SHEET_ONE_SERIES_2
 
 
 class TestExcelComparator(TestCaseWithFileOutput):

@@ -30,9 +30,7 @@ class RiskContributionAnalysis(object):
         """
         volatility_of_returns = factors_rets.std(axis=0)
 
-        correlation_asset_portfolio = factors_rets.apply(
-            lambda series: series.corr(portfolio_rets)
-        )
+        correlation_asset_portfolio = factors_rets.apply(lambda series: series.corr(portfolio_rets))
 
         risk_contribution = weigths_of_assets * volatility_of_returns * correlation_asset_portfolio
 
@@ -40,8 +38,8 @@ class RiskContributionAnalysis(object):
         return normalized_risk_contribution_msci
 
     @classmethod
-    def get_risk_contribution_optimised(cls, assets_rets: SimpleReturnsDataFrame, weights_of_assets: pd.Series)\
-            -> pd.Series:
+    def get_risk_contribution_optimised(
+            cls, assets_rets: SimpleReturnsDataFrame, weights_of_assets: pd.Series) -> pd.Series:
         """
         Calculates risk contribution of each asset of the portfolio.
 
@@ -63,8 +61,8 @@ class RiskContributionAnalysis(object):
         return risk_contribution
 
     @classmethod
-    def get_distance_to_equal_risk_contrib(cls, assets_returns_covariance: pd.DataFrame,
-                                           weights_of_assets: pd.Series) -> float:
+    def get_distance_to_equal_risk_contrib(
+            cls, assets_returns_covariance: pd.DataFrame, weights_of_assets: pd.Series) -> float:
         """
         By minimising this function it is possible to calculate Equal Risk Contribution Portfolio. It has better
         numerical properties than simple approach  ( riskContribution - mean(riskContribution) )
@@ -86,10 +84,10 @@ class RiskContributionAnalysis(object):
 
         # sum up all the squared differences
         distance = 0
-        for i in range(0, num_of_assets-1):
-            for j in range(i+1, num_of_assets):
+        for i in range(0, num_of_assets - 1):
+            for j in range(i + 1, num_of_assets):
                 partial_diff = risk_contributions.iloc[i] - risk_contributions.iloc[j]
-                distance += partial_diff**2
+                distance += partial_diff ** 2
 
         return np.sqrt(distance)
 
@@ -120,8 +118,8 @@ class RiskContributionAnalysis(object):
         return mean_risk_contribution_distance < 0.005  # max distance: 0.5%
 
     @classmethod
-    def _get_normalized_risk_contribution(cls, assets_returns_covariance: pd.DataFrame,
-                                          weights_of_factors: pd.Series) -> pd.Series:
+    def _get_normalized_risk_contribution(
+            cls, assets_returns_covariance: pd.DataFrame, weights_of_factors: pd.Series) -> pd.Series:
         raw_risk_contribution = weights_of_factors * (assets_returns_covariance.dot(weights_of_factors))
-        normalized_risk_contrib = raw_risk_contribution/raw_risk_contribution.sum()
+        normalized_risk_contrib = raw_risk_contribution / raw_risk_contribution.sum()
         return normalized_risk_contrib

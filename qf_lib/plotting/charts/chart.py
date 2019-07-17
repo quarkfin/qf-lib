@@ -5,7 +5,7 @@ import threading
 import urllib.parse
 import uuid
 from collections import OrderedDict
-from typing import List, Any, Union
+from typing import List, Any, Union, Tuple
 
 import matplotlib as mpl
 import matplotlib.artist as artist
@@ -27,7 +27,7 @@ class Chart(object):
     # Static lock used by all charts to ensure more than one chart isn't being plotted at the same time.
     plot_lock = threading.Lock()
 
-    def __init__(self, start_x: Any=None, end_x: Any=None, upper_y: Any=None, lower_y: Any=None):
+    def __init__(self, start_x: Any = None, end_x: Any = None, upper_y: Any = None, lower_y: Any = None):
         # Matplotlib-specific fields.
         self._ax = None
         self._secondary_axes = None
@@ -92,19 +92,20 @@ class Chart(object):
         """
         return self._secondary_axes
 
-    def plot(self, figsize=None):
+    def plot(self, figsize: Tuple[float, float] = None):
         """
         Plots the chart. The underlying figure stays hidden until the show() method is called.
 
         Parameters
         ----------
-        figsize: Tuple(float, float)
+        figsize
             The figure size to draw the chart at in inches. This is a tuple of (width, height) passed directly
             to matplotlib's ``plot`` function. The values are expressed in inches.
         """
         raise NotImplementedError
 
-    def render_as_base64_image(self, figsize=None, dpi=250, optimise=False) -> str:
+    def render_as_base64_image(
+            self, figsize: Tuple[float, float] = None, dpi: int = 250, optimise: bool = False) -> str:
         """
         Plots the chart and returns the base64 image.
         """
@@ -166,8 +167,8 @@ class Chart(object):
                              "{} is not accepted as the data container".format(str(type(data_container))))
 
     @classmethod
-    def determine_end_x(cls, start: datetime.datetime,
-                        series_list: List[Union[QFSeries, DataElementDecorator]]) -> datetime.datetime:
+    def determine_end_x(cls, start: datetime.datetime, series_list: List[Union[QFSeries, DataElementDecorator]]) \
+            -> datetime.datetime:
         """
         Implements a heuristic for determining the x-axis end date based on a start date and series list.
 
@@ -217,8 +218,7 @@ class Chart(object):
         registered under the specified key, the operation will raise the AssertionError.
         """
         key = decorator.key
-        assert key not in self._decorators, "The key '{}' is already used for another decorator.".format(
-            key)
+        assert key not in self._decorators, "The key '{}' is already used for another decorator.".format(key)
 
         self._decorators[key] = decorator
 
@@ -228,8 +228,7 @@ class Chart(object):
         """
         if self._secondary_axes is None:
             self._setup_axes_if_necessary()
-            self._secondary_axes = self.axes.twinx(
-            ) if self._orientation == Orientation.Vertical else self.axes.twiny()
+            self._secondary_axes = self.axes.twinx() if self._orientation == Orientation.Vertical else self.axes.twiny()
 
     def get_data_element_decorators(self):
         from qf_lib.plotting.decorators.data_element_decorator import DataElementDecorator
@@ -250,7 +249,7 @@ class Chart(object):
             result.append(series[i].data.to_json())
         return result
 
-    def _setup_axes_if_necessary(self, figsize=None):
+    def _setup_axes_if_necessary(self, figsize: Tuple[float, float] = None):
         if self._ax is None:
             figure = plt.figure(figsize=figsize)
             ax = figure.add_subplot(1, 1, 1)  # (nrows, ncols, axnum)
@@ -272,8 +271,7 @@ class Chart(object):
         Set's default style properties, which couldn't be set using style sheets.
         """
         # make x labels horizontal
-        artist.setp(self.axes.xaxis.get_majorticklabels(),
-                    rotation=0, horizontalalignment='center')
+        artist.setp(self.axes.xaxis.get_majorticklabels(), rotation=0, horizontalalignment='center')
 
         # Remove right and top lines around the graph.
         self.axes.spines['right'].set_visible(False)
@@ -360,7 +358,7 @@ class Chart(object):
 
         return data
 
-    def _generate_key(self, key: str=None) -> str:
+    def _generate_key(self, key: str = None) -> str:
         """
         Generates a new key if ``key`` is ``None``, otherwise returns ``key``.
 
@@ -370,16 +368,14 @@ class Chart(object):
         if adjusted_key is None:
             adjusted_key = str(uuid.uuid4())
 
-        assert adjusted_key not in self._decorators, "Key '{}' is already used.".format(
-            adjusted_key)
+        assert adjusted_key not in self._decorators, "Key '{}' is already used.".format(adjusted_key)
         return adjusted_key
 
     def _get_data_min_value(self):
         result = None
         for key, decorator in self._decorators.items():
             if isinstance(decorator, DataElementDecorator):
-                data_min = self._trim_data(
-                    decorator.data).dropna().values.min()
+                data_min = self._trim_data(decorator.data).dropna().values.min()
                 if result is None or data_min < result:
                     result = data_min
         return result
@@ -388,8 +384,7 @@ class Chart(object):
         result = None
         for key, decorator in self._decorators.items():
             if isinstance(decorator, DataElementDecorator):
-                data_max = self._trim_data(
-                    decorator.data).dropna().values.max()
+                data_max = self._trim_data(decorator.data).dropna().values.max()
                 if result is None or data_max > result:
                     result = data_max
         return result

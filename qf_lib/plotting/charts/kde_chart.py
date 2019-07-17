@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 
 import seaborn as sns
 
@@ -16,7 +16,7 @@ class KDEChart(Chart):
     def __init__(self):
         super().__init__(start_x=None, end_x=None)
 
-    def plot(self, figsize=None):
+    def plot(self, figsize: Tuple[float, float] = None):
         self._setup_axes_if_necessary(figsize)
         self._apply_decorators()
         self._adjust_style()

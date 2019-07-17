@@ -1,6 +1,6 @@
 import warnings
 from datetime import datetime
-from typing import Tuple, Sequence
+from typing import Tuple, Sequence, Any
 
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.plotting.decorators.chart_decorator import ChartDecorator
@@ -8,7 +8,7 @@ from qf_lib.plotting.decorators.simple_legend_item import SimpleLegendItem
 
 
 class SpanDecorator(ChartDecorator, SimpleLegendItem):
-    def __init__(self, shadowed_periods: Sequence[Tuple[datetime, datetime]], key=None, **plot_settings):
+    def __init__(self, shadowed_periods: Sequence[Tuple[datetime, datetime]], key: str = None, **plot_settings: Any):
         """
         Uses a series of periods (tuples containing start date and end date of each period) to draw vertical spans
         (rectangles).
@@ -31,12 +31,12 @@ class SpanDecorator(ChartDecorator, SimpleLegendItem):
         self.plot_settings = plot_settings
 
     @classmethod
-    def from_int_list(cls, series: QFSeries, key=None, **plot_settings):
+    def from_int_list(cls, series: QFSeries, key: str = None, **plot_settings: Any):
         warnings.warn("This method is deprecated. Use SpanDecorator.__init__() instead.")
         periods = cls._periods_from_int_series(series)
         return SpanDecorator(periods, key, **plot_settings)
 
-    def decorate(self, chart) -> None:
+    def decorate(self, chart: "Chart") -> None:
         axes = chart.axes
 
         self.plot_settings.setdefault('alpha', 0.3)

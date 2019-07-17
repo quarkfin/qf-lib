@@ -1,37 +1,40 @@
-import datetime
 from typing import Any, Tuple
 
 import pandas
 
 from qf_lib.plotting.decorators.chart_decorator import ChartDecorator
+from qf_lib.plotting.decorators.data_element_decorator import DataElementDecorator
 from qf_lib.plotting.decorators.simple_legend_item import SimpleLegendItem
 
 
 class PointEmphasisDecorator(ChartDecorator, SimpleLegendItem):
-    def __init__(self, series_data_element, coordinates: Tuple[Any, Any], color: str=None, decimal_points: int=2,
-                 label_format='  {1:g}', key=None, use_secondary_axes: bool=False, move_point=True, font_size=15):
+    def __init__(self, series_data_element: DataElementDecorator, coordinates: Tuple[Any, Any], color: str = None,
+                 decimal_points: int = 2, label_format: str = '  {:.4g}', key: str = None,
+                 use_secondary_axes: bool = False, move_point: bool = True, font_size: int = 15):
         """
         Creates a new marker for `series_data_element` for `x=series_index`. For a timeseries, you can specify
         the time that you wish to be emphasised.
 
         Parameters
         ----------
-        series_data_element: DataElementDecorator
+        series_data_element
             The DataElementDecorator which should be decorated with an emphasised point.
         coordinates
             The x and y coordinate of the point that should be emphasised. The x and y coordinates should be expressed
             in data coordinates (e.g. the x coordinate should be a date if x-axis contains dates).
-        color: str, optional
+        color
             color of the marker; by default it will be the same as the decorated line
-        decimal_points: int, optional
+        decimal_points
             number of decimal points that should be shown in the point's label
-        label_format: str, optional
+        label_format
             A format string specifying how the label should be displayed. Takes two parameters: the index and value.
-        key: str, optional
+            useful values: ' {:0.1E}',  '  {:0.1f}'
+        key
             see: ChartDecorator.__init__#key
         use_secondary_axes
             determines whether this PointEmphasis belongs on the secondary axis.
         """
+        # label_format = ' {:0.1E}'
         ChartDecorator.__init__(self, key)
         SimpleLegendItem.__init__(self)
 
@@ -50,7 +53,7 @@ class PointEmphasisDecorator(ChartDecorator, SimpleLegendItem):
         self.move_point = move_point
         self.font_size = font_size
 
-    def decorate(self, chart):
+    def decorate(self, chart: "Chart"):
         ax = chart.secondary_axes if self._use_secondary_axes else chart.axes
 
         decorated_line = self._series_data_element.legend_artist
@@ -64,10 +67,7 @@ class PointEmphasisDecorator(ChartDecorator, SimpleLegendItem):
         self.legend_artist = ax.plot([x], [y], 'o', color=self._color)[0]
 
         # Format label based on specified format string.
-        if isinstance(x, datetime.datetime):
-            label = self._label_format.format(x, round(y, self._decimal_points))
-        else:
-            label = self._label_format.format(round(x, self._decimal_points), round(y, self._decimal_points))
+        label = self._label_format.format(y)
 
         if self.move_point:
             # Calculate where the text should be positioned.

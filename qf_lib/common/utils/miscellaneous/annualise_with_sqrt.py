@@ -6,8 +6,8 @@ from pandas import Series
 from qf_lib.common.enums.frequency import Frequency
 
 
-def annualise_with_sqrt(values: Union[float, Series, List[float]], frequency: Frequency) \
-        -> Union[float, Series, List[float]]:
+def annualise_with_sqrt(
+        values: Union[float, Series, List[float]], frequency: Frequency) -> Union[float, Series, List[float]]:
     """
     Annualises samples of given frequency by multiplying each value by the square-rooted number of samples in a year
     for a given frequency.

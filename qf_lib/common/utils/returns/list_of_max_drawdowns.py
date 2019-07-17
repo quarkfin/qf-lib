@@ -7,20 +7,20 @@ from qf_lib.common.utils.returns.drawdown_tms import drawdown_tms
 from qf_lib.containers.series.qf_series import QFSeries
 
 
-def list_of_max_drawdowns(prices_tms: QFSeries) -> (List, List):
+def list_of_max_drawdowns(prices_tms: QFSeries) -> (List[float], List[float]):
     """
     Finds the values of individual maximum drawdowns and the duration of each drawdown.
 
     Parameters
     ----------
-    prices_tms: QFSeries
+    prices_tms
         timeseries of prices
 
     Returns
     -------
-    max_drawdowns: list<float>
+    max_drawdowns
         list of all maximum values in individual drawdowns
-    duration_of_drawdowns: list<float>
+    duration_of_drawdowns
         list of all durations of drawdowns expressed in days
     """
 

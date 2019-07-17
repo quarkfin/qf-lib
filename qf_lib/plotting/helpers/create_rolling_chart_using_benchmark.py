@@ -13,9 +13,9 @@ from qf_lib.plotting.decorators.title_decorator import TitleDecorator
 RollingWindowFunction = Callable[[Union[QFSeries, numpy.ndarray], Union[QFSeries, numpy.ndarray]], float]
 
 
-def create_rolling_chart_using_benchmark(series: Union[QFSeries, List[QFSeries]], benchmark_series: QFSeries,
-                                         func: RollingWindowFunction,
-                                         func_name: str, window_size=126, step=20, oos_date: str=None) -> LineChart:
+def create_rolling_chart_using_benchmark(
+        series: Union[QFSeries, List[QFSeries]], benchmark_series: QFSeries, func: RollingWindowFunction,
+        func_name: str, window_size: int = 126, step: int = 20, oos_date: str = None) -> LineChart:
     """
     Creates a new line chart and adds the rolling window for each of the specified series to it. The `func`
     function is fed data for each window and whatever it returns is added to the resulting rolled series.

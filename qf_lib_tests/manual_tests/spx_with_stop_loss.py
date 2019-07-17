@@ -1,9 +1,10 @@
 from unittest import TestCase
+
 import matplotlib.pyplot as plt
+
 plt.ion()  # required for dynamic chart, good to keep this at the beginning of imports
 
-from qf_lib.backtesting.execution_handler.simulated.commission_models.ib_commission_model import IBCommissionModel
-from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
+from qf_lib.backtesting.execution_handler.commission_models.ib_commission_model import IBCommissionModel
 from demo_scripts.demo_configuration.demo_ioc import container
 from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
 from qf_lib.backtesting.order.time_in_force import TimeInForce

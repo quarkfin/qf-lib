@@ -2,8 +2,6 @@ import abc
 from datetime import datetime
 from typing import Generic, TypeVar, Set, Type, Optional
 
-from qf_lib.common.utils.dateutils.date_to_string import date_to_str
-
 
 class Event(object, metaclass=abc.ABCMeta):
     """

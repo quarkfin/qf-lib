@@ -5,8 +5,7 @@ from qf_lib.containers.series.returns_series import ReturnsSeries, QFSeries
 
 
 def aggregate_returns(
-    returns: ReturnsSeries, start_dates: Sequence[datetime], end_dates: Sequence[datetime]
-) -> Sequence[float]:
+        returns: ReturnsSeries, start_dates: Sequence[datetime], end_dates: Sequence[datetime]) -> Sequence[float]:
     """
     Aggregates returns using custom start dates and end dates.
 
@@ -35,8 +34,8 @@ def aggregate_returns(
 
 
 def custom_series_aggregation(
-    series: QFSeries, start_dates: Sequence[datetime], end_dates: Sequence[datetime], func:Callable
-) -> Sequence[float]:
+        series: QFSeries, start_dates: Sequence[datetime], end_dates: Sequence[datetime], func: Callable)\
+        -> Sequence[float]:
     """
     Aggregates returns using custom start dates and end dates.
 
@@ -64,5 +63,3 @@ def custom_series_aggregation(
         aggregated_values.append(aggregated_ret)
 
     return aggregated_values
-
-

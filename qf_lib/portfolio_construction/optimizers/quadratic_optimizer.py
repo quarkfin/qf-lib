@@ -20,8 +20,8 @@ class QuadraticOptimizer(object):
     }
 
     @classmethod
-    def get_optimal_weights(cls, P: np.ndarray=None, q: np.ndarray=None,
-                            upper_constraints: Union[Sequence, float]=None) -> np.ndarray:
+    def get_optimal_weights(cls, P: np.ndarray = None, q: np.ndarray = None,
+                            upper_constraints: Union[Sequence, float] = None) -> np.ndarray:
         """
         Solves the problem defined by matrix h, vector f and constraints.
 
@@ -58,7 +58,7 @@ class QuadraticOptimizer(object):
             G_2, h_2 = constr.upper_bound_constraint(assets_number, upper_constraints)
             G, h = constr.merge_constraints(G, h, G_2, h_2)
 
-        initial_weights = matrix(1.0/assets_number, (assets_number, 1))
+        initial_weights = matrix(1.0 / assets_number, (assets_number, 1))
 
         # minimize (1/2)x'Px + q'x
         # subject to Gx <= h; Ax = b

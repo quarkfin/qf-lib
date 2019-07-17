@@ -5,7 +5,7 @@ import blpapi
 
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
-from qf_lib.common.tickers.tickers import BloombergTicker, tickers_as_strings, Ticker
+from qf_lib.common.tickers.tickers import BloombergTicker, tickers_as_strings
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
@@ -23,7 +23,7 @@ from qf_lib.settings import Settings
 
 class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
     """
-    Provides financial data from the Bloomberg.
+    Provides financial data from Bloomberg.
     """
 
     def __init__(self, settings: Settings):
@@ -130,8 +130,7 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
             tickers_str, fields, start_date, end_date, frequency, currency, override_name, override_value)
 
         normalized_result = normalize_data_array(
-            data_array, tickers, fields, got_single_date, got_single_ticker, got_single_field
-        )
+            data_array, tickers, fields, got_single_date, got_single_ticker, got_single_field)
 
         return normalized_result
 
@@ -148,7 +147,7 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
         }
         return price_field_dict
 
-    def get_tickers_universe(self, universe_ticker: BloombergTicker, date: datetime=None) -> List[BloombergTicker]:
+    def get_tickers_universe(self, universe_ticker: BloombergTicker, date: datetime = None) -> List[BloombergTicker]:
         if date and date.date() != datetime.today().date():
             raise ValueError("BloombergDataProvider does not provide historical tickers_universe data")
         field = 'INDX_MEMBERS'

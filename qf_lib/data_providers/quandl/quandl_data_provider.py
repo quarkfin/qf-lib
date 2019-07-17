@@ -1,5 +1,4 @@
 from datetime import datetime
-from datetime import datetime
 from itertools import groupby
 from typing import Union, Sequence, Dict
 
@@ -32,22 +31,22 @@ class QuandlDataProvider(DataProvider):
         quandl.ApiConfig.api_key = self.key
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
-    def get_price(self, tickers: Union[QuandlTicker, Sequence[QuandlTicker]],
-                  fields: Union[PriceField, Sequence[PriceField]],
-                  start_date: datetime, end_date: datetime=None):
-        return self._get_history(convert_to_prices_types=True, tickers=tickers, fields=fields, start_date=start_date,
-                                 end_date=end_date)
+    def get_price(
+            self, tickers: Union[QuandlTicker, Sequence[QuandlTicker]], fields: Union[PriceField, Sequence[PriceField]],
+            start_date: datetime, end_date: datetime = None):
+        return self._get_history(
+            convert_to_prices_types=True, tickers=tickers, fields=fields, start_date=start_date, end_date=end_date)
 
-    def get_history(self, tickers: Union[QuandlTicker, Sequence[QuandlTicker]],
-                    fields: Union[None, str, Sequence[str]]=None,
-                    start_date: datetime=None, end_date: datetime=None, **kwargs):
-        return self._get_history(convert_to_prices_types=False, tickers=tickers, fields=fields, start_date=start_date,
-                                 end_date=end_date)
+    def get_history(
+            self, tickers: Union[QuandlTicker, Sequence[QuandlTicker]], fields: Union[None, str, Sequence[str]] = None,
+            start_date: datetime = None, end_date: datetime = None, **kwargs):
+        return self._get_history(
+            convert_to_prices_types=False, tickers=tickers, fields=fields, start_date=start_date, end_date=end_date)
 
-    def _get_history(self, convert_to_prices_types: bool, tickers: Union[QuandlTicker, Sequence[QuandlTicker]],
-                     fields: Union[None, str, Sequence[str], PriceField, Sequence[PriceField]]=None,
-                     start_date: datetime=None, end_date: datetime=None) \
-            -> Union[QFSeries, QFDataFrame, QFDataArray]:
+    def _get_history(
+            self, convert_to_prices_types: bool, tickers: Union[QuandlTicker, Sequence[QuandlTicker]],
+            fields: Union[None, str, Sequence[str], PriceField, Sequence[PriceField]] = None,
+            start_date: datetime = None, end_date: datetime = None) -> Union[QFSeries, QFDataFrame, QFDataArray]:
         """
         NOTE: Only use one Quandl Database at the time.
         Do not mix multiple databases in one query - this is the natural limitation coming from the fact that column
@@ -66,8 +65,7 @@ class QuandlDataProvider(DataProvider):
             ticker_group = list(ticker_group)
 
             partial_result_dict = self._get_result_for_single_database(
-                convert_to_prices_types, ticker_group, fields, start_date, end_date
-            )
+                convert_to_prices_types, ticker_group, fields, start_date, end_date)
 
             result_dict.update(partial_result_dict)
 
@@ -78,8 +76,7 @@ class QuandlDataProvider(DataProvider):
 
         normalized_result = normalize_data_array(
             result_data_array, tickers, fields, got_single_date, got_single_ticker, got_single_field,
-            use_prices_types=convert_to_prices_types
-        )
+            use_prices_types=convert_to_prices_types)
 
         return normalized_result
 
@@ -95,12 +92,10 @@ class QuandlDataProvider(DataProvider):
 
         if db_type == QuandlDBType.Table:
             partial_result_dict = self._get_history_from_table(
-                ticker_group, fields_as_strings, start_date, end_date
-            )
+                ticker_group, fields_as_strings, start_date, end_date)
         elif db_type == QuandlDBType.Timeseries:
             partial_result_dict = self._get_history_from_timeseries(
-                ticker_group, fields_as_strings, start_date, end_date
-            )
+                ticker_group, fields_as_strings, start_date, end_date)
         else:
             raise LookupError("Quandl Database type: {} is not supported.".format(db_type))
 
@@ -202,8 +197,8 @@ class QuandlDataProvider(DataProvider):
 
         return result_dict
 
-    def _get_history_from_timeseries(self, tickers: Sequence[QuandlTicker], fields: Sequence[str],
-                                     start_date: datetime, end_date: datetime):
+    def _get_history_from_timeseries(
+            self, tickers: Sequence[QuandlTicker], fields: Sequence[str], start_date: datetime, end_date: datetime):
         """
         NOTE: Only use one Quandl Database at the time. Do not mix multiple databases.
         """
@@ -249,8 +244,7 @@ class QuandlDataProvider(DataProvider):
 
         if missing_fields:
             missing_columns = [ticker.field_to_column_name(field) for field in missing_fields]
-            self.logger.warning(
-                "Columns {} have not been found in the Quandl response".format(missing_columns))
+            self.logger.warning("Columns {} have not been found in the Quandl response".format(missing_columns))
 
         fields_to_select = requested_fields_set.intersection(got_fields_set)
 

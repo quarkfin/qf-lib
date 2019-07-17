@@ -13,8 +13,8 @@ class NonlinearFunctionOptimizer(object):
 
     @classmethod
     def get_weights(cls, minimised_func: Callable[[Sequence[float]], float], num_of_assets: int,
-                    upper_constraints: Union[float, Sequence[float]], max_iter: int=10000) -> np.ndarray:
-        one_over_n_weights = np.array([1/num_of_assets] * num_of_assets)
+                    upper_constraints: Union[float, Sequence[float]], max_iter: int = 10000) -> np.ndarray:
+        one_over_n_weights = np.array([1 / num_of_assets] * num_of_assets)
         bounds = cls._get_bounds(num_of_assets, upper_constraints)
 
         def weights_sum_to_one_fun(weights):
@@ -31,9 +31,9 @@ class NonlinearFunctionOptimizer(object):
             'maxiter': max_iter
         }
 
-        optimization_result = scipy.optimize.minimize(fun=minimised_func, method='SLSQP', x0=one_over_n_weights,
-                                                      bounds=bounds, constraints=weights_sum_up_to_one_constr,
-                                                      options=options)
+        optimization_result = scipy.optimize.minimize(
+            fun=minimised_func, method='SLSQP', x0=one_over_n_weights, bounds=bounds,
+            constraints=weights_sum_up_to_one_constr, options=options)
         logger = qf_logger.getChild(cls.__name__)
         if optimization_result.success:
             logger.info(optimization_result.message)
@@ -43,7 +43,7 @@ class NonlinearFunctionOptimizer(object):
         return optimization_result.x
 
     @classmethod
-    def _get_bounds(cls, num_of_assets: int, upper_constraints: Union[Sequence[float], float])\
+    def _get_bounds(cls, num_of_assets: int, upper_constraints: Union[Sequence[float], float]) \
             -> List[Tuple[float, float]]:
         zeros = np.array([0] * num_of_assets)
         if isinstance(upper_constraints, Sequence):

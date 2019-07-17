@@ -5,11 +5,11 @@ import numpy as np
 from numpy import sign
 
 from qf_lib.backtesting.contract.contract import Contract
-from qf_lib.backtesting.contract_to_ticker_conversion.base import ContractTickerMapper
+from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.portfolio.backtest_position import BacktestPosition
 from qf_lib.backtesting.portfolio.trade import Trade
-from qf_lib.backtesting.transaction import Transaction
+from qf_lib.backtesting.portfolio.transaction import Transaction
 from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.containers.series.prices_series import PricesSeries
@@ -77,8 +77,7 @@ class Portfolio(object):
 
         contracts = self.open_positions_dict.keys()
         contract_to_ticker_dict = {
-            contract: self.contract_ticker_mapper.contract_to_ticker(contract) for contract in contracts
-        }
+            contract: self.contract_ticker_mapper.contract_to_ticker(contract) for contract in contracts}
 
         all_tickers_in_portfolio = list(contract_to_ticker_dict.values())
         current_prices_series = self.data_handler.get_last_available_price(tickers=all_tickers_in_portfolio)
@@ -133,8 +132,8 @@ class Portfolio(object):
 
         return position
 
-    def _record_trade_and_transaction(self, prev_position_quantity: int, prev_position_avg_price: float,
-                                      transaction: Transaction):
+    def _record_trade_and_transaction(
+            self, prev_position_quantity: int, prev_position_avg_price: float, transaction: Transaction):
         """
         Trade is defined as a transaction that goes in the direction of making your position smaller.
         For example:

@@ -10,8 +10,8 @@ from qf_lib.backtesting.monitoring.dummy_monitor import DummyMonitor
 from qf_lib.backtesting.monitoring.past_signals_generator import PastSignalsGenerator
 from qf_lib.backtesting.monitoring.settings_for_live_trading import LiveTradingSettings
 from qf_lib.common.utils.dateutils.date_to_string import date_to_str
-from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
-from qf_lib.publishers.email_publishing.email_publisher import EmailPublisher
+from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
+from qf_lib.documents_utils.email_publishing.email_publisher import EmailPublisher
 from qf_lib.settings import Settings
 
 
@@ -37,19 +37,21 @@ class LiveTradingMonitor(DummyMonitor):
         self._publish_by_email(attachments_paths, timestamp)
 
     def _generate_files(self):
-        signal_generator = PastSignalsGenerator(container=self.container,
-                                                live_start_date=self.trading_settings.live_start_date,
-                                                initial_risk=self.trading_settings.initial_risk,
-                                                model_type_tickers_dict=self.trading_settings.model_type_tickers_dict)
+        signal_generator = PastSignalsGenerator(
+            container=self.container,
+            live_start_date=self.trading_settings.live_start_date,
+            initial_risk=self.trading_settings.initial_risk,
+            model_type_tickers_dict=self.trading_settings.model_type_tickers_dict)
         signal_generator.collect_backtest_result()
         past_signals_file_path = signal_generator.generate_past_signals_file()
 
-        live_trading_sheet = LiveTradingSheet(settings=self.container.resolve(Settings),
-                                              pdf_exporter=self.container.resolve(PDFExporter),
-                                              strategy_tms=signal_generator.backtest_tms,
-                                              strategy_leverage_tms=signal_generator.leverage_tms,
-                                              is_stats=self.trading_settings.is_returns_stats,
-                                              title=self.trading_settings.title)
+        live_trading_sheet = LiveTradingSheet(
+            settings=self.container.resolve(Settings),
+            pdf_exporter=self.container.resolve(PDFExporter),
+            strategy_tms=signal_generator.backtest_tms,
+            strategy_leverage_tms=signal_generator.leverage_tms,
+            is_stats=self.trading_settings.is_returns_stats,
+            title=self.trading_settings.title)
 
         live_trading_sheet.build_document()
         live_trading_sheet_path = live_trading_sheet.save()
@@ -57,7 +59,6 @@ class LiveTradingMonitor(DummyMonitor):
         return [past_signals_file_path, live_trading_sheet_path]
 
     def _publish_by_email(self, attachments_dirs: List[str], timestamp):
-
         class EmailUser(object):
             def __init__(self, name, email_address):
                 self.name = name
@@ -81,4 +82,3 @@ class LiveTradingMonitor(DummyMonitor):
                 attachments=attachments_dirs,
                 context={'user': user, 'date': date_str}
             )
-

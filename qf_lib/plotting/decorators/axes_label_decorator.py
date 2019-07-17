@@ -3,7 +3,7 @@ from qf_lib.plotting.decorators.chart_decorator import ChartDecorator
 
 
 class AxesLabelDecorator(ChartDecorator):
-    def __init__(self, x_label: str=None, y_label: str=None, secondary_y_label: str=None, key=None):
+    def __init__(self, x_label: str = None, y_label: str = None, secondary_y_label: str = None, key: str = None):
         """
         Creates a new axes label decorator that shows the specified ``x_label`` and ``y_label`` on the chart.
         """

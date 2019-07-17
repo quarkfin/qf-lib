@@ -5,7 +5,7 @@ from qf_lib.backtesting.contract.contract import Contract
 
 class Position(metaclass=ABCMeta):
     @abstractmethod
-    def contract(self) ->Contract:
+    def contract(self) -> Contract:
         pass
 
     @abstractmethod

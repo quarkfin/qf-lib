@@ -1,9 +1,8 @@
 import logging
 from abc import abstractmethod, ABCMeta
 from functools import total_ordering
-from typing import Union, Sequence, Tuple, List, Optional
-
 from os.path import basename
+from typing import Union, Sequence, Tuple, List, Optional
 
 from qf_lib.common.enums.quandl_db_type import QuandlDBType
 
@@ -54,7 +53,7 @@ class BloombergTicker(Ticker):
         super().__init__(ticker)
 
     @classmethod
-    def from_string(cls, ticker_str: Union[str, Sequence[str]])\
+    def from_string(cls, ticker_str: Union[str, Sequence[str]]) \
             -> Union["BloombergTicker", Sequence["BloombergTicker"]]:
         """
         Example: BloombergTicker.from_string('SPX Index')
@@ -90,6 +89,7 @@ class InternalDBTicker(Ticker):
         Example: InternalDBTicker.from_string('#TimeseriesName')
         Example: InternalDBTicker.from_string('#123')
         """
+
         def to_ticker(ticker_string: str):
             clean_str = ticker_string[1:]  # skip '#'
             try:
@@ -128,6 +128,7 @@ class HaverTicker(Ticker):
         """
         Example: HaverTicker.from_string('RECESSQ2@USECON')
         """
+
         def to_ticker(ticker_string: str):
             ticker, db_name = ticker_string.split('@')
             return HaverTicker(ticker, db_name)
@@ -139,7 +140,7 @@ class HaverTicker(Ticker):
 
 
 class QuandlTicker(Ticker):
-    def __init__(self, ticker: str, database_name: str, database_type: QuandlDBType=QuandlDBType.Timeseries):
+    def __init__(self, ticker: str, database_name: str, database_type: QuandlDBType = QuandlDBType.Timeseries):
         super().__init__(ticker)
         self.database_name = database_name
         self.database_type = database_type
@@ -163,6 +164,7 @@ class QuandlTicker(Ticker):
         Example: QuandlTicker.from_string('WIKI/MSFT')
         Note: this method supports only the Timeseries tickers at the moment.
         """
+
         def to_ticker(ticker_string: str):
             db_name, ticker = ticker_string.rsplit('/', 1)
             return QuandlTicker(ticker, db_name, db_type)
@@ -188,6 +190,7 @@ class CcyTicker(Ticker):
         """
         Example: CcyTicker.from_string('Bitcoin')
         """
+
         def to_ticker(ticker_string: str):
             return CcyTicker(ticker_string.lower())
 
@@ -220,6 +223,7 @@ def str_to_ticker(ticker_str: Union[str, Sequence[str]]) -> Union[None, Ticker, 
         If all tickers were successfully converted the second list should be empty
 
     """
+
     def convert_single_ticker(single_ticker_str: str) -> Optional[Ticker]:
         if single_ticker_str[0] == "#":
             return InternalDBTicker.from_string(single_ticker_str)

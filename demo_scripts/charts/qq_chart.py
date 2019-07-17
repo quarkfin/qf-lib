@@ -12,11 +12,17 @@ from qf_lib.plotting.helpers.create_qq_chart import create_qq_chart
 start_date = str_to_date('2005-01-01')
 end_date = datetime.now()
 
-data_provider = container.resolve(GeneralPriceProvider)
 
-prices_tms = data_provider.get_price(QuandlTicker('AAPL', 'WIKI'), PriceField.Close, start_date, end_date)
+def main():
+    data_provider = container.resolve(GeneralPriceProvider)
 
-chart = create_qq_chart(prices_tms)
-chart.plot()
+    prices_tms = data_provider.get_price(QuandlTicker('AAPL', 'WIKI'), PriceField.Close, start_date, end_date)
 
-plt.show(block=True)
+    chart = create_qq_chart(prices_tms)
+    chart.plot()
+
+    plt.show(block=True)
+
+
+if __name__ == '__main__':
+    main()

@@ -20,7 +20,7 @@ from qf_lib.containers.series.log_returns_series import LogReturnsSeries
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
-from qf_lib.testing_tools.containers_comparison import assert_series_equal, assert_lists_equal
+from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_series_equal, assert_lists_equal
 
 
 class TestReturnsUtils(TestCase):

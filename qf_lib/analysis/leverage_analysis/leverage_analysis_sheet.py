@@ -4,9 +4,10 @@ from os import path
 import matplotlib as plt
 
 from qf_lib.analysis.common.abstract_document import AbstractDocument
-from qf_lib.common.utils.document_exporting import ParagraphElement, ChartElement
-from qf_lib.common.utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.containers.series.qf_series import QFSeries
+from qf_lib.documents_utils.document_exporting.element.chart import ChartElement
+from qf_lib.documents_utils.document_exporting.element.paragraph import ParagraphElement
+from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.plotting.decorators.axes_position_decorator import AxesPositionDecorator
 from qf_lib.settings import Settings
 

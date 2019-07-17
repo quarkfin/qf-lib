@@ -14,7 +14,7 @@ class StepwiseFactorsIdentifier(FactorsIdentifier):
     Class used for identifying factors in the model with Stepwise Regression (with Forward Feature Selection).
     """
 
-    def __init__(self, epsilon: float=0.05, is_intercept: bool=True):
+    def __init__(self, epsilon: float = 0.05, is_intercept: bool = True):
         """
         Parameters
         ----------
