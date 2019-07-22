@@ -11,7 +11,7 @@ class BpsTradeValueCommissionModel(CommissionModel):
         Parameters
         ----------
         commission
-            commission expressed in a basis points. (e.g. 2.0 could denote 2 pbs of trade value).
+            commission expressed in a basis points. (e.g. 2.0 denotes 2 pbs of trade value).
         """
         self.commission = commission
 
