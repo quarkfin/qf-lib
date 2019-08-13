@@ -19,9 +19,8 @@ class SimpleReturnsSeries(ReturnsSeries):
 
     def to_log_returns(self) -> "LogReturnsSeries":
         from qf_lib.containers.series.log_returns_series import LogReturnsSeries
-        log_returns_values = [log(simple_ret + 1) for simple_ret in self.values]
-        log_returns_tms = LogReturnsSeries(index=self.index.copy(), data=log_returns_values).__finalize__(self)
-
+        log_returns = log(self + 1)
+        log_returns_tms = LogReturnsSeries(index=self.index.copy(), data=log_returns.values).__finalize__(self)
         return log_returns_tms
 
     def to_simple_returns(self) -> "SimpleReturnsSeries":

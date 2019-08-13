@@ -20,13 +20,14 @@ class TestMultiFactorPortfolio(TestCase):
     @classmethod
     def setUpClass(cls):
         cls.assets_df = assets_df
-        cls.parameters = PortfolioParameters(0.0001, 0.25, 0.25, 0.5)
+        cls.parameters = PortfolioParameters(0.0001, 0.25, 0.25, 0.5, 0)
 
     def test_get_weights(self):
         portfolio = MultiFactorPortfolio(self.assets_df.cov(),
                                          self.assets_df.var(),
                                          self.assets_df.mean(),
                                          max_drawdown(self.assets_df),
+                                         self.assets_df.skew(),
                                          self.parameters)
         actual_weights = portfolio.get_weights()
 
@@ -44,6 +45,7 @@ class TestMultiFactorPortfolio(TestCase):
                                          self.assets_df.var(),
                                          self.assets_df.mean(),
                                          max_drawdown(self.assets_df),
+                                         self.assets_df.skew(),
                                          self.parameters,
                                          upper_constraint=0.1)
         actual_weights = portfolio.get_weights()
