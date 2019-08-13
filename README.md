@@ -39,6 +39,7 @@ dependencies. However the provided wheels are only suitable for Windows (64-bit 
 * Install `TA Lib` (optional):
     * extract TA Lib SDK archive (zip) to `C:\ta-lib` (unfortunately this is the fixed path)
     * run `pip install TA_Lib-0.4.17-cp36-cp36m-win_amd64.whl` in the `win_dependencies` directory.
+* Install `certifi` by running `pip install certifi==2017.4.17`
 * Install `Haver` (optional) by running `Haver-1.1.0-cp36-cp36m-win_amd64.whl` in the `win_dependencies` directory.
 * Install other requirements using `pip`. Run `pip install -r requirements.txt` in the main directory of the `QuantFin Lib`.
 * Install Interactive Brokers platform (optional):
