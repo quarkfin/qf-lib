@@ -1,8 +1,6 @@
 include README.md
-include COPYRIGHT
+include LICENSE
 include requirements.txt
-include COPYRIGHT
-include README.md
 include *.yml
 include *.ps1
 

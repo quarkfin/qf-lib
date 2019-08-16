@@ -7,7 +7,7 @@ toc_label: "On this page"
 toc_icon: "cog"
 ---
 
-This document will guide you through the installation process and will help you configure the library for your personal use.
+This document will guide you through the installation process and will help you configure the library.
 
 
 ## Prerequisites

@@ -20,12 +20,12 @@ with open("README.md", "r") as fh:
 setup(
     name='qf-lib',
     version='1.0.0',
-    author='Jacek Witkowski, Marcin Borratynski, Thomas Ruxton, Dominik Picheta, Olga Kalinowska',
+    author='Jacek Witkowski, Marcin Borratynski, Thomas Ruxton, Dominik Picheta, Olga Kalinowska, Karolina Cynk',
     author_email='qf-lib@cern.ch',
     description='Quantitative Finance Library',
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url='https://gitlab.cern.ch/pfreport/QF-Lib',
+    url='https://quarkfin.github.io/qf-lib/',
     packages=find_packages(),
     provides=[
         'qf_lib'
@@ -54,8 +54,7 @@ setup(
     ],
     keywords='quantitative finance backtester',
     project_urls={
-        'Bug Reports': 'https://gitlab.cern.ch/pfreport/QF-Lib/issues',
-        'Source': 'https://gitlab.cern.ch/pfreport/QF-Lib'
+        'Source': 'https://github.com/quarkfin/qf-lib'
     },
     python_requires='>=3.6.0'
 )
