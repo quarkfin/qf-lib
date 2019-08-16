@@ -1,0 +1,34 @@
+main:
+  - title: "Getting Started"
+    url: /docs/getting_started/
+  - title: "About"
+    url: /docs/about/
+  - title: "Modules"
+    url: /docs/structure/
+  - title: "GitHub"
+    url: "https://github.com/"
+
+docs:
+  - title: "Getting Started"
+    children:
+      - title: "Installation"
+        url: /docs/getting_started/
+      - title: "Modules"
+        url: /docs/structure/
+  - title: "Todo some header"
+    children:
+      - title: "About"
+        url: /docs/about/
+      - title: "Application"
+        url: /docs/application/
+      - title: "Features"
+        url: /docs/features/
+
+  - title: "META"
+    children:
+      - title: "Contributors"
+        url: /contributors/
+      - title: "Milestones"
+        url: /milestones/
+      - title: "License"
+        url: /license/
