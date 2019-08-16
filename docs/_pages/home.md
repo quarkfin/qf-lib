@@ -8,7 +8,7 @@ header:
     - label: "<i class='fas fa-download'></i> Clone GitHub Repository"
       url: "https://github.com/quarkfin/qf-lib"
 excerpt: >
-  QF-Lib is a modular Python library that provides an advanced event driven backtester and a set of high quality tools for quantitative finance. <a href="/template/docs/about/">Read more...</a><br />
+  QF-Lib is a modular Python library that provides an advanced event driven backtester and a set of high quality tools for quantitative finance. <a href="/qf-lib/docs/about/">Read more...</a><br />
 feature_row:
   - image_path: /assets/images/multi-tool.png
     alt: "Multi-tool for any financial research"
