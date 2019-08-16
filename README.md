@@ -1,14 +1,5 @@
----
-permalink: /docs/getting_started/
-title: "Getting started"
-toc: true
-toc_sticky: true
-toc_label: "Table of contents"
-toc_icon: "cog"
----
-
+# QF-Lib
 This document will guide you through the installation process and will help you configure the library for your personal use.
-
 
 ## Prerequisites
 It is assumed that you have already installed Python 3.6.

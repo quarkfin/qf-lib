@@ -6,7 +6,7 @@ main:
   - title: "Modules"
     url: /docs/structure/
   - title: "GitHub"
-    url: "https://github.com/"
+    url: "https://github.com/quarkfin/qf-lib"
 
 docs:
   - title: "Getting Started"
@@ -15,7 +15,7 @@ docs:
         url: /docs/getting_started/
       - title: "Modules"
         url: /docs/structure/
-  - title: "Todo some header"
+  - title: "Project"
     children:
       - title: "About"
         url: /docs/about/
@@ -30,5 +30,7 @@ docs:
         url: /contributors/
       - title: "Milestones"
         url: /milestones/
+      - title: "Forum"
+        url: "https://qflib.freeforums.net/"
       - title: "License"
         url: /license/

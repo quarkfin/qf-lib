@@ -6,7 +6,7 @@ header:
   overlay_image: /assets/images/home-background.jpg
   actions:
     - label: "<i class='fas fa-download'></i> Clone GitHub Repository"
-      url: "https://github.com/"
+      url: "https://github.com/quarkfin/qf-lib"
 excerpt: >
   QF-Lib is a modular Python library that provides an advanced event driven backtester and a set of high quality tools for quantitative finance. <a href="/template/docs/about/">Read more...</a><br />
 feature_row:
