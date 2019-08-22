@@ -24,11 +24,7 @@ class PortfolioHandler(object):
     The PortfolioHandler is designed to interact with the backtesting or live trading overall event-driven
     architecture. Each PortfolioHandler contains a Portfolio object, which stores the actual BacktestPosition objects.
 
-    The PortfolioHandler takes a handle to a PositionSizer object which determines a mechanism, based on the current
-    Portfolio, as to how to size a new Order.
-
-    The PortfolioHandler also takes a handle to the RiskManager, which is used to modify any generated
-    Orders to remain in line with risk parameters.
+    The PortfolioHandler takes a handle to the AbstractMonitor, which updates the statistics after a day of trading.
     """
 
     def __init__(self, portfolio: Portfolio, monitor: AbstractMonitor, scheduler: Scheduler):

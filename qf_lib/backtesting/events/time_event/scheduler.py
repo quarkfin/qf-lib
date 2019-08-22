@@ -30,9 +30,6 @@ class Scheduler(object):
 
     Normally time events are generated whenever the EventManager's queue is empty. The generation will be triggered
     by TimeFlowController.
-
-    One should not use Scheduler for subscribing to all TimeEvents. If you want to subscribe to all TimeEvents then
-    use EventManager.subscribe(...) method.
     """
 
     def __init__(self, timer: Timer):
@@ -49,8 +46,6 @@ class Scheduler(object):
         """
         Subscribes listener to a concrete TimeEvent (e.g. MarketOpenEvent). Listener will be only notified
         of events of this concrete type (not all TimeEvents like with event_manager.subscribe(TimeEvent, self).
-
-        If you want to subscribe to all TimeEvents, use EventManager.subscribe(TimeEvent) method.
 
         Parameters
         ----------
