@@ -19,6 +19,7 @@ import pandas as pd
 
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
+from qf_lib.backtesting.events.time_event.periodic_event.intraday_bar_event import IntradayBarEvent
 from qf_lib.backtesting.execution_handler.commission_models.commission_model import CommissionModel
 from qf_lib.backtesting.execution_handler.simulated_executor import SimulatedExecutor
 from qf_lib.backtesting.execution_handler.slippage.base import Slippage
@@ -40,7 +41,7 @@ class StopOrdersExecutor(SimulatedExecutor):
         super().__init__(contracts_to_tickers_mapper, data_handler, monitor, portfolio, timer,
                          order_id_generator, commission_model, slippage_model)
 
-    def accept_orders(self, orders: Sequence[Order]) -> List[int]:
+    def assign_order_ids(self, orders: Sequence[Order]) -> List[int]:
         tickers = [self._contracts_to_tickers_mapper.contract_to_ticker(order.contract) for order in orders]
 
         unique_tickers_list = list(set(tickers))
@@ -52,12 +53,8 @@ class StopOrdersExecutor(SimulatedExecutor):
             execution_style = order.execution_style  # type: StopOrder
             stop_price = execution_style.stop_price
 
-            order_id = next(self._order_id_generator)
-
             if order.quantity < 0:
-                if stop_price < current_price:
-                    self._awaiting_orders[order_id] = order
-                else:
+                if stop_price >= current_price:
                     raise ValueError(
                         "Incorrect stop price ({stop_price:5.2f}). "
                         "For the Sell Stop it must be placed below "
@@ -65,9 +62,7 @@ class StopOrdersExecutor(SimulatedExecutor):
                             stop_price=stop_price, current_price=current_price
                         ))
             elif order.quantity > 0:
-                if stop_price > current_price:
-                    self._awaiting_orders[order_id] = order
-                else:
+                if stop_price <= current_price:
                     raise ValueError(
                         "Incorrect stop price ({stop_price:5.2f}). "
                         "For the Buy Stop it must be placed above "
@@ -77,33 +72,45 @@ class StopOrdersExecutor(SimulatedExecutor):
             else:
                 raise ValueError("Incorrect order quantity (quantity: 0)")
 
+            order_id = next(self._order_id_generator)
             order.id = order_id
             order_id_list.append(order_id)
 
         return order_id_list
 
-    def _get_orders_with_fill_prices_without_slippage(self, open_orders_list, tickers):
+    def _get_orders_with_fill_prices_without_slippage(self, open_orders_list, tickers, market_open, market_close):
         no_slippage_fill_prices_list = []
         to_be_executed_orders = []
-        unexecuted_stop_orders_data_dict = {}
+        expired_stop_orders = []  # type: List[int]
 
         unique_tickers = list(set(tickers))
         # index=tickers, columns=fields
-        current_bars_df = self._data_handler.get_bar_for_today(unique_tickers)  # type: pd.DataFrame
+        current_bars_df = self._data_handler.get_current_bar(unique_tickers)
+        # type: pd.DataFrame
 
-        for order, ticker in zip(open_orders_list, tickers):
-            current_bar = current_bars_df.loc[ticker, :]
-            no_slippage_fill_price = self._calculate_no_slippage_fill_price(current_bar, order)
+        # Check at first if at this moment of time, expiry checks should be made or not (optimization reasons)
+        if market_close:
+            for order, ticker in zip(open_orders_list, tickers):
+                current_bar = current_bars_df.loc[ticker, :]
+                no_slippage_fill_price = self._calculate_no_slippage_fill_price(current_bar, order)
 
-            if no_slippage_fill_price is None:  # the Order cannot be executed
-                if order.time_in_force == TimeInForce.GTC:
-                    # preserve only GTC orders. DAY orders will be dropped at this point
-                    unexecuted_stop_orders_data_dict[order.id] = order
-            else:
-                to_be_executed_orders.append(order)
-                no_slippage_fill_prices_list.append(no_slippage_fill_price)
+                if no_slippage_fill_price is not None:
+                    to_be_executed_orders.append(order)
+                    no_slippage_fill_prices_list.append(no_slippage_fill_price)
+                else:
+                    # the Order cannot be executed
+                    if self._order_expires(order):
+                        expired_stop_orders.append(order.id)
+        else:
+            for order, ticker in zip(open_orders_list, tickers):
+                current_bar = current_bars_df.loc[ticker, :]
+                no_slippage_fill_price = self._calculate_no_slippage_fill_price(current_bar, order)
 
-        return no_slippage_fill_prices_list, to_be_executed_orders, unexecuted_stop_orders_data_dict
+                if no_slippage_fill_price is not None:
+                    to_be_executed_orders.append(order)
+                    no_slippage_fill_prices_list.append(no_slippage_fill_price)
+
+        return no_slippage_fill_prices_list, to_be_executed_orders, expired_stop_orders
 
     def _calculate_no_slippage_fill_price(self, current_bar, order):
         """
@@ -114,12 +121,13 @@ class StopOrdersExecutor(SimulatedExecutor):
         StopOrder shouldn't be executed at any price).
         """
         # Make sure that at least all values except Volume are available. Volume is not available for currencies.
-        price_bar = current_bar.loc[[PriceField.Open, PriceField.High, PriceField.Low, PriceField.Close]]
-        if price_bar.isnull().values.any():  # there is no data for today for a given Ticker; skip it
+        price_bar = tuple(current_bar.loc[[PriceField.Open, PriceField.High, PriceField.Low, PriceField.Close]])
+        if None in price_bar:
             return None
 
+        open_price, high_price, low_price, close_price = price_bar
+
         stop_price = order.execution_style.stop_price
-        open_price = current_bar.loc[PriceField.Open]
         is_sell_stop = order.quantity < 0
         no_slippage_fill_price = None
 
@@ -127,14 +135,12 @@ class StopOrdersExecutor(SimulatedExecutor):
             if open_price <= stop_price:
                 no_slippage_fill_price = open_price
             else:
-                low_price = current_bar[PriceField.Low]
                 if low_price <= stop_price:
                     no_slippage_fill_price = stop_price
         else:  # is buy stop
             if open_price >= stop_price:
                 no_slippage_fill_price = open_price
             else:
-                high_price = current_bar[PriceField.High]
                 if high_price >= stop_price:
                     no_slippage_fill_price = stop_price
 
@@ -145,3 +151,13 @@ class StopOrdersExecutor(SimulatedExecutor):
             "Only TimeInForce.DAY or TimeInForce.GTC Time in Force is accepted by StopOrdersExecutor"
         assert isinstance(order.execution_style, StopOrder), \
             "Only StopOrder ExecutionStyle is supported by StopOrdersExecutor"
+
+    @staticmethod
+    def _order_expires(order: Order):
+        """
+        The orders for the standard market orders executor should not expiry.
+
+        In case of on market close orders execution, the orders should expire if their TimeInForce is not equal to GTC.
+        DAY orders will be dropped at this moment.
+        """
+        return order.time_in_force != TimeInForce.GTC

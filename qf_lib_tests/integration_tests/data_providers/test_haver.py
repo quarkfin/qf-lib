@@ -14,6 +14,7 @@
 
 import unittest
 
+from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import HaverTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
@@ -53,14 +54,16 @@ class TestHaverDataProvider(unittest.TestCase):
     def test_price_single_invalid_ticker(self):
         # single ticker, single field; end_date by default now, frequency by default DAILY, currency by default None
         data = self.data_provider.get_price(tickers=self.INVALID_TICKER1, fields=self.SINGLE_PRICE_FIELD,
-                                            start_date=self.START_DATE, end_date=self.END_DATE)
+                                            start_date=self.START_DATE, end_date=self.END_DATE,
+                                            frequency=Frequency.DAILY)
 
         self.assertIsInstance(data, PricesSeries)
         self.assertEqual(len(data), 0)
         self.assertEqual(data.name, self.INVALID_TICKER1.as_string())
 
         data = self.data_provider.get_price(tickers=self.INVALID_TICKER2, fields=self.SINGLE_PRICE_FIELD,
-                                            start_date=self.START_DATE, end_date=self.END_DATE)
+                                            start_date=self.START_DATE, end_date=self.END_DATE,
+                                            frequency=Frequency.DAILY)
 
         self.assertIsInstance(data, PricesSeries)
         self.assertEqual(len(data), 0)
@@ -69,7 +72,8 @@ class TestHaverDataProvider(unittest.TestCase):
     def test_price_many_invalid_tickers(self):
         # single ticker, single field; end_date by default now, frequency by default DAILY, currency by default None
         data = self.data_provider.get_price(tickers=self.INVALID_TICKERS, fields=self.SINGLE_PRICE_FIELD,
-                                            start_date=self.START_DATE, end_date=self.END_DATE)
+                                            start_date=self.START_DATE, end_date=self.END_DATE,
+                                            frequency=Frequency.DAILY)
 
         self.assertIsInstance(data, PricesDataFrame)
         self.assertEqual(data.shape, (self.NUM_OF_DATES, len(self.INVALID_TICKERS)))
@@ -79,7 +83,8 @@ class TestHaverDataProvider(unittest.TestCase):
 
     def test_price_single_ticker(self):
         data = self.data_provider.get_price(tickers=self.SINGLE_TICKER, fields=self.SINGLE_PRICE_FIELD,
-                                            start_date=self.START_DATE, end_date=self.END_DATE)
+                                            start_date=self.START_DATE, end_date=self.END_DATE,
+                                            frequency=Frequency.DAILY)
 
         self.assertIsInstance(data, PricesSeries)
         self.assertEqual(len(data), self.NUM_OF_DATES)
@@ -87,7 +92,8 @@ class TestHaverDataProvider(unittest.TestCase):
 
     def test_price_multiple_tickers(self):
         data = self.data_provider.get_price(tickers=self.MANY_TICKERS, fields=self.SINGLE_PRICE_FIELD,
-                                            start_date=self.START_DATE, end_date=self.END_DATE)
+                                            start_date=self.START_DATE, end_date=self.END_DATE,
+                                            frequency=Frequency.DAILY)
         self.assertEqual(type(data), PricesDataFrame)
         self.assertEqual(data.shape, (self.NUM_OF_DATES, len(self.MANY_TICKERS)))
         self.assertEqual(list(data.columns), self.MANY_TICKERS)

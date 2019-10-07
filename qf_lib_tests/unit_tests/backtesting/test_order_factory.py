@@ -44,7 +44,7 @@ class TestOrderFactory(unittest.TestCase):
         when(broker).get_positions().thenReturn([position])
 
         data_handler = mock(strict=True)
-        when(data_handler).get_last_available_price([cls.ticker]).thenReturn(
+        when(data_handler).get_last_available_price([cls.ticker], None).thenReturn(
             pd.Series([cls.share_price], index=[cls.ticker]))
 
         cls.order_factory = OrderFactory(broker, data_handler, DummyBloombergContractTickerMapper())

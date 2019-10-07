@@ -104,6 +104,10 @@ class AbstractTearsheet(AbstractDocument, metaclass=ABCMeta):
 
         self.document.add_element(grid)
 
+    def _add_rolling_chart(self, timeseries):
+        chart = self._get_rolling_chart(timeseries)
+        self.document.add_element(ChartElement(chart, figsize=self.full_image_size, dpi=self.dpi))
+
     def _add_statistics_table(self, series_list: List[QFSeries]):
         ta_list = [TimeseriesAnalysis(series, self.frequency) for series in series_list]
         super()._add_statistics_table(ta_list)

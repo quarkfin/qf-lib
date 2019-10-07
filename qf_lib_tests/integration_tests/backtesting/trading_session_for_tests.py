@@ -11,12 +11,16 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-
+from qf_lib.backtesting.data_handler.daily_data_handler import DailyDataHandler
+from qf_lib.backtesting.data_handler.intraday_data_handler import IntradayDataHandler
+from qf_lib.backtesting.events.time_event.regular_time_event.after_market_close_event import AfterMarketCloseEvent
+from qf_lib.backtesting.events.time_event.regular_time_event.before_market_open_event import BeforeMarketOpenEvent
+from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
+from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
 from qf_lib.backtesting.monitoring.backtest_result import BacktestResult
 from qf_lib.backtesting.broker.backtest_broker import BacktestBroker
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.bloomberg_mapper import \
     DummyBloombergContractTickerMapper
-from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.events.notifiers import Notifiers
 from qf_lib.backtesting.events.time_flow_controller import BacktestTimeFlowController
 from qf_lib.backtesting.execution_handler.commission_models.fixed_commission_model import FixedCommissionModel
@@ -25,9 +29,9 @@ from qf_lib.backtesting.execution_handler.slippage.price_based_slippage import P
 from qf_lib.backtesting.monitoring.dummy_monitor import DummyMonitor
 from qf_lib.backtesting.order.order_factory import OrderFactory
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
-from qf_lib.backtesting.portfolio.portfolio_handler import PortfolioHandler
 from qf_lib.backtesting.position_sizer.simple_position_sizer import SimplePositionSizer
 from qf_lib.backtesting.trading_session.trading_session import TradingSession
+from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.utils.dateutils.date_to_string import date_to_str
 from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
@@ -39,7 +43,8 @@ class TestingTradingSession(TradingSession):
     Encapsulates the settings and components for carrying out a backtest session. Pulls for data every day.
     """
 
-    def __init__(self, data_provider: DataProvider, start_date, end_date, initial_cash):
+    def __init__(self, data_provider: DataProvider, start_date, end_date, initial_cash,
+                 frequency: Frequency = Frequency.MIN_1):
         """
         Set up the backtest variables according to what has been passed in.
         """
@@ -51,13 +56,23 @@ class TestingTradingSession(TradingSession):
                 "Testing the Backtester:",
                 "Start date: {:s}".format(date_to_str(start_date)),
                 "End date: {:s}".format(date_to_str(end_date)),
-                "Initial cash: {:.2f}".format(initial_cash)
+                "Initial cash: {:.2f}".format(initial_cash),
+                "Frequency of the simulated executio handler: {}".format(frequency)
             ])
         )
 
         timer = SettableTimer(start_date)
         notifiers = Notifiers(timer)
-        data_handler = DataHandler(data_provider, timer)
+        if frequency <= Frequency.DAILY:
+            data_handler = DailyDataHandler(data_provider, timer)
+        else:
+            data_handler = IntradayDataHandler(data_provider, timer)
+
+        BeforeMarketOpenEvent.set_trigger_time({"hour": 7, "minute": 30, "second": 0, "microsecond": 0})
+        MarketOpenEvent.set_trigger_time({"hour": 13, "minute": 30, "second": 0, "microsecond": 0})
+        MarketCloseEvent.set_trigger_time({"hour": 20, "minute": 0, "second": 0, "microsecond": 0})
+        AfterMarketCloseEvent.set_trigger_time({"hour": 21, "minute": 0, "second": 0, "microsecond": 0})
+
         event_manager = self._create_event_manager(timer, notifiers)
         contract_ticker_mapper = DummyBloombergContractTickerMapper()
         self.contract_ticker_mapper = contract_ticker_mapper
@@ -81,7 +96,6 @@ class TestingTradingSession(TradingSession):
         time_flow_controller = BacktestTimeFlowController(
             notifiers.scheduler, event_manager, timer, notifiers.empty_queue_event_notifier, end_date
         )
-        portfolio_handler = PortfolioHandler(portfolio, monitor, notifiers.scheduler)
         position_sizer = SimplePositionSizer(broker, data_handler, order_factory, contract_ticker_mapper)
 
         self.logger.info(
@@ -107,7 +121,6 @@ class TestingTradingSession(TradingSession):
         self.event_manager = event_manager
         self.data_handler = data_handler
         self.portfolio = portfolio
-        self.portfolio_handler = portfolio_handler
         self.execution_handler = execution_handler
         self.position_sizer = position_sizer
         self.monitor = monitor

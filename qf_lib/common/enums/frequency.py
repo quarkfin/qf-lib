@@ -13,18 +13,25 @@
 #     limitations under the License.
 
 import math
+import numpy as np
+
 from enum import Enum
 from functools import total_ordering
 from statistics import mode
 from typing import Dict
-
-import numpy as np
-import pandas
-from pandas import DatetimeIndex
+from pandas import DatetimeIndex, infer_freq
 
 
 @total_ordering
 class Frequency(Enum):
+
+    MIN_1 = 98280  # 1 minute
+    MIN_5 = 19656  # 5 minutes
+    MIN_10 = 9828
+    MIN_15 = 6552
+    MIN_30 = 3276
+    MIN_60 = 1638  # 1 hour, it is assumed a day has 6.5 trading hours
+
     DAILY = 252
     WEEKLY = 52
     MONTHLY = 12
@@ -45,6 +52,12 @@ class Frequency(Enum):
     def from_string(cls, str_name):
 
         name_to_frequency = {
+            '1': Frequency.MIN_1,
+            '5': Frequency.MIN_5,
+            '10': Frequency.MIN_10,
+            '15': Frequency.MIN_15,
+            '30': Frequency.MIN_30,
+            '60': Frequency.MIN_60,
             'daily': Frequency.DAILY,
             'weekly': Frequency.WEEKLY,
             'monthly': Frequency.MONTHLY,
@@ -63,6 +76,12 @@ class Frequency(Enum):
         from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 
         frequency_to_delta = {
+            Frequency.MIN_1: RelativeDelta(minutes=1),
+            Frequency.MIN_5: RelativeDelta(minutes=5),
+            Frequency.MIN_10: RelativeDelta(minutes=10),
+            Frequency.MIN_15: RelativeDelta(minutes=15),
+            Frequency.MIN_30: RelativeDelta(minutes=30),
+            Frequency.MIN_60: RelativeDelta(minutes=60),
             Frequency.DAILY: RelativeDelta(days=1),
             Frequency.WEEKLY: RelativeDelta(weeks=1),
             Frequency.MONTHLY: RelativeDelta(months=1),
@@ -70,10 +89,17 @@ class Frequency(Enum):
             Frequency.SEMI_ANNUALLY: RelativeDelta(months=6),
             Frequency.YEARLY: RelativeDelta(years=1)
         }
+
         return frequency_to_delta[self]
 
     def __str__(self):
         frequency_to_name = {
+            Frequency.MIN_1: "1",
+            Frequency.MIN_5: "5",
+            Frequency.MIN_10: "10",
+            Frequency.MIN_15: "15",
+            Frequency.MIN_30: "30",
+            Frequency.MIN_60: "60",
             Frequency.DAILY: "daily",
             Frequency.WEEKLY: "weekly",
             Frequency.MONTHLY: "monthly",
@@ -95,6 +121,13 @@ class Frequency(Enum):
     @classmethod
     def from_pandas_freq(cls, freq):
         pandas_freq_to_frequency = {
+            "T": Frequency.MIN_1,
+            "5T": Frequency.MIN_5,
+            "10T": Frequency.MIN_10,
+            "15T": Frequency.MIN_15,
+            "30T": Frequency.MIN_30,
+            "60T": Frequency.MIN_60,
+            "H": Frequency.MIN_60,
             "D": Frequency.DAILY,
             "B": Frequency.DAILY,
             "W": Frequency.WEEKLY,
@@ -109,6 +142,12 @@ class Frequency(Enum):
 
     def to_pandas_freq(self):
         frequency_to_pandas_freq = {
+            Frequency.MIN_1: "T",
+            Frequency.MIN_5: "5T",
+            Frequency.MIN_10: "10T",
+            Frequency.MIN_15: "15T",
+            Frequency.MIN_30: "30T",
+            Frequency.MIN_60: "H",
             Frequency.DAILY: "D",
             Frequency.WEEKLY: "W",
             Frequency.MONTHLY: "M",
@@ -117,7 +156,10 @@ class Frequency(Enum):
             Frequency.IRREGULAR: None
         }
 
-        return frequency_to_pandas_freq[self]
+        try:
+            return frequency_to_pandas_freq[self]
+        except KeyError:
+            return "{}T".format(self)
 
     @classmethod
     def get_lowest_freq(cls, freqs: Dict[str, "Frequency"]) -> str:
@@ -125,14 +167,30 @@ class Frequency(Enum):
 
     @classmethod
     def infer_freq(cls, index: DatetimeIndex) -> "Frequency":
-        result = cls.from_pandas_freq(pandas.infer_freq(index))
+        result = cls.from_pandas_freq(infer_freq(index))
 
         if result == Frequency.IRREGULAR:
             # Attempt to infer the frequency ourselves.
             diff = index.values[1:] - index.values[0:-1]
             most_popular = mode(diff).astype(
                 'timedelta64[D]') / np.timedelta64(1, 'D')
-            if most_popular == 1:
+            if most_popular < 1:
+                # Infer intraday frequency (change to minutes)
+                most_popular = mode(diff).astype(
+                    'timedelta64[m]') / np.timedelta64(1, 'm')
+                if most_popular == 1:
+                    result = Frequency.MIN_1
+                elif 4 <= most_popular <= 6:
+                    result = Frequency.MIN_5
+                elif 9 <= most_popular <= 11:
+                    result = Frequency.MIN_10
+                elif 14 <= most_popular <= 16:
+                    result = Frequency.MIN_15
+                elif 29 <= most_popular <= 31:
+                    result = Frequency.MIN_30
+                elif 50 <= most_popular <= 70:
+                    result = Frequency.MIN_60
+            elif most_popular == 1:
                 result = Frequency.DAILY
             elif 29 <= most_popular <= 31:
                 result = Frequency.MONTHLY

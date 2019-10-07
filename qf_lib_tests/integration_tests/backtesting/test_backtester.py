@@ -18,7 +18,9 @@ from unittest import TestCase
 import matplotlib
 
 from qf_lib.backtesting.broker.broker import Broker
+from qf_lib.backtesting.events.time_event.regular_time_event.before_market_open_event import BeforeMarketOpenEvent
 from qf_lib.backtesting.order.time_in_force import TimeInForce
+from qf_lib.common.enums.frequency import Frequency
 from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_series_equal
 from qf_lib_tests.unit_tests.config.test_settings import get_test_settings
 
@@ -30,7 +32,6 @@ from qf_lib.backtesting.order.execution_style import MarketOrder
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.data_providers.bloomberg import BloombergDataProvider
 
-from qf_lib.backtesting.events.time_event.before_market_open_event import BeforeMarketOpenEvent
 from qf_lib.backtesting.events.time_event.scheduler import Scheduler
 from qf_lib.backtesting.order.order_factory import OrderFactory
 from qf_lib.common.tickers.tickers import BloombergTicker
@@ -84,17 +85,17 @@ class TestBacktester(TestCase):
 
         first_trade_date = str_to_date("2010-01-04")
         initial_cash = msft_prices.loc[first_trade_date, PriceField.Open]
-        ts = TestingTradingSession(data_provider, start_date, end_date, initial_cash)
+        ts = TestingTradingSession(data_provider, start_date, end_date, initial_cash, frequency=Frequency.DAILY)
 
         BuyAndHoldStrategy(ts.broker, ts.order_factory, ts.notifiers.scheduler)
 
         # Set up the backtest
         ts.start_trading()
 
-        actual_portfolio_tms = ts.portfolio.get_portfolio_timeseries()
+        actual_portfolio_tms = ts.portfolio.get_portfolio_eod_tms()
 
         expected_portfolio_tms = msft_prices.loc[:, PriceField.Close].asof(actual_portfolio_tms.index)
-        expected_portfolio_tms[:first_trade_date] = initial_cash
+        expected_portfolio_tms[:str_to_date("2010-01-03")] = initial_cash
 
         assert_series_equal(expected_portfolio_tms, actual_portfolio_tms, check_names=False)
 

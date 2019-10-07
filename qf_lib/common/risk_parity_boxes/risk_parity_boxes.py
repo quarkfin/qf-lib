@@ -16,6 +16,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Mapping, Sequence
 
+from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.common_start_and_end import get_common_start_and_end
@@ -93,12 +94,12 @@ class RiskParityBoxesFactory(object):
 
         self.all_tickers = self._get_all_tickers(self.tickers_dict)
 
-    def make_parity_boxes(self, start_date: datetime, end_date: datetime) -> RiskParityBoxes:
+    def make_parity_boxes(self, start_date: datetime, end_date: datetime, frequency: Frequency = Frequency.DAILY) -> RiskParityBoxes:
         """
         Downloads the needed data and makes parity boxes. Each box is one series of returns (starting at the first
         date after start_date and ending at the end_date).
         """
-        asset_rets_df = self._get_assets_data(end_date, start_date)
+        asset_rets_df = self._get_assets_data(end_date, start_date, frequency)
 
         # create a dict: growth -> inflation -> None
         boxes_df = dict()
@@ -155,9 +156,9 @@ class RiskParityBoxesFactory(object):
 
         return sorted(list(all_tickers))
 
-    def _get_assets_data(self, end_date, start_date):
+    def _get_assets_data(self, end_date, start_date, frequency):
         # download data
-        asset_prices_df = self.bbg_data_provider.get_price(self.all_tickers, PriceField.Close, start_date, end_date)
+        asset_prices_df = self.bbg_data_provider.get_price(self.all_tickers, PriceField.Close, start_date, end_date, frequency)
         asset_prices_df = cast_dataframe(asset_prices_df, output_type=PricesDataFrame)
 
         # trim

@@ -36,6 +36,20 @@ def set_tickers(request, tickers):
     for ticker in tickers:
         securities.appendValue(ticker)
 
+def set_ticker(request, ticker):
+    """
+    Sets requested ticker in the Bloomberg's request.
+
+    Parameters
+    ----------
+    request
+        request to be sent
+    tickers: str
+        required ticker
+
+    """
+    security = request.getElement(SECURITY)
+    security.setValue(ticker)
 
 def set_fields(request, field_names):
     requested_fields = request.getElement(FIELDS)
@@ -44,7 +58,23 @@ def set_fields(request, field_names):
 
 
 def convert_to_bloomberg_freq(frequency: Frequency) -> str:
-    return frequency.name
+    frequency_to_bloomberg = {
+        Frequency.MIN_1: "1",
+        Frequency.MIN_5: "5",
+        Frequency.MIN_10: "10",
+        Frequency.MIN_15: "15",
+        Frequency.MIN_30: "30",
+        Frequency.MIN_60: "60",
+        Frequency.DAILY: "DAILY",
+        Frequency.WEEKLY: "WEEKLY",
+        Frequency.MONTHLY: "MONTHLY",
+        Frequency.QUARTERLY: "QUARTERLY ",
+        Frequency.SEMI_ANNUALLY: "SEMI_ANNUALLY",
+        Frequency.YEARLY: "YEARLY",
+        Frequency.IRREGULAR: "IRREGULAR"
+    }
+
+    return frequency_to_bloomberg[frequency]
 
 
 def convert_to_bloomberg_date(date: datetime) -> str:
@@ -71,6 +101,11 @@ def check_event_for_errors(event):
 def extract_security_data(event):
     first_msg = blpapi.event.MessageIterator(event).next()
     return first_msg.getElement(SECURITY_DATA)
+
+
+def extract_bar_data(event):
+    first_msg = blpapi.event.MessageIterator(event).next()
+    return first_msg.getElement(BAR_DATA)
 
 
 def count_messages(event):
@@ -107,3 +142,15 @@ def check_security_data_for_errors(security_data):
         error_message = "Response contains security error:\n" + str(security_data)
         logger.error(error_message)
         raise BloombergError(error_message)
+
+
+def field_name_to_intraday(field_name):
+    price_field_dict = {
+        'PX_OPEN': OPEN,
+        'PX_HIGH': HIGH,
+        'PX_LOW': LOW,
+        'PX_LAST': CLOSE,
+        "PX_VOLUME": VOLUME
+    }
+
+    return price_field_dict[field_name]

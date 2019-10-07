@@ -17,7 +17,10 @@ from os.path import join
 from typing import List
 
 from qf_lib.analysis.timeseries_analysis.timeseries_analysis import TimeseriesAnalysis
+from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.plotting_mode import PlottingMode
+from qf_lib.common.utils.volatility.get_volatility import get_volatility
+from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.documents_utils.document_exporting.document import Document
 from qf_lib.documents_utils.document_exporting.element.grid import GridElement
@@ -26,6 +29,7 @@ from qf_lib.documents_utils.document_exporting.element.table import Table
 from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.plotting.charts.line_chart import LineChart
 from qf_lib.plotting.charts.underwater_chart import UnderwaterChart
+from qf_lib.plotting.decorators.axes_formatter_decorator import AxesFormatterDecorator, PercentageFormatter
 from qf_lib.plotting.decorators.axes_label_decorator import AxesLabelDecorator
 from qf_lib.plotting.decorators.axes_position_decorator import AxesPositionDecorator
 from qf_lib.plotting.decorators.data_element_decorator import DataElementDecorator
@@ -114,13 +118,55 @@ class AbstractDocument(metaclass=ABCMeta):
         return chart
 
     def _get_leverage_chart(self, leverage: QFSeries, rotate_x_axis: bool = False):
+        return self._get_line_chart(leverage, "Leverage over time", rotate_x_axis)
+
+    def _get_line_chart(self, series: QFSeries, title: str, rotate_x_axis: bool = False):
         chart = LineChart(rotate_x_axis=rotate_x_axis)
 
-        series_elem = DataElementDecorator(leverage)
+        series_elem = DataElementDecorator(series)
         chart.add_decorator(series_elem)
 
-        title_decorator = TitleDecorator("Leverage over time", key="title")
+        title_decorator = TitleDecorator(title, key="title")
         chart.add_decorator(title_decorator)
+        return chart
+
+    def _get_rolling_chart(self, timeseries):
+        days_rolling = int(252 / 2)  # 6M rolling
+        step = round(days_rolling / 5)
+
+        tms = timeseries.to_prices(1)
+        chart = LineChart(start_x=tms.index[0], end_x=tms.index[-1])
+        line_decorator = HorizontalLineDecorator(0, key="h_line", linewidth=1)
+        chart.add_decorator(line_decorator)
+
+        legend = LegendDecorator()
+
+        def tot_return(window):
+            return PricesSeries(window).total_cumulative_return()
+
+        def volatility(window):
+            return get_volatility(PricesSeries(window), Frequency.DAILY)
+
+        functions = [tot_return, volatility]
+        names = ['Rolling Return', 'Rolling Volatility']
+        for func, name in zip(functions, names):
+            rolling = tms.rolling_window(days_rolling, func, step=step)
+            rolling_element = DataElementDecorator(rolling)
+            chart.add_decorator(rolling_element)
+            legend.add_entry(rolling_element, name)
+
+        chart.add_decorator(legend)
+
+        chart.add_decorator(AxesFormatterDecorator(y_major=PercentageFormatter(".0f")))
+
+        left, bottom, width, height = self.full_image_axis_position
+        position_decorator = AxesPositionDecorator(left, bottom, width, height)
+        chart.add_decorator(position_decorator)
+        title_str = "{} - Rolling Stats [{} days]".format(timeseries.name, days_rolling)
+
+        title_decorator = TitleDecorator(title_str, key="title")
+        chart.add_decorator(title_decorator)
+
         return chart
 
     def _add_statistics_table(self, ta_list: List[TimeseriesAnalysis]):

@@ -58,16 +58,16 @@ class BacktestTimeFlowController(TimeFlowController):
         self.backtest_end_datetime = self._end_of_the_day(backtest_end_date)
 
     def generate_time_event(self):
-        time_event = self.scheduler.get_next_time_event()
-        next_time_of_event = time_event.time
+        time_events_list, next_time_of_event = self.scheduler.get_next_time_events()
 
         if next_time_of_event > self.backtest_end_datetime:
-            self.event_manager.publish(EndTradingEvent(self.backtest_end_datetime))
+            self.event_manager.publish(EndTradingEvent())
         else:
             # because it's a backtest we don't really need to wait until the time of next TimeEvent; we can simply
             # fast-forward the timer to that time
             self.settable_timer.set_current_time(next_time_of_event)
-            self.event_manager.publish(time_event)
+            for time_event in time_events_list:
+                self.event_manager.publish(time_event)
 
     def _end_of_the_day(self, end_date: datetime):
         return datetime(end_date.year, end_date.month, end_date.day, 23, 59, 59, 999999)
@@ -82,15 +82,16 @@ class LiveSessionTimeFlowController(TimeFlowController):
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
     def generate_time_event(self):
-        time_event = self.scheduler.get_next_time_event()
-        next_time_of_event = time_event.time
+        time_events_list, next_time_of_event = self.scheduler.get_next_time_events()
 
-        self.logger.info("Next time event: {}".format(time_event))
+        for time_event in time_events_list:
+            self.logger.info("Next time event: {}".format(time_event))
 
         self.sleep_until(next_time_of_event)
 
-        self.logger.info("Wake up!".format(time_event.__class__.__name__, next_time_of_event))
-        self.event_manager.publish(time_event)
+        for time_event in time_events_list:
+            self.logger.info("Wake up!".format(time_event.__class__.__name__, next_time_of_event))
+            self.event_manager.publish(time_event)
 
     def sleep_until(self, time_of_next_time_event: datetime):
         # if we're in the live session we need to put the program to sleep until the next TimeEvent

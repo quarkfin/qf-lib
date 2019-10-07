@@ -12,9 +12,14 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-import os
 import pickle
+from os.path import exists
 from typing import Any, Callable
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
+
+
+class CachedValueException(Exception):
+    pass
 
 
 def cached_value(func: Callable[[], Any], path) -> Any:
@@ -23,12 +28,17 @@ def cached_value(func: Callable[[], Any], path) -> Any:
     are saved into the file. Then the result is returned.
     """
 
-    if os.path.exists(path):
+    if exists(path):
         with open(path, 'rb') as file:
             result = pickle.load(file)
     else:
-        result = func()
-        with open(path, 'wb') as file:
-            pickle.dump(result, file)
+        try:
+            result = func()
+            with open(path, 'wb') as file:
+                pickle.dump(result, file)
+
+        except CachedValueException:
+            logger = qf_logger.getChild(__name__)
+            logger.error('Error while processing {}'.format(func))
 
     return result

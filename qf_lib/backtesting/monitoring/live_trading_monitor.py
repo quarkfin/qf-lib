@@ -19,7 +19,7 @@ from dic.container import Container
 
 from qf_lib.analysis.strategy_monitoring.live_trading_sheet import LiveTradingSheet
 from qf_lib.backtesting.events.notifiers import Notifiers
-from qf_lib.backtesting.events.time_event.after_market_close_event import AfterMarketCloseEvent
+from qf_lib.backtesting.events.time_event.regular_time_event.after_market_close_event import AfterMarketCloseEvent
 from qf_lib.backtesting.monitoring.dummy_monitor import DummyMonitor
 from qf_lib.backtesting.monitoring.past_signals_generator import PastSignalsGenerator
 from qf_lib.backtesting.monitoring.settings_for_live_trading import LiveTradingSettings

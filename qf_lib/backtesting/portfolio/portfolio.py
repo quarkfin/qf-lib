@@ -26,6 +26,7 @@ from qf_lib.backtesting.portfolio.trade import Trade
 from qf_lib.backtesting.portfolio.transaction import Transaction
 from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
+from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 
@@ -57,9 +58,12 @@ class Portfolio(object):
         self._leverage = []  # type: List[float]
 
         self.open_positions_dict = {}  # type: Dict[Contract, BacktestPosition]
-        self.closed_positions = []  # type: List[BacktestPosition]
         self.transactions = []  # type: List[Transaction]
         self.trades = []  # type: List[Trade]
+
+        # A list containing dictionaries with summarized assets information (contains a mapping from
+        # contracts to market value at the specific time)
+        self._assets_history = []
 
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
@@ -80,7 +84,6 @@ class Portfolio(object):
         # if the position was closed: remove it from open positions and place in closed positions
         if position.is_closed:
             self.open_positions_dict.pop(transaction.contract)
-            self.closed_positions.append(position)
 
     def update(self):
         """
@@ -98,16 +101,19 @@ class Portfolio(object):
 
         self._remove_positions_assigned_to_acquired_companies(contract_to_ticker_dict, current_prices_series)
 
+        current_assets = {}
         for contract, position in self.open_positions_dict.items():
             ticker = contract_to_ticker_dict[contract]
             security_price = current_prices_series[ticker]
             position.update_price(bid_price=security_price, ask_price=security_price)
             self.net_liquidation += position.market_value
             self.gross_value_of_positions += abs(position.market_value)
+            current_assets[contract] = position.market_value
 
         self.dates.append(self.timer.now())
         self.portfolio_values.append(self.net_liquidation)
         self._leverage.append(self.gross_value_of_positions / self.net_liquidation)
+        self._assets_history.append(current_assets)
 
     def _remove_positions_assigned_to_acquired_companies(self, contract_to_ticker_dict, current_prices_series):
         remove = [c for c in self.open_positions_dict if np.isnan(current_prices_series[contract_to_ticker_dict[c]])]
@@ -119,11 +125,12 @@ class Portfolio(object):
             self.logger.warning("{}: position assigned to Ticker {} removed due to incomplete price data."
                                 .format(str(self.timer.now()), con.symbol))
 
-    def get_portfolio_timeseries(self) -> PricesSeries:
+    def get_portfolio_eod_tms(self) -> PricesSeries:
         """
         Returns a timeseries of value of the portfolio expressed in currency units
         """
-        portfolio_timeseries = PricesSeries(data=self.portfolio_values, index=self.dates)
+        end_of_day_date = list(map(lambda x: datetime(x.year, x.month, x.day), self.dates))  # remove the time component
+        portfolio_timeseries = PricesSeries(data=self.portfolio_values, index=end_of_day_date)
         return portfolio_timeseries
 
     def get_trades(self) -> List[Trade]:
@@ -174,3 +181,13 @@ class Portfolio(object):
                           entry_price=entry_price,
                           exit_price=exit_price)
             self.trades.append(trade)
+
+    def assets_history(self) -> QFDataFrame:
+        """
+        Returns a QFDataFrame containing the number of assets in the portfolio for each of the dates.
+        """
+        return QFDataFrame(data=self._assets_history, index=self.dates)
+
+    def transactions_series(self) -> QFSeries:
+        time_index = (t.time for t in self.transactions)
+        return QFSeries(data=self.transactions, index=time_index)

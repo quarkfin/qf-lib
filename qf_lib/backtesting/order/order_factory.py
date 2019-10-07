@@ -22,6 +22,7 @@ from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.order.execution_style import ExecutionStyle
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.time_in_force import TimeInForce
+from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.miscellaneous.function_name import get_function_name
 
@@ -122,7 +123,7 @@ class OrderFactory(object):
         return self.orders(quantities, execution_style, time_in_force)
 
     def value_orders(self, values: Mapping[Contract, float], execution_style: ExecutionStyle,
-                     time_in_force: TimeInForce) -> List[Order]:
+                     time_in_force: TimeInForce, frequency: Frequency = None) -> List[Order]:
         """
         Creates a list of Orders by specifying the amount of money which should be spent on each asset rather
         than the number of shares to buy/sell.
@@ -139,13 +140,13 @@ class OrderFactory(object):
         """
         self._log_function_call(vars())
 
-        quantities, _ = self._calculate_target_shares_and_tolerances(values)
+        quantities, _ = self._calculate_target_shares_and_tolerances(values, frequency=frequency)
 
         int_quantities = {contract: math.floor(quantity) for contract, quantity in quantities.items()}
         return self.orders(int_quantities, execution_style, time_in_force)
 
     def percent_orders(self, percentages: Mapping[Contract, float], execution_style: ExecutionStyle,
-                       time_in_force: TimeInForce) -> List[Order]:
+                       time_in_force: TimeInForce, frequency: Frequency = None) -> List[Order]:
         """
         Creates a list of Orders by specifying the percentage of the current portfolio value which should be spent
         on each asset.
@@ -159,16 +160,19 @@ class OrderFactory(object):
             execution style of an order (e.g. MarketOrder, StopOrder, etc.)
         time_in_force
             e.g. 'DAY' (Order valid for one trading session), 'GTC' (good till cancelled)
+        frequency
+            frequency for the last available price sampling (daily or minutely)
         """
         self._log_function_call(vars())
 
         portfolio_value = self.broker.get_portfolio_value()
         values = {contract: portfolio_value * fraction for contract, fraction in percentages.items()}
 
-        return self.value_orders(values, execution_style, time_in_force)
+        return self.value_orders(values, execution_style, time_in_force, frequency)
 
     def target_value_orders(self, target_values: Mapping[Contract, float], execution_style: ExecutionStyle,
-                            time_in_force: TimeInForce, tolerance_value=0.0) -> List[Order]:
+                            time_in_force: TimeInForce, tolerance_value=0.0, frequency: Frequency = None) \
+            -> List[Order]:
         """
         Creates a list of Orders by specifying how much should be allocated in each asset after the Orders
         have been executed.
@@ -200,16 +204,19 @@ class OrderFactory(object):
 
             if abs(target - actual) > tolerance
                 buy or sell assets to match the target
+        frequency
+            frequency for the last available price sampling (daily or minutely)
         """
         self._log_function_call(vars())
 
         target_quantities, tolerance_quantities = \
-            self._calculate_target_shares_and_tolerances(target_values, tolerance_value)
+            self._calculate_target_shares_and_tolerances(target_values, tolerance_value, frequency)
 
         return self.target_orders(target_quantities, execution_style, time_in_force, tolerance_quantities)
 
     def target_percent_orders(self, target_percentages: Mapping[Contract, float], execution_style: ExecutionStyle,
-                              time_in_force: TimeInForce, tolerance_percent=0.0) -> List[Order]:
+                              time_in_force: TimeInForce, tolerance_percent=0.0, frequency: Frequency = None) \
+            -> List[Order]:
         """
         Creates an Order adjusting a position to a value equal to the given percentage of the portfolio.
 
@@ -244,10 +251,10 @@ class OrderFactory(object):
             contract: portfolio_value * target_percent for contract, target_percent in target_percentages.items()}
         tolerance_value = tolerance_percent * portfolio_value
 
-        return self.target_value_orders(target_values, execution_style, time_in_force, tolerance_value)
+        return self.target_value_orders(target_values, execution_style, time_in_force, tolerance_value, frequency)
 
     def _calculate_target_shares_and_tolerances(
-            self, contract_to_amount_of_money: Mapping[Contract, float], tolerance_value=0.0) \
+            self, contract_to_amount_of_money: Mapping[Contract, float], tolerance_value=0.0, frequency: Frequency = None) \
             -> (Mapping[Contract, float], Mapping[Contract, float]):
         """
         Returns
@@ -262,7 +269,7 @@ class OrderFactory(object):
             contract_to_amount_of_money)
 
         tickers = list(tickers_to_contract_and_amount_of_money.keys())
-        current_prices = self.data_handler.get_last_available_price(tickers)
+        current_prices = self.data_handler.get_last_available_price(tickers, frequency)
 
         # Contract -> target number of shares
         target_quantities = dict()  # type: Dict[Contract, float]
@@ -307,4 +314,4 @@ class OrderFactory(object):
 
             log_message += "\n\t{}: {}".format(key, value_str)
 
-        self.logger.info(log_message)
+        self.logger.debug(log_message)

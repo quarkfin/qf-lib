@@ -11,6 +11,7 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
+#
 
 from datetime import datetime
 from unittest import TestCase
@@ -23,6 +24,7 @@ from numpy.testing import assert_equal, assert_almost_equal
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
 from qf_lib.backtesting.alpha_model.alpha_model_strategy import AlphaModelStrategy
+from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker, BloombergTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
@@ -38,12 +40,14 @@ class TestAlphaModelStrategy(TestCase):
     data_start_date = str_to_date("2014-12-25")
     test_start_date = str_to_date("2015-01-01")
     end_date = str_to_date("2015-02-28")
+    frequency = Frequency.DAILY
 
     def setUp(self):
         all_fields = PriceField.ohlcv()
 
         self._mocked_prices_arr = self._make_mock_data_array(self.tickers, all_fields)
-        self._price_provider_mock = PresetDataProvider(self._mocked_prices_arr, self.data_start_date, self.end_date)
+        self._price_provider_mock = PresetDataProvider(self._mocked_prices_arr, self.data_start_date, self.end_date,
+                                                       self.frequency)
 
         risk_estimation_factor = 0.05
         self.alpha_model = DummyAlphaModel(risk_estimation_factor)
@@ -96,6 +100,7 @@ class TestAlphaModelStrategy(TestCase):
             start_date=self.test_start_date,
             end_date=self.end_date,
             initial_cash=1000000,
+            frequency=self.frequency
         )
         return ts
 

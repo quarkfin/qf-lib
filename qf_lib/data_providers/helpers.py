@@ -57,7 +57,6 @@ def normalize_data_array(
     """
     # to keep the order of tickers and fields we reindex the data_array
     data_array = data_array.reindex(tickers=tickers, fields=fields)
-    data_array = data_array.sortby(DATES)
 
     squeezed_result = squeeze_data_array(data_array, got_single_date, got_single_ticker, got_single_field)
     casted_result = cast_data_array_to_proper_type(squeezed_result, use_prices_types)

@@ -13,7 +13,7 @@
 #     limitations under the License.
 
 from itertools import count
-from typing import Dict, List, Sequence
+from typing import List, Sequence
 
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
@@ -37,42 +37,62 @@ class MarketOrdersExecutor(SimulatedExecutor):
         super().__init__(contracts_to_tickers_mapper, data_handler, monitor, portfolio, timer,
                          order_id_generator, commission_model, slippage_model)
 
-    def accept_orders(self, orders: Sequence[Order]) -> List[int]:
+    def assign_order_ids(self, orders: Sequence[Order]) -> List[int]:
         order_id_list = []
         for order in orders:
             self._check_order_validity(order)
 
             order.id = next(self._order_id_generator)
             order_id_list.append(order.id)
-            self._awaiting_orders[order.id] = order
 
         return order_id_list
 
-    def _get_orders_with_fill_prices_without_slippage(self, market_orders_list, tickers):
-        """
-        Unexecuted orders dict will always be empty.
-        Executes only on the market open and drops the orders if unexecuted
-        """
+    def _get_orders_with_fill_prices_without_slippage(self, market_orders_list, tickers, market_open, market_close):
         unique_tickers = list(set(tickers))
         current_prices_series = self._data_handler.get_current_price(unique_tickers)
 
-        unexecuted_orders_dict = {}  # type: Dict[int, Order]
+        expired_orders = []  # type: List[int]
         to_be_executed_orders = []
         no_slippage_prices = []
 
-        for order, ticker in zip(market_orders_list, tickers):
-            security_price = current_prices_series[ticker]
+        # Check at first if at this moment of time, expiry checks should be made or not (optimization reasons)
+        if market_open or market_close:
+            # In case of market open or market close, some of the orders may expire
+            for order, ticker in zip(market_orders_list, tickers):
+                security_price = current_prices_series[ticker]
 
-            if is_finite_number(security_price):
-                to_be_executed_orders.append(order)
-                no_slippage_prices.append(security_price)
-            else:
-                if order.time_in_force == TimeInForce.GTC:
-                    # preserve only GTC orders. DAY orders will be dropped at this point
-                    unexecuted_orders_dict[order.id] = order
+                if is_finite_number(security_price):
+                    to_be_executed_orders.append(order)
+                    no_slippage_prices.append(security_price)
+                elif self._order_expires(order, market_open, market_close):
+                    expired_orders.append(order.id)
+        else:
+            for order, ticker in zip(market_orders_list, tickers):
+                security_price = current_prices_series[ticker]
 
-        return no_slippage_prices, to_be_executed_orders, unexecuted_orders_dict
+                if is_finite_number(security_price):
+                    to_be_executed_orders.append(order)
+                    no_slippage_prices.append(security_price)
+
+        return no_slippage_prices, to_be_executed_orders, expired_orders
 
     def _check_order_validity(self, order):
         assert order.execution_style == MarketOrder(), \
             "Only MarketOrder ExecutionStyle is supported by MarketOrdersExecutor"
+
+    @staticmethod
+    def _order_expires(order: Order, market_open: bool, market_close: bool):
+        """
+        The orders for the standard market orders executor should not expiry.
+
+        In case of on market close orders execution, the orders should expire if their TimeInForce is not equal to GTC.
+        DAY orders will be dropped at this moment.
+
+        In case of market open orders execution, the orders should expiry if their TimeInForce is equal to OPG.
+        """
+        if market_open and order.time_in_force == TimeInForce.OPG:
+            return True
+        elif market_close and order.time_in_force != TimeInForce.GTC:
+            return True
+        else:
+            return False

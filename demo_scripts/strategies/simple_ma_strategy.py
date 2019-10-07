@@ -15,6 +15,7 @@
 import matplotlib.pyplot as plt
 
 from qf_lib.backtesting.order.time_in_force import TimeInForce
+from qf_lib.common.enums.frequency import Frequency
 
 plt.ion()  # required for dynamic chart, good to keep this at the beginning of imports
 
@@ -23,8 +24,8 @@ from qf_lib.backtesting.trading_session.backtest_trading_session_builder import 
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.backtesting.order.execution_style import MarketOrder
-from qf_lib.common.tickers.tickers import BloombergTicker
-from qf_lib.backtesting.events.time_event.before_market_open_event import BeforeMarketOpenEvent
+from qf_lib.common.tickers.tickers import BloombergTicker, Ticker
+from qf_lib.backtesting.events.time_event.regular_time_event.before_market_open_event import BeforeMarketOpenEvent
 from qf_lib.backtesting.trading_session.backtest_trading_session import BacktestTradingSession
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 
@@ -35,15 +36,14 @@ class SimpleMAStrategy(object):
     of a backtest.
     """
 
-    ticker = BloombergTicker("MSFT US Equity")
-
-    def __init__(self, ts: BacktestTradingSession):
+    def __init__(self, ts: BacktestTradingSession, ticker: Ticker):
         self.broker = ts.broker
         self.order_factory = ts.order_factory
         self.data_handler = ts.data_handler
         self.contract_ticker_mapper = ts.contract_ticker_mapper
         self.position_sizer = ts.position_sizer
         self.timer = ts.timer
+        self.ticker = ticker
 
         ts.notifiers.scheduler.subscribe(BeforeMarketOpenEvent, listener=self)
 
@@ -74,13 +74,15 @@ class SimpleMAStrategy(object):
 def main():
     start_date = str_to_date("2010-01-01")
     end_date = str_to_date("2010-03-01")
+    ticker = BloombergTicker("MSFT US Equity")
 
     session_builder = container.resolve(BacktestTradingSessionBuilder)  # type: BacktestTradingSessionBuilder
+    session_builder.set_frequency(Frequency.DAILY)
     session_builder.set_backtest_name('Simple_MA')
     ts = session_builder.build(start_date, end_date)
-    ts.use_data_preloading(SimpleMAStrategy.ticker, RelativeDelta(days=40))
+    ts.use_data_preloading(ticker, RelativeDelta(days=40))
 
-    SimpleMAStrategy(ts)
+    SimpleMAStrategy(ts, ticker)
     ts.start_trading()
 
 

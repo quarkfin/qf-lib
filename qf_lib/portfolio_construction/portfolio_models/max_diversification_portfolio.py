@@ -18,6 +18,7 @@ import numpy as np
 import pandas as pd
 from cvxopt.base import matrix
 from cvxopt.coneprog import qp
+import warnings
 
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
@@ -108,6 +109,7 @@ class MaxDiversificationPortfolio(Portfolio):
         diversification_ratio = avg_volatility / portfolio_volatility
         return float(diversification_ratio)
 
+    # noinspection PyUnresolvedReferences
     def _get_upper_bound_constraints(self, P, q, G_lower_bound, h_lower_bound, A, b):
         upper_bound = self.upper_constraint
 
@@ -134,7 +136,7 @@ class MaxDiversificationPortfolio(Portfolio):
 
             loop_iter += 1
             if loop_iter >= self.max_iter:
-                logging.warning("Max. number of iterations achieved during searching for a weights scaling factor.")
+                warnings.warn("Max. number of iterations achieved during searching for a weights scaling factor.")
                 break
 
         return G_upper_bound, h_upper_bound_scaled

@@ -61,6 +61,21 @@ class TearsheetWithBenchmark(AbstractTearsheet):
 
         self._add_statistics_table(series_list)
 
+        # Next Page
+        self.document.add_element(NewPageElement())
+
+        self._add_header()
+
+        self.document.add_element(ParagraphElement("\n"))
+        self.document.add_element(ParagraphElement("\n"))
+
+        self._add_rolling_chart(self.strategy_series)
+
+        self.document.add_element(ParagraphElement("\n"))
+        self.document.add_element(ParagraphElement("\n"))
+
+        self._add_rolling_chart(self.benchmark_series)
+
     def _add_ret_distribution_and_similarity(self):
         grid = GridElement(mode=PlottingMode.PDF,
                            figsize=self.half_image_size, dpi=self.dpi)

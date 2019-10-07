@@ -32,9 +32,11 @@ remote_theme: mmistakes/minimal-mistakes
 paginate: 5 # amount of posts to show
 paginate_path: /page:num/
 timezone: # https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
-
+logo: "/assets/images/CERN_logo.png"
 include:
   - _pages
+head_scripts:
+  - https://www.google.com/recaptcha/api.js
 
 # Exclude from processing.
 # The following items will not be processed, by default. Create a custom list

@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 
 from demo_scripts.demo_configuration.demo_ioc import container
 from qf_lib.common.enums.price_field import PriceField
-from qf_lib.common.tickers.tickers import BloombergTicker, QuandlTicker
+from qf_lib.common.tickers.tickers import QuandlTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
 from qf_lib.plotting.helpers.create_skewness_chart import create_skewness_chart

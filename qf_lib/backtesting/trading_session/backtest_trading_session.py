@@ -24,6 +24,7 @@ from qf_lib.backtesting.order.order_factory import OrderFactory
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.backtesting.position_sizer.position_sizer import PositionSizer
 from qf_lib.backtesting.trading_session.trading_session import TradingSession
+from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
@@ -39,7 +40,7 @@ class BacktestTradingSession(TradingSession):
     def __init__(self, contract_ticker_mapper: ContractTickerMapper, start_date, end_date,
                  position_sizer: PositionSizer, data_handler: DataHandler, timer: SettableTimer,
                  notifiers: Notifiers, portfolio: Portfolio, events_manager: EventManager, monitor: BacktestMonitor,
-                 broker: BacktestBroker, order_factory: OrderFactory):
+                 broker: BacktestBroker, order_factory: OrderFactory, frequency: Frequency):
         """
         Set up the backtest variables according to what has been passed in.
         """
@@ -60,6 +61,7 @@ class BacktestTradingSession(TradingSession):
         self.timer = timer
         self.order_factory = order_factory
         self.broker = broker
+        self.frequency = frequency
 
     def use_data_preloading(self, tickers: Union[Ticker, Sequence[Ticker]], time_delta: RelativeDelta = None):
         if time_delta is None:

@@ -12,7 +12,6 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-import logging
 from datetime import datetime
 from typing import List, Tuple, Type
 
@@ -21,9 +20,14 @@ from qf_lib.backtesting.broker.backtest_broker import BacktestBroker
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.bloomberg_mapper import \
     DummyBloombergContractTickerMapper
-from qf_lib.backtesting.data_handler.data_handler import DataHandler
+from qf_lib.backtesting.data_handler.daily_data_handler import DailyDataHandler
+from qf_lib.backtesting.data_handler.intraday_data_handler import IntradayDataHandler
 from qf_lib.backtesting.events.event_manager import EventManager
 from qf_lib.backtesting.events.notifiers import Notifiers
+from qf_lib.backtesting.events.time_event.regular_time_event.after_market_close_event import AfterMarketCloseEvent
+from qf_lib.backtesting.events.time_event.regular_time_event.before_market_open_event import BeforeMarketOpenEvent
+from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
+from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
 from qf_lib.backtesting.events.time_flow_controller import BacktestTimeFlowController
 from qf_lib.backtesting.execution_handler.commission_models.commission_model import CommissionModel
 from qf_lib.backtesting.execution_handler.commission_models.fixed_commission_model import FixedCommissionModel
@@ -36,15 +40,15 @@ from qf_lib.backtesting.monitoring.dummy_monitor import DummyMonitor
 from qf_lib.backtesting.monitoring.light_backtest_monitor import LightBacktestMonitor
 from qf_lib.backtesting.order.order_factory import OrderFactory
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
-from qf_lib.backtesting.portfolio.portfolio_handler import PortfolioHandler
 from qf_lib.backtesting.position_sizer.initial_risk_position_sizer import InitialRiskPositionSizer
 from qf_lib.backtesting.position_sizer.position_sizer import PositionSizer
 from qf_lib.backtesting.position_sizer.simple_position_sizer import SimplePositionSizer
 from qf_lib.backtesting.trading_session.backtest_trading_session import BacktestTradingSession
+from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.tickers.tickers import QuandlTicker, Ticker, BloombergTicker
 from qf_lib.common.utils.dateutils.timer import SettableTimer
-from qf_lib.common.utils.logging.logging_config import setup_logging
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
+from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
 from qf_lib.data_providers.price_data_provider import DataProvider
 from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
@@ -59,9 +63,10 @@ class BacktestTradingSessionBuilder(object):
         self._logger = qf_logger.getChild(self.__class__.__name__)
 
         self._backtest_name = "Backtest Results"
-        self._initial_cash = 100000
+        self._initial_cash = 10000000
         self._monitor_type = LightBacktestMonitor
-        self._logging_level = logging.WARNING
+        self._benchmark_tms = None
+
         self._contract_ticker_mapper = DummyBloombergContractTickerMapper()
         self._commission_model = FixedCommissionModel(0.0)
         self._slippage_model = PriceBasedSlippage(0.0)
@@ -73,9 +78,20 @@ class BacktestTradingSessionBuilder(object):
         self._pdf_exporter = pdf_exporter
         self._excel_exporter = excel_exporter
 
+        self._frequency = None
+
+        # setup time of market events
+        BeforeMarketOpenEvent.set_trigger_time({"hour": 1, "minute": 0, "second": 0, "microsecond": 0})
+        MarketOpenEvent.set_trigger_time({"hour": 9, "minute": 30, "second": 0, "microsecond": 0})
+        MarketCloseEvent.set_trigger_time({"hour": 16, "minute": 00, "second": 0, "microsecond": 0})
+        AfterMarketCloseEvent.set_trigger_time({"hour": 23, "minute": 30, "second": 0, "microsecond": 0})
+
     def set_backtest_name(self, name: str):
         assert not any(char in name for char in ('/\\?%*:|"<>'))
         self._backtest_name = name
+
+    def set_frequency(self, frequency: Frequency):
+        self._frequency = frequency
 
     def set_initial_cash(self, initial_cash: int):
         assert type(initial_cash) is int and initial_cash > 0
@@ -104,9 +120,8 @@ class BacktestTradingSessionBuilder(object):
         assert issubclass(monitor_type, AbstractMonitor)
         self._monitor_type = monitor_type
 
-    def set_logging_level(self, logging_level: int):
-        assert logging_level == logging.WARNING or logging_level == logging.INFO
-        self._logging_level = logging_level
+    def set_benchmark_tms(self, benchmark_tms: QFSeries):
+        self._benchmark_tms = benchmark_tms
 
     def set_contract_ticker_mapper(self, contract_ticker_mapper: ContractTickerMapper):
         self._contract_ticker_mapper = contract_ticker_mapper
@@ -137,21 +152,31 @@ class BacktestTradingSessionBuilder(object):
         ])
         return event_manager
 
+    def _create_data_handler(self, data_provider, timer):
+        if self._frequency == Frequency.MIN_1:
+            data_handler = IntradayDataHandler(data_provider, timer)
+        elif self._frequency == Frequency.DAILY:
+            data_handler = DailyDataHandler(data_provider, timer)
+        else:
+            raise ValueError("Invalid frequency parameter. The only frequencies supported by the DataHandler are "
+                             "Frequency.DAILY and Frequency.MIN_1.")
+
+        return data_handler
+
     def build(self, start_date: datetime, end_date: datetime) -> BacktestTradingSession:
         self._timer = SettableTimer(start_date)
         self._notifiers = Notifiers(self._timer)
         self._events_manager = self._create_event_manager(self._timer, self._notifiers)
 
-        self._data_handler = DataHandler(self._data_provider, self._timer)
+        self._data_handler = self._create_data_handler(self._data_provider, self._timer)
 
         self._portfolio = Portfolio(self._data_handler, self._initial_cash, self._timer, self._contract_ticker_mapper)
         self._backtest_result = BacktestResult(self._portfolio, self._backtest_name, start_date, end_date)
         self._monitor = self._monitor_setup()
 
-        self._portfolio_handler = PortfolioHandler(self._portfolio, self._monitor, self._notifiers.scheduler)
         self._execution_handler = SimulatedExecutionHandler(
             self._data_handler, self._timer, self._notifiers.scheduler, self._monitor, self._commission_model,
-            self._contract_ticker_mapper, self._portfolio, self._slippage_model)
+            self._contract_ticker_mapper, self._portfolio, self._slippage_model, frequency=self._frequency)
 
         self._time_flow_controller = BacktestTimeFlowController(
             self._notifiers.scheduler, self._events_manager, self._timer,
@@ -160,8 +185,6 @@ class BacktestTradingSessionBuilder(object):
         self._broker = BacktestBroker(self._portfolio, self._execution_handler)
         self._order_factory = OrderFactory(self._broker, self._data_handler, self._contract_ticker_mapper)
         self._position_sizer = self._position_sizer_setup()
-
-        setup_logging(self._logging_level)
 
         self._logger.info(
             "\n".join([
@@ -202,14 +225,18 @@ class BacktestTradingSessionBuilder(object):
             events_manager=self._events_manager,
             monitor=self._monitor,
             broker=self._broker,
-            order_factory=self._order_factory
+            order_factory=self._order_factory,
+            frequency=self._frequency
         )
         return ts
 
     def _monitor_setup(self):
         if self._monitor_type is DummyMonitor:
             return DummyMonitor()
-        return self._monitor_type(self._backtest_result, self._settings, self._pdf_exporter, self._excel_exporter)
+        monitor = self._monitor_type(self._backtest_result, self._settings, self._pdf_exporter, self._excel_exporter)
+        if self._benchmark_tms is not None:
+            monitor.set_benchmark(self._benchmark_tms)
+        return monitor
 
     def _position_sizer_setup(self):
         if self._position_sizer_param is None:
@@ -219,3 +246,6 @@ class BacktestTradingSessionBuilder(object):
             return self._position_sizer_type(
                 self._broker, self._data_handler, self._order_factory, self._contract_ticker_mapper,
                 self._position_sizer_param)
+
+
+

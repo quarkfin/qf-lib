@@ -16,6 +16,7 @@ from abc import abstractmethod, ABCMeta
 from datetime import datetime
 from typing import Union, Sequence, Dict
 
+from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.containers.dataframe.cast_dataframe import cast_dataframe
@@ -33,14 +34,19 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
     single data base, for example: Quandl, Bloomberg, Yahoo.)
     """
 
-    def get_price(
-            self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
-            start_date: datetime, end_date: datetime = None) -> Union[None, PricesSeries, PricesDataFrame, QFDataArray]:
-        if start_date == end_date:
+    def get_price(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
+                  start_date: datetime, end_date: datetime = None, frequency: Frequency = Frequency.DAILY) -> \
+            Union[None, PricesSeries, PricesDataFrame, QFDataArray]:
+
+        got_single_date = False if frequency > Frequency.DAILY else (
+            bool(start_date and (start_date == end_date))
+        )
+
+        if got_single_date:
             raise NotImplementedError("Single date queries are not supported yet")
 
         fields_str = self._map_field_to_str(tickers, fields)
-        container = self.get_history(tickers, fields_str, start_date, end_date)
+        container = self.get_history(tickers, fields_str, start_date, end_date, frequency)
 
         # Convert to PriceSeries / PriceDataFrame and replace the string index with PriceField index
         if self._is_single_price_field(fields):
@@ -130,10 +136,6 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
             return True
 
         return False
-
-    @staticmethod
-    def _is_single_date(start_date, end_date):
-        return start_date is not None and (start_date == end_date)
 
     def _get_first_ticker(self, tickers):
         if self._is_single_ticker(tickers):

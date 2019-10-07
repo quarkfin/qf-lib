@@ -33,4 +33,17 @@ END_DATE = blpapi.Name("endDate")
 PERIODICITY_SELECTION = blpapi.Name("periodicitySelection")
 PERIODICITY_ADJUSTMENT = blpapi.Name("periodicityAdjustment")
 
+TIME = blpapi.Name("time")
+START_DATE_TIME = blpapi.Name("startDateTime")
+END_DATE_TIME = blpapi.Name("endDateTime")
+INTERVAL = blpapi.Name("interval")
+BAR_DATA = blpapi.Name("barData")
+BAR_TICK_DATA = blpapi.Name("barTickData")
+
+OPEN = blpapi.Name("open")
+CLOSE = blpapi.Name("close")
+LOW = blpapi.Name("low")
+HIGH = blpapi.Name("high")
+VOLUME = blpapi.Name("volume")
+
 REF_DATA_SERVICE_URI = "//blp/refdata"  # address of bloomberg service

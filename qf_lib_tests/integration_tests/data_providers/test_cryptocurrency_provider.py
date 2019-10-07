@@ -16,6 +16,7 @@ import unittest
 
 import pandas as pd
 
+from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import CcyTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
@@ -49,7 +50,8 @@ class TestCryptoCurrency(unittest.TestCase):
     def test_price_single_ticker_single_field(self):
         # single ticker, single field; end_date by default now, frequency by default DAILY, currency by default None
         data = self.cryptocurrency_provider.get_price(tickers=self.SINGLE_TICKER, fields=self.SINGLE_PRICE_FIELD,
-                                                      start_date=self.START_DATE, end_date=self.END_DATE)
+                                                      start_date=self.START_DATE, end_date=self.END_DATE,
+                                                      frequency=Frequency.DAILY)
 
         self.assertIsInstance(data, PricesSeries)
         self.assertEqual(len(data), self.NUM_OF_DATES)
@@ -58,7 +60,8 @@ class TestCryptoCurrency(unittest.TestCase):
     def test_price_single_ticker_multiple_fields(self):
         # single ticker, many fields; can be the same as for single field???
         data = self.cryptocurrency_provider.get_price(tickers=self.SINGLE_TICKER, fields=self.MANY_PRICE_FIELDS,
-                                                      start_date=self.START_DATE, end_date=self.END_DATE)
+                                                      start_date=self.START_DATE, end_date=self.END_DATE,
+                                                      frequency=Frequency.DAILY)
 
         self.assertEqual(type(data), PricesDataFrame)
         self.assertEqual(data.shape, (self.NUM_OF_DATES, len(self.MANY_PRICE_FIELDS)))
@@ -66,7 +69,8 @@ class TestCryptoCurrency(unittest.TestCase):
 
     def test_price_multiple_tickers_single_field(self):
         data = self.cryptocurrency_provider.get_price(tickers=self.MANY_TICKERS, fields=self.SINGLE_PRICE_FIELD,
-                                                      start_date=self.START_DATE, end_date=self.END_DATE)
+                                                      start_date=self.START_DATE, end_date=self.END_DATE,
+                                                      frequency=Frequency.DAILY)
         self.assertEqual(type(data), PricesDataFrame)
         self.assertEqual(data.shape, (self.NUM_OF_DATES, len(self.MANY_TICKERS)))
         self.assertEqual(list(data.columns), self.MANY_TICKERS)
@@ -74,7 +78,8 @@ class TestCryptoCurrency(unittest.TestCase):
     def test_price_multiple_tickers_multiple_fields(self):
         # testing for single date (start_date and end_date are the same)
         data = self.cryptocurrency_provider.get_price(tickers=self.MANY_TICKERS, fields=self.MANY_PRICE_FIELDS,
-                                                      start_date=self.START_DATE, end_date=self.END_DATE)
+                                                      start_date=self.START_DATE, end_date=self.END_DATE,
+                                                      frequency=Frequency.DAILY)
 
         self.assertEqual(type(data), QFDataArray)
         self.assertEqual(data.shape, (self.NUM_OF_DATES, len(self.MANY_TICKERS), len(self.MANY_PRICE_FIELDS)))

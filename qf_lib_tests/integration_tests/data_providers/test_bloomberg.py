@@ -39,7 +39,7 @@ class TestBloomberg(unittest.TestCase):
     START_DATE = str_to_date('2014-01-01')
     END_DATE = str_to_date('2015-02-02')
     SINGLE_FIELD = 'PX_LAST'
-    MANY_FIELDS = ['PX_LAST', 'OPEN', 'HIGH']
+    MANY_FIELDS = ['PX_LAST', 'PX_OPEN', 'PX_HIGH']
     INVALID_TICKER = BloombergTicker('Inv TIC Equity')
     INVALID_TICKERS = [BloombergTicker('Inv1 TIC Equity'), BloombergTicker('AAPL US Equity'),
                        BloombergTicker('Inv2 TIC Equity')]
@@ -58,7 +58,8 @@ class TestBloomberg(unittest.TestCase):
     def test_price_single_invalid_ticker_single_field(self):
         # single ticker, single field; end_date by default now, frequency by default DAILY, currency by default None
         data = self.bbg_provider.get_price(tickers=self.INVALID_TICKER, fields=self.SINGLE_PRICE_FIELD,
-                                           start_date=self.START_DATE, end_date=self.END_DATE)
+                                           start_date=self.START_DATE, end_date=self.END_DATE,
+                                           frequency=Frequency.DAILY)
 
         self.assertIsInstance(data, PricesSeries)
         self.assertEqual(len(data), 0)
@@ -67,7 +68,8 @@ class TestBloomberg(unittest.TestCase):
     def test_price_single_invalid_ticker_many_fields(self):
         # single ticker, single field; end_date by default now, frequency by default DAILY, currency by default None
         data = self.bbg_provider.get_price(tickers=self.INVALID_TICKER, fields=self.MANY_PRICE_FIELDS,
-                                           start_date=self.START_DATE, end_date=self.END_DATE)
+                                           start_date=self.START_DATE, end_date=self.END_DATE,
+                                           frequency=Frequency.DAILY)
 
         self.assertIsInstance(data, PricesDataFrame)
         self.assertEqual(data.shape, (0, len(self.MANY_PRICE_FIELDS)))
@@ -76,7 +78,8 @@ class TestBloomberg(unittest.TestCase):
     def test_price_many_invalid_tickers_many_fields(self):
         # single ticker, single field; end_date by default now, frequency by default DAILY, currency by default None
         data = self.bbg_provider.get_price(tickers=self.INVALID_TICKERS, fields=self.MANY_PRICE_FIELDS,
-                                           start_date=self.START_DATE, end_date=self.END_DATE)
+                                           start_date=self.START_DATE, end_date=self.END_DATE,
+                                           frequency=Frequency.DAILY)
 
         self.assertEqual(type(data), QFDataArray)
         self.assertEqual(data.shape, (self.NUM_OF_DATES, len(self.INVALID_TICKERS), len(self.MANY_PRICE_FIELDS)))
@@ -89,7 +92,8 @@ class TestBloomberg(unittest.TestCase):
     def test_price_single_ticker_single_field(self):
         # single ticker, single field; end_date by default now, frequency by default DAILY, currency by default None
         data = self.bbg_provider.get_price(tickers=self.SINGLE_TICKER, fields=self.SINGLE_PRICE_FIELD,
-                                           start_date=self.START_DATE, end_date=self.END_DATE)
+                                           start_date=self.START_DATE, end_date=self.END_DATE,
+                                           frequency=Frequency.DAILY)
 
         self.assertIsInstance(data, PricesSeries)
         self.assertEqual(len(data), self.NUM_OF_DATES)
@@ -98,7 +102,8 @@ class TestBloomberg(unittest.TestCase):
     def test_price_single_ticker_multiple_fields(self):
         # single ticker, many fields; can be the same as for single field???
         data = self.bbg_provider.get_price(tickers=self.SINGLE_TICKER, fields=self.MANY_PRICE_FIELDS,
-                                           start_date=self.START_DATE, end_date=self.END_DATE)
+                                           start_date=self.START_DATE, end_date=self.END_DATE,
+                                           frequency=Frequency.DAILY)
 
         self.assertEqual(type(data), PricesDataFrame)
         self.assertEqual(data.shape, (self.NUM_OF_DATES, len(self.MANY_PRICE_FIELDS)))
@@ -106,18 +111,20 @@ class TestBloomberg(unittest.TestCase):
 
     def test_price_multiple_tickers_single_field(self):
         data = self.bbg_provider.get_price(tickers=self.MANY_TICKERS, fields=self.SINGLE_PRICE_FIELD,
-                                           start_date=self.START_DATE, end_date=self.END_DATE)
+                                           start_date=self.START_DATE, end_date=self.END_DATE,
+                                           frequency=Frequency.DAILY)
         self.assertEqual(type(data), PricesDataFrame)
         self.assertEqual(data.shape, (self.NUM_OF_DATES, len(self.MANY_TICKERS)))
         self.assertEqual(list(data.columns), self.MANY_TICKERS)
 
     def test_price_multiple_tickers_single_field_order(self):
         data1 = self.bbg_provider.get_price(tickers=self.MANY_TICKERS, fields=self.SINGLE_PRICE_FIELD,
-                                            start_date=self.START_DATE, end_date=self.END_DATE)
+                                            start_date=self.START_DATE, end_date=self.END_DATE,
+                                            frequency=Frequency.DAILY)
 
         data2 = self.bbg_provider.get_price(tickers=[self.MANY_TICKERS[1], self.MANY_TICKERS[0]],
-                                            fields=self.SINGLE_PRICE_FIELD,
-                                            start_date=self.START_DATE, end_date=self.END_DATE)
+                                            fields=self.SINGLE_PRICE_FIELD, start_date=self.START_DATE,
+                                            end_date=self.END_DATE, frequency=Frequency.DAILY)
 
         assert_series_equal(data2.iloc[:, 0], data1.iloc[:, 1])
         assert_series_equal(data2.iloc[:, 1], data1.iloc[:, 0])
@@ -125,7 +132,8 @@ class TestBloomberg(unittest.TestCase):
     def test_price_multiple_tickers_multiple_fields(self):
         # testing for single date (start_date and end_date are the same)
         data = self.bbg_provider.get_price(tickers=self.MANY_TICKERS, fields=self.MANY_PRICE_FIELDS,
-                                           start_date=self.START_DATE, end_date=self.END_DATE)
+                                           start_date=self.START_DATE, end_date=self.END_DATE,
+                                           frequency=Frequency.DAILY)
 
         self.assertEqual(type(data), QFDataArray)
         self.assertEqual(data.shape, (self.NUM_OF_DATES, len(self.MANY_TICKERS), len(self.MANY_PRICE_FIELDS)))

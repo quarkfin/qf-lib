@@ -20,7 +20,10 @@ import pandas as pd
 from mockito import mock, when, ANY
 from pandas import Series, date_range
 
-from qf_lib.backtesting.data_handler.data_handler import DataHandler
+from qf_lib.backtesting.data_handler.daily_data_handler import DailyDataHandler
+from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
+from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
+from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import QuandlTicker
 from qf_lib.common.utils.dateutils.date_format import DateFormat
@@ -34,36 +37,38 @@ from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_seri
 class Test_DataHandler_CurrentPrices(TestCase):
     def setUp(self):
         self.timer, self.tickers, _, self.data_handler = _get_test_case_set_up()
+        MarketOpenEvent.set_trigger_time({"hour": 13, "minute": 30, "second": 0, "microsecond": 0})
+        MarketCloseEvent.set_trigger_time({"hour": 20, "minute": 0, "second": 0, "microsecond": 0})
 
     def test_before_data_starts(self):
         self._assert_current_prices_are_correct("2009-12-28 06:00:00.000000", None)
 
     def test_at_open_when_data_available_for_every_ticker(self):
-        self._assert_current_prices_are_correct("2009-12-28 09:30:00.000000", [25.0, 27.0])
+        self._assert_current_prices_are_correct("2009-12-28 13:30:00.000000", [25.0, 27.0])
 
     def test_in_the_middle_of_a_trading_session_when_data_available_for_every_ticker(self):
         self._assert_current_prices_are_correct("2009-12-28 12:00:00.000000", None)
 
     def test_at_the_market_close_when_data_available_for_every_ticker(self):
-        self._assert_current_prices_are_correct("2009-12-28 16:00:00.000000", [26.0, 28.0])
+        self._assert_current_prices_are_correct("2009-12-28 20:00:00.000000", [26.0, 28.0])
 
     def test_at_market_open_when_data_available_for_the_second_ticker(self):
-        self._assert_current_prices_are_correct("2009-12-29 09:30:00.000000", [None, 29.0])
+        self._assert_current_prices_are_correct("2009-12-29 13:30:00.000000", [None, 29.0])
 
     def test_in_the_middle_of_a_trading_session_when_data_available_for_the_second_ticker(self):
-        self._assert_current_prices_are_correct("2009-12-29 12:00:00.000000", None)
+        self._assert_current_prices_are_correct("2009-12-29 15:00:00.000000", None)
 
     def test_at_market_close_when_data_available_for_the_second_ticker(self):
-        self._assert_current_prices_are_correct("2009-12-29 16:00:00.000000", [None, 30.0])
+        self._assert_current_prices_are_correct("2009-12-29 20:00:00.000000", [None, 30.0])
 
     def test_at_market_open_when_data_available_for_the_first_ticker(self):
-        self._assert_current_prices_are_correct("2009-12-30 09:30:00.000000", [31.0, None])
+        self._assert_current_prices_are_correct("2009-12-30 13:30:00.000000", [31.0, None])
 
     def test_at_market_close_when_data_available_for_the_first_ticker(self):
-        self._assert_current_prices_are_correct("2009-12-30 16:00:00.000000", [32.0, None])
+        self._assert_current_prices_are_correct("2009-12-30 20:00:00.000000", [32.0, None])
 
     def test_after_market_close_when_data_is_not_available_for_anything_anymore(self):
-        self._assert_current_prices_are_correct("2009-12-30 20:00:00.000000", None)
+        self._assert_current_prices_are_correct("2009-12-30 21:00:00.000000", None)
 
     def _assert_current_prices_are_correct(self, curr_time_str, expected_values):
         current_time = str_to_date(curr_time_str, DateFormat.FULL_ISO)
@@ -76,18 +81,20 @@ class Test_DataHandler_CurrentPrices(TestCase):
 class Test_DataHandler_LastAvailablePrices(TestCase):
     def setUp(self):
         self.timer, self.tickers, _, self.data_handler = _get_test_case_set_up()
+        MarketOpenEvent.set_trigger_time({"hour": 13, "minute": 30, "second": 0, "microsecond": 0})
+        MarketCloseEvent.set_trigger_time({"hour": 20, "minute": 0, "second": 0, "microsecond": 0})
 
     def test_before_data_starts(self):
         self._assert_last_prices_are_correct("2009-12-28 06:00:00.000000", None)
 
     def test_at_open_when_data_available_for_every_ticker(self):
-        self._assert_last_prices_are_correct("2009-12-28 09:30:00.000000", [25.0, 27.0])
+        self._assert_last_prices_are_correct("2009-12-28 13:30:00.000000", [25.0, 27.0])
 
     def test_at_market_open_when_data_available_for_the_first_ticker(self):
-        self._assert_last_prices_are_correct("2009-12-30 09:30:00.000000", [31.0, 30.0])
+        self._assert_last_prices_are_correct("2009-12-30 13:30:00.000000", [31.0, 30.0])
 
     def test_at_market_close_when_data_available_for_the_first_ticker(self):
-        self._assert_last_prices_are_correct("2009-12-30 16:00:00.000000", [32.0, 30.0])
+        self._assert_last_prices_are_correct("2009-12-30 20:00:00.000000", [32.0, 30.0])
 
     def test_after_market_close_when_data_is_not_available_for_anything_anymore(self):
         self._assert_last_prices_are_correct("2009-12-30 20:00:00.000000", [32.0, 30.0])
@@ -105,15 +112,17 @@ class Test_DataHandler_BarForToday(TestCase):
         self.timer, self.tickers, self.price_fields, self.data_handler = _get_test_case_set_up()
         self.tickers_index = pd.Index(self.tickers, name='tickers')
         self.fields_index = pd.Index(self.price_fields, name='fields')
+        MarketOpenEvent.set_trigger_time({"hour": 13, "minute": 30, "second": 0, "microsecond": 0})
+        MarketCloseEvent.set_trigger_time({"hour": 20, "minute": 0, "second": 0, "microsecond": 0})
 
     def test_after_market_close_when_bar_is_available_for_every_ticker(self):
-        self._assert_bars_for_today_is_correct("2009-12-28 16:00:00.000000", [
+        self._assert_bars_for_today_is_correct("2009-12-28 20:00:00.000000", [
             [25.0, 25.1, 25.2, 26.0, 25.3],  # MSFT 2009-12-28
             [27.0, 27.1, 27.2, 28.0, 27.3]   # APPL 2009-12-28
         ])
 
     def test_on_open_when_only_data_from_yesterday_available(self):
-        self._assert_bars_for_today_is_correct("2009-12-29 09:30:00.000000", [
+        self._assert_bars_for_today_is_correct("2009-12-29 13:30:00.000000", [
             [None, None, None, None, None],  # MSFT 2009-12-28
             [None, None, None, None, None]   # APPL 2009-12-28
         ])
@@ -125,14 +134,14 @@ class Test_DataHandler_BarForToday(TestCase):
         ])
 
     def test_at_market_close_when_data_available_for_the_second_ticker_only(self):
-        self._assert_bars_for_today_is_correct("2009-12-29 16:00:00.000000", [
+        self._assert_bars_for_today_is_correct("2009-12-29 20:00:00.000000", [
             [None, None, None, None, None],  # MSFT 2009-12-29
             [29.0, 29.1, 29.2, 30.0, 29.3]   # APPL 2009-12-29
         ])
 
     def test_at_market_close_after_weekend(self):
         # 2010-01-04
-        self._assert_bars_for_today_is_correct("2010-01-04 16:00:00.000000", [
+        self._assert_bars_for_today_is_correct("2010-01-04 20:00:00.000000", [
             [None, None, None, None, None],  # MSFT 2009-12-28
             [None, None, None, None, None]   # APPL 2009-12-29
         ])
@@ -141,7 +150,7 @@ class Test_DataHandler_BarForToday(TestCase):
         current_time = str_to_date(curr_time_str, DateFormat.FULL_ISO)
         self.timer.set_current_time(current_time)
         expected_dataframe = pd.DataFrame(data=expected_values, index=self.tickers_index, columns=self.fields_index)
-        actual_dataframe = self.data_handler.get_bar_for_today(self.tickers)
+        actual_dataframe = self.data_handler.get_current_bar(self.tickers)
         assert_dataframes_equal(expected_dataframe, actual_dataframe, check_names=False)
 
 
@@ -155,7 +164,7 @@ def _get_test_case_set_up():
         tickers, price_fields=price_fields
     )
 
-    data_handler = DataHandler(price_data_provider_mock, timer)
+    data_handler = DailyDataHandler(price_data_provider_mock, timer)
 
     return timer, tickers, price_fields, data_handler
 
@@ -187,14 +196,11 @@ def _create_price_provider_mock(tickers, price_fields):
         ]
     )
 
-    price_data_provider_mock = mock(strict=True)  # type: GeneralPriceProvider
-    when(price_data_provider_mock).get_price(
-        tickers, [PriceField.Open, PriceField.Close], ANY(datetime), ANY(datetime)
-    ).thenReturn(mock_data_array.loc[:, :, [PriceField.Open, PriceField.Close]])
+    price_data_provider_mock = mock({"frequency": Frequency.DAILY}, strict=True)  # type: GeneralPriceProvider
+    when(price_data_provider_mock).get_price(tickers, [PriceField.Open, PriceField.Close], ANY(datetime), ANY(datetime),
+                                             Frequency.DAILY).thenReturn(mock_data_array.loc[:, :, [PriceField.Open, PriceField.Close]])
 
-    when(price_data_provider_mock).get_price(
-        tickers, price_fields, ANY(datetime), ANY(datetime)
-    ).thenReturn(mock_data_array)
+    when(price_data_provider_mock).get_price(tickers, price_fields, ANY(datetime), ANY(datetime), Frequency.DAILY).thenReturn(mock_data_array)
 
     return price_data_provider_mock
 

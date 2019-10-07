@@ -25,6 +25,7 @@ from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
 from qf_lib.backtesting.alpha_model.alpha_model_factory import AlphaModelFactory
 from qf_lib.backtesting.fast_alpha_model_tester.fast_alpha_models_tester import FastAlphaModelTester
+from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.enums.trade_field import TradeField
 from qf_lib.common.tickers.tickers import QuandlTicker, Ticker
@@ -46,12 +47,14 @@ class TestFastAlphaModelsTester(TestCase):
     data_start_date = str_to_date("2014-12-25")
     data_end_date = test_end_date
 
+    frequency = Frequency.DAILY
+
     def setUp(self):
         all_fields = PriceField.ohlcv()
 
         self._mocked_prices_arr = self._make_mock_data_array(self.tickers, all_fields)
         self._price_provider_mock = PresetDataProvider(self._mocked_prices_arr,
-                                                       self.data_start_date, self.data_end_date)
+                                                       self.data_start_date, self.data_end_date, self.frequency)
         self.timer = SettableTimer()
         self._alpha_model_factory = DummyAlphaModelFactory(self.timer)  # type: AlphaModelFactory
 

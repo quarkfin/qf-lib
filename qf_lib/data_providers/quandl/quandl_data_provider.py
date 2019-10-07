@@ -19,6 +19,7 @@ from typing import Union, Sequence, Dict
 import pandas as pd
 import quandl
 
+from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.enums.quandl_db_type import QuandlDBType
 from qf_lib.common.tickers.tickers import QuandlTicker
@@ -45,9 +46,9 @@ class QuandlDataProvider(DataProvider):
         quandl.ApiConfig.api_key = self.key
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
-    def get_price(
-            self, tickers: Union[QuandlTicker, Sequence[QuandlTicker]], fields: Union[PriceField, Sequence[PriceField]],
-            start_date: datetime, end_date: datetime = None):
+    def get_price(self, tickers: Union[QuandlTicker, Sequence[QuandlTicker]],
+                  fields: Union[PriceField, Sequence[PriceField]], start_date: datetime, end_date: datetime = None,
+                  frequency: Frequency = Frequency.DAILY):
         return self._get_history(
             convert_to_prices_types=True, tickers=tickers, fields=fields, start_date=start_date, end_date=end_date)
 
@@ -60,7 +61,8 @@ class QuandlDataProvider(DataProvider):
     def _get_history(
             self, convert_to_prices_types: bool, tickers: Union[QuandlTicker, Sequence[QuandlTicker]],
             fields: Union[None, str, Sequence[str], PriceField, Sequence[PriceField]] = None,
-            start_date: datetime = None, end_date: datetime = None) -> Union[QFSeries, QFDataFrame, QFDataArray]:
+            start_date: datetime = None, end_date: datetime = None) -> \
+            Union[QFSeries, QFDataFrame, QFDataArray]:
         """
         NOTE: Only use one Quandl Database at the time.
         Do not mix multiple databases in one query - this is the natural limitation coming from the fact that column

@@ -17,6 +17,7 @@ import unittest
 import pandas as pd
 from mockito import mock, when
 
+from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import QuandlTicker, BloombergTicker, HaverTicker, CcyTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
@@ -28,6 +29,7 @@ from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
 class TestGeneralPriceProviderMock(unittest.TestCase):
     START_DATE = str_to_date('2017-10-02')
     END_DATE = str_to_date('2017-10-17')
+    FREQUENCY = Frequency.DAILY
 
     BBG_TICKERS = [BloombergTicker('BBG1'), BloombergTicker('BBG2'),
                    BloombergTicker('BBG3'), BloombergTicker('BBG4')]
@@ -70,16 +72,16 @@ class TestGeneralPriceProviderMock(unittest.TestCase):
         ]
 
         bloomberg = mock(strict=True)
-        when(bloomberg)\
-            .get_price(self.BBG_TICKERS, self.PRICE_FIELDS, self.START_DATE, self.END_DATE)\
+        when(bloomberg) \
+            .get_price(self.BBG_TICKERS, self.PRICE_FIELDS, self.START_DATE, self.END_DATE, self.FREQUENCY) \
             .thenReturn(
                 QFDataArray.create(dates=datetime_index, tickers=self.BBG_TICKERS, fields=self.PRICE_FIELDS, data=data)
             )
         when(bloomberg).supported_ticker_types().thenReturn({BloombergTicker})
 
         quandl = mock(strict=True)
-        when(quandl)\
-            .get_price(self.QUANDL_TICKERS, self.PRICE_FIELDS, self.START_DATE, self.END_DATE)\
+        when(quandl) \
+            .get_price(self.QUANDL_TICKERS, self.PRICE_FIELDS, self.START_DATE, self.END_DATE, self.FREQUENCY) \
             .thenReturn(
                 QFDataArray.create(
                     dates=datetime_index, tickers=self.QUANDL_TICKERS, fields=self.PRICE_FIELDS, data=data
@@ -88,8 +90,8 @@ class TestGeneralPriceProviderMock(unittest.TestCase):
         when(quandl).supported_ticker_types().thenReturn({QuandlTicker})
 
         haver = mock(strict=True)
-        when(haver)\
-            .get_price(self.HAVER_TICKERS, self.PRICE_FIELDS, self.START_DATE, self.END_DATE) \
+        when(haver) \
+            .get_price(self.HAVER_TICKERS, self.PRICE_FIELDS, self.START_DATE, self.END_DATE, self.FREQUENCY) \
             .thenReturn(
                 QFDataArray.create(
                     dates=datetime_index, tickers=self.HAVER_TICKERS, fields=self.PRICE_FIELDS, data=data
@@ -98,8 +100,8 @@ class TestGeneralPriceProviderMock(unittest.TestCase):
         when(haver).supported_ticker_types().thenReturn({HaverTicker})
 
         ccy = mock(strict=True)
-        when(ccy)\
-            .get_price(self.CCY_TICKERS, self.PRICE_FIELDS, self.START_DATE, self.END_DATE) \
+        when(ccy) \
+            .get_price(self.CCY_TICKERS, self.PRICE_FIELDS, self.START_DATE, self.END_DATE, self.FREQUENCY) \
             .thenReturn(
                 QFDataArray.create(
                     dates=datetime_index, tickers=self.CCY_TICKERS, fields=self.PRICE_FIELDS, data=data

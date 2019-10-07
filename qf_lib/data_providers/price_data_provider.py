@@ -16,6 +16,7 @@ from abc import ABCMeta, abstractmethod
 from datetime import datetime
 from typing import Union, Sequence, Type, Set
 
+from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
@@ -30,10 +31,11 @@ class DataProvider(object, metaclass=ABCMeta):
     An interface for price providers (e.g. AbstractPriceDataProvider or GeneralPriceProvider).
     """
 
+    frequency = None
+
     @abstractmethod
-    def get_price(
-            self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
-            start_date: datetime, end_date: datetime = None) -> Union[None, PricesSeries, PricesDataFrame, QFDataArray]:
+    def get_price(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
+                  start_date: datetime, end_date: datetime = None, frequency: Frequency = None) -> Union[None, PricesSeries, PricesDataFrame, QFDataArray]:
         """
         Gets adjusted historical Prices (OPEN HIGH LOW CLOSE) and VOLUME
 
@@ -48,6 +50,8 @@ class DataProvider(object, metaclass=ABCMeta):
         end_date
             date representing the end of historical period from which data should be retrieved;
             if no end_date was provided, by default the current date will be used
+        frequency
+            frequency of the data
 
         Returns
         -------
@@ -68,7 +72,7 @@ class DataProvider(object, metaclass=ABCMeta):
     @abstractmethod
     def get_history(
             self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[None, str, Sequence[str]],
-            start_date: datetime, end_date: datetime = None, **kwargs) -> Union[QFSeries, QFDataFrame, QFDataArray]:
+            start_date: datetime, end_date: datetime = None, frequency: Frequency = None, **kwargs) -> Union[QFSeries, QFDataFrame, QFDataArray]:
         """
         Gets historical attributes(fields) of different securities(tickers).
 
@@ -92,6 +96,8 @@ class DataProvider(object, metaclass=ABCMeta):
         end_date
             date representing the end of historical period from which data should be retrieved;
             if no end_date was provided, by default the current date will be used
+        frequency
+            frequency of the data
         kwargs
             kwargs should not be used on the level of AbstractDataProvider. They are here to provide a common interface
             for all data providers since some of the specific data providers accept additional arguments

@@ -24,7 +24,7 @@ from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
 from qf_lib.backtesting.order.execution_style import MarketOrder, StopOrder
 from qf_lib.common.tickers.tickers import Ticker
-from qf_lib.backtesting.events.time_event.before_market_open_event import BeforeMarketOpenEvent
+from qf_lib.backtesting.events.time_event.regular_time_event.before_market_open_event import BeforeMarketOpenEvent
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 

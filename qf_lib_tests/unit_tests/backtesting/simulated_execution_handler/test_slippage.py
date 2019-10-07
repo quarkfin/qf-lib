@@ -71,7 +71,7 @@ class TestSlippage(TestCase):
         saved_tickers = self.tickers
 
         class DataHandlerMock(object):
-            def get_bar_for_today(self, tickers):
+            def get_current_bar(self, tickers):
                 assert set(tickers) == set(saved_tickers)
 
                 result = pd.DataFrame(

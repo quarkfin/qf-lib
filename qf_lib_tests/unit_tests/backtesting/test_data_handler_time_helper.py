@@ -16,8 +16,8 @@ import unittest
 from unittest import TestCase
 
 from qf_lib.backtesting.data_handler.data_handler import _DataHandlerTimeHelper
-from qf_lib.backtesting.events.time_event.market_close_event import MarketCloseEvent
-from qf_lib.backtesting.events.time_event.market_open_event import MarketOpenEvent
+from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
+from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
 from qf_lib.common.utils.dateutils.date_format import DateFormat
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.dateutils.timer import SettableTimer
@@ -26,13 +26,16 @@ from qf_lib.common.utils.dateutils.timer import SettableTimer
 class TestDataHandlerTimeHelper(TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.YESTERDAY_OPEN = str_to_date("2018-01-29 09:30:00.000000", DateFormat.FULL_ISO)
-        cls.YESTERDAY_CLOSE = str_to_date("2018-01-29 16:00:00.000000", DateFormat.FULL_ISO)
+        cls.YESTERDAY_OPEN = str_to_date("2018-01-29 13:30:00.000000", DateFormat.FULL_ISO)
+        cls.YESTERDAY_CLOSE = str_to_date("2018-01-29 20:00:00.000000", DateFormat.FULL_ISO)
         cls.TODAY_BEFORE_OPEN = str_to_date("2018-01-30 06:00:00.000000", DateFormat.FULL_ISO)
-        cls.TODAY_OPEN = str_to_date("2018-01-30 09:30:00.000000", DateFormat.FULL_ISO)
-        cls.TODAY_MIDDLE_DAY = str_to_date("2018-01-30 12:00:00.000000", DateFormat.FULL_ISO)
-        cls.TODAY_CLOSE = str_to_date("2018-01-30 16:00:00.000000", DateFormat.FULL_ISO)
+        cls.TODAY_OPEN = str_to_date("2018-01-30 13:30:00.000000", DateFormat.FULL_ISO)
+        cls.TODAY_MIDDLE_DAY = str_to_date("2018-01-30 15:00:00.000000", DateFormat.FULL_ISO)
+        cls.TODAY_CLOSE = str_to_date("2018-01-30 20:00:00.000000", DateFormat.FULL_ISO)
         cls.TODAY_AFTER_CLOSE = str_to_date("2018-01-30 20:00:00.000000", DateFormat.FULL_ISO)
+
+        MarketOpenEvent.set_trigger_time({"hour": 13, "minute": 30, "second": 0, "microsecond": 0})
+        MarketCloseEvent.set_trigger_time({"hour": 20, "minute": 0, "second": 0, "microsecond": 0})
 
     def setUp(self):
         self.timer = SettableTimer()

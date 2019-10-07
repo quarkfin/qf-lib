@@ -24,11 +24,8 @@ class Event(object, metaclass=abc.ABCMeta):
     trading infrastructure.
     """
 
-    def __init__(self, time: Optional[datetime]):
-        self.time = time
-
     def __str__(self):
-        return "{} - {:<25}".format(self.time, self.__class__.__name__)
+        return "{:<25}".format(self.__class__.__name__)
 
 
 _EventSubclass = TypeVar('_EventSubclass', bound=Event)

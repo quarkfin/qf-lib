@@ -16,6 +16,7 @@ import queue
 import warnings
 from typing import Dict, Type, Sequence
 
+from qf_lib.backtesting.events.time_event.time_event import TimeEvent
 from qf_lib.backtesting.events.empty_queue_event.empty_queue_event import EmptyQueueEvent
 from qf_lib.backtesting.events.end_trading_event.end_trading_event import EndTradingEvent
 from qf_lib.backtesting.events.event_base import Event, EventNotifier, EventListener
@@ -110,20 +111,18 @@ class EventManager(object):
             # Checking if queue is empty in this manner is not thread-safe.
             event = self.events_queue.get(block=False)
         except queue.Empty:
-            event = EmptyQueueEvent(self.timer.now())
+            event = EmptyQueueEvent()
         return event
 
     def _dispatch_event(self, event: Event):
         str_template = 'Dispatching event: {}'.format(event)
         self.logger.debug(str_template)
 
-        from qf_lib.backtesting.events.time_event.time_event import TimeEvent
         event_type = type(event)
 
         if isinstance(event, TimeEvent):
             event_type = TimeEvent
-
-        if event_type == EndTradingEvent:
+        elif event_type == EndTradingEvent:
             self.continue_trading = False
 
         notifier = self._events_to_notifiers[event_type]

@@ -83,7 +83,7 @@ class VolumeShareSlippage(Slippage):
 
     def _get_volumes_from_today(self, tickers: Sequence[Ticker]):
         unique_tickers = list(set(tickers))
-        today_bar = self.data_handler.get_bar_for_today(unique_tickers)
+        today_bar = self.data_handler.get_current_bar(unique_tickers)
         volumes = today_bar.loc[tickers, PriceField.Volume].values
 
         return volumes

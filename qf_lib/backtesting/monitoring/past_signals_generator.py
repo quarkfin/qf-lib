@@ -67,7 +67,7 @@ class PastSignalsGenerator(object):
         self.exposures_df = self.signals_df.applymap(lambda x: x.suggested_exposure.name)
         self.fractions_at_risk_df = self.signals_df.applymap(lambda x: x.fraction_at_risk)
 
-        portfolio_tms = self.backtest_ts.portfolio.get_portfolio_timeseries()
+        portfolio_tms = self.backtest_ts.portfolio.get_portfolio_eod_tms()
         portfolio_tms.index = portfolio_tms.index.date  # remove time part
         self.backtest_tms = portfolio_tms
         self.exposures_df["c/c return"] = portfolio_tms.to_simple_returns()

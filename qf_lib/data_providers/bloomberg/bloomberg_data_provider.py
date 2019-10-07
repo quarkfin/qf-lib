@@ -125,19 +125,27 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
             currency: str = None,
             override_name: str = None, override_value: str = None) \
             -> Union[QFSeries, QFDataFrame, QFDataArray]:
+        """
+        Gets historical data from Bloomberg from the (start_date - end_date) time range. In case of frequency, which is
+        higher than daily frequency (intraday data), the data is indexed by the start_date.
+        E.g.
+        Time range: 8:00 - 8:01, frequency: 1 minute - indexed with the 8:00 timestamp
+        """
         if fields is None:
             raise ValueError("Fields being None is not supported by {}".format(self.__class__.__name__))
 
         self._connect_if_needed()
         self._assert_is_connected()
 
-        got_single_date = start_date is not None and (start_date == end_date)
+        if end_date is None:
+            end_date = datetime.now()
+
+        got_single_date = start_date is not None and (
+            (start_date == end_date) if frequency <= Frequency.DAILY else False
+        )
 
         tickers, got_single_ticker = convert_to_list(tickers, BloombergTicker)
         fields, got_single_field = convert_to_list(fields, (PriceField, str))
-
-        if end_date is None:
-            end_date = datetime.now()
 
         tickers_str = tickers_as_strings(tickers)
         data_array = self._historical_data_provider.get(

@@ -18,6 +18,7 @@ from unittest import TestCase
 import pandas as pd
 from mockito import mock, when
 
+from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.risk_parity_boxes.risk_parity_boxes import RiskParityBoxesFactory, ChangeDirection
 from qf_lib.common.tickers.tickers import str_to_ticker
@@ -32,6 +33,7 @@ class TestRiskParityBoxesFactory(TestCase):
     def setUpClass(cls):
         cls.start_date = str_to_date("2017-10-01")
         cls.end_date = str_to_date("2017-11-01")
+        cls.frequency = Frequency.DAILY
 
         datetime_index = pd.DatetimeIndex([
             '2017-10-02', '2017-10-03', '2017-10-04', '2017-10-05', '2017-10-06',
@@ -72,7 +74,7 @@ class TestRiskParityBoxesFactory(TestCase):
             [264.4727, 106.06, 121.01, 323.1553, 2455.70, 2415.48, 1274.66]
         ])
         when(bbg_data_provider).get_price(
-            all_tickers, PriceField.Close, cls.start_date, cls.end_date
+            all_tickers, PriceField.Close, cls.start_date, cls.end_date, cls.frequency
         ).thenReturn(assets_prices_df)
 
         cls.bbg_data_provider = bbg_data_provider

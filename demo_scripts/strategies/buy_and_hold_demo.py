@@ -15,6 +15,7 @@
 import matplotlib.pyplot as plt
 
 from qf_lib.backtesting.order.time_in_force import TimeInForce
+from qf_lib.common.enums.frequency import Frequency
 
 plt.ion()  # required for dynamic chart, keep before other imports
 
@@ -24,7 +25,7 @@ from qf_lib.backtesting.broker.broker import Broker
 from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.order.execution_style import MarketOrder
 from qf_lib.common.tickers.tickers import BloombergTicker
-from qf_lib.backtesting.events.time_event.before_market_open_event import BeforeMarketOpenEvent
+from qf_lib.backtesting.events.time_event.regular_time_event.before_market_open_event import BeforeMarketOpenEvent
 from qf_lib.backtesting.events.time_event.scheduler import Scheduler
 from qf_lib.backtesting.order.order_factory import OrderFactory
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
@@ -64,6 +65,7 @@ def main():
 
     session_builder = container.resolve(BacktestTradingSessionBuilder)  # type: BacktestTradingSessionBuilder
     session_builder.set_backtest_name('Buy and Hold')
+    session_builder.set_frequency(Frequency.DAILY)
     ts = session_builder.build(start_date, end_date)
     ts.use_data_preloading(BuyAndHoldStrategy.TICKER)
 

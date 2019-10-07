@@ -26,7 +26,7 @@ from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.backtesting.order.execution_style import MarketOrder
 from qf_lib.common.tickers.tickers import BloombergTicker
-from qf_lib.backtesting.events.time_event.before_market_open_event import BeforeMarketOpenEvent
+from qf_lib.backtesting.events.time_event.regular_time_event.before_market_open_event import BeforeMarketOpenEvent
 from qf_lib.backtesting.trading_session.backtest_trading_session import BacktestTradingSession
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 
@@ -86,7 +86,7 @@ def main():
     SimpleMAStrategy(ts)
     ts.start_trading()
 
-    actual_end_value = ts.portfolio.get_portfolio_timeseries()[-1]
+    actual_end_value = ts.portfolio.get_portfolio_eod_tms()[-1]
     expected_value = 898294.64
 
     print("Expected End Value = {}".format(expected_value))

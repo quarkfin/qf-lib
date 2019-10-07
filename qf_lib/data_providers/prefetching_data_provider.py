@@ -15,6 +15,7 @@
 from datetime import datetime
 from typing import Sequence
 
+from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.data_providers.preset_data_provider import PresetDataProvider
@@ -32,9 +33,11 @@ class PrefetchingDataProvider(PresetDataProvider):
                  tickers: Sequence[Ticker],
                  fields: Sequence[PriceField],
                  start_date: datetime, end_date: datetime,
+                 frequency: Frequency,
                  check_data_availability: bool = True):
-        prefetched_data = data_provider.get_price(tickers, fields, start_date, end_date)
+        prefetched_data = data_provider.get_price(tickers, fields, start_date, end_date, frequency)
         super().__init__(
             data=prefetched_data,
             start_date=start_date, end_date=end_date,
+            frequency=frequency,
             check_data_availability=check_data_availability)

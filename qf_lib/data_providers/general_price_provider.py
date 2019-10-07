@@ -16,6 +16,7 @@ from datetime import datetime
 from itertools import groupby
 from typing import Sequence, Union, Dict, Type
 
+from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
@@ -46,48 +47,52 @@ class GeneralPriceProvider(DataProvider):
             if provider is not None:
                 self._register_data_provider(provider)
 
-    def get_price(
-            self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
-            start_date: datetime, end_date: datetime = None) -> Union[None, PricesSeries, PricesDataFrame, QFDataArray]:
+    def get_price(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
+                  start_date: datetime, end_date: datetime = None, frequency: Frequency = Frequency.DAILY) -> Union[None, PricesSeries, PricesDataFrame, QFDataArray]:
         """"
         Implements the functionality of AbstractPriceDataProvider using duck-typing.
         """
         use_prices_types = True
-        normalized_result = self._get_data_for_multiple_tickers(tickers, fields, start_date, end_date, use_prices_types)
+        normalized_result = self._get_data_for_multiple_tickers(tickers, fields, start_date, end_date, frequency, use_prices_types)
 
         return normalized_result
 
     def get_history(
             self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[str, Sequence[str]], start_date: datetime,
-            end_date: datetime = None, **kwargs) -> Union[QFSeries, QFDataFrame, QFDataArray]:
+            end_date: datetime = None, frequency: Frequency = Frequency.DAILY, **kwargs) -> Union[QFSeries, QFDataFrame, QFDataArray]:
         """"
         Implements the functionality of DataProvider using duck-typing.
         """
         use_prices_types = False
-        normalized_result = self._get_data_for_multiple_tickers(tickers, fields, start_date, end_date, use_prices_types)
+        normalized_result = self._get_data_for_multiple_tickers(tickers, fields, start_date, end_date, frequency,
+                                                                use_prices_types)
 
         return normalized_result
 
     def supported_ticker_types(self):
         return self._ticker_type_to_data_provider_dict.keys()
 
-    def _get_data_for_multiple_tickers(self, tickers, fields, start_date, end_date, use_prices_types):
+    def _get_data_for_multiple_tickers(self, tickers, fields, start_date, end_date, frequency, use_prices_types):
         if use_prices_types:
             type_of_field = PriceField
 
             def get_data_func(data_prov: DataProvider, tickers_for_single_data_provider):
-                prices = data_prov.get_price(tickers_for_single_data_provider, fields, start_date, end_date)
+                prices = data_prov.get_price(tickers_for_single_data_provider, fields, start_date, end_date,
+                                             frequency)
                 return prices
         else:
             type_of_field = str
 
             def get_data_func(data_prov: DataProvider, tickers_for_single_data_provider):
-                prices = data_prov.get_history(tickers_for_single_data_provider, fields, start_date, end_date)
+                prices = data_prov.get_history(tickers_for_single_data_provider, fields, start_date, end_date,
+                                               frequency)
                 return prices
 
         tickers, got_single_ticker = convert_to_list(tickers, Ticker)
         fields, got_single_field = convert_to_list(fields, type_of_field)
-        got_single_date = start_date is not None and (start_date == end_date)
+        got_single_date = start_date is not None and (
+            (start_date == end_date) if frequency <= Frequency.DAILY else False
+        )
         partial_results = []
 
         for ticker_class, ticker_group in groupby(tickers, lambda t: type(t)):

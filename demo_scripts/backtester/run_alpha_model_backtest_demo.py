@@ -22,6 +22,7 @@ from qf_lib.backtesting.contract.contract_to_ticker_conversion.quandl_mapper imp
 from qf_lib.backtesting.execution_handler.commission_models.ib_commission_model import IBCommissionModel
 from qf_lib.backtesting.monitoring.backtest_monitor import BacktestMonitor
 from qf_lib.backtesting.monitoring.past_signals_generator import get_all_tickers_used
+from qf_lib.common.enums.frequency import Frequency
 
 plt.ion()  # required for dynamic chart, good to keep this at the beginning of imports
 
@@ -47,6 +48,7 @@ def main():
     session_builder.set_contract_ticker_mapper(DummyQuandlContractTickerMapper())
     session_builder.set_commission_model(commission_model)
     session_builder.set_monitor_type(BacktestMonitor)
+    session_builder.set_frequency(Frequency.DAILY)
     ts = session_builder.build(start_date, end_date)
 
     # ----- build models ----- #
@@ -64,7 +66,7 @@ def main():
     ts.start_trading()
 
     # ----- use results ----- #
-    backtest_tms = ts.portfolio.get_portfolio_timeseries().to_log_returns()
+    backtest_tms = ts.portfolio.get_portfolio_eod_tms().to_log_returns()
     print("mean daily log return: {}".format(backtest_tms.mean()))
     print("std of daily log returns: {}".format(backtest_tms.std()))
 

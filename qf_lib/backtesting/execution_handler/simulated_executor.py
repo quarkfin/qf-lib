@@ -45,11 +45,15 @@ class SimulatedExecutor(metaclass=abc.ABCMeta):
         self._awaiting_orders = {}  # type: Dict[int, Order]
 
     @abc.abstractmethod
-    def accept_orders(self, orders: Sequence[Order]) -> List[int]:
+    def assign_order_ids(self, orders: Sequence[Order]) -> List[int]:
         """
-        Accept the orders for future execution
+        Assign the orders ids
         """
         pass
+
+    def accept_orders(self, orders: Sequence[Order]):
+        for order in orders:
+            self._awaiting_orders[order.id] = order
 
     def cancel_order(self, order_id: int) -> Optional[Order]:
         """
@@ -71,7 +75,7 @@ class SimulatedExecutor(metaclass=abc.ABCMeta):
         """
         return list(self._awaiting_orders.values())
 
-    def execute_orders(self):
+    def execute_orders(self, market_open=False, market_close=False):
         """
         Converts Orders into Transactions. Preserves the dictionary of unexecuted Orders (order_id -> Order)
         """
@@ -84,15 +88,19 @@ class SimulatedExecutor(metaclass=abc.ABCMeta):
 
         tickers = [self._contracts_to_tickers_mapper.contract_to_ticker(order.contract) for order in open_orders_list]
 
-        no_slippage_fill_prices_list, to_be_executed_orders, unexecuted_orders_data_dict = \
-            self._get_orders_with_fill_prices_without_slippage(open_orders_list, tickers)
+        no_slippage_fill_prices_list, to_be_executed_orders, expired_orders_list = \
+            self._get_orders_with_fill_prices_without_slippage(open_orders_list, tickers, market_open, market_close)
 
         fill_prices, _ = self._slippage_model.apply_slippage(to_be_executed_orders, no_slippage_fill_prices_list)
 
         for order, fill_price in zip(to_be_executed_orders, fill_prices):
             self._execute_order(order, fill_price)
+            # Delete the executed orders from awaiting orders dictionary
+            del self._awaiting_orders[order.id]
 
-        self._awaiting_orders = unexecuted_orders_data_dict
+        # Delete all expired orders
+        for expired_order_id in expired_orders_list:
+            del self._awaiting_orders[expired_order_id]
 
     def _execute_order(self, order: Order, fill_price: float):
         """
@@ -110,8 +118,9 @@ class SimulatedExecutor(metaclass=abc.ABCMeta):
         self._portfolio.transact_transaction(transaction)
 
     @abc.abstractmethod
-    def _get_orders_with_fill_prices_without_slippage(self, open_orders_list: List[Order], tickers: List[Ticker]) \
-            -> Tuple[List[float], List[Order], Dict[int, Order]]:
+    def _get_orders_with_fill_prices_without_slippage(self, open_orders_list: List[Order], tickers: List[Ticker],
+                                                      market_open: bool, market_close: bool) \
+            -> Tuple[List[float], List[Order], List[int]]:
         """
         open_orders_list
             list of open orders
@@ -124,8 +133,8 @@ class SimulatedExecutor(metaclass=abc.ABCMeta):
             prices of the tickers without slippage
         to_be_executed_orders
             list of orders that can be executes (has price and is traded)
-        unexecuted_orders_dict
-            dict(order_number, Order) of orders that cannot be executed this time
+        expired_orders_list
+            list of orders numbers that will expire and therefore should be deleted from awaiting orders
 
         """
         pass

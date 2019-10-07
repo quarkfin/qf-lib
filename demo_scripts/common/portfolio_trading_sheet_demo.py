@@ -1,0 +1,83 @@
+#     Copyright 2016-present CERN – European Organization for Nuclear Research
+#
+#     Licensed under the Apache License, Version 2.0 (the "License");
+#     you may not use this file except in compliance with the License.
+#     You may obtain a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#     Unless required by applicable law or agreed to in writing, software
+#     distributed under the License is distributed on an "AS IS" BASIS,
+#     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#     See the License for the specific language governing permissions and
+#     limitations under the License.
+from demo_scripts.backtester.moving_average_alpha_model import MovingAverageAlphaModel
+from demo_scripts.common.utils.dummy_ticker import DummyTicker
+from demo_scripts.common.utils.dummy_ticker_mapper import DummyTickerMapper
+from demo_scripts.demo_configuration.demo_data_provider import daily_data_provider
+from demo_scripts.demo_configuration.demo_ioc import container
+from qf_lib.analysis.tearsheets.portfolio_trading_sheet import PortfolioTradingSheet
+from qf_lib.backtesting.alpha_model.all_tickers_used import get_all_tickers_used
+from qf_lib.backtesting.alpha_model.alpha_model_factory import AlphaModelFactory
+from qf_lib.backtesting.alpha_model.alpha_model_strategy import AlphaModelStrategy
+from qf_lib.backtesting.execution_handler.commission_models.ib_commission_model import IBCommissionModel
+from qf_lib.backtesting.monitoring.backtest_monitor import BacktestMonitor
+from qf_lib.backtesting.position_sizer.initial_risk_position_sizer import InitialRiskPositionSizer
+from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
+from qf_lib.common.enums.frequency import Frequency
+from qf_lib.common.utils.dateutils.string_to_date import str_to_date
+from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
+from qf_lib.settings import Settings
+
+
+def main():
+    model_type = MovingAverageAlphaModel
+
+    initial_risk = 0.03
+    commission_model = IBCommissionModel()
+
+    start_date = str_to_date('2010-01-01')
+    end_date = str_to_date('2010-05-01')
+
+    # Use the preset daily data provider
+    data_provider = daily_data_provider
+
+    # ----- build trading session ----- #
+    session_builder = container.resolve(BacktestTradingSessionBuilder)  # type: BacktestTradingSessionBuilder
+    session_builder.set_backtest_name('Moving Average Alpha Model Backtest')
+    session_builder.set_position_sizer(InitialRiskPositionSizer, initial_risk)
+    session_builder.set_contract_ticker_mapper(DummyTickerMapper())
+    session_builder.set_commission_model(commission_model)
+    session_builder.set_monitor_type(BacktestMonitor)
+    session_builder.set_data_provider(data_provider)
+    session_builder.set_frequency(Frequency.DAILY)
+
+    ts = session_builder.build(start_date, end_date)
+
+    # ----- build models ----- #
+    model_factory = AlphaModelFactory(ts.data_handler)
+    model = model_factory.make_parametrized_model(model_type)
+    model_tickers = [DummyTicker('AAA'), DummyTicker('BBB'), DummyTicker('CCC'),
+                     DummyTicker('DDD'), DummyTicker('EEE'), DummyTicker('FFF')]
+    model_tickers_dict = {model: model_tickers}
+
+    # ----- preload price data ----- #
+    all_tickers_used = get_all_tickers_used(model_tickers_dict)
+    ts.use_data_preloading(all_tickers_used)
+
+    # ----- start trading ----- #
+    AlphaModelStrategy(ts, model_tickers_dict, use_stop_losses=True)
+    ts.start_trading()
+
+    settings = container.resolve(Settings)  # type: Settings
+    pdf_exporter = container.resolve(PDFExporter)  # type: PDFExporter
+
+    # ----- generate portfolio trading sheet ----- #
+    portfolio_trading_sheet = PortfolioTradingSheet(settings, pdf_exporter, ts.monitor.backtest_result,
+                                                    ts.monitor.backtest_result.backtest_name)
+    portfolio_trading_sheet.build_document()
+    portfolio_trading_sheet.save()
+
+
+if __name__ == '__main__':
+    main()

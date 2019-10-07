@@ -21,6 +21,10 @@ from mockito.matchers import Matcher
 
 from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.bloomberg_mapper import DummyBloombergContractTickerMapper
+from qf_lib.backtesting.events.time_event.periodic_event.intraday_bar_event import IntradayBarEvent
+from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
+from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
+from qf_lib.backtesting.events.time_event.single_time_event.schedule_order_execution_event import ScheduleOrderExecutionEvent
 from qf_lib.backtesting.execution_handler.commission_models.fixed_commission_model import FixedCommissionModel
 from qf_lib.backtesting.execution_handler.simulated_execution_handler import SimulatedExecutionHandler
 from qf_lib.backtesting.execution_handler.slippage.price_based_slippage import PriceBasedSlippage
@@ -29,7 +33,9 @@ from qf_lib.backtesting.order.execution_style import MarketOrder, MarketOnCloseO
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.backtesting.portfolio.transaction import Transaction
+from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.tickers.tickers import BloombergTicker
+from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_lists_equal
@@ -70,15 +76,27 @@ class TestMarketOnOpenExecutionStyle(TestCase):
 
     def setUp(self):
         self.start_date = str_to_date("2018-02-04")
+        self.number_of_minutes = 1
+
+        MarketOpenEvent.set_trigger_time({"hour": 13, "minute": 30, "second": 0, "microsecond": 0})
+        MarketCloseEvent.set_trigger_time({"hour": 20, "minute": 0, "second": 0, "microsecond": 0})
+
+        before_close = self.start_date + MarketCloseEvent.trigger_time() - \
+                       RelativeDelta(minutes=self.number_of_minutes)
+
         self.msft_contract = Contract(self.MSFT_TICKER_STR, security_type='SEK', exchange='TEST')
         self.msft_ticker = BloombergTicker(self.MSFT_TICKER_STR)
 
         self.contracts_to_tickers_mapper = DummyBloombergContractTickerMapper()
-        self.timer = SettableTimer(initial_time=self.start_date)
+        self.timer = SettableTimer(initial_time=before_close)
 
         self.data_handler = mock(strict=True)
 
         self.scheduler = mock()
+        ScheduleOrderExecutionEvent.clear()
+
+        # Set the periodic bar events to intraday trading
+        IntradayBarEvent.frequency = Frequency.MIN_1
 
         self.commission_model = FixedCommissionModel(commission=0.0)
         self.monitor = _MonitorMock()
@@ -86,9 +104,10 @@ class TestMarketOnOpenExecutionStyle(TestCase):
         self.portfolio = mock()
 
         slippage_model = PriceBasedSlippage(0.0)
-        self.exec_hanlder = SimulatedExecutionHandler(self.data_handler, self.timer, self.scheduler, self.spied_monitor,
+        self.exec_handler = SimulatedExecutionHandler(self.data_handler, self.timer, self.scheduler, self.spied_monitor,
                                                       self.commission_model, self.contracts_to_tickers_mapper,
-                                                      self.portfolio, slippage_model)
+                                                      self.portfolio, slippage_model,
+                                                      RelativeDelta(minutes=self.number_of_minutes))
 
         self._set_last_msft_price(100.0)
         self.order_1 = Order(self.msft_contract, quantity=10, execution_style=MarketOrder(),
@@ -101,97 +120,111 @@ class TestMarketOnOpenExecutionStyle(TestCase):
         self.order_4 = Order(self.msft_contract, quantity=4, execution_style=MarketOnCloseOrder(),
                              time_in_force=TimeInForce.DAY)
 
+    def _trigger_single_time_event(self):
+        self.timer.set_current_time(self.timer.now() + RelativeDelta(minutes=self.number_of_minutes))
+        event = ScheduleOrderExecutionEvent()
+        self.exec_handler.on_orders_accept(event)
+
     def test_1_order_fill(self):
-        self.exec_hanlder.accept_orders([self.order_1])
+        self.exec_handler.assign_order_ids([self.order_1])
         self._set_price_for_now(101)
-        self.exec_hanlder.on_market_open(...)
+        self._trigger_single_time_event()
+        self.exec_handler.on_market_open(...)
 
         verify(self.spied_monitor, times=1).record_transaction(...)
         verify(self.portfolio, times=1).transact_transaction(...)
 
-        actual_orders = self.exec_hanlder.get_open_orders()
+        actual_orders = self.exec_handler.get_open_orders()
         expected_orders = []
         assert_lists_equal(expected_orders, actual_orders)
 
     def test_3_orders_fill(self):
-        self.exec_hanlder.accept_orders([self.order_1, self.order_2, self.order_3])
+        self.exec_handler.assign_order_ids([self.order_1, self.order_2, self.order_3])
         self._set_price_for_now(101)
-        self.exec_hanlder.on_market_open(...)
+        self._trigger_single_time_event()
+        self.exec_handler.on_market_open(...)
 
         verify(self.spied_monitor, times=3).record_transaction(...)
         verify(self.portfolio, times=3).transact_transaction(...)
 
-        actual_orders = self.exec_hanlder.get_open_orders()
+        actual_orders = self.exec_handler.get_open_orders()
         expected_orders = []
         assert_lists_equal(expected_orders, actual_orders)
 
     def test_3_orders_fill_only_at_open(self):
-        self.exec_hanlder.accept_orders([self.order_1, self.order_2, self.order_3])
+        self.exec_handler.assign_order_ids([self.order_1, self.order_2, self.order_3])
         self._set_price_for_now(101)
-        self.exec_hanlder.on_market_close(...)
+        self._trigger_single_time_event()
+        self.exec_handler.on_market_close(...)
 
         verifyZeroInteractions(self.portfolio, self.spied_monitor)
 
-        actual_orders = self.exec_hanlder.get_open_orders()
+        actual_orders = self.exec_handler.get_open_orders()
         expected_orders = [self.order_1, self.order_2, self.order_3]
-        assert_lists_equal(expected_orders, actual_orders)
+        self.assertCountEqual(expected_orders, actual_orders)
 
     def test_fill_open_and_close(self):
-        self.exec_hanlder.accept_orders([self.order_1, self.order_2])
-        self.exec_hanlder.accept_orders([self.order_2, self.order_3])
-        self.exec_hanlder.accept_orders([self.order_3, self.order_4])
-        self.exec_hanlder.accept_orders([self.order_4, self.order_4])
+        self.exec_handler.assign_order_ids([self.order_1, self.order_2])
+        self.exec_handler.assign_order_ids([self.order_2, self.order_3])
+        self.exec_handler.assign_order_ids([self.order_3, self.order_4])
+        self.exec_handler.assign_order_ids([self.order_4, self.order_4])
 
         self._set_price_for_now(101)
-        self.exec_hanlder.on_market_open(...)
-
-        verify(self.spied_monitor, times=5).record_transaction(...)
-        verify(self.portfolio, times=5).transact_transaction(...)
-
-        actual_orders = self.exec_hanlder.get_open_orders()
-        expected_orders = [self.order_4,  self.order_4,  self.order_4]
-        assert_lists_equal(expected_orders, actual_orders)
-
-        self.exec_hanlder.on_market_close(...)
-
-        verify(self.spied_monitor, times=8).record_transaction(...)
-        verify(self.portfolio, times=8).transact_transaction(...)
-
-        actual_orders = self.exec_hanlder.get_open_orders()
-        expected_orders = []
-        assert_lists_equal(expected_orders, actual_orders)
-
-    def test_fill_close_and_open(self):
-        self.exec_hanlder.accept_orders([self.order_1, self.order_2])
-        self.exec_hanlder.accept_orders([self.order_2, self.order_3])
-        self.exec_hanlder.accept_orders([self.order_3, self.order_4])
-        self.exec_hanlder.accept_orders([self.order_4, self.order_4])
-
-        self._set_price_for_now(101)
-        self.exec_hanlder.on_market_close(...)
+        self._trigger_single_time_event()
+        self.exec_handler.on_market_open(...)
 
         verify(self.spied_monitor, times=3).record_transaction(...)
         verify(self.portfolio, times=3).transact_transaction(...)
 
-        actual_orders = self.exec_hanlder.get_open_orders()
-        expected_orders = [self.order_1,  self.order_2,  self.order_2, self.order_3, self.order_3]
+        actual_orders = self.exec_handler.get_open_orders()
+        expected_orders = [self.order_4]
         assert_lists_equal(expected_orders, actual_orders)
 
-        self.exec_hanlder.on_market_open(...)
+        self.exec_handler.on_market_close(...)
 
-        verify(self.spied_monitor, times=8).record_transaction(...)
-        verify(self.portfolio, times=8).transact_transaction(...)
+        verify(self.spied_monitor, times=4).record_transaction(...)
+        verify(self.portfolio, times=4).transact_transaction(...)
 
-        actual_orders = self.exec_hanlder.get_open_orders()
+        actual_orders = self.exec_handler.get_open_orders()
         expected_orders = []
         assert_lists_equal(expected_orders, actual_orders)
+
+    def test_fill_close_and_open(self):
+
+        self.exec_handler.assign_order_ids([self.order_1, self.order_2])
+        self.exec_handler.assign_order_ids([self.order_2, self.order_3])
+        self.exec_handler.assign_order_ids([self.order_3, self.order_4])
+        self.exec_handler.assign_order_ids([self.order_4, self.order_4])
+
+        self._set_price_for_now(101)
+
+        self._trigger_single_time_event()
+        self.exec_handler.on_market_close(...)
+
+        # Transaction related to order 4 will be executed only once, as only one Order object was passed
+        verify(self.spied_monitor, times=1).record_transaction(...)
+        verify(self.portfolio, times=1).transact_transaction(...)
+
+        actual_orders = self.exec_handler.get_open_orders()
+        expected_orders = [self.order_1,  self.order_2, self.order_3]
+        self.assertCountEqual(expected_orders, actual_orders)
+
+        self.exec_handler.on_market_open(...)
+
+        verify(self.spied_monitor, times=4).record_transaction(...)
+        verify(self.portfolio, times=4).transact_transaction(...)
+
+        actual_orders = self.exec_handler.get_open_orders()
+        expected_orders = []
+        self.assertCountEqual(expected_orders, actual_orders)
 
     def test_market_open_transaction(self):
         order = self.order_1
         price = 102
-        self.exec_hanlder.accept_orders([order])
+        self.exec_handler.assign_order_ids([order])
         self._set_price_for_now(price)
-        self.exec_hanlder.on_market_open(...)
+        self._trigger_single_time_event()
+        self.exec_handler.on_market_open(...)
 
         timestamp = self.timer.now()
         contract = order.contract
@@ -206,9 +239,10 @@ class TestMarketOnOpenExecutionStyle(TestCase):
     def test_market_close_transaction(self):
         order = self.order_4
         price = 102
-        self.exec_hanlder.accept_orders([self.order_1, order])
+        self.exec_handler.assign_order_ids([self.order_1, order])
         self._set_price_for_now(price)
-        self.exec_hanlder.on_market_close(...)
+        self._trigger_single_time_event()
+        self.exec_handler.on_market_close(...)
 
         timestamp = self.timer.now()
         contract = order.contract
@@ -222,17 +256,19 @@ class TestMarketOnOpenExecutionStyle(TestCase):
 
     def test_market_close_does_not_trade(self):
         price = None
-        self.exec_hanlder.accept_orders([self.order_1, self.order_4])
+        self.exec_handler.assign_order_ids([self.order_1, self.order_4])
         self._set_price_for_now(price)
-        self.exec_hanlder.on_market_close(...)
+        self._trigger_single_time_event()
+        self.exec_handler.on_market_close(...)
 
         verifyZeroInteractions(self.portfolio, self.spied_monitor)
 
     def test_market_open_does_not_trade(self):
         price = None
-        self.exec_hanlder.accept_orders([self.order_1, self.order_4])
+        self.exec_handler.assign_order_ids([self.order_1, self.order_4])
         self._set_price_for_now(price)
-        self.exec_hanlder.on_market_open(...)
+        self._trigger_single_time_event()
+        self.exec_handler.on_market_open(...)
 
         verifyZeroInteractions(self.portfolio, self.spied_monitor)
 

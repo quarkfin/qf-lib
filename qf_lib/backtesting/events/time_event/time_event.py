@@ -23,9 +23,8 @@ class TimeEvent(Event, metaclass=ABCMeta):
     Represents an event associated with certain date/time (e.g. 2017-05-13 13:00).
     """
 
-    @classmethod
     @abstractmethod
-    def next_trigger_time(cls, now: datetime) -> datetime:
+    def next_trigger_time(self, now: datetime) -> datetime:
         pass
 
     @abstractmethod
@@ -39,7 +38,7 @@ class TimeEvent(Event, metaclass=ABCMeta):
         if type(self) != type(other):
             return False
 
-        return self.time == other.time
+        return True
 
     def __hash__(self):
-        return hash((type(self), self.time))
+        return hash(type(self))
