@@ -43,6 +43,12 @@ class TestingTradingSession(TradingSession):
     Encapsulates the settings and components for carrying out a backtest session. Pulls for data every day.
     """
 
+    # initialise market time
+    BeforeMarketOpenEvent.set_trigger_time({"hour": 7, "minute": 30, "second": 0, "microsecond": 0})
+    MarketOpenEvent.set_trigger_time({"hour": 13, "minute": 30, "second": 0, "microsecond": 0})
+    MarketCloseEvent.set_trigger_time({"hour": 20, "minute": 0, "second": 0, "microsecond": 0})
+    AfterMarketCloseEvent.set_trigger_time({"hour": 21, "minute": 0, "second": 0, "microsecond": 0})
+
     def __init__(self, data_provider: DataProvider, start_date, end_date, initial_cash,
                  frequency: Frequency = Frequency.MIN_1):
         """
@@ -67,11 +73,6 @@ class TestingTradingSession(TradingSession):
             data_handler = DailyDataHandler(data_provider, timer)
         else:
             data_handler = IntradayDataHandler(data_provider, timer)
-
-        BeforeMarketOpenEvent.set_trigger_time({"hour": 7, "minute": 30, "second": 0, "microsecond": 0})
-        MarketOpenEvent.set_trigger_time({"hour": 13, "minute": 30, "second": 0, "microsecond": 0})
-        MarketCloseEvent.set_trigger_time({"hour": 20, "minute": 0, "second": 0, "microsecond": 0})
-        AfterMarketCloseEvent.set_trigger_time({"hour": 21, "minute": 0, "second": 0, "microsecond": 0})
 
         event_manager = self._create_event_manager(timer, notifiers)
         contract_ticker_mapper = DummyBloombergContractTickerMapper()

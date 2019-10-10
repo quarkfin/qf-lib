@@ -47,3 +47,5 @@ HIGH = blpapi.Name("high")
 VOLUME = blpapi.Name("volume")
 
 REF_DATA_SERVICE_URI = "//blp/refdata"  # address of bloomberg service
+
+FUT_CHAIN = blpapi.Name("FUT_CHAIN")

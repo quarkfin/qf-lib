@@ -36,6 +36,7 @@ def set_tickers(request, tickers):
     for ticker in tickers:
         securities.appendValue(ticker)
 
+
 def set_ticker(request, ticker):
     """
     Sets requested ticker in the Bloomberg's request.
@@ -50,6 +51,7 @@ def set_ticker(request, ticker):
     """
     security = request.getElement(SECURITY)
     security.setValue(ticker)
+
 
 def set_fields(request, field_names):
     requested_fields = request.getElement(FIELDS)

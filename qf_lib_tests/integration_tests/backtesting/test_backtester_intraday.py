@@ -21,6 +21,7 @@ from qf_lib.backtesting.broker.broker import Broker
 from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
 from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.common.enums.frequency import Frequency
+from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.utils.miscellaneous.get_cached_value import CachedValueException, cached_value
 from qf_lib.data_providers.preset_data_provider import PresetDataProvider
 from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_series_equal
@@ -102,7 +103,7 @@ class TestBacktester(TestCase):
     def test_backtester_with_buy_and_hold_strategy(self):
         start_date = str_to_date("2019-07-16")
         end_date = str_to_date("2019-09-01")
-        data_provider = self.setUpDataProvider(str_to_date("2019-07-01"), str_to_date("2019-09-01"))
+        data_provider = self.setUpDataProvider(str_to_date("2019-07-01"), end_date + RelativeDelta(days=1))
 
         msft_prices = data_provider.get_price(
             BuyAndHoldStrategy.MICROSOFT_TICKER, fields=[PriceField.Open, PriceField.Close],
