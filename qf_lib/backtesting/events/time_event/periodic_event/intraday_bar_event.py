@@ -42,7 +42,6 @@ class IntradayBarEvent(PeriodicEvent):
     def notify(self, listener) -> None:
         listener.on_new_bar(self)
 
-    @staticmethod
     def _shift_time(self, time_dict: Dict, time_delta: RelativeDelta):
         """
         Helper function, which allows to add time (RelativeDelta) to a time dictionary, which may contain the following
