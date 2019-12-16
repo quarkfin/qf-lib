@@ -3,6 +3,14 @@ permalink: /contributors/
 title: "Contributors"
 ---
 
+## Sponsors
+
+**Matthew Eyton-Jones** *Chief Executive Officer - CERN Pension Fund*
+{: .notice}
+
+**Elena Manola-Bonthond** *Chief Investment Officer - CERN Pension Fund*
+{: .notice}
+
 ## Developers
 
 **Marcin Borratynski** *CERN Pension Fund* Marcin Borratynski is a QF-Lib Project Lead, he joined the CERN Pension Fund in 2012 and is responsible for developing a quantitative asset allocation system as well as IT infrastructure of the Fund. He designed and implemented algorithmic investment strategy for the equity markets outperforming the benchmark by a large margin.  Prior to that Borratynski worked as an analyst for TOTEM Experiment at CERN where he was  processing data coming from the LHC – the largest and most complex experimental facility ever built. Borratynski has earned a computer science degree from AGH University of Science and Technology and an MBA from University of Geneva. He also holds the Certificate in Quantitative Finance (CQF).
