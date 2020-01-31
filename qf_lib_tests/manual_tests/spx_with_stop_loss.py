@@ -16,6 +16,8 @@ from unittest import TestCase
 
 import matplotlib.pyplot as plt
 
+from qf_lib.common.enums.frequency import Frequency
+
 plt.ion()  # required for dynamic chart, good to keep this at the beginning of imports
 
 from qf_lib.backtesting.execution_handler.commission_models.ib_commission_model import IBCommissionModel
@@ -72,6 +74,7 @@ def main():
     session_builder = container.resolve(BacktestTradingSessionBuilder)  # type: BacktestTradingSessionBuilder
     session_builder.set_backtest_name('SPY w. stop ' + str(SpxWithStopLoss.percentage))
     session_builder.set_initial_cash(1000000)
+    session_builder.set_frequency(Frequency.DAILY)
     session_builder.set_commission_model(IBCommissionModel())
     ts = session_builder.build(start_date, end_date)
     ts.use_data_preloading(SpxWithStopLoss.ticker, RelativeDelta(days=40))
@@ -79,7 +82,7 @@ def main():
     SpxWithStopLoss(ts)
     ts.start_trading()
 
-    actual_end_value = ts.portfolio.get_portfolio_eod_tms()[-1]
+    actual_end_value = ts.portfolio.portfolio_eod_series()[-1]
     expected_value = 1137843
 
     print("Expected End Value = {}".format(expected_value))

@@ -15,7 +15,7 @@
 from typing import Sequence
 
 import numpy as np
-import pandas as pd
+from qf_lib.containers.dataframe.simple_returns_dataframe import SimpleReturnsDataFrame
 
 
 class ScenariosGenerator(object):
@@ -24,7 +24,8 @@ class ScenariosGenerator(object):
     investment strategy.
     """
 
-    def make_scenarios(self, trade_rets: Sequence[float], scenarios_length=100, num_of_scenarios=10000) -> pd.DataFrame:
+    def make_scenarios(self, trade_rets: Sequence[float], scenarios_length=100, num_of_scenarios=10000) -> \
+            SimpleReturnsDataFrame:
         """
         Creates a number of scenarios of a given length by randomly choosing (with replacement) returns from
         the original sequence of Trade's returns. The result is the pandas DataFrame which is indexed by the Trade's
@@ -46,4 +47,4 @@ class ScenariosGenerator(object):
         values = np.random.choice(trade_rets, scenarios_length * num_of_scenarios)
         values = np.reshape(values, (scenarios_length, num_of_scenarios))
 
-        return pd.DataFrame(values)
+        return SimpleReturnsDataFrame(values)

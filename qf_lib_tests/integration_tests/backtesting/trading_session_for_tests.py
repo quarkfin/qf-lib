@@ -35,7 +35,7 @@ from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.utils.dateutils.date_to_string import date_to_str
 from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
-from qf_lib.data_providers.price_data_provider import DataProvider
+from qf_lib.data_providers.data_provider import DataProvider
 
 
 class TestingTradingSession(TradingSession):

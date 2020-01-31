@@ -49,9 +49,9 @@ def main():
 
     # put first point
     # noinspection PyProtectedMember
-    portfolio.dates.append(start_date)
+    portfolio._dates.append(start_date)
     # noinspection PyProtectedMember
-    portfolio.portfolio_values.append(initial_value)
+    portfolio._portfolio_values.append(initial_value)
 
     # create an Transaction
     timestamp = str_to_date("2010-01-01")
@@ -64,13 +64,13 @@ def main():
     for i in range(50):
         date = start_date + timedelta(days=i)
         # noinspection PyProtectedMember
-        past_value = portfolio.portfolio_values[-1]
+        past_value = portfolio._portfolio_values[-1]
         rand = randint(0, 100) - 50
 
         # noinspection PyProtectedMember
-        portfolio.dates.append(date)
+        portfolio._dates.append(date)
         # noinspection PyProtectedMember
-        portfolio.portfolio_values.append(past_value + rand)
+        portfolio._portfolio_values.append(past_value + rand)
 
         monitor.end_of_day_update(date)
         monitor.record_transaction(transaction)

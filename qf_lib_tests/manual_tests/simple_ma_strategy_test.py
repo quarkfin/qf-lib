@@ -19,6 +19,7 @@ import matplotlib.pyplot as plt
 from demo_scripts.demo_configuration.demo_ioc import container
 from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
+from qf_lib.common.enums.frequency import Frequency
 
 plt.ion()  # required for dynamic chart, good to keep this at the beginning of imports
 
@@ -80,13 +81,14 @@ def main():
     session_builder = container.resolve(BacktestTradingSessionBuilder)  # type: BacktestTradingSessionBuilder
     session_builder.set_backtest_name('Simple_MA')
     session_builder.set_initial_cash(1000000)
+    session_builder.set_frequency(Frequency.DAILY)
     ts = session_builder.build(start_date, end_date)
     ts.use_data_preloading(SimpleMAStrategy.ticker, RelativeDelta(days=40))
 
     SimpleMAStrategy(ts)
     ts.start_trading()
 
-    actual_end_value = ts.portfolio.get_portfolio_eod_tms()[-1]
+    actual_end_value = ts.portfolio.portfolio_eod_series()[-1]
     expected_value = 898294.64
 
     print("Expected End Value = {}".format(expected_value))

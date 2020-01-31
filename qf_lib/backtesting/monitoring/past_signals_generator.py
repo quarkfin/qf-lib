@@ -63,16 +63,16 @@ class PastSignalsGenerator(object):
 
     def collect_backtest_result(self):
         self.backtest_ts.start_trading()
-        self.signals_df = self.strategy.signals_df
+        self.signals_df = self.strategy.get_signals()
         self.exposures_df = self.signals_df.applymap(lambda x: x.suggested_exposure.name)
         self.fractions_at_risk_df = self.signals_df.applymap(lambda x: x.fraction_at_risk)
 
-        portfolio_tms = self.backtest_ts.portfolio.get_portfolio_eod_tms()
+        portfolio_tms = self.backtest_ts.portfolio.portfolio_eod_series()
         portfolio_tms.index = portfolio_tms.index.date  # remove time part
         self.backtest_tms = portfolio_tms
         self.exposures_df["c/c return"] = portfolio_tms.to_simple_returns()
 
-        leverage_tms = self.backtest_ts.portfolio.leverage()
+        leverage_tms = self.backtest_ts.portfolio.leverage_series()
         leverage_tms.index = leverage_tms.index.date  # remove time part
         self.leverage_tms = leverage_tms
         self.exposures_df["leverage"] = leverage_tms

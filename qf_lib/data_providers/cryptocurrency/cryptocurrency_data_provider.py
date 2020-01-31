@@ -13,14 +13,14 @@
 #     limitations under the License.
 
 from datetime import date, datetime
-from typing import Dict, Optional, Sequence, Union
+from typing import Dict, Optional, Sequence, Union, List
 
 import pandas as pd
 from bs4 import BeautifulSoup as BS
 from requests import Session
 
 from qf_lib.common.enums.price_field import PriceField
-from qf_lib.common.tickers.tickers import CcyTicker
+from qf_lib.common.tickers.tickers import CcyTicker, Ticker
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
@@ -186,3 +186,8 @@ class CryptoCurrencyDataProvider(AbstractPriceDataProvider):
         table = table.loc[start_date:end_date]
 
         return table
+
+    def get_futures_chain_tickers(self, tickers: Union[Ticker, Sequence[Ticker]], date: datetime,
+                                  include_expired_contracts: bool = True) -> Dict[Ticker, List[Ticker]]:
+        raise NotImplementedError("Downloading Future Chain Tickers in CryptoCurrencyDataProvider is not supported yet")
+

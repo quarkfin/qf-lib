@@ -41,6 +41,7 @@ class TestPositionSizer(unittest.TestCase):
         cls.initial_allocation = 0.5  # 50% of our portfolio is invested in AAPL
         cls.contract = Contract(cls.ticker.ticker, 'STK', 'SIM_EXCHANGE')
         cls.initial_risk = 0.02
+        cls.max_target_percentage = 1.5
         position = BrokerPosition(cls.contract, cls.initial_position, 25)
 
         broker = mock(strict=True)
@@ -54,7 +55,8 @@ class TestPositionSizer(unittest.TestCase):
 
         cls.simple_position_sizer = SimplePositionSizer(broker, data_handler, order_factory, contract_ticker_mapper)
         cls.initial_risk_position_sizer = InitialRiskPositionSizer(broker, data_handler, order_factory,
-                                                                   contract_ticker_mapper, cls.initial_risk)
+                                                                   contract_ticker_mapper, cls.initial_risk,
+                                                                   cls.max_target_percentage)
 
     def test_simple_position_sizer(self):
         fraction_at_risk = 0.02
@@ -105,7 +107,6 @@ class TestPositionSizer(unittest.TestCase):
         stop_price = self.last_price * (1 - fraction_at_risk)
         stop_quantity = -(self.initial_position + additional_contracts)
         self.assertEqual(orders[1], Order(self.contract, stop_quantity, StopOrder(stop_price), TimeInForce.GTC))
-
 
     def test_out_signal(self):
         fraction_at_risk = 0.02

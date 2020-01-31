@@ -25,7 +25,3 @@ class Position(metaclass=ABCMeta):
     @abstractmethod
     def quantity(self) -> int:
         pass
-
-    @abstractmethod
-    def avg_cost_per_share(self) -> float:
-        pass

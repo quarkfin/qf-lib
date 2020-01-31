@@ -23,6 +23,7 @@ from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.dimension_names import TICKERS
+from qf_lib.containers.futures.future_ticker import FutureTicker
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
@@ -30,7 +31,7 @@ from qf_lib.data_providers.bloomberg.bloomberg_data_provider import BloombergDat
 from qf_lib.data_providers.cryptocurrency.cryptocurrency_data_provider import CryptoCurrencyDataProvider
 from qf_lib.data_providers.haver import HaverDataProvider
 from qf_lib.data_providers.helpers import normalize_data_array
-from qf_lib.data_providers.price_data_provider import DataProvider
+from qf_lib.data_providers.data_provider import DataProvider
 from qf_lib.data_providers.quandl.quandl_data_provider import QuandlDataProvider
 
 
@@ -38,7 +39,6 @@ class GeneralPriceProvider(DataProvider):
     """
     The main class that should be used in order to access prices of financial instruments.
     """
-
     def __init__(self, bloomberg: BloombergDataProvider = None, quandl: QuandlDataProvider = None,
                  haver: HaverDataProvider = None, cryptocurrency: CryptoCurrencyDataProvider = None):
         self._ticker_type_to_data_provider_dict = {}  # type: Dict[Type[Ticker], DataProvider]
@@ -68,6 +68,25 @@ class GeneralPriceProvider(DataProvider):
                                                                 use_prices_types)
 
         return normalized_result
+
+    def get_futures_chain_tickers(self, tickers: Union[FutureTicker, Sequence[FutureTicker]], date: datetime,
+                                  include_expired_contracts: bool = True) -> Dict[FutureTicker, QFSeries]:
+        """"
+        Implements the functionality of DataProvider using duck-typing.
+        """
+        tickers, got_single_ticker = convert_to_list(tickers, Ticker)
+        results = {}
+
+        def get_data_func(data_prov: DataProvider, tickers_for_single_data_provider) -> Dict[FutureTicker, QFSeries]:
+            return data_prov.get_futures_chain_tickers(tickers_for_single_data_provider, date, include_expired_contracts)
+
+        for ticker_class, ticker_group in groupby(tickers, lambda t: type(t)):
+            data_provider = self._identify_data_provider(ticker_class)
+            partial_result = get_data_func(data_provider, list(ticker_group))
+            if partial_result is not None:
+                results.update(partial_result)
+
+        return results
 
     def supported_ticker_types(self):
         return self._ticker_type_to_data_provider_dict.keys()

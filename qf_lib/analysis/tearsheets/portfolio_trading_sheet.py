@@ -13,6 +13,7 @@
 #     limitations under the License.
 
 from datetime import datetime
+from itertools import groupby
 from os import path
 
 import matplotlib as plt
@@ -22,9 +23,9 @@ from pandas import Timedelta
 from qf_lib.analysis.common.abstract_document import AbstractDocument
 from qf_lib.backtesting.monitoring.backtest_result import BacktestResult
 from qf_lib.common.enums.frequency import Frequency
-from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.documents_utils.document_exporting.element.chart import ChartElement
 from qf_lib.documents_utils.document_exporting.element.paragraph import ParagraphElement
+from qf_lib.documents_utils.document_exporting.element.table import Table
 from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.plotting.charts.line_chart import LineChart
 from qf_lib.plotting.decorators.axes_position_decorator import AxesPositionDecorator
@@ -32,28 +33,10 @@ from qf_lib.plotting.decorators.data_element_decorator import DataElementDecorat
 from qf_lib.plotting.decorators.legend_decorator import LegendDecorator
 from qf_lib.plotting.decorators.title_decorator import TitleDecorator
 from qf_lib.settings import Settings
+from qf_lib.analysis.error_handling import ErrorHandling
 
 
-def error_logging(*exceptions):
-    """
-    Helper function, used to decorate all the charts plotting functions, in order to facilitate error handling.
-    It logs the error message and allows further chart to be plotted successfully.
-    """
-    logger = qf_logger.getChild(__name__)
-
-    def wrap(func):
-        def wrapped_function(*args):
-            try:
-                return func(*args)
-            except exceptions as e:
-                logger.error("{}: {}. The chart could not be generated using {}.".format(
-                    e.__class__.__name__, e, func.__name__)
-                )
-
-        return wrapped_function
-    return wrap
-
-
+@ErrorHandling.class_error_logging()
 class PortfolioTradingSheet(AbstractDocument):
     """
     Creates a PDF containing a visual representation of portfolio changes over time
@@ -76,11 +59,12 @@ class PortfolioTradingSheet(AbstractDocument):
         self._add_concentration_of_portfolio_chart((1, 5,))
         self._add_gini_coefficient_chart()
         self._add_number_of_transactions_chart('D', 'Number of transactions per day')
-        self._add_number_of_transactions_chart('30D', 'Number of transactions per moth')
+        self._add_number_of_transactions_chart('30D', 'Number of transactions per month')
         self._add_number_of_transactions_chart('365D', 'Number of transactions per year')
+        self._add_avg_time_in_the_market_per_ticker()
 
     def _add_leverage_chart(self):
-        lev_chart = self._get_leverage_chart(self.backtest_result.portfolio.leverage())
+        lev_chart = self._get_leverage_chart(self.backtest_result.portfolio.leverage_series())
 
         position_decorator = AxesPositionDecorator(*self.full_image_axis_position)
         lev_chart.add_decorator(position_decorator)
@@ -88,7 +72,7 @@ class PortfolioTradingSheet(AbstractDocument):
         self.document.add_element(ChartElement(lev_chart, figsize=self.full_image_size, dpi=self.dpi))
 
     def _add_assets_number_in_portfolio_chart(self):
-        assets_history = self.backtest_result.portfolio.assets_history()
+        assets_history = self.backtest_result.portfolio.assets_eod_history()
 
         # Find all not NaN values (not NaN values indicate that the position was open for this contract at that time)
         # and count their number for each row (for each of the dates)
@@ -108,7 +92,10 @@ class PortfolioTradingSheet(AbstractDocument):
         chart.add_decorator(position_decorator)
 
         # Add top asset contribution
-        assets_history = self.backtest_result.portfolio.assets_history()
+        assets_history = self.backtest_result.portfolio.assets_eod_history()
+        if assets_history.empty:
+            raise ValueError("No assets found in assets history")
+
         assets_history = assets_history.fillna(0)
 
         # Define a legend
@@ -119,9 +106,8 @@ class PortfolioTradingSheet(AbstractDocument):
             top_assets_mean_values = assets_history.stack(dropna=False).groupby(level=0).apply(
                 lambda group: group.nlargest(assets_number).mean()
             )
-
             # Divide the computed mean values by the portfolio value, for each of the dates
-            top_assets_percentage_value = top_assets_mean_values / self.backtest_result.portfolio.portfolio_values
+            top_assets_percentage_value = top_assets_mean_values / self.backtest_result.portfolio.portfolio_eod_series()
 
             concentration_top_asset = DataElementDecorator(top_assets_percentage_value)
             chart.add_decorator(concentration_top_asset)
@@ -138,7 +124,6 @@ class PortfolioTradingSheet(AbstractDocument):
 
         self.document.add_element(ChartElement(chart, figsize=self.full_image_size, dpi=self.dpi))
 
-    @error_logging(ValueError, AttributeError, IndexError)
     def _add_number_of_transactions_chart(self, pandas_freq: str, title: str):
         chart = LineChart(rotate_x_axis=False)
 
@@ -146,6 +131,8 @@ class PortfolioTradingSheet(AbstractDocument):
         chart.add_decorator(position_decorator)
 
         transactions = self.backtest_result.portfolio.transactions_series()
+        if transactions.empty:
+            raise ValueError("Transactions series is empty")
 
         # Compute the number of transactions per day
         transactions = transactions.resample(Frequency.DAILY.to_pandas_freq()).count()
@@ -180,7 +167,7 @@ class PortfolioTradingSheet(AbstractDocument):
         chart.add_decorator(position_decorator)
 
         # Get the assets history
-        assets_history = self.backtest_result.portfolio.assets_history()
+        assets_history = self.backtest_result.portfolio.assets_eod_history()
         assets_history = assets_history.fillna(0)
 
         def gini(group):
@@ -204,13 +191,62 @@ class PortfolioTradingSheet(AbstractDocument):
 
         self.document.add_element(ChartElement(chart, figsize=self.full_image_size, dpi=self.dpi))
 
+    def _add_avg_time_in_the_market_per_ticker(self):
+        # Get the assets history
+        assets_history = self.backtest_result.portfolio.assets_eod_history()
+        assets_history = assets_history.fillna(0)
+
+        table = Table(column_names=['Tickers', 'Longs', 'Shorts', 'Out'], css_class="table stats-table")
+
+        future_contracts = [contract for contract in assets_history.columns if contract.security_type == 'FUT']
+        stock_contracts = [contract for contract in assets_history.columns if contract.security_type == 'STK']
+
+        for contract in stock_contracts:
+            longs = assets_history[contract].where(assets_history[contract] > 0).count()
+            shorts = assets_history[contract].where(assets_history[contract] < 0).count()
+            outs = assets_history[contract].where(assets_history[contract] == 0).count()
+
+            number_of_days = longs + shorts + outs
+            longs = longs / number_of_days
+            shorts = shorts / number_of_days
+            outs = outs / number_of_days
+            table.add_row([contract.symbol, "{:.2%}".format(longs), "{:.2%}".format(shorts), "{:.2%}".format(outs)])
+
+        # Group the futures contracts by their family ID
+        future_contracts.sort(key=lambda contract: contract.symbol)
+        for future_ticker, futures_contracts_list in groupby(
+                future_contracts,
+                lambda c: self.backtest_result.portfolio.contract_ticker_mapper.contract_to_ticker(c, strictly_to_specific_ticker=False)
+        ):
+            futures_contracts_list = list(futures_contracts_list)
+
+            longs = 0
+            shorts = 0
+            number_of_days = None
+
+            for contract in futures_contracts_list:
+                # It is assumed that no two contracts from the same family create open positions in the same time
+                longs += assets_history[contract].where(assets_history[contract] > 0).count()
+                shorts += assets_history[contract].where(assets_history[contract] < 0).count()
+
+                if number_of_days is None:
+                    number_of_days = assets_history[contract].count()
+
+            outs = number_of_days - longs - shorts
+
+            longs = longs / number_of_days
+            shorts = shorts / number_of_days
+            outs = outs / number_of_days
+
+            table.add_row([future_ticker.family_id, "{:.2%}".format(longs), "{:.2%}".format(shorts), "{:.2%}".format(outs)])
+
+        self.document.add_element(table)
 
     def save(self, report_dir: str = ""):
-        output_sub_dir = path.join(report_dir, "portfolio_trading_sheet")
-
         # Set the style for the report
         plt.style.use(['tearsheet'])
 
-        filename = "%Y_%m_%d-%H%M {}.pdf".format(self.title)
+        filename = "%Y_%m_%d-%H%M Portfolio Trading Sheet.pdf"
         filename = datetime.now().strftime(filename)
-        return self.pdf_exporter.generate([self.document], output_sub_dir, filename)
+        return self.pdf_exporter.generate([self.document], report_dir, filename)
+

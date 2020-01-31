@@ -14,13 +14,14 @@
 
 from abc import ABCMeta, abstractmethod
 from datetime import datetime
-from typing import Union, Sequence, Type, Set
+from typing import Union, Sequence, Type, Set, Dict
 
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
+from qf_lib.containers.futures.future_ticker import FutureTicker
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
@@ -123,3 +124,28 @@ class DataProvider(object, metaclass=ABCMeta):
         Returns classes of tickers which are supported by this DataProvider.
         """
         pass
+
+    @abstractmethod
+    def get_futures_chain_tickers(self, tickers: Union[FutureTicker, Sequence[Ticker]], date: datetime,
+                                  include_expired_contracts: bool = True) -> Dict[FutureTicker, QFSeries]:
+        """
+        Returns tickers of futures contracts, which belong to the same futures contract chain as the provided ticker
+        (tickers), along with their expiration dates in form of a QFSeries.
+
+        Parameters
+        ----------
+        tickers
+            tickers for which should the future chain tickers be retrieved
+        date
+        include_expired_contracts
+            date is used along with include_expired_contracts to download only valid / all tickers belonging to one
+            certain future chain
+        Returns
+        -------
+            Returns a dictionary, which maps Tickers to QFSeries, consisting of the expiration dates of Future
+            Contracts: Dict[FutureTicker, QFSeries]. The QFSeries contain the specific Tickers, which belong to the
+            corresponding futures family, same as the FutureTicker, and are indexed by the expiration dates of
+            the specific future contracts.
+        """
+        pass
+

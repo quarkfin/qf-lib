@@ -6,16 +6,23 @@ table caption {
 table.table {
   text-align: left;
   margin-top: 15px;
+  margin-bottom: 15px;
   background-color: rgb(245, 245, 245);
   width: 100%;
   border-collapse: collapse;
+  box-sizing: border-box;
+}
+
+table.table.slim-table {
+    position: relative;
+    width: 60%;
+    transform: translateX(33%);
 }
 
 /* Sets the styling for all table header elements */
 table.table th {
   border-top: 2px solid #727272;
   border-bottom: 1px solid #a3a3a3;
-  padding: 5px 15px;
   background-color: transparent;
   color: black;
   text-align: center;
@@ -34,10 +41,45 @@ table.table td {
   border: none;
   text-align: right;
 }
+table.table.left-align td{
+    text-align: left;
+}
 
+table.table.center-align td{
+    text-align: center;
+}
+
+table.table.pad_cells td{
+    padding: 5px 35px;
+}
+
+table.table.wide-first-column td:nth-of-type(1) {
+  width: 30%;
+}
+
+table.table td.wider-second-column {
+    width: 15%;
+}
+
+table.table th.pad-headers{
+    white-space: initial;
+}
+
+table.table.shrink-font td{
+    font-size: 0.8em;
+}
 /* Sets the styling for the first column in all tables */
 table.table td:nth-of-type(1) {
   font-weight: bold;
   width: 15%;
   text-align: left !important;
+}
+
+table.table td.sorted-by-column{
+    font-weight: bold;
+    background-color: #e8e8e8;
+}
+
+table.table td.red-row {
+    color: red;
 }

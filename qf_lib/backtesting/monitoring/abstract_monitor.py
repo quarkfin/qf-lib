@@ -41,7 +41,7 @@ class AbstractMonitor(metaclass=ABCMeta):
         raise NotImplementedError("Should implement end_of_day_update()")
 
     @abstractmethod
-    def end_of_trading_update(self, timestamp: datetime):
+    def end_of_trading_update(self, timestamp: datetime = None):
         """
         Final update at the end of backtest session
         """

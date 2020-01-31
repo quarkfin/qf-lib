@@ -42,3 +42,5 @@ def cached_value(func: Callable[[], Any], path) -> Any:
             logger.error('Error while processing {}'.format(func))
 
     return result
+
+

@@ -22,8 +22,9 @@ class DummyTickerMapper(ContractTickerMapper):
     Dummy ticker mapper designed for the demo purposes.
     """
 
-    def contract_to_ticker(self, contract: Contract) -> Ticker:
+    def contract_to_ticker(self, contract: Contract, strictly_to_specific_ticker=True) -> Ticker:
         return DummyTicker(ticker=contract.symbol)
 
     def ticker_to_contract(self, ticker: Ticker) -> Contract:
         return Contract(symbol=ticker.ticker, security_type='STK', exchange='SIM_EXCHANGE')
+

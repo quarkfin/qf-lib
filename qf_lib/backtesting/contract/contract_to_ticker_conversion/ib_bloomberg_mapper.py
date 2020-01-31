@@ -14,7 +14,7 @@
 
 from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
-from qf_lib.common.tickers.tickers import Ticker, BloombergTicker
+from qf_lib.common.tickers.tickers import BloombergTicker
 
 
 class IB_Bloomberg_ContractTickerMapper(ContractTickerMapper):
@@ -39,7 +39,7 @@ class IB_Bloomberg_ContractTickerMapper(ContractTickerMapper):
         self.bbg_suffix = bbg_suffix
         self.security_type = security_type
 
-    def contract_to_ticker(self, contract: Contract) -> Ticker:
+    def contract_to_ticker(self, contract: Contract, strictly_to_specific_ticker=True) -> BloombergTicker:
         return BloombergTicker(ticker=contract.symbol)
 
     def ticker_to_contract(self, ticker: BloombergTicker) -> Contract:

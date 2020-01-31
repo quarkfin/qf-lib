@@ -22,7 +22,7 @@ from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
-from qf_lib.data_providers.price_data_provider import DataProvider
+from qf_lib.data_providers.data_provider import DataProvider
 
 
 class MarketStressIndicator(object):

@@ -11,6 +11,7 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
+from typing import Optional
 
 from qf_lib.backtesting.alpha_model.signal import Signal
 from qf_lib.backtesting.broker.broker import Broker
@@ -18,6 +19,7 @@ from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.order.execution_style import MarketOrder
+from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.order_factory import OrderFactory
 from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.backtesting.position_sizer.position_sizer import PositionSizer
@@ -32,7 +34,7 @@ class InitialRiskPositionSizer(PositionSizer):
     """
 
     def __init__(self, broker: Broker, data_handler: DataHandler, order_factory: OrderFactory,
-                 contract_ticker_mapper: ContractTickerMapper, initial_risk: float, max_target_percentage=1.5):
+                 contract_ticker_mapper: ContractTickerMapper, initial_risk: float, max_target_percentage: float=None):
         """
         initial_risk
             should be set once for all signals. It corresponds to the value that we are willing to lose
@@ -40,6 +42,7 @@ class InitialRiskPositionSizer(PositionSizer):
             single trade
         max_target_percentage
             max leverage that is accepted by the position sizer.
+            if None, no max_target_percentage is used.
         """
         super().__init__(broker, data_handler, order_factory, contract_ticker_mapper)
 
@@ -47,7 +50,7 @@ class InitialRiskPositionSizer(PositionSizer):
         self.max_target_percentage = max_target_percentage
         self.logger.info("Initial Risk: {}".format(initial_risk))
 
-    def _generate_market_order(self, contract: Contract, signal: Signal):
+    def _generate_market_order(self, contract: Contract, signal: Signal) -> Optional[Order]:
         assert is_finite_number(self._initial_risk), "Initial risk has to be a finite number"
         assert is_finite_number(signal.fraction_at_risk), "fraction_at_risk has to be a finite number"
 
@@ -74,7 +77,7 @@ class InitialRiskPositionSizer(PositionSizer):
         Sometimes the target percentage can be excessive to be executed by the broker (might exceed margin requirement)
         Cap the target percentage to the max value defined in this function
         """
-        if initial_target_percentage > self.max_target_percentage:
+        if (self.max_target_percentage is not None) and (initial_target_percentage > self.max_target_percentage):
             self.logger.info("Target Percentage: {} above the maximum of {}. Setting the target percentage to {}"
                              .format(initial_target_percentage, self.max_target_percentage, self.max_target_percentage))
             return self.max_target_percentage

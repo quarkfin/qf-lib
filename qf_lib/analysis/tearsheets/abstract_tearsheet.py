@@ -113,11 +113,9 @@ class AbstractTearsheet(AbstractDocument, metaclass=ABCMeta):
         super()._add_statistics_table(ta_list)
 
     def save(self, report_dir: str = ""):
-        output_sub_dir = path.join(report_dir, "tearsheet")
-
         # Set the style for the report
         plt.style.use(['tearsheet'])
 
-        filename = "%Y_%m_%d-%H%M {}.pdf".format(self.title)
+        filename = "%Y_%m_%d-%H%M Tearsheet.pdf"
         filename = datetime.now().strftime(filename)
-        return self.pdf_exporter.generate([self.document], output_sub_dir, filename)
+        return self.pdf_exporter.generate([self.document], report_dir, filename)

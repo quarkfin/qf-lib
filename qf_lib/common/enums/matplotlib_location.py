@@ -30,3 +30,14 @@ class Location(Enum):
 
     def __init__(self, code):
         self.code = code
+
+
+class AxisLocation(Enum):
+    """"
+    Custom location for legend placements. In axis lengths for placement.
+    e.g (1,0) = (x=1, y=0) = BOTTOM_RIGHT
+    """
+    LOWER_RIGHT = (1, 0)
+    LOWER_LEFT = (0, 0)
+    UPPER_RIGHT = (1, 1)
+    UPPER_LEFT = (0, 1)

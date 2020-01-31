@@ -11,6 +11,7 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
+from typing import Optional
 
 from qf_lib.backtesting.alpha_model.signal import Signal
 from qf_lib.backtesting.broker.broker import Broker
@@ -41,7 +42,7 @@ class FixedPortfolioPercentagePositionSizer(PositionSizer):
 
         self.fixed_percentage = fixed_percentage
 
-    def _generate_market_order(self, contract, signal: Signal) -> Order:
+    def _generate_market_order(self, contract, signal: Signal) -> Optional[Order]:
         target_percentage = signal.suggested_exposure.value * self.fixed_percentage
 
         market_order_list = self._order_factory.target_percent_orders(

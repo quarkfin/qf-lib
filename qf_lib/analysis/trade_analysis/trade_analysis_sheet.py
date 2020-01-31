@@ -15,20 +15,28 @@
 from datetime import datetime
 from math import sqrt
 from os.path import join
+from typing import Union, Tuple
+
+from pandas import Timedelta, to_timedelta
+import numpy as np
 
 import matplotlib as plt
 from matplotlib.ticker import FormatStrFormatter, MaxNLocator
 
+from qf_lib.analysis.error_handling import ErrorHandling
+from qf_lib.backtesting.fast_alpha_model_tester.scenarios_generator import ScenariosGenerator
 from qf_lib.common.enums.plotting_mode import PlottingMode
 from qf_lib.common.enums.trade_field import TradeField
 from qf_lib.common.utils.dateutils.to_days import to_days
 from qf_lib.common.utils.miscellaneous.constants import DAYS_PER_YEAR_AVG
 from qf_lib.common.utils.returns.annualise_total_return import annualise_total_return
 from qf_lib.common.utils.returns.max_drawdown import max_drawdown
+from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
 from qf_lib.documents_utils.document_exporting.document import Document
 from qf_lib.documents_utils.document_exporting.element.grid import GridElement
+from qf_lib.documents_utils.document_exporting.element.new_page import NewPageElement
 from qf_lib.documents_utils.document_exporting.element.page_header import PageHeaderElement
 from qf_lib.documents_utils.document_exporting.element.paragraph import ParagraphElement
 from qf_lib.documents_utils.document_exporting.element.table import Table
@@ -47,6 +55,7 @@ from qf_lib.settings import Settings
 from qf_lib.starting_dir import get_starting_dir_abs_path
 
 
+@ErrorHandling.class_error_logging()
 class TradeAnalysisSheet(object):
     """
     Creates a PDF containing main statistics of the trades
@@ -89,6 +98,12 @@ class TradeAnalysisSheet(object):
 
         self._add_histogram_and_cumulative()
         self._add_statistics_table()
+
+        self._add_long_short_statistics()
+
+        # Next page
+        self.document.add_element(NewPageElement())
+        self._add_simulation_results()
 
     def _add_header(self):
         logo_path = join(get_starting_dir_abs_path(), self.settings.logo_path)
@@ -149,12 +164,12 @@ class TradeAnalysisSheet(object):
         return chart
 
     def _add_statistics_table(self):
-        table = Table(column_names=["Measure", "Value"], css_class="table stats-table")
+        table = Table(column_names=["All Trades", "Value"], css_class="table stats-table")
 
         number_of_trades = self.returns_of_trades.count()
         table.add_row(["Number of trades", number_of_trades])
 
-        period_length = self.end_date - self.start_date
+        period_length = Timedelta(self.end_date - self.start_date)
         period_length_in_years = to_days(period_length) / DAYS_PER_YEAR_AVG
         avg_number_of_trades = number_of_trades / period_length_in_years / self.nr_of_assets_traded
         table.add_row(["Avg number of trades per year per asset", avg_number_of_trades])
@@ -199,7 +214,193 @@ class TradeAnalysisSheet(object):
         table.add_row(["SQN for 100 trades", sqn * 10])  # SQN * sqrt(100)
         table.add_row(["SQN * Sqrt(avg number of trades per year)", sqn * sqrt(avg_number_of_trades)])
 
+        # Average duration of a trade (days)
+        trades_duration = self.trades_df[TradeField.EndDate] - self.trades_df[TradeField.StartDate]
+        avg_trades_duration = trades_duration.mean()
+        # Extract the number of days from the Timedelta
+        avg_trades_duration = avg_trades_duration / to_timedelta(1, unit='D')
+        table.add_row(["Avg duration of a trade (days)", avg_trades_duration])
+
         self.document.add_element(table)
+
+    def _add_long_short_statistics(self):
+
+        def generate_table(trade_type: str, trades_df: QFDataFrame, all_trades_count: int) -> Table:
+            table = Table(column_names=["{} Trades".format(trade_type), "Value"], css_class="table stats-table")
+
+            trades_count = trades_df.shape[0]
+            trade_returns = SimpleReturnsSeries(trades_df[TradeField.Return])
+
+            table.add_row(["% of {} Trades".format(trade_type),  "{:.2%}".format(trades_count / all_trades_count)])
+
+            avg_return = trade_returns.mean()
+            table.add_row(["Average return of {} Trade".format(trade_type), "{:.2%}".format(avg_return)])
+
+            prices_tms = trade_returns.to_prices()
+            total_return = prices_tms.iloc[-1] / prices_tms.iloc[0] - 1.0
+            table.add_row(["Total return of {} Trades".format(trade_type), "{:.2%}".format(total_return)])
+
+            std_of_returns = trade_returns.std()
+            table.add_row(["Std of return of {} Trades".format(trade_type), "{:.2%}".format(std_of_returns)])
+
+            # System Quality Number
+            sqn = avg_return / std_of_returns
+            table.add_row(["SQN", sqn])
+
+            return table
+
+        long_trades = self.trades_df[self.trades_df[TradeField.Exposure] > 0]
+        short_trades = self.trades_df[self.trades_df[TradeField.Exposure] < 0]
+
+        long_trades_count = long_trades.shape[0]
+        short_trades_count = short_trades.shape[0]
+        all_trades_count = self.trades_df.shape[0]
+
+        if long_trades_count > 0:
+            # Add Long Trades statistics table
+            table = generate_table("Long", long_trades, all_trades_count)
+            self.document.add_element(table)
+
+        if short_trades_count > 0:
+            # Add Long Trades statistics table
+            table = generate_table("Short", short_trades, all_trades_count)
+            self.document.add_element(table)
+
+    def _add_simulation_results(self):
+        # Generate a data frame consisting of a certain number of "scenarios" (each scenario denotes one single equity
+        # curve)
+        scenarios_df, total_returns = self._get_scenarios()
+
+        self._add_simulation_plots(scenarios_df, total_returns)
+
+        simulations_summary_table = self._get_monte_carlos_simulator_outputs(scenarios_df, total_returns)
+        self.document.add_element(simulations_summary_table)
+
+        # Extract the results of each of the scenarios and summarize the data in the tables
+        dist_summary_tables = self._get_distribution_summary_table(total_returns)
+        self.document.add_element(dist_summary_tables)
+
+        # Add the "Chances of dropping below" and "Simulations summary" tables
+        ruin_chances_table = self._get_chances_of_dropping_below_table(scenarios_df)
+        self.document.add_element(ruin_chances_table)
+
+
+    def _get_scenarios(self, num_of_scenarios: int = 2500) -> Tuple[PricesDataFrame, SimpleReturnsSeries]:
+        # Generate scenarios, each of which consists of a certain number of trades, equal to the average number
+        # of trades per year
+        scenarios_generator = ScenariosGenerator()
+
+        # Compute the average number of trades per year
+        number_of_trades = self.returns_of_trades.count()
+        period_length = Timedelta(self.end_date - self.start_date)
+        period_length_in_years = to_days(period_length) / DAYS_PER_YEAR_AVG
+        avg_number_of_trades = int(number_of_trades / period_length_in_years)
+
+        # Generate the scenarios
+        scenarios_df = scenarios_generator.make_scenarios(
+            self.returns_of_trades,
+            scenarios_length=avg_number_of_trades,
+            num_of_scenarios=num_of_scenarios
+        )
+
+        scenarios_df = scenarios_df.to_prices()
+
+        return scenarios_df, scenarios_df.iloc[-1] / scenarios_df.iloc[0] - 1.0
+
+    def _add_simulation_plots(self, scenarios_df: PricesDataFrame, total_returns: SimpleReturnsSeries):
+        grid = GridElement(mode=PlottingMode.PDF, figsize=self.half_image_size, dpi=self.dpi)
+
+        # Plot all the possible paths on a chart
+        all_paths_chart = self._get_simulation_plot(scenarios_df * 100.0)
+        grid.add_chart(all_paths_chart)
+
+        distribution_plot = self._get_distribution_plot(total_returns * 100.0)
+        grid.add_chart(distribution_plot)
+
+        self.document.add_element(grid)
+
+    def _get_simulation_plot(self, scenarios_df: SimpleReturnsSeries) -> Chart:
+        chart = LineChart(log_scale=True)
+
+        for _, scenario in scenarios_df.items():
+            data_element = DataElementDecorator(scenario)
+            chart.add_decorator(data_element)
+
+        # Add title
+        title_decorator = TitleDecorator("Monte Carlo Simulations (log scale)", key="title")
+        chart.add_decorator(title_decorator)
+
+        return chart
+
+    def _get_distribution_plot(self, scenarios_results: SimpleReturnsSeries, bins: Union[int, str] = 200) -> Chart:
+        # Plot the distribution
+        start_x = np.quantile(scenarios_results, 0.01)
+        end_x = np.quantile(scenarios_results, 0.99)
+        chart = HistogramChart(scenarios_results, bins=bins, start_x=start_x, end_x=end_x)
+
+        # Add title
+        title_decorator = TitleDecorator("Monte Carlo Simulations Distribution", key="title")
+        chart.add_decorator(title_decorator)
+
+        return chart
+
+    def _get_distribution_summary_table(self, scenarios_results: SimpleReturnsSeries) -> GridElement:
+        grid = GridElement(mode=PlottingMode.PDF, figsize=self.half_image_size, dpi=self.dpi)
+
+        table_worst = Table(column_names=["Scenarios", "Return"], css_class="table stats-table")
+        table_top = Table(column_names=["Scenarios", "Return"], css_class="table stats-table")
+
+        for percentage in [0.05, 0.1, 0.2, 0.3]:
+            table_worst.add_row(["{:.0%} Tail".format(percentage),
+                                 "{:.2%}".format(np.quantile(scenarios_results, percentage))])
+            table_top.add_row(["{:.0%} Top".format(percentage),
+                               "{:.2%}".format(np.quantile(scenarios_results, (1.0 - percentage)))])
+
+        grid.add_element(table_worst)
+        grid.add_element(table_top)
+
+        return grid
+
+    def _get_chances_of_dropping_below_table(self, scenarios_df: PricesDataFrame) -> Table:
+        table = Table(column_names=["Chances of dropping below", "Probability"], css_class="table stats-table")
+        _, all_scenarios_number = scenarios_df.shape
+
+        for percentage in np.linspace(0.1, 0.9, 9):
+            # Count number of scenarios, whose returns at some point of time dropped below the percentage * initial
+            # value
+            _, scenarios_above_percentage = scenarios_df.where(scenarios_df > (1.0 - percentage)).dropna(axis=1).shape
+            probability = (all_scenarios_number - scenarios_above_percentage) / all_scenarios_number
+
+            table.add_row(["{:.0%}".format(percentage), "{:.2%}".format(probability)])
+
+            if probability < 1.0 and percentage > 0.1:
+                break
+
+        return table
+
+    def _get_monte_carlos_simulator_outputs(self, scenarios_df: PricesDataFrame, total_returns: SimpleReturnsSeries) -> \
+            Table:
+        table = Table(column_names=["Measure", "Value"], css_class="table stats-table")
+        _, all_scenarios_number = scenarios_df.shape
+
+        # Add the Median Return value
+        median_return = np.median(total_returns)
+        table.add_row(["Median Return", "{:.2%}".format(median_return)])
+
+        # Add the Median Drawdown
+        max_drawdowns = max_drawdown(scenarios_df)
+        median_drawdown = np.median(max_drawdowns)
+        table.add_row(["Median Maximum Drawdown", "{:.2%}".format(median_drawdown)])
+
+        # Add the Median Return / Median Drawdown
+        table.add_row(["Return / Drawdown", "{:.2f}".format(median_return/median_drawdown)])
+
+        # Probability, that the return will be > 0
+        scenarios_with_positive_result = total_returns[total_returns > 1.0].count()
+        probability = scenarios_with_positive_result / all_scenarios_number
+        table.add_row(["Probability > 0", "{:.2%}".format(probability)])
+
+        return table
 
     def save(self):
         output_sub_dir = "trades_analysis"

@@ -147,7 +147,7 @@ class Frequency(Enum):
             Frequency.MIN_10: "10T",
             Frequency.MIN_15: "15T",
             Frequency.MIN_30: "30T",
-            Frequency.MIN_60: "H",
+            Frequency.MIN_60: "60T",
             Frequency.DAILY: "D",
             Frequency.WEEKLY: "W",
             Frequency.MONTHLY: "M",

@@ -51,6 +51,10 @@ p.comment {
   padding: 0 0.15em;
 }
 
+p.centered-text {
+    text-align: center;
+}
+
 /* Sets the width of the first column in the stats table */
 table.stats-table td:nth-of-type(1) {
   width: 35% !important;

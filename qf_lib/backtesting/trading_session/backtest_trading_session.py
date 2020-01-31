@@ -30,6 +30,8 @@ from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
+from qf_lib.data_providers.futures.futures_prefetching_data_provider import FuturesPrefetchingDataProvider
+from qf_lib.data_providers.prefetching_data_provider import PrefetchingDataProvider
 
 
 class BacktestTradingSession(TradingSession):
@@ -67,4 +69,21 @@ class BacktestTradingSession(TradingSession):
         if time_delta is None:
             time_delta = RelativeDelta(years=1)
         data_history_start = self.start_date - time_delta
-        self.data_handler.use_data_bundle(tickers, PriceField.ohlcv(), data_history_start, self.end_date)
+        self.data_handler.use_data_bundle(tickers, PriceField.ohlcv(), data_history_start,
+                                          self.end_date, self.frequency, PrefetchingDataProvider)
+
+    def use_futures_data_preloading(self, tickers: Union[Ticker, Sequence[Ticker]], time_delta: RelativeDelta = None):
+        """
+        Preloads data related to Futures Contracts.
+        tickers
+            one or a list of specific tickers (one ticker per tickers family e.g. 'CTZ9 Comdty' for Cotton), used
+            further to download the futures contracts related data
+        time_delta
+            amount of time to go back before the provided backtest start date, to download data from
+        """
+        if time_delta is None:
+            time_delta = RelativeDelta(years=1)
+        data_history_start = self.start_date - time_delta
+        self.data_handler.use_data_bundle(tickers, PriceField.ohlcv(), data_history_start,
+                                          self.end_date, self.frequency,
+                                          FuturesPrefetchingDataProvider)

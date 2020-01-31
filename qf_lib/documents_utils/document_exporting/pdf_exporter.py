@@ -45,6 +45,14 @@ class PDFExporter(DocumentExporter):
 
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
+    def set_default_directory_level_up(self):
+        """
+        Sets the document_css_dir one level above 'default css', to enable applying css classes in other folders.
+        Using the generate function demands inputting css_file_names as paths from newly set level.
+        e.g: 'default_css\main'
+        """
+        self._document_css_dir = abspath(dirname(__file__))
+
     def generate(self, documents: List[Document], export_dir: str, filename: str,
                  include_table_of_contents=False, css_file_names: List[str] = None) -> str:
         """

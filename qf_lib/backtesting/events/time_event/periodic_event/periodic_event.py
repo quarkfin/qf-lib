@@ -129,7 +129,9 @@ class PeriodicEvent(TimeEvent, metaclass=ABCMeta):
 
             # Check if the next trigger time points to Saturday or Sunday and if so, shift it to Monday
             if _next_trigger_time.weekday() in (5, 6):
-                _next_trigger_time += RelativeDelta(day=0)
+                _next_trigger_time_shifted = _next_trigger_time + RelativeDelta(weekday=0)
+                assert _next_trigger_time_shifted >= _next_trigger_time
+                _next_trigger_time = _next_trigger_time_shifted
 
             return _next_trigger_time
 

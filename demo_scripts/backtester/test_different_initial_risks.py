@@ -49,7 +49,7 @@ def get_trade_rets_values(init_risk: float, alpha_model_type: Type[AlphaModel]) 
 
     ts.use_data_preloading(get_all_tickers_used(model_tickers_dict))
     ts.start_trading()
-    trades = ts.portfolio.get_trades()
+    trades = ts.portfolio.trade_list()
     returns_of_trades = [(t.exit_price / t.entry_price - 1) * np.sign(t.quantity) for t in trades]
     return returns_of_trades
 

@@ -23,7 +23,6 @@ from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event i
 from qf_lib.backtesting.events.time_event.single_time_event.schedule_order_execution_event import ScheduleOrderExecutionEvent
 from qf_lib.backtesting.events.time_event.periodic_event.intraday_bar_event import IntradayBarEvent
 from qf_lib.backtesting.events.time_event.scheduler import Scheduler
-from qf_lib.backtesting.events.time_event.time_event import TimeEvent
 from qf_lib.backtesting.execution_handler.commission_models.commission_model import CommissionModel
 from qf_lib.backtesting.execution_handler.execution_handler import ExecutionHandler
 from qf_lib.backtesting.execution_handler.market_on_close_orders_executor import MarketOnCloseOrdersExecutor
@@ -98,7 +97,8 @@ class SimulatedExecutionHandler(ExecutionHandler):
             timer, order_id_generator, commission_model, slippage_model)
 
     def on_after_market_close(self, _: AfterMarketCloseEvent):
-        self.portfolio.update()
+        # Update the portfolio and record its state, current assets and positions
+        self.portfolio.update(record=True)
         self.monitor.end_of_day_update(self.timer.now())
 
     def on_market_close(self, _: MarketCloseEvent):
@@ -110,16 +110,9 @@ class SimulatedExecutionHandler(ExecutionHandler):
         self._market_orders_executor.execute_orders(market_open=True)
         self._market_on_open_orders_executor.execute_orders(market_open=True)
 
-        # Update portfolio in case of intraday trading
-        if self.intraday_trading:
-            self.portfolio.update()
-
     def on_new_bar(self, _: IntradayBarEvent):
         self._market_orders_executor.execute_orders()
         self._stop_orders_executor.execute_orders()
-
-        # Update portfolio
-        self.portfolio.update()
 
     def on_orders_accept(self, event: ScheduleOrderExecutionEvent):
         executors_to_orders_dict = event.get_executors_to_orders_dict(self.timer.now())  # type: Dict[SimulatedExecutor, List[Order]]

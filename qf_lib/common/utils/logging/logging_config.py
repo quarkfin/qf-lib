@@ -23,9 +23,10 @@ from qf_lib.common.utils.logging.qf_parent_logger import qf_logger, ib_logger
 from qf_lib.starting_dir import get_starting_dir_abs_path
 
 
-def setup_logging(level, console_logging=True, log_dir=None, log_file_base_name=""):
+def setup_logging(level, console_logging=True, log_dir=None, log_file_base_name="", only_qf=True):
     _inner_setup_logging(qf_logger, level, console_logging, log_dir, "QF_" + log_file_base_name)
-    _inner_setup_logging(ib_logger, level, console_logging, log_dir, "IB_" + log_file_base_name)
+    if not only_qf:
+        _inner_setup_logging(ib_logger, level, console_logging, log_dir, "IB_" + log_file_base_name)
 
 
 def _inner_setup_logging(logger, level, console_logging, log_dir, log_file_base_name):
@@ -35,6 +36,14 @@ def _inner_setup_logging(logger, level, console_logging, log_dir, log_file_base_
     )
     logger.setLevel(level)
 
+    # If not already exists a streamhandler, add one
+    if not any(isinstance(handle, logging.StreamHandler) for handle in logger.handlers):
+        # config logging to console (stdout)
+        if console_logging:
+            stream_handler = logging.StreamHandler(sys.stdout)
+            stream_handler.setFormatter(formatter)
+            logger.addHandler(stream_handler)
+
     # config logging to file
     if log_dir is not None:
         abs_log_dir = join(get_starting_dir_abs_path(), log_dir)
@@ -43,12 +52,16 @@ def _inner_setup_logging(logger, level, console_logging, log_dir, log_file_base_
         if not exists(abs_log_dir):
             makedirs(abs_log_dir)
 
-        file_handler = logging.FileHandler(join(abs_log_dir, log_file))
-        file_handler.setFormatter(formatter)
-        logger.addHandler(file_handler)
+        # If not already exists a filehandler, add one
+        if not any(isinstance(handle, logging.FileHandler) for handle in logger.handlers):
+            file_handler = logging.FileHandler(join(abs_log_dir, log_file))
+            file_handler.setFormatter(formatter)
+            logger.addHandler(file_handler)
 
-    # config logging to console (stdout)
-    if console_logging:
-        stream_handler = logging.StreamHandler(sys.stdout)
-        stream_handler.setFormatter(formatter)
-        logger.addHandler(stream_handler)
+
+
+
+def remove_stream_handler(logger, log_dir, log_file_base_name):
+    # Assume logger is setup
+    stream_handler = logging.StreamHandler(sys.stdout)
+    logger.addHandler(stream_handler)

@@ -22,7 +22,7 @@ import quandl
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.enums.quandl_db_type import QuandlDBType
-from qf_lib.common.tickers.tickers import QuandlTicker
+from qf_lib.common.tickers.tickers import QuandlTicker, Ticker
 from qf_lib.common.utils.dateutils.date_to_string import date_to_str
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
@@ -31,7 +31,7 @@ from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.helpers import tickers_dict_to_data_array, \
     normalize_data_array, get_fields_from_tickers_data_dict
-from qf_lib.data_providers.price_data_provider import DataProvider
+from qf_lib.data_providers.data_provider import DataProvider
 from qf_lib.settings import Settings
 
 
@@ -40,7 +40,6 @@ class QuandlDataProvider(DataProvider):
     The table database: WIKI/PRICES offers stock prices, dividends and splits for 3000 US publicly-traded companies.
     This database is updated at 9:15 PM EST every weekday.
     """
-
     def __init__(self, settings: Settings):
         self.key = settings.quandl_key
         quandl.ApiConfig.api_key = self.key
@@ -283,3 +282,8 @@ class QuandlDataProvider(DataProvider):
         table = table.loc[start_date:end_date]
 
         return table
+
+    def get_futures_chain_tickers(self, tickers: Union[Ticker, Sequence[Ticker]], date: datetime,
+                                  include_expired_contracts: bool = True) -> Dict[Ticker, QFSeries]:
+        raise NotImplementedError("Downloading Future Chain Tickers in QuandlDataProvider is not supported yet")
+

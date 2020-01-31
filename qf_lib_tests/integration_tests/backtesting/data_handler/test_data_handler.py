@@ -17,7 +17,6 @@ from unittest import TestCase
 import pandas as pd
 
 from qf_lib.backtesting.data_handler.daily_data_handler import DailyDataHandler
-from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
 from qf_lib.common.enums.price_field import PriceField
@@ -179,8 +178,8 @@ class TestDataHandler(TestCase):
         result_array = self.data_handler.historical_price([self.microsoft_ticker], [PriceField.Open, PriceField.Close],
                                                           nr_of_bars=5)
 
-        self.assertEquals(QFDataArray, type(result_array))
-        self.assertEquals((5, 1, 2), result_array.shape)
+        self.assertEqual(QFDataArray, type(result_array))
+        self.assertEqual((5, 1, 2), result_array.shape)
 
         expected_dates_str = ["2018-01-24", "2018-01-25", "2018-01-26", "2018-01-29", "2018-01-30"]
         expected_dates = [str_to_date(date_str) for date_str in expected_dates_str]
@@ -191,7 +190,7 @@ class TestDataHandler(TestCase):
         self.timer.set_current_time(str_to_date("2018-01-04") + MarketOpenEvent.trigger_time() + RelativeDelta(hours=1))
         result_df = self.data_handler.historical_price([self.microsoft_ticker], PriceField.Open, nr_of_bars=5)
 
-        self.assertEquals(PricesDataFrame, type(result_df))
+        self.assertEqual(PricesDataFrame, type(result_df))
 
         expected_dates_idx = pd.DatetimeIndex(
             ['2017-12-27', '2017-12-28', '2017-12-29', '2018-01-02', '2018-01-03'], name=DATES

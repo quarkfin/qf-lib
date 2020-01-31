@@ -64,7 +64,7 @@ class DailyDataHandler(DataHandler):
         end_date = self._get_end_date_without_look_ahead()
         start_date = end_date - RelativeDelta(days=nr_of_days_to_go_back)
 
-        container = self.price_data_provider.get_price(tickers, fields, start_date, end_date, frequency)
+        container = self.data_provider.get_price(tickers, fields, start_date, end_date, frequency)
 
         num_of_dates_available = container.shape[0]
         if num_of_dates_available < nr_of_bars:
@@ -93,12 +93,12 @@ class DailyDataHandler(DataHandler):
         """
         frequency = frequency or self.fixed_data_provider_frequency or Frequency.DAILY
         end_date_without_look_ahead = self._get_end_date_without_look_ahead(end_date)
-        return self.price_data_provider.get_price(tickers, fields, start_date, end_date_without_look_ahead,
-                                                  frequency)
+        return self.data_provider.get_price(tickers, fields, start_date, end_date_without_look_ahead,
+                                            frequency)
 
     def get_history(
             self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[str, Sequence[str]], start_date: datetime,
-            end_date: datetime = None, frequency: Frequency = None, **kwargs) ->\
+            end_date: datetime = None, frequency: Frequency = None, **kwargs) -> \
             Union[QFSeries, QFDataFrame, QFDataArray]:
         """
         Runs DataProvider.get_history(...) but before makes sure that the query doesn't concern data from the future.
@@ -107,7 +107,7 @@ class DailyDataHandler(DataHandler):
         """
         frequency = frequency or self.fixed_data_provider_frequency or Frequency.DAILY
         end_date_without_look_ahead = self._get_end_date_without_look_ahead(end_date)
-        return self.price_data_provider.get_history(tickers, fields, start_date, end_date_without_look_ahead, frequency)
+        return self.data_provider.get_history(tickers, fields, start_date, end_date_without_look_ahead, frequency)
 
     def get_last_available_price(self, tickers: Union[Ticker, Sequence[Ticker]],
                                  frequency: Frequency = None) -> Union[float, pd.Series]:
@@ -131,7 +131,7 @@ class DailyDataHandler(DataHandler):
         return self._get_single_date_price(tickers, nans_allowed=False, frequency=Frequency.DAILY)
 
     def get_current_price(self, tickers: Union[Ticker, Sequence[Ticker]],
-                                 frequency: Frequency = None) -> Union[float, pd.Series]:
+                          frequency: Frequency = None) -> Union[float, pd.Series]:
         """
         Works just like get_last_available_price() but it can return NaNs if data is not available at the current
         moment (e.g. it returns NaN on a non-trading day or when current time is different than the time of MarketOpen
@@ -220,13 +220,17 @@ class DailyDataHandler(DataHandler):
         # Compute the time ranges, used further by the get_price function
         current_datetime = self.timer.now()
 
-        start_date = current_datetime - RelativeDelta(days=7)
+        # We download the prices since the last 10 days. In case of getting the last available price, we assume that
+        # within each 10 consecutive days, at least one price will occur. If not, in case e.g. future contracts, we
+        # assume that the contract ended and we need to e.g. close the position for this ticker in the portfolio, if
+        # open.
+        start_date = current_datetime - RelativeDelta(days=10)
         current_date = self._zero_out_time_component(current_datetime)
 
         price_fields = [PriceField.Open, PriceField.Close]
 
-        prices_data_array = self.price_data_provider.get_price(tickers, price_fields, start_date, current_date,
-                                                               frequency)
+        prices_data_array = self.data_provider.get_price(tickers, price_fields, start_date, current_date,
+                                                         frequency)
         prices_df = self._data_array_to_dataframe(prices_data_array)
 
         prices_df = prices_df.loc[:current_datetime]

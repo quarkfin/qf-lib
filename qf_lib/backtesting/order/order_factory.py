@@ -280,10 +280,11 @@ class OrderFactory(object):
         for ticker, (contract, amount_of_money) in tickers_to_contract_and_amount_of_money.items():
             current_price = current_prices.loc[ticker]
 
-            target_quantity = amount_of_money / current_price  # type: float
+            divisor = (current_price * contract.contract_size)
+            target_quantity = amount_of_money / divisor   # type: float
             target_quantities[contract] = target_quantity
 
-            tolerance_quantity = tolerance_value / current_price  # type: float
+            tolerance_quantity = tolerance_value / divisor  # type: float
             tolerance_quantities[contract] = tolerance_quantity
 
         return target_quantities, tolerance_quantities

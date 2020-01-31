@@ -46,11 +46,12 @@ from qf_lib.backtesting.position_sizer.simple_position_sizer import SimplePositi
 from qf_lib.backtesting.trading_session.backtest_trading_session import BacktestTradingSession
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.tickers.tickers import QuandlTicker, Ticker, BloombergTicker
+from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
-from qf_lib.data_providers.price_data_provider import DataProvider
+from qf_lib.data_providers.data_provider import DataProvider
 from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.documents_utils.excel.excel_exporter import ExcelExporter
 from qf_lib.settings import Settings
@@ -79,12 +80,12 @@ class BacktestTradingSessionBuilder(object):
         self._excel_exporter = excel_exporter
 
         self._frequency = None
+        self._scheduling_time_delay = RelativeDelta(minutes=1)
 
-        # setup time of market events
-        BeforeMarketOpenEvent.set_trigger_time({"hour": 1, "minute": 0, "second": 0, "microsecond": 0})
-        MarketOpenEvent.set_trigger_time({"hour": 9, "minute": 30, "second": 0, "microsecond": 0})
-        MarketCloseEvent.set_trigger_time({"hour": 16, "minute": 00, "second": 0, "microsecond": 0})
-        AfterMarketCloseEvent.set_trigger_time({"hour": 23, "minute": 30, "second": 0, "microsecond": 0})
+        BeforeMarketOpenEvent.set_trigger_time({"hour": 8, "minute": 0, "second": 0, "microsecond": 0})
+        MarketOpenEvent.set_trigger_time({"hour": 13, "minute": 30, "second": 0, "microsecond": 0})
+        MarketCloseEvent.set_trigger_time({"hour": 20, "minute": 0, "second": 0, "microsecond": 0})
+        AfterMarketCloseEvent.set_trigger_time({"hour": 23, "minute": 00, "second": 0, "microsecond": 0})
 
     def set_backtest_name(self, name: str):
         assert not any(char in name for char in ('/\\?%*:|"<>'))
@@ -92,6 +93,9 @@ class BacktestTradingSessionBuilder(object):
 
     def set_frequency(self, frequency: Frequency):
         self._frequency = frequency
+
+    def set_scheduling_time_delay(self, time_delay: RelativeDelta):
+        self._scheduling_time_delay = time_delay
 
     def set_initial_cash(self, initial_cash: int):
         assert type(initial_cash) is int and initial_cash > 0
@@ -176,7 +180,8 @@ class BacktestTradingSessionBuilder(object):
 
         self._execution_handler = SimulatedExecutionHandler(
             self._data_handler, self._timer, self._notifiers.scheduler, self._monitor, self._commission_model,
-            self._contract_ticker_mapper, self._portfolio, self._slippage_model, frequency=self._frequency)
+            self._contract_ticker_mapper, self._portfolio, self._slippage_model,
+            scheduling_time_delay=self._scheduling_time_delay, frequency=self._frequency)
 
         self._time_flow_controller = BacktestTimeFlowController(
             self._notifiers.scheduler, self._events_manager, self._timer,

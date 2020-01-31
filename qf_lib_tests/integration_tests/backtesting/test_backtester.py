@@ -92,7 +92,7 @@ class TestBacktester(TestCase):
         # Set up the backtest
         ts.start_trading()
 
-        actual_portfolio_tms = ts.portfolio.get_portfolio_eod_tms()
+        actual_portfolio_tms = ts.portfolio.portfolio_eod_series()
 
         expected_portfolio_tms = msft_prices.loc[:, PriceField.Close].asof(actual_portfolio_tms.index)
         expected_portfolio_tms[:str_to_date("2010-01-03")] = initial_cash

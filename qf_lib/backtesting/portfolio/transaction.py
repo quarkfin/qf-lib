@@ -37,33 +37,28 @@ class Transaction(object):
         price
             price at which the trade was filled
         commission
-            brokerage commission for carrying out the trade
+            brokerage commission for carrying out the trade. It is always a positive number
         """
+        assert commission >= 0.0
+
         self.time = time
         self.contract = contract
         self.quantity = quantity
         self.price = price
         self.commission = commission
 
-    def average_price_including_commission(self) -> float:
-        """
-        Returns average price that we obtain by selling asset or the average price that we paid to buy asset.
-        It always includes the commission paid.
-        """
-        result = self.quantity * self.price
-        result += self.commission
-        result /= self.quantity
-        return result
-
     def __str__(self):
-        string_template = "{datetime_str:s} - {class_name:<25} -> Contract: {contract_str:>30}," \
-                          "Quantity: {quantity:>7}, Price: {price:>7.2f}, " \
-                          "Commission: {commission:>7.2f}".format(datetime_str=date_to_str(self.time),
-                                                                  class_name=self.__class__.__name__,
-                                                                  contract_str=str(self.contract),
-                                                                  quantity=self.quantity,
-                                                                  price=self.price,
-                                                                  commission=self.commission)
+        string_template = "{class_name:s} ({datetime_str:s}) -> " \
+                          "Quantity: {quantity:>8}, " \
+                          "Price: {price:>10.2f}, " \
+                          "Commission: {commission:>7.2f}, " \
+                          "Contract: {contract_str:}".format(class_name=self.__class__.__name__,
+                                                             datetime_str=date_to_str(self.time),
+                                                             quantity=self.quantity,
+                                                             price=self.price,
+                                                             commission=self.commission,
+                                                             contract_str=str(self.contract)
+                                                             )
 
         return string_template
 

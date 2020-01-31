@@ -13,10 +13,11 @@
 #     limitations under the License.
 
 from datetime import datetime
-from typing import Union, Sequence, Set, Type
+from typing import Union, Sequence, Set, Type, Dict
 import numpy as np
 import pandas as pd
 
+from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
@@ -25,11 +26,12 @@ from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.dimension_names import DATES
+from qf_lib.containers.futures.future_ticker import FutureTicker
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.helpers import normalize_data_array
-from qf_lib.data_providers.price_data_provider import DataProvider
+from qf_lib.data_providers.data_provider import DataProvider
 
 
 class PresetDataProvider(DataProvider):
@@ -101,6 +103,7 @@ class PresetDataProvider(DataProvider):
             # If the data is of intraday data type, which spans over multiple days, the base parameter of resamples
             # function should be adjusted differently for the first day. Therefore, the data array is divided into two
             # separate arrays - first containing only the first day, and the second one - containing all other dates.
+
             end_of_day = start_date + RelativeDelta(hour=23, minute=59, second=59)
             _end_date = end_of_day if (end_of_day < end_date) else end_date
 
@@ -123,7 +126,7 @@ class PresetDataProvider(DataProvider):
             data_array_2 = data_array.loc[end_of_day:end_date, :, :]
 
             if len(data_array_2) > 0:
-                base_data_array_2 = pd.to_datetime(data_array_2[DATES].values[0]).minute
+                base_data_array_2 = MarketOpenEvent.trigger_time().minute
 
                 data_array_2 = data_array_2.resample(
                     dates=frequency.to_pandas_freq(),
@@ -192,6 +195,9 @@ class PresetDataProvider(DataProvider):
     def supported_ticker_types(self) -> Set[Type[Ticker]]:
         return self._ticker_types
 
+    def cached_tickers(self) -> Set[Ticker]:
+        return self._tickers_cached_set
+
     @staticmethod
     def _aggregate_data_array(data_array, tickers: Sequence[Ticker], fields: Sequence[PriceField]):
         """
@@ -227,3 +233,7 @@ class PresetDataProvider(DataProvider):
                         returned_frame.loc[ticker, field] = np.nan
 
         return returned_frame
+
+    def get_futures_chain_tickers(self, tickers: Union[FutureTicker, Sequence[FutureTicker]], date: datetime,
+                                  include_expired_contracts: bool = True) -> Dict[FutureTicker, QFSeries]:
+        pass

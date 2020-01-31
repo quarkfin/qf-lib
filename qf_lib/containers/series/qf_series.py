@@ -28,7 +28,7 @@ class QFSeries(pd.Series, TimeIndexedContainer):
     """
 
     def __init__(self, data: object=None, index: object=None, dtype: object=None, name: object=None, copy:object=False,
-                 fastpath: object=False) -> object:
+                 fastpath: object=False):
         super().__init__(data, index, dtype, name, copy, fastpath)
 
     @property

@@ -24,7 +24,7 @@ from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.cast_series import cast_series
 from qf_lib.containers.series.prices_series import PricesSeries
-from qf_lib.data_providers.price_data_provider import DataProvider
+from qf_lib.data_providers.data_provider import DataProvider
 
 
 class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):

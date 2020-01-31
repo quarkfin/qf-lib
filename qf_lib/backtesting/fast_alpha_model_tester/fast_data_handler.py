@@ -24,7 +24,7 @@ from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.prices_series import PricesSeries
-from qf_lib.data_providers.price_data_provider import DataProvider
+from qf_lib.data_providers.data_provider import DataProvider
 
 
 class FastDataHandler(DataHandler):
@@ -39,11 +39,11 @@ class FastDataHandler(DataHandler):
     def historical_price(self, ticker, fields, num_of_bars_needed, frequency: Frequency = Frequency.DAILY):
         end_date = self.timer.now()
         start_date = end_date - 2 * RelativeDelta(days=num_of_bars_needed)
-        too_much_of_data = self.price_data_provider.get_price(ticker, fields, start_date, end_date,
-                                                              frequency)  # type: PricesDataFrame
+        too_much_of_data = self.data_provider.get_price(ticker, fields, start_date, end_date,
+                                                        frequency)  # type: PricesDataFrame
         result = too_much_of_data.tail(num_of_bars_needed)
         return result
 
     def get_price(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
                   start_date: datetime, end_date: datetime = None, frequency: Frequency = Frequency.DAILY) -> Union[PricesSeries, PricesDataFrame, QFDataArray]:
-        return self.price_data_provider.get_price(tickers, fields, start_date, end_date, frequency)
+        return self.data_provider.get_price(tickers, fields, start_date, end_date, frequency)

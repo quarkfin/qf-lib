@@ -28,7 +28,7 @@ from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.dimension_names import DATES, TICKERS, FIELDS
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.data_providers.prefetching_data_provider import PrefetchingDataProvider
-from qf_lib.data_providers.price_data_provider import DataProvider
+from qf_lib.data_providers.data_provider import DataProvider
 
 
 class TestPrefetchingDataProvider(unittest.TestCase):

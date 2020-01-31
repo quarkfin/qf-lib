@@ -12,13 +12,14 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
+
 class Contract(object):
-    def __init__(self, symbol: str, security_type: str, exchange: str):
+    def __init__(self, symbol: str, security_type: str, exchange: str, contract_size=1):
         """
         Parameters
         ----------
         symbol
-            symbol of the asset handled later on by the Broker (e.g. MSFT)
+            symbol of the asset handled later on by the Broker (e.g. "MSFT")
         security_type
             e.g. 'STK' for a stock
         exchange
@@ -27,6 +28,9 @@ class Contract(object):
         self.symbol = symbol
         self.security_type = security_type
         self.exchange = exchange
+
+        # used for futures and options. For cash contracts (stocks, bonds ETFs) should always be equal to 1
+        self.contract_size = contract_size
 
     def __str__(self):
         return 'Contract: symbol: {}, security_type: {} exchange: {}'.format(

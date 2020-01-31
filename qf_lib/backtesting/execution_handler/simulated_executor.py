@@ -98,6 +98,10 @@ class SimulatedExecutor(metaclass=abc.ABCMeta):
             # Delete the executed orders from awaiting orders dictionary
             del self._awaiting_orders[order.id]
 
+        # If any orders have been executed - update the portfolio
+        if len(to_be_executed_orders) > 0:
+            self._portfolio.update()
+
         # Delete all expired orders
         for expired_order_id in expired_orders_list:
             del self._awaiting_orders[expired_order_id]

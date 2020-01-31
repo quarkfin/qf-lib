@@ -25,7 +25,7 @@ from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.date_to_string import date_to_str
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
-from qf_lib.data_providers.price_data_provider import DataProvider
+from qf_lib.data_providers.data_provider import DataProvider
 from qf_lib.documents_utils.document_exporting.document import Document
 from qf_lib.documents_utils.document_exporting.element.chart import ChartElement
 from qf_lib.documents_utils.document_exporting.element.heading import HeadingElement

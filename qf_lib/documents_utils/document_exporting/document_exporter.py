@@ -17,6 +17,7 @@ from os.path import join
 from typing import Sequence
 
 from qf_lib.documents_utils.document_exporting.document import Document
+from qf_lib.documents_utils.document_exporting.element.front_page import FrontPage
 from qf_lib.documents_utils.document_exporting.element.header import HeaderElement
 from qf_lib.documents_utils.document_exporting.element.index import IndexElement
 from qf_lib.settings import Settings
@@ -76,7 +77,7 @@ class DocumentExporter(object):
     def _add_table_of_contents(cls, document):
         # Ideally we would like to add a table of contents after the Header element.
         # Check if a header element is the first element.
-        if isinstance(document.elements[0], HeaderElement):
+        if isinstance(document.elements[0], (HeaderElement, FrontPage)):
             # If it is the first element then insert the table of contents after it.
             document.elements.insert(1, IndexElement(4))
         else:

@@ -30,7 +30,7 @@ from qf_lib.common.tickers.tickers import Ticker, BloombergTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.data_providers.preset_data_provider import PresetDataProvider
-from qf_lib.data_providers.price_data_provider import DataProvider
+from qf_lib.data_providers.data_provider import DataProvider
 from qf_lib_tests.integration_tests.backtesting.trading_session_for_tests import TestingTradingSession
 
 
@@ -47,7 +47,7 @@ class TestAlphaModelStrategy(TestCase):
 
         self._mocked_prices_arr = self._make_mock_data_array(self.tickers, all_fields)
         self._price_provider_mock = PresetDataProvider(self._mocked_prices_arr, self.data_start_date, self.end_date,
-                                                       self.frequency)
+                                                       self.frequency, check_data_availability=False)
 
         risk_estimation_factor = 0.05
         self.alpha_model = DummyAlphaModel(risk_estimation_factor)
@@ -109,11 +109,11 @@ class TestAlphaModelStrategy(TestCase):
 
         expected_transactions_quantities = \
             [8130, -127, 1, -8004, 7454, -58, -7396, 6900, -6900, 6390, -44, -6346, 5718, -36]
-        result_transactions_quantities = [t.quantity for t in result.transactions]
+        result_transactions_quantities = [t.quantity for t in result.transactions_series()]
         assert_equal(expected_transactions_quantities, result_transactions_quantities)
 
         expected_transactions_prices = [125, 130, 135, 235.6, 255, 260, 259.35, 280, 264.1, 285, 290, 282, 315, 320]
-        result_transactions_prices = [t.price for t in result.transactions]
+        result_transactions_prices = [t.price for t in result.transactions_series()]
         assert_almost_equal(expected_transactions_prices, result_transactions_prices)
 
         expected_portfolio_values = [1024390, 1064659, 1064659, 1064659, 1104677, 1144697, 1184717, 1224737, 1264757,
@@ -123,7 +123,7 @@ class TestAlphaModelStrategy(TestCase):
                                      1908229.4, 1908229.4, 1908229.4, 1945325.4, 1982305.4, 2019285.4, 1918330, 1808620,
                                      1808620, 1808620, 1827790, 1859608, 1891338, 1923068, 1954798, 1954798, 1954798,
                                      1789802, 1806956, 1835438, 1863848, 1892258, 1892258]
-        assert_almost_equal(expected_portfolio_values, result.portfolio_values)
+        assert_almost_equal(expected_portfolio_values, list(result.portfolio_eod_series()))
 
 
 class DummyAlphaModel(AlphaModel):

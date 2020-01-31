@@ -92,7 +92,8 @@ class ConeChartOOS(Chart):
         ax.set_xlim(0, self.oos_series.size)
 
         self._insert_valuation_text_box(cone, strategy_tms)
-
+        self._apply_decorators()
+        
     def _insert_valuation_text_box(self, cone, strategy_tms):
         # add text box with average expectation over 20 days and overall horizon
         one_sigma_df = cone.calculate_aggregated_cone_oos_only(self.oos_series, self.is_mean_return, self.is_sigma, 1)

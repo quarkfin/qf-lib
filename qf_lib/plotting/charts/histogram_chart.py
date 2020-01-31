@@ -13,16 +13,15 @@
 #     limitations under the License.
 
 from collections import Sequence
-from typing import Tuple
-
-import matplotlib.mlab as mlab
+from typing import Tuple, Union, Any
 from scipy.stats import norm
 
 from qf_lib.plotting.charts.chart import Chart
 
 
 class HistogramChart(Chart):
-    def __init__(self, series: Sequence, best_fit: bool = False, bins: int = 20, **plot_settings):
+    def __init__(self, series: Sequence, best_fit: bool = False, bins: Union[int, str] = 20, start_x: Any = None,
+                 end_x: Any = None, **plot_settings):
         """
         Constructs a new histogram based on the ``series`` specified.
 
@@ -37,7 +36,7 @@ class HistogramChart(Chart):
         plot_settings
             Options to pass to the ``hist`` function.
         """
-        super().__init__(start_x=None, end_x=None)
+        super().__init__(start_x=start_x, end_x=end_x)
         self._series = series
         self.plot_settings = plot_settings
         self._num_of_bins = bins
@@ -52,7 +51,7 @@ class HistogramChart(Chart):
             # Calculate the best fit for the data.
             mu, sigma = norm.fit(self._series)
             # Draw best fit line.
-            y = mlab.normpdf(bins, mu, sigma)
+            y = norm.pdf(bins, mu, sigma)
             # Multiply by count of data and bin width to get unnormalised best fit line.
             unnormalised_y = y * len(self._series) * abs(bins[0] - bins[1])
             self.axes.plot(bins, unnormalised_y, "r--")

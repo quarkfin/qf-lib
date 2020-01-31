@@ -66,7 +66,7 @@ def main():
     ts.start_trading()
 
     # ----- use results ----- #
-    backtest_tms = ts.portfolio.get_portfolio_eod_tms().to_log_returns()
+    backtest_tms = ts.portfolio.portfolio_eod_series().to_log_returns()
     print("mean daily log return: {}".format(backtest_tms.mean()))
     print("std of daily log returns: {}".format(backtest_tms.std()))
 

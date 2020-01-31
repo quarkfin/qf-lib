@@ -24,7 +24,7 @@ from qf_lib.backtesting.order.order_factory import OrderFactory
 from qf_lib.backtesting.position_sizer.position_sizer import PositionSizer
 from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
-from qf_lib.data_providers.price_data_provider import DataProvider
+from qf_lib.data_providers.data_provider import DataProvider
 from qf_lib.settings import Settings
 
 

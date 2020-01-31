@@ -1,0 +1,30 @@
+
+<!--
+  ~    Copyright 2016-present CERN – European Organization for Nuclear Research
+  ~
+  ~    Licensed under the Apache License, Version 2.0 (the "License");
+  ~    you may not use this file except in compliance with the License.
+  ~    You may obtain a copy of the License at
+  ~
+  ~        http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~    Unless required by applicable law or agreed to in writing, software
+  ~    distributed under the License is distributed on an "AS IS" BASIS,
+  ~    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~    See the License for the specific language governing permissions and
+  ~    limitations under the License.
+  -->
+
+<p style="page-break-before: always" ></p> <!-- Force a page break -->
+<div class="front-page">
+    <h1 style="font-size: 28px; font-weight: bold; text-align: center;
+     margin-top: 250px; padding-bottom: 25px;"> {{header}} </h1>
+    <h2 style="font-weight: bold; text-align: center;">{{ title }} </h2>
+    {% if logo_path is not none %}
+        <img class="cern-logo image" src="file:///{{logo_url}}" style="display: block;
+        margin-left: auto;  margin-right: auto; padding-bottom: 25px; padding-top: 10px ">
+    {% endif %}
+
+    <h2 style="font-weight: bold; text-align: center; ">{{ subtitle }} </h2>
+</div>
+<p style="page-break-after: always" ></p> <!-- Force a page break after-->

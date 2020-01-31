@@ -14,7 +14,7 @@
 
 from abc import ABCMeta, abstractmethod
 from itertools import groupby
-from typing import List, Sequence
+from typing import List, Sequence, Optional
 
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
 from qf_lib.backtesting.alpha_model.signal import Signal
@@ -71,7 +71,7 @@ class PositionSizer(object, metaclass=ABCMeta):
         return orders
 
     @abstractmethod
-    def _generate_market_order(self, contract, signal: Signal) -> Order:
+    def _generate_market_order(self, contract, signal: Signal) -> Optional[Order]:
         raise NotImplementedError("Should implement _generate_market_order()")
 
     def _generate_stop_order(self, contract, signal, market_order: Order):
@@ -83,7 +83,9 @@ class PositionSizer(object, metaclass=ABCMeta):
 
         if stop_quantity != 0:
             stop_price = self._calculate_stop_price(signal)
-            assert is_finite_number(stop_price), "Stop price should be a finite number"
+            if not is_finite_number(stop_price):
+                self.logger.info("Stop price should be a finite number")
+                return None
 
             # put minus before the quantity as stop order has to go in the opposite direction
             stop_orders = self._order_factory.orders({contract: -stop_quantity}, StopOrder(stop_price), TimeInForce.GTC)

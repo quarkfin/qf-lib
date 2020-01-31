@@ -53,7 +53,7 @@ class _MonitorMock(AbstractMonitor):
     def end_of_day_update(self, timestamp: datetime):
         raise NotImplementedError
 
-    def end_of_trading_update(self, timestamp: datetime):
+    def end_of_trading_update(self, timestamp: datetime = None):
         raise NotImplementedError
 
     def record_transaction(self, transaction: Transaction):
@@ -74,7 +74,7 @@ class TestStopLossExecutionStyle(TestCase):
         before_close = self.start_date + MarketCloseEvent.trigger_time() - \
                             RelativeDelta(minutes=self.number_of_minutes)
 
-        self.msft_contract = Contract(self.MSFT_TICKER_STR, security_type='SEK', exchange='TEST')
+        self.msft_contract = Contract(self.MSFT_TICKER_STR, security_type='STK', exchange='TEST')
         self.msft_ticker = BloombergTicker(self.MSFT_TICKER_STR)
 
         self.contracts_to_tickers_mapper = DummyBloombergContractTickerMapper()

@@ -27,17 +27,23 @@ class FuturesDataProvider(object):
         self._session = session
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
-    def get(self, tickers: Sequence[str], chain_date: datetime) -> Dict[str, List[str]]:
+    def get(self, tickers: Sequence[str], chain_date: datetime, include_expired_contracts: bool = True) ->\
+            Dict[str, List[str]]:
         ref_data_service = self._session.getService(REF_DATA_SERVICE_URI)
         request = ref_data_service.createRequest("ReferenceDataRequest")
 
         set_tickers(request, tickers)
         set_fields(request, ["FUT_CHAIN"])
 
-        # Set the parameters to include all the future contracts, that already expired
+        if include_expired_contracts:
+            # Set the parameters to include all the future contracts, that already expired
+            override_names = ("CHAIN_DATE", "INCLUDE_EXPIRED_CONTRACTS")
+            override_values = (convert_to_bloomberg_date(chain_date), "Y")
+        else:
+            override_names = ("CHAIN_DATE",)
+            override_values = (convert_to_bloomberg_date(chain_date),)
+
         override_fields = ("fieldId", "value")
-        override_names = ("CHAIN_DATE", "INCLUDE_EXPIRED_CONTRACTS")
-        override_values = (convert_to_bloomberg_date(chain_date), "Y")
         self._set_overrides(request, override_fields, override_names, override_values)
 
         self._session.sendRequest(request)

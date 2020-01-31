@@ -12,12 +12,13 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Union, Sequence
 
 import pandas as pd
 
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
+from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
@@ -84,7 +85,7 @@ class IntradayDataHandler(DataHandler):
         # E.g. if the market opens at 13:30, the bars will also start at 13:30
         start_date = end_date - RelativeDelta(days=nr_of_days_to_go_back, hour=0, minute=0, second=0, microsecond=0)
 
-        container = self.price_data_provider.get_price(tickers, fields, start_date, end_date, frequency)
+        container = self.data_provider.get_price(tickers, fields, start_date, end_date, frequency)
 
         num_of_dates_available = container.shape[0]
         if num_of_dates_available < nr_of_bars:
@@ -110,12 +111,12 @@ class IntradayDataHandler(DataHandler):
         """
         frequency = frequency or self.fixed_data_provider_frequency or Frequency.MIN_1
         end_date_without_look_ahead = self._get_end_date_without_look_ahead(end_date)
-        return self.price_data_provider.get_price(tickers, fields, start_date, end_date_without_look_ahead,
-                                                  frequency)
+        return self.data_provider.get_price(tickers, fields, start_date, end_date_without_look_ahead,
+                                            frequency)
 
     def get_history(
             self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[str, Sequence[str]], start_date: datetime,
-            end_date: datetime = None, frequency: Frequency = None, **kwargs) ->\
+            end_date: datetime = None, frequency: Frequency = None, **kwargs) -> \
             Union[QFSeries, QFDataFrame, QFDataArray]:
         """
         Runs DataProvider.get_history(...) but before makes sure that the query doesn't concern data from the future.
@@ -124,7 +125,7 @@ class IntradayDataHandler(DataHandler):
         """
         frequency = frequency or self.fixed_data_provider_frequency or Frequency.MIN_1
         end_date_without_look_ahead = self._get_end_date_without_look_ahead(end_date)
-        return self.price_data_provider.get_history(tickers, fields, start_date, end_date_without_look_ahead, frequency)
+        return self.data_provider.get_history(tickers, fields, start_date, end_date_without_look_ahead, frequency)
 
     def get_last_available_price(self, tickers: Union[Ticker, Sequence[Ticker]],
                                  frequency: Frequency = None) -> Union[float, pd.Series]:
@@ -146,10 +147,102 @@ class IntradayDataHandler(DataHandler):
             - last_prices.index contains tickers
             - last_prices.data contains latest available prices for given tickers
         """
-        return self._get_single_date_price(tickers, nans_allowed=False, frequency=Frequency.MIN_1)
+        frequency = frequency or self.fixed_data_provider_frequency or Frequency.MIN_1
+
+        if frequency <= Frequency.DAILY:
+            raise ValueError("The Intraday Data Handler can be used only with the Intraday Frequency")
+
+        tickers, was_single_ticker_provided = convert_to_list(tickers, Ticker)
+
+        # if an empty tickers list was supplied then return an empty result
+        if not tickers:
+            return pd.Series()
+
+        current_datetime = self.timer.now()
+
+        # If the current_datetime represents the time after Market Close and before Market Open, shift it to the
+        # Market Close of the day before
+        if current_datetime + MarketOpenEvent.trigger_time() > current_datetime:
+            current_datetime = current_datetime - RelativeDelta(days=1)
+            current_datetime = current_datetime + MarketCloseEvent.trigger_time()
+        elif current_datetime + MarketCloseEvent.trigger_time() < current_datetime:
+            current_datetime = current_datetime + MarketCloseEvent.trigger_time()
+
+        # If the current_datetime represents Saturday or Sunday, shift it to last Friday
+        if current_datetime.weekday() in (5, 6):
+            current_datetime = current_datetime - RelativeDelta(weekday=4, weeks=1)
+
+        # The time range denotes the current_datetime +- time delta related to the given frequency. The current price is
+        # represented as the close price of (time_range_start, current_datetime) range, labeled using the time_range_
+        # start value in most of the cases.
+        #
+        # The only exception is the price at the market open - in this case we do not have the bar directly
+        # leading up to market open time. Thus, the open price from the time range (current_datetime, time_range_end)
+        # is used to denote the price.
+
+        time_range_start = current_datetime - frequency.time_delta()
+        time_range_end = current_datetime + frequency.time_delta()
+
+        # The start date is used to download older data, in case if there is no price available currently and we are
+        # interested in the last available one. Therefore, at first we look one hour in the past. If this amount of data
+        # would not be sufficient, we would look up to a few days in the past.
+
+        download_start_date = current_datetime - Frequency.MIN_60.time_delta()
+
+        def download_prices(start_time, end_time, multiple_days=False):
+            # Function which downloads prices for the given tickers. In case if the time range spans over multiple days
+            # and thus contains at least one Market Open Event, combine the Open price for the first bar after the
+            # market open with the Close prices for all other bars from this day.
+            if multiple_days:
+                price_fields = [PriceField.Open, PriceField.Close]
+                prices = self.data_provider.get_price(tickers, price_fields, start_time,
+                                                      end_time, frequency)
+                return self._data_array_to_dataframe(prices, frequency)
+            else:
+                return self.data_provider.get_price(tickers, PriceField.Close, start_time,
+                                                    end_time, frequency)
+
+        # If the data contains the Market Open Price, merge the prices
+        if download_start_date <= MarketOpenEvent.trigger_time() + time_range_end <= time_range_end:
+            contains_market_open = True
+        elif download_start_date <= MarketOpenEvent.trigger_time() + download_start_date <= time_range_end:
+            contains_market_open = True
+        elif (time_range_end - download_start_date) > timedelta(days=1):
+            contains_market_open = True
+        else:
+            contains_market_open = False
+
+        prices_data_array = download_prices(download_start_date, time_range_end, contains_market_open)
+
+        # Access the price bar starting at time_range_start and ending at current_datetime
+        try:
+            prices_series = prices_data_array.asof(time_range_start)
+            prices_series.name = "Last available asset prices"
+
+            if prices_series.isnull().values.any():
+                # If any of the values is null, download more data, using a longer period of time
+                raise IndexError
+
+        except IndexError:
+            # Download data using a longer period of time. In case of Monday or Tuesday, we download data from last 4
+            # days in order to handle situations, were there was no price on Monday or Friday (and during the weekend).
+            # In all other cases, we download data from the last 2 days.
+            number_of_days_to_go_back = 2 if download_start_date.weekday() not in (0, 1) else 4
+            prices_data_array = download_prices(download_start_date - RelativeDelta(days=number_of_days_to_go_back),
+                                                time_range_end,
+                                                multiple_days=True)
+
+            prices_series = prices_data_array.asof(time_range_start)
+            prices_series.name = "Last available asset prices"
+
+        prices_series = cast_series(prices_series, pd.Series)
+        if was_single_ticker_provided:
+            return prices_series[0]
+        else:
+            return prices_series
 
     def get_current_price(self, tickers: Union[Ticker, Sequence[Ticker]],
-                                 frequency: Frequency = None) -> Union[float, pd.Series]:
+                          frequency: Frequency = None) -> Union[float, pd.Series]:
         """
         Works just like get_last_available_price() but it can return NaNs if data is not available at the current
         moment (e.g. it returns NaN on a non-trading day).
@@ -170,7 +263,47 @@ class IntradayDataHandler(DataHandler):
             - current_prices.index contains tickers
             - current_prices.data contains latest available prices for given tickers
         """
-        return self._get_single_date_price(tickers, nans_allowed=True, frequency=Frequency.MIN_1)
+        frequency = frequency or self.fixed_data_provider_frequency or Frequency.MIN_1
+
+        if frequency <= Frequency.DAILY:
+            raise ValueError("The Intraday Data Handler can be used only with the Intraday Frequency")
+
+        tickers, was_single_ticker_provided = convert_to_list(tickers, Ticker)
+        # if an empty tickers list was supplied then return an empty result
+        if not tickers:
+            return pd.Series()
+
+        current_datetime = self.timer.now()
+
+        # Check if the current time is at the market open, if so - take the Open price of the time range, starting
+        # at current datetime
+        if current_datetime + MarketOpenEvent.trigger_time() == current_datetime:
+            time_range_start = current_datetime
+            field = PriceField.Open
+        else:
+            time_range_start = current_datetime - frequency.time_delta()
+            field = PriceField.Close
+
+        prices_data_array = self.data_provider.get_price(tickers,
+                                                         field,
+                                                         time_range_start,
+                                                         time_range_start + frequency.time_delta(),
+                                                         frequency)
+        try:
+            # Below, the loc[time_range_start] is used instead of iloc[0], in order to return the price exactly from the
+            # time_range_start, and not from the range between time_range_start and time_range_start +
+            # frequency.time_delta()
+            prices_series = prices_data_array.loc[time_range_start]
+        except KeyError:
+            prices_series = pd.Series(index=tickers)
+
+        prices_series.name = "Current asset prices"
+
+        prices_series = cast_series(prices_series, pd.Series)
+        if was_single_ticker_provided:
+            return prices_series[0]
+        else:
+            return prices_series
 
     def get_current_bar(self, tickers: Union[Ticker, Sequence[Ticker]], frequency: Frequency = None) \
             -> Union[pd.Series, pd.DataFrame]:
@@ -223,68 +356,6 @@ class IntradayDataHandler(DataHandler):
 
         return min(current_time, end_date)
 
-    def _get_single_date_price(
-            self, tickers: Union[Ticker, Sequence[Ticker]], nans_allowed: bool, frequency: Frequency = Frequency.DAILY)\
-            -> Union[float, pd.Series]:
-        tickers, was_single_ticker_provided = convert_to_list(tickers, Ticker)
-
-        # if an empty tickers list was supplied then return an empty result
-        if not tickers:
-            return pd.Series()
-
-        current_datetime = self.timer.now()
-
-        # Calculate the time ranges and start date, used further by the get_price function.
-
-        # The time range denote the current_datetime +- 1 range. The current price is represented as the close price of
-        # (time_range_start, current_datetime) range, labeled using the time_range_start value in most of the cases.
-        # The only exception is the price at the market open - in this case we do not have the bar directly leading up
-        # to market open time. Thus, the open price from the time range (current_datetime, time_range_end) is used to
-        # denote the price.
-
-        time_range_start = current_datetime - frequency.time_delta()
-        time_range_end = current_datetime + frequency.time_delta()
-
-        # The start date is used to download older data, in case if there is no price available currently and we are
-        # interested in the last available one (nans_allowed = False). Therefore we look a few days in the past in this
-        # case. Otherwise, the time_range_start time is used.
-
-        download_start_date = time_range_start if nans_allowed else \
-            current_datetime - RelativeDelta(days=5, hour=0, minute=0, second=0)
-
-        price_fields = [PriceField.Open, PriceField.Close]
-
-        prices_data_array = self.price_data_provider.get_price(tickers, price_fields, download_start_date,
-                                                               time_range_end, frequency)
-        prices_df = self._data_array_to_dataframe(prices_data_array, frequency)
-
-        prices_df = prices_df.loc[:current_datetime]
-
-        # Access the price bar starting at time_range_start and ending at current_datetime
-        try:
-            prices_series = prices_df.loc[time_range_start, :]
-        except KeyError:
-            prices_series = pd.Series(index=tickers)
-
-        prices_series.name = "Current asset prices"
-
-        if not nans_allowed:
-            # fill NaNs with latest available prices
-            last_available_close_prices = prices_df.apply(func=lambda series: series.asof(time_range_start))
-
-            if not last_available_close_prices.empty:
-                unavailable_prices_tickers = prices_series.isnull()
-                prices_series.loc[unavailable_prices_tickers] = \
-                    last_available_close_prices.loc[unavailable_prices_tickers]
-
-            prices_series.name = "Last available asset prices"
-
-        prices_series = cast_series(prices_series, pd.Series)
-        if was_single_ticker_provided:
-            return prices_series[0]
-        else:
-            return prices_series
-
     def _data_array_to_dataframe(self, prices_data_array: QFDataArray, frequency: Frequency):
         """
         Converts a QFDataArray into a DataFrame by removing the "Price Field" axis.
@@ -294,17 +365,17 @@ class IntradayDataHandler(DataHandler):
         price for this time range, denotes the OPEN price of 9:30 - 9:31.
         """
         original_dates = list(prices_data_array.dates.to_index())
-        market_open_datetimes = [price_datetime for price_datetime in original_dates if
-                                 price_datetime + MarketOpenEvent.trigger_time() == price_datetime]
-        shifted_open_datetimes = [price_datetime - frequency.time_delta() for price_datetime in
-                                  market_open_datetimes]
+        dates = prices_data_array.resample(dates='1D').first().dates.to_index()
+        market_open_datetimes = [price_datetime + MarketOpenEvent.trigger_time() for price_datetime in dates if
+                                 price_datetime + MarketOpenEvent.trigger_time() in original_dates]
+        shifted_open_datetimes = [price_datetime - frequency.time_delta() for price_datetime in market_open_datetimes]
 
-        new_dates = list(set(shifted_open_datetimes + original_dates))
+        new_dates = list(set(original_dates + shifted_open_datetimes))
+        new_dates = sorted(new_dates)
         prices_df = PricesDataFrame(index=new_dates, columns=prices_data_array.tickers)
 
         prices_df.loc[shifted_open_datetimes, :] = \
             prices_data_array.loc[market_open_datetimes, :, PriceField.Open].values
         prices_df.loc[original_dates, :] = prices_data_array.loc[original_dates, :, PriceField.Close].values
 
-        prices_df.sort_index(inplace=True)
         return prices_df

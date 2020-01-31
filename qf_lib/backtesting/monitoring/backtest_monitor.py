@@ -69,10 +69,10 @@ class BacktestMonitor(AbstractMonitor):
         self._ax.grid()
         self._ax.set_title("Progress of the backtest - {}".format(backtest_result.backtest_name))
         self._figure.autofmt_xdate(rotation=20)
-        self._file_name_template = datetime.now().strftime("%Y_%m_%d-%H%M {}".format(backtest_result.backtest_name))
-        self._report_dir = "backtesting"
+        self._dir_name_template = datetime.now().strftime("%Y_%m_%d-%H%M {}".format(backtest_result.backtest_name))
+        self._report_dir = path.join("backtesting", self._dir_name_template)
 
-        self._csv_file = self._init_csv_file(self._file_name_template)
+        self._csv_file = self._init_csv_file()
         self._csv_writer = csv.writer(self._csv_file)
 
     def set_benchmark(self, benchmark: QFSeries):
@@ -83,7 +83,7 @@ class BacktestMonitor(AbstractMonitor):
         Saves the results of the backtest
         """
 
-        portfolio_tms = self.backtest_result.portfolio.get_portfolio_eod_tms()
+        portfolio_tms = self.backtest_result.portfolio.portfolio_eod_series()
         portfolio_tms.name = self.backtest_result.backtest_name
 
         self._export_pdf_with_charts(portfolio_tms)
@@ -95,8 +95,9 @@ class BacktestMonitor(AbstractMonitor):
 
     def _export_tms_to_excel(self, portfolio_tms):
         try:
-            xlsx_filename = "{}.xlsx".format(self._file_name_template)
-            relative_file_path = path.join(self._report_dir, "timeseries", xlsx_filename)
+            xlsx_filename = "%Y_%m_%d-%H%M Timeseries.xlsx"
+            xlsx_filename = datetime.now().strftime(xlsx_filename)
+            relative_file_path = path.join(self._report_dir, xlsx_filename)
             self._excel_exporter.export_container(
                 portfolio_tms, relative_file_path, starting_cell='A1', include_column_names=True)
         except Exception:
@@ -140,7 +141,7 @@ class BacktestMonitor(AbstractMonitor):
         """
         Update line chart with current timeseries
         """
-        portfolio_tms = self.backtest_result.portfolio.get_portfolio_eod_tms()
+        portfolio_tms = self.backtest_result.portfolio.portfolio_eod_series()
         self._ax.grid()
 
         # Set the data on x and y
@@ -169,15 +170,16 @@ class BacktestMonitor(AbstractMonitor):
         """
         self._save_trade_to_file(transaction)
 
-    def _init_csv_file(self, file_name_template: str) -> TextIOWrapper:
+    def _init_csv_file(self) -> TextIOWrapper:
         """
         Creates a new csv file for every backtest run, writes the header and returns the path to the file.
         """
-        output_dir = path.join(get_starting_dir_abs_path(), self._settings.output_directory, self._report_dir, "trades")
+        output_dir = path.join(get_starting_dir_abs_path(), self._settings.output_directory, self._report_dir)
         if not path.exists(output_dir):
             makedirs(output_dir)
 
-        csv_filename = "{}.csv".format(file_name_template)
+        csv_filename = "%Y_%m_%d-%H%M Trades.csv"
+        csv_filename = datetime.now().strftime(csv_filename)
         file_path = path.expanduser(path.join(output_dir, csv_filename))
 
         # Write new file header

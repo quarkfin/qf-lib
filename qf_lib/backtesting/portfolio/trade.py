@@ -15,6 +15,7 @@
 from datetime import datetime
 
 from qf_lib.backtesting.contract.contract import Contract
+from qf_lib.common.utils.dateutils.date_to_string import date_to_str
 
 
 class Trade(object):
@@ -24,30 +25,40 @@ class Trade(object):
         We buy 10 shares of X and then we sell 3 shares of X. This creates a trade when we buy and sell 3 shares of X
     """
 
-    def __init__(self, time: datetime, contract: Contract, quantity: int, entry_price: float, exit_price: float,
-                 risk_as_percent: float = float('nan')):
+    def __init__(self, start_time: datetime, end_time: datetime, contract: Contract, quantity: int, entry_price: float,
+                 exit_price: float, commission: float, risk_as_percent: float = float('nan')):
         """
-        time
+        start_time
+            moment when we opened the position corresponding to this trade
+        end_time
             moment when we close the trade
         contract
             contract defining the security
         quantity
             number of shares traded
         entry_price
-            price at which the instrument has been bought including transaction costs
+            price at which the instrument has been bought (excluding all fees and commission)
         exit_price
-            price at which the trade was closed including all fees and commission
+            price at which the trade was closed (excluding all fees and commission)
+        commission
+            all the transaction costs related to the trade.
+            It includes the cost of opening the position and also cost of reducing it.
+            commission is expressed in currency units
         risk_as_percent
             max percentage risk that we aim to have on this instrument.
             for example it could be the the percentage that is used to calculate the stop price.
         """
-        self.time = time
+        self.start_time = start_time
+        self.end_time = end_time
         self.contract = contract
         self.quantity = quantity
         self.entry_price = entry_price
         self.exit_price = exit_price
+        self.commission = commission
 
         self.risk_as_percent = risk_as_percent
+
+        self._multiplier = self.quantity * self.contract.contract_size
 
     def define_risk(self, risk_as_percent: float):
         """
@@ -61,7 +72,7 @@ class Trade(object):
         Profit or loss associated with a trade expressed in currency units
         including transaction costs and commissions
         """
-        profit_loss = (self.exit_price - self.entry_price) * self.quantity
+        profit_loss = (self.exit_price - self.entry_price) * self._multiplier - self.commission
         return profit_loss
 
     @property
@@ -70,7 +81,7 @@ class Trade(object):
         total risk associated with a trade expressed in currency units.
         It is the maximum loss that we expect to get while holding 'self.quantity' units of 'self.contract'
         """
-        total_risk = abs(self.entry_price * self.risk_as_percent * self.quantity)
+        total_risk = abs(self.entry_price * self.risk_as_percent * self._multiplier)
         return total_risk
 
     @property
@@ -80,3 +91,17 @@ class Trade(object):
         """
         result = self.pnl / self.total_risk
         return result
+
+    def __str__(self):
+        string_template = "{class_name:s} ({start_date:s} - {end_date:s}) -> " \
+                          "Asset: {asset:>20}, " \
+                          "Quantity: {quantity:>8}, " \
+                          "P&L: {pnl:>10.2f}".format(class_name=self.__class__.__name__,
+                                                     start_date=date_to_str(self.start_time),
+                                                     end_date=date_to_str(self.end_time),
+                                                     asset=self.contract.symbol,
+                                                     quantity=self.quantity,
+                                                     pnl=self.pnl,
+                                                     )
+
+        return string_template

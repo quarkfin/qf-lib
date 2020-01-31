@@ -11,7 +11,7 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-
+from collections import defaultdict
 from typing import List, Dict, Sequence
 
 import numpy as np
@@ -56,7 +56,8 @@ class AlphaModelStrategy(object):
 
         self._model_tickers_dict = model_tickers_dict
         self._use_stop_losses = use_stop_losses
-        self.signals_df = QFDataFrame()  # rows indexed by date and columns by "Ticker@AlphaModel" string
+        self._signals = defaultdict(list)  # signals with date and "Ticker@AlphaModel" string
+        self._signals_dates = []
 
         ts.notifiers.scheduler.subscribe(BeforeMarketOpenEvent, listener=self)
         self.logger = qf_logger.getChild(self.__class__.__name__)
@@ -79,9 +80,18 @@ class AlphaModelStrategy(object):
 
         for model, tickers in self._model_tickers_dict.items():
             tickers = list(set(tickers))  # remove duplicates
-            contracts = [self._contract_ticker_mapper.ticker_to_contract(ticker) for ticker in tickers]
 
-            for ticker, contract in zip(tickers, contracts):
+            def map_valid_tickers(ticker):
+                try:
+                    return self._contract_ticker_mapper.ticker_to_contract(ticker)
+                except (AttributeError, KeyError):
+                    return None
+
+            contracts = [map_valid_tickers(ticker) for ticker in tickers]
+            tickers_and_contracts = zip(tickers, contracts)
+            valid_tickers_and_contracts = [(t, c) for t, c in tickers_and_contracts if c is not None]
+
+            for ticker, contract in valid_tickers_and_contracts:
                 current_exposure = self._get_current_exposure(contract, current_positions)
                 signal = model.get_signal(ticker, current_exposure)
                 signals.append(signal)
@@ -105,10 +115,36 @@ class AlphaModelStrategy(object):
             self._broker.place_orders(stop_orders)
 
     def _save_signals(self, signals: List[Signal]):
-        for signal in signals:
+        tickers_to_models = {
+            ticker: model.__class__.__name__ for model, tickers_list in self._model_tickers_dict.items()
+            for ticker in tickers_list
+        }
+
+        tickers_to_signals = {
+            ticker: None for model_tickers in self._model_tickers_dict.values() for ticker in model_tickers
+        }
+
+        tickers_to_signals.update({
+            signal.ticker: signal for signal in signals
+        })
+
+        for ticker in tickers_to_signals.keys():
+            signal = tickers_to_signals[ticker]
+            model_name = tickers_to_models[ticker]
+
             self.logger.info(signal)
-            column = signal.ticker.as_string() + "@" + signal.alpha_model.__class__.__name__
-            self.signals_df.loc[self._timer.now().date(), column] = signal  # save signals
+
+            ticker_str = ticker.as_string() + "@" + model_name
+            self._signals[ticker_str].append((self._timer.now().date(), signal))
+
+        self._signals_dates.append(self._timer.now())
+
+    def get_signals(self):
+        """
+        Returns a QFDataFrame with all generated signals. The columns names are of the form TickerName@ModelName,
+        and the rows are indexed by the time of signals generation.
+        """
+        return QFDataFrame(data=self._signals, index=self._signals_dates)
 
     @staticmethod
     def _get_current_exposure(contract: Contract, current_positions: List[Position]) -> Exposure:

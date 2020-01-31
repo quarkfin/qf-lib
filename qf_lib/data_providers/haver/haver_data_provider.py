@@ -16,12 +16,12 @@ import os
 import threading
 import warnings
 from datetime import datetime
-from typing import Union, Sequence, Dict, Optional
+from typing import Union, Sequence, Dict, Optional, List
 
 from pandas import PeriodIndex, DataFrame
 
 from qf_lib.common.enums.price_field import PriceField
-from qf_lib.common.tickers.tickers import HaverTicker
+from qf_lib.common.tickers.tickers import HaverTicker, Ticker
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.qf_data_array import QFDataArray
@@ -130,3 +130,8 @@ class HaverDataProvider(AbstractPriceDataProvider):
 
         if not self.connected:
             raise ConnectionError("No Haver connection.")
+
+    def get_futures_chain_tickers(self, tickers: Union[Ticker, Sequence[Ticker]], date: datetime,
+                                  include_expired_contracts: bool = True) -> Dict[Ticker, List[Ticker]]:
+        raise NotImplementedError("Downloading Future Chain Tickers in HaverDataProvider is not supported yet")
+
