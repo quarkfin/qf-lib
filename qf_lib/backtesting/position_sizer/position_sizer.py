@@ -14,11 +14,12 @@
 
 from abc import ABCMeta, abstractmethod
 from itertools import groupby
-from typing import List, Sequence, Optional
+from typing import List, Optional, Dict
 
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
 from qf_lib.backtesting.alpha_model.signal import Signal
 from qf_lib.backtesting.broker.broker import Broker
+from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.order.execution_style import StopOrder
@@ -42,44 +43,61 @@ class PositionSizer(object, metaclass=ABCMeta):
         self._contract_ticker_mapper = contract_ticker_mapper
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
-    def size_signals(self, signals: Sequence[Signal]) -> List[Order]:
+    def size_signals(self, signals: List[Signal], use_stop_losses: bool = True) -> List[Order]:
         """
         Based on the signals provided, creates a list of Orders where proper sizing has been applied
         """
 
         self._check_for_duplicates(signals)
 
-        contracts = [self._contract_ticker_mapper.ticker_to_contract(signal.ticker) for signal in signals]
-        orders = []
+        market_orders = self._generate_market_orders(signals)
+        market_orders = [order for order in market_orders if order is not None]
 
-        for signal, contract in zip(signals, contracts):
-            market_order = self._generate_market_order(contract, signal)
-            if market_order is not None:
-                orders.append(market_order)
-                self.logger.info("Market Order for {}, {}".format(contract, market_order))
-            else:
-                self.logger.info("No Market Order for {}".format(contract))
+        orders = market_orders
 
-            if signal.suggested_exposure != Exposure.OUT:
-                stop_order = self._generate_stop_order(contract, signal, market_order)
-                if stop_order is not None:
-                    orders.append(stop_order)
-                    self.logger.info("Stop Order for {}, {}".format(contract, stop_order))
-                else:
-                    self.logger.info("No Stop Order for {}".format(contract))
+        for order in market_orders:
+            self.logger.info("Market Order for {}, {}".format(order.contract, order))
+
+        if use_stop_losses:
+            # As the market orders are not sorted according to signals, create a dictionary mapping
+            # contracts to market orders (orders contain now only these market orders which are not None)
+            contract_to_market_order = {
+                order.contract: order for order in market_orders
+            }
+
+            stop_orders = [
+                self._generate_stop_order(signal, contract_to_market_order)
+                for signal in signals if signal.suggested_exposure != Exposure.OUT
+            ]
+
+            stop_orders = [order for order in stop_orders if order is not None]
+            orders = market_orders + stop_orders
+
+            for order in stop_orders:
+                    self.logger.info("Stop Order for {}, {}".format(order.contract, order))
 
         return orders
 
     @abstractmethod
-    def _generate_market_order(self, contract, signal: Signal) -> Optional[Order]:
-        raise NotImplementedError("Should implement _generate_market_order()")
+    def _generate_market_orders(self, signals: List[Signal]) -> List[Optional[Order]]:
+        raise NotImplementedError("Should implement _generate_market_orders()")
 
-    def _generate_stop_order(self, contract, signal, market_order: Order):
+    def _generate_stop_order(self, signal, contract_to_market_order: Dict[Contract, Order]) -> Optional[Order]:
+        """
+        As each of the stop orders relies on the precomputed stop_price, which considers a.o. last available price of
+        the security, orders are being created separately for each of the signals.
+        """
+        contract = self._contract_ticker_mapper.ticker_to_contract(signal.ticker)
+
         # stop_quantity = existing position size + recent market orders quantity
         stop_quantity = self._get_existing_position_quantity(contract)
 
-        if market_order is not None:
+        try:
+            market_order = contract_to_market_order[contract]
             stop_quantity += market_order.quantity
+        except KeyError:
+            # Generated Market Order was equal to None
+            pass
 
         if stop_quantity != 0:
             stop_price = self._calculate_stop_price(signal)
@@ -108,7 +126,7 @@ class PositionSizer(object, metaclass=ABCMeta):
         quantity = next((position.quantity() for position in positions if position.contract() == contract), 0)
         return quantity
 
-    def _check_for_duplicates(self, signals: Sequence[Signal]):
+    def _check_for_duplicates(self, signals: List[Signal]):
         sorted_signals = sorted(signals, key=lambda signal: signal.ticker)
         for ticker, signal_group in groupby(sorted_signals, lambda signal: signal.ticker):
             signal_list = list(signal_group)

@@ -1,8 +1,8 @@
 main:
   - title: "Getting Started"
-    url: /docs/getting_started/
+    url: /installation/
   - title: "About"
-    url: /docs/about/
+    url: /about/
   - title: "Contributors"
     url: /contributors/
   - title: "Contact us"
@@ -14,26 +14,28 @@ docs:
   - title: "Getting Started"
     children:
       - title: "Installation"
-        url: /docs/getting_started/
+        url: /installation/
       - title: "Modules"
-        url: /docs/structure/
+        url: /structure/
       - title: "Backtest flow"
-        url: /docs/backtest_flow/
+        url: /backtest_flow/
+      - title: "Futures contracts"
+        url: /futures/
+      - title: "Strategies implementing"
+        url: /strategies_implementing/
   - title: "Project"
     children:
       - title: "About"
-        url: /docs/about/
+        url: /about/
       - title: "Application"
-        url: /docs/application/
+        url: /application/
       - title: "Features"
-        url: /docs/features/
+        url: /features/
 
   - title: "META"
     children:
       - title: "Contributors"
         url: /contributors/
-      - title: "Milestones"
-        url: /milestones/
       - title: "Forum"
         url: "https://qflib.freeforums.net/"
       - title: "Contact us"

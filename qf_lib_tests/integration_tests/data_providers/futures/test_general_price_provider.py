@@ -17,7 +17,7 @@ from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event 
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.dateutils.timer import SettableTimer
-from qf_lib.containers.futures.future_ticker import BloombergFutureTicker
+from qf_lib.containers.futures.future_tickers.bloomberg_future_ticker import BloombergFutureTicker
 from qf_lib.data_providers.bloomberg import BloombergDataProvider
 from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
 from qf_lib_tests.unit_tests.config.test_settings import get_test_settings
@@ -36,24 +36,22 @@ class TestGeneralPriceProvider(unittest.TestCase):
     def setUpClass(cls):
         cls.frequency = Frequency.DAILY
         cls.tickers = [
-            BloombergFutureTicker("Cotton", "CTF0 Comdty", timer, bbg_provider, 1, 3),
-            BloombergFutureTicker("Corn", 'C {} Comdty', timer, bbg_provider, 1, 5, 50, "HMUZ")]
+            BloombergFutureTicker("Cotton", "CTF0 Comdty", 1, 3),
+            BloombergFutureTicker("Corn", 'C {} Comdty', 1, 5, 50, "HMUZ")]
+
+        timer.set_current_time(str_to_date('2017-12-20'))
+
+        for ticker in cls.tickers:
+            ticker.initialize_data_provider(timer, bbg_provider)
 
         cls.start_date = str_to_date('2015-10-08')
         cls.end_date = str_to_date('2017-12-20')
 
         MarketCloseEvent.set_trigger_time({"hour": 20, "minute": 00, "second": 0, "microsecond": 0})
 
-    def test_get_futures_chain_tickers_include_expired_contracts(self):
-        fut_chain_dict = data_provider.get_futures_chain_tickers(self.tickers, self.end_date)
-        bbg_fut_chain_dict = bbg_provider.get_futures_chain_tickers(self.tickers, self.end_date)
-
-        for ticker in self.tickers:
-            self.assertCountEqual(fut_chain_dict[ticker], bbg_fut_chain_dict[ticker])
-
-    def test_get_futures_chain_tickers_exclude_expired_contracts(self):
-        fut_chain_dict = data_provider.get_futures_chain_tickers(self.tickers, self.end_date, False)
-        bbg_fut_chain_dict = bbg_provider.get_futures_chain_tickers(self.tickers, self.end_date, False)
+    def test_get_futures_chain_tickers(self):
+        fut_chain_dict = data_provider.get_futures_chain_tickers(self.tickers)
+        bbg_fut_chain_dict = bbg_provider.get_futures_chain_tickers(self.tickers)
 
         for ticker in self.tickers:
             self.assertCountEqual(fut_chain_dict[ticker], bbg_fut_chain_dict[ticker])

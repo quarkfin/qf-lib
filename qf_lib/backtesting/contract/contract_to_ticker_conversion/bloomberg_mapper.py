@@ -16,7 +16,7 @@ from typing import Union
 from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.common.tickers.tickers import BloombergTicker
-from qf_lib.containers.futures.future_ticker import BloombergFutureTicker
+from qf_lib.containers.futures.future_tickers.bloomberg_future_ticker import BloombergFutureTicker
 
 
 class DummyBloombergContractTickerMapper(ContractTickerMapper):

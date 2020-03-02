@@ -29,6 +29,7 @@ class Ticker(metaclass=ABCMeta):
             identifier of the security in a specific database
         """
         self.ticker = ticker
+        self.logger = logging.getLogger(self.__class__.__name__)
 
     def __str__(self):
         return "{}:{}".format(self.__class__.__name__, self.ticker)

@@ -32,10 +32,10 @@ from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 
 class SimpleMAStrategy(object):
     """
-    A testing strategy that simply purchases (longs) an asset as soon as it starts and then holds until the completion
-    of a backtest.
+    strategy, which computes every day, before the market open time, two simple moving averages (long - 20 days,
+    short - 5 days) and creates a buy order in case if the short moving average is greater or equal to the long moving
+    average.
     """
-
     def __init__(self, ts: BacktestTradingSession, ticker: Ticker):
         self.broker = ts.broker
         self.order_factory = ts.order_factory
@@ -45,28 +45,35 @@ class SimpleMAStrategy(object):
         self.timer = ts.timer
         self.ticker = ticker
 
+        # Subscribe to the BeforeMarketOpenEvent
         ts.notifiers.scheduler.subscribe(BeforeMarketOpenEvent, listener=self)
 
     def on_before_market_open(self, _: BeforeMarketOpenEvent):
         self.calculate_signals()
 
     def calculate_signals(self):
+        # Compute the moving averages
         long_ma_len = 20
         short_ma_len = 5
 
-        long_ma_series = self.data_handler.historical_price(self.ticker, PriceField.Close, long_ma_len)
+        # Use data handler to download last 20 daily close prices and use them to compute the moving averages
+        long_ma_series = self.data_handler.historical_price(self.ticker,
+                                                            PriceField.Close, long_ma_len)
         long_ma_price = long_ma_series.mean()
 
         short_ma_series = long_ma_series.tail(short_ma_len)
         short_ma_price = short_ma_series.mean()
 
+        # Map the given ticker onto a Contract object, which can be further used to place an Order
         contract = self.contract_ticker_mapper.ticker_to_contract(self.ticker)
 
         if short_ma_price >= long_ma_price:
+            # Place a buy Market Order, adjusting the position to a value equal to 100% of the portfolio
             orders = self.order_factory.target_percent_orders({contract: 1.0}, MarketOrder(), TimeInForce.DAY)
         else:
             orders = self.order_factory.target_percent_orders({contract: 0.0}, MarketOrder(), TimeInForce.DAY)
 
+        # Cancel any open orders and place the newly created ones
         self.broker.cancel_all_open_orders()
         self.broker.place_orders(orders)
 

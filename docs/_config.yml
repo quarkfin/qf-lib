@@ -38,6 +38,9 @@ include:
 head_scripts:
   - https://www.google.com/recaptcha/api.js
 
+baseurl: "/qf-lib" 
+
+
 # Exclude from processing.
 # The following items will not be processed, by default. Create a custom list
 # to override the default setting.
@@ -58,6 +61,9 @@ plugins:
   - jekyll-feed
   - jemoji
   - jekyll-include-cache
+  - jekyll-archives
+
+breadcrumbs: true 
 
 footer:
   links:

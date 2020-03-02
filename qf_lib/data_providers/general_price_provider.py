@@ -23,7 +23,7 @@ from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.dimension_names import TICKERS
-from qf_lib.containers.futures.future_ticker import FutureTicker
+from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
@@ -69,8 +69,8 @@ class GeneralPriceProvider(DataProvider):
 
         return normalized_result
 
-    def get_futures_chain_tickers(self, tickers: Union[FutureTicker, Sequence[FutureTicker]], date: datetime,
-                                  include_expired_contracts: bool = True) -> Dict[FutureTicker, QFSeries]:
+    def get_futures_chain_tickers(self, tickers: Union[FutureTicker, Sequence[FutureTicker]]) \
+            -> Dict[FutureTicker, QFSeries]:
         """"
         Implements the functionality of DataProvider using duck-typing.
         """
@@ -78,7 +78,7 @@ class GeneralPriceProvider(DataProvider):
         results = {}
 
         def get_data_func(data_prov: DataProvider, tickers_for_single_data_provider) -> Dict[FutureTicker, QFSeries]:
-            return data_prov.get_futures_chain_tickers(tickers_for_single_data_provider, date, include_expired_contracts)
+            return data_prov.get_futures_chain_tickers(tickers_for_single_data_provider)
 
         for ticker_class, ticker_group in groupby(tickers, lambda t: type(t)):
             data_provider = self._identify_data_provider(ticker_class)

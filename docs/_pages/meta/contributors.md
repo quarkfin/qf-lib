@@ -28,7 +28,13 @@ title: "Contributors"
 **Karolina Cynk** *CERN Pension Fund* Karolina Cynk joined the CERN Pension Fund in 2019 and prior to that worked for the Cisco Systems. She is a distinguished graduate of Computer Science on AGH University of Science and Technology on the Faculty of Computer Science, Electronics and Telecommunications, during her studies she participated in a research grant. Apart from her work, she is highly interested in mathematics and modern networking.
 {: .notice}
 
-**Tom Ruxton**
+**Tom Ruxton** Tom Ruxton is a Computer Science graduate of the Newcastle University. Tom Ruxton joined CERN Pension Fund in 2017 and worked as a full stack developer. He was also an active contributor to the DevOps of the Fund. Tom is a British Army Reserve Officer and a holder of International Duke of Edinburgh’s Award.
+{: .notice}
+
+**Jonathan Malatialy** *Julius Baer* Jonathan Malatialy graduated with a Master in Finance from the Faculty of Business and Economics at the University of Lausanne (HEC). His passion for finance and new technologies led him to specialize in Data Science and Financial Entrepreneurship as part of his studies. After writing his Master's thesis at the CERN Pension Fund, he moved to Zurich to work for Julius Baer as an Intern Quantitative Analyst Investment Engineering in the Division Investment Management. Jonathan also has the rank of Sergeant in the Swiss Armed Forces and served as an Explorer in Thun and throughout Switzerland.
+{: .notice}
+
+**Kristoffer Landsnes** *CERN Pension Fund* Kristoffer joined the Quantitative Methods Team as Python Developer in 2019. Kristoffer has a passion for finance and entrepreneurship, with previous financial analyst and software development roles in SIX X-clear, London Stock Exchange Group, LCH and OECD. Currently he is pursuing his MSc in Engineering Cybernetics with Data Analysis at the Norwegian University of Science and Technology, with completed 1st year master as exchange student at École Polytechnique Fédérale de Lausanne. Kristoffer served in the Norwegian Army and speaks fluent Norwegian, English and French.
 {: .notice}
 
 ## Advisors
@@ -36,5 +42,5 @@ title: "Contributors"
 **Alberto Desirelli** *CERN Pension Fund* Alberto Desirelli is CRO and Head of Quantitative Section at the Pension Fund of CERN, the European Organization for Nuclear Research based in Geneva, Switzerland. The Fund manages approximately 4 billion Swiss Francs in assets, both internally and externally. Prior to joining the CERN Pension Fund Dr. Desirelli was responsible for the structural risk assessment of CERN flagship installation, the Large Hadron Collider (LHC). Before that he was responsible for the numerical analyses of CERN LHC Compact Muon Solenoid superconducting coil and worked on projects in the field of synchrotron radiation, Nuclear Magnetic Resonance and superconductivity in Milan and Oxford. Prior to that he lectured Physics at the Politecnico di Milano and worked as an Art dealer out of London. Dr. Desirelli holds a PhD in Mechanical Engineering from the Politecnico di Milano with a thesis on numerical modeling of the LHC dipoles.
 {: .notice}
 
-**Roman Goossens** *CERN Pension Fund* Roman Goossens works as CERN Pension Fund chief economist and co-manager of private equity investments. Previously, he worked as chief economist in several financial institutions in Brazil: Bradesco BBI, Gap Asset Management and Forsix Asset Management. He started his career as financial economist at the Bank of England, UK. He has a PhD in international economics from the Graduate Institute of International Studies and a Master’s in Finance from Imperial College Management School. 
+**Roman Goossens** *CERN Pension Fund* Roman Goossens works as CERN Pension Fund chief economist and co-manager of private equity investments. Previously, he worked as chief economist in several financial institutions in Brazil: Bradesco BBI, Gap Asset Management and Forsix Asset Management. He started his career as financial economist at the Bank of England, UK. He has a PhD in international economics from the Graduate Institute of International Studies and a Master’s in Finance from Imperial College Management School.
 {: .notice}

@@ -25,9 +25,10 @@ from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
 
 
-def get_aggregate_returns(series: QFSeries, convert_to: Frequency, multi_index: bool = False) -> SimpleReturnsSeries:
+def get_aggregate_returns(series: QFSeries, convert_to: Frequency, multi_index: bool = False, keep_nans:bool = False) \
+        -> SimpleReturnsSeries:
     """
-    Aggregates returns by week, month, or year.
+    Aggregates returns by week, month, or year. Note: The cumulative returns function replaces all Nans with 0.000.
 
     Parameters
     ----------
@@ -49,8 +50,11 @@ def get_aggregate_returns(series: QFSeries, convert_to: Frequency, multi_index: 
     # identified by a multi-level index (dates, dates) which is forbidden (names of levels must be unique).
     # Ideally each grouping would define names of the levels, e.g. (year, week) but I don't know
     simple_rets.index.name = None
+    if keep_nans:
+        aggregated_series = simple_rets.groupby(grouping).apply(lambda rets: rets.total_cumulative_returns_keep_nans())
+    else:
+        aggregated_series = simple_rets.groupby(grouping).apply(lambda rets: rets.total_cumulative_return())
 
-    aggregated_series = simple_rets.groupby(grouping).apply(lambda rets: rets.total_cumulative_return())
     aggregated_series = cast_series(aggregated_series, SimpleReturnsSeries)
 
     if not multi_index:

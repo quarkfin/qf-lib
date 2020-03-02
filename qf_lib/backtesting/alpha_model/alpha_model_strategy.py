@@ -22,7 +22,7 @@ from qf_lib.backtesting.portfolio.position import Position
 from qf_lib.backtesting.trading_session.trading_session import TradingSession
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
-from qf_lib.backtesting.order.execution_style import MarketOrder, StopOrder
+from qf_lib.common.exceptions.future_contracts_exceptions import NoValidTickerException
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.backtesting.events.time_event.regular_time_event.before_market_open_event import BeforeMarketOpenEvent
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
@@ -64,15 +64,16 @@ class AlphaModelStrategy(object):
         self._log_configuration()
 
     def on_before_market_open(self, _: BeforeMarketOpenEvent=None):
-        self.logger.info("on_before_market_open - Signals Generation Started")
-        signals = self._calculate_signals()
-        self.logger.info("on_before_market_open - Signals Generation Finished")
+        if self._timer.now().weekday() not in (5, 6):  # Skip saturdays and sundays
+            self.logger.info("on_before_market_open - Signals Generation Started")
+            signals = self._calculate_signals()
+            self.logger.info("on_before_market_open - Signals Generation Finished")
 
-        self._save_signals(signals)
+            self._save_signals(signals)
 
-        self.logger.info("on_before_market_open - Placing Orders")
-        self._place_orders(signals)
-        self.logger.info("on_before_market_open - Orders Placed")
+            self.logger.info("on_before_market_open - Placing Orders")
+            self._place_orders(signals)
+            self.logger.info("on_before_market_open - Orders Placed")
 
     def _calculate_signals(self):
         current_positions = self._broker.get_positions()
@@ -84,7 +85,7 @@ class AlphaModelStrategy(object):
             def map_valid_tickers(ticker):
                 try:
                     return self._contract_ticker_mapper.ticker_to_contract(ticker)
-                except (AttributeError, KeyError):
+                except NoValidTickerException:
                     return None
 
             contracts = [map_valid_tickers(ticker) for ticker in tickers]
@@ -100,19 +101,13 @@ class AlphaModelStrategy(object):
 
     def _place_orders(self, signals):
         self.logger.info("Converting Signals to Orders using: {}".format(self._position_sizer.__class__.__name__))
-        orders = self._position_sizer.size_signals(signals)
+        orders = self._position_sizer.size_signals(signals, self._use_stop_losses)
 
         self.logger.info("Cancelling all open orders")
         self._broker.cancel_all_open_orders()
 
-        market_orders = [order for order in orders if isinstance(order.execution_style, MarketOrder)]
-        self.logger.info("Placing market orders")
-        self._broker.place_orders(market_orders)
-
-        if self._use_stop_losses:
-            stop_orders = [order for order in orders if isinstance(order.execution_style, StopOrder)]
-            self.logger.info("Placing stop orders")
-            self._broker.place_orders(stop_orders)
+        self.logger.info("Placing orders")
+        self._broker.place_orders(orders)
 
     def _save_signals(self, signals: List[Signal]):
         tickers_to_models = {
@@ -146,8 +141,7 @@ class AlphaModelStrategy(object):
         """
         return QFDataFrame(data=self._signals, index=self._signals_dates)
 
-    @staticmethod
-    def _get_current_exposure(contract: Contract, current_positions: List[Position]) -> Exposure:
+    def _get_current_exposure(self, contract: Contract, current_positions: List[Position]) -> Exposure:
         matching_position_quantities = [position.quantity()
                                         for position in current_positions if position.contract() == contract]
 
@@ -161,4 +155,9 @@ class AlphaModelStrategy(object):
         for model, tickers in self._model_tickers_dict.items():
             self.logger.info('Model: {}'.format(str(model)))
             for ticker in tickers:
-                self.logger.info('\t Ticker: {}'.format(ticker.as_string()))
+                try:
+                    self.logger.info('\t Ticker: {}'.format(ticker.as_string()))
+                except NoValidTickerException:
+                    raise ValueError("Futures Tickers are not supported by the AlphaModelStrategy. Use the "
+                                     "FuturesAlphaModelStrategy instead.")
+

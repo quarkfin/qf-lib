@@ -11,11 +11,10 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-from typing import Optional
+from typing import Optional, List
 
 from qf_lib.backtesting.alpha_model.signal import Signal
 from qf_lib.backtesting.broker.broker import Broker
-from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.order.execution_style import MarketOrder
@@ -50,27 +49,38 @@ class InitialRiskPositionSizer(PositionSizer):
         self.max_target_percentage = max_target_percentage
         self.logger.info("Initial Risk: {}".format(initial_risk))
 
-    def _generate_market_order(self, contract: Contract, signal: Signal) -> Optional[Order]:
+    def _generate_market_orders(self, signals: List[Signal]) -> List[Optional[Order]]:
         assert is_finite_number(self._initial_risk), "Initial risk has to be a finite number"
-        assert is_finite_number(signal.fraction_at_risk), "fraction_at_risk has to be a finite number"
 
-        target_percentage = self._initial_risk / signal.fraction_at_risk
-        self.logger.info("Target Percentage: {}".format(target_percentage))
+        def compute_target_percentage(signal):
+            assert is_finite_number(signal.fraction_at_risk), "fraction_at_risk has to be a finite number"
+            target_percentage = self._initial_risk / signal.fraction_at_risk
+            self.logger.info("Target Percentage for {}: {}".format(signal.ticker, target_percentage))
 
-        target_percentage = self._cap_max_target_percentage(target_percentage)
+            target_percentage = self._cap_max_target_percentage(target_percentage)
 
-        target_percentage *= signal.suggested_exposure.value  # preserve the direction (-1, 0 , 1)
-        self.logger.info("Target Percentage considering direction: {}".format(target_percentage))
+            target_percentage *= signal.suggested_exposure.value  # preserve the direction (-1, 0 , 1)
+            self.logger.info("Target Percentage considering direction for {}: {}".format(signal.ticker,
+                                                                                         target_percentage))
 
-        assert is_finite_number(target_percentage), "target_percentage has to be a finite number"
+            assert is_finite_number(target_percentage), "target_percentage has to be a finite number"
+            return target_percentage
+
+        def signal_to_contract(signal):
+            # Map signal to contract
+            return self._contract_ticker_mapper.ticker_to_contract(signal.ticker)
+
+        target_percentages = {
+            signal_to_contract(signal): compute_target_percentage(signal) for signal in signals
+        }
 
         market_order_list = self._order_factory.target_percent_orders(
-            {contract: target_percentage}, MarketOrder(), TimeInForce.OPG)
-        if len(market_order_list) == 0:
-            return None
+            target_percentages, MarketOrder(), TimeInForce.OPG
+        )
 
-        assert len(market_order_list) == 1, "Only one order should be generated"
-        return market_order_list[0]
+
+
+        return market_order_list
 
     def _cap_max_target_percentage(self, initial_target_percentage: float):
         """

@@ -1,5 +1,5 @@
 ---
-permalink: /docs/structure/
+permalink: /structure/
 title: "Modules"
 toc: true
 toc_sticky: true
@@ -25,17 +25,8 @@ flow of the events is `EventManager`. `EventManager` contains an events queue. W
 then the manager takes the event from the queue and notifies all interested components. Components may
 also generate new events by using the `publish(event)` method.
 
-To run a backtest:
-- create a `TradingSession` (for `BacktestTradingSession` use `BacktestTradingSessionBuilder`),
-- build a dictionary of `AlphaModel` and `Ticker` assigned to them,
-- (optionally) preload price data and add use them in the `TradingSession`,
-- create a `TradingStrategy`,
-- call `start_trading()` method on the `TradingSession`.
-An example script is available at `demo_scripts/backtester/run_alpha_model_backtest_demo.py`.
-
 The module contains the following tools:
-- **alpha_model** - a part of the Strategy responsible for calculating Signals. Each Signal contains information such as
-suggested exposure, fraction at risk (helpful to determine the stop loss levels), signal confidence or expected price move.
+- **alpha_model** - a part of the Strategy responsible for calculating Signals. Each Signal contains information such as suggested exposure, fraction at risk (helpful to determine the stop loss levels), signal confidence or expected price move.
 - **broker** - components which simulate a broker in the backtest. The Broker abstract class is an interface for all
 potential specific implementations of brokers.
 - **contract** - an equivalent of a contract in live trading. Each position has a corresponding contract.
@@ -177,6 +168,9 @@ The only 3-D container in the system is QFDataArray. It inherits from xr.DataArr
 TICKERS, FIELDS (as in `qf_lib.containers.dimension_names`). It should be created using the create() class method
 or converted from a regular xr.DataArray with from_xr_data_array(). Use of QFDataArrays instead of different 3-D structures
 enables simple slicing and conversion to 2-D and 1-D QF-Lib containers.
+
+## Futures
+In order to support futures contracts chaining `FutureContract`, `FutureTicker` and `FuturesChain` structures were introduced. Detailed description of these classes can be found in the [Futures contracts section]({{ "/futures" | prepend:site.baseurl}}).
 
 # Data providers
 They are [singletons](https://en.wikipedia.org/wiki/Singleton_pattern) registered in the IoC container. Their purpose

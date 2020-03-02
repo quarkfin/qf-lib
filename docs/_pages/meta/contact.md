@@ -1,12 +1,12 @@
 ---
 permalink: /contact/
+title: "Contact us"
 ---
 
 <div class="contact-page">
   <div id="pop-up"></div>
   <div class="contact-form">
       <form id="contact-form" action="" onsubmit="return ValidateForm(event)">
-        <span class="contact-form-title">Contact Us</span>
         <div class="wrap-input">
           <span class="label-input">Full Name</span>
           <input class="input" type="text" name="Name" placeholder="Enter Your Name" />

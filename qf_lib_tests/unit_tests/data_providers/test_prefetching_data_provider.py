@@ -17,7 +17,7 @@ from datetime import datetime
 
 import pandas as pd
 import numpy as np
-from mockito import mock, when
+from mockito import mock, when, ANY
 
 import qf_lib_tests.helpers.testing_tools.containers_comparison as tt
 from qf_lib.common.enums.frequency import Frequency
@@ -63,6 +63,8 @@ class TestPrefetchingDataProvider(unittest.TestCase):
         )
         when(data_provider).get_price(self.cached_tickers, self.cached_fields, self.start_date, self.end_date,
                                       self.frequency).thenReturn(result)
+
+        when(data_provider).get_futures_chain_tickers(ANY).thenReturn(dict())
 
         return data_provider
 

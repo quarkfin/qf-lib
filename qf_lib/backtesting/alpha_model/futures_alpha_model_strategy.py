@@ -11,45 +11,54 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-from typing import Sequence, List, Set
+from typing import Sequence, List, Set, Dict
 
 import numpy as np
 
+from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
 from qf_lib.backtesting.alpha_model.alpha_model_strategy import AlphaModelStrategy
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
 from qf_lib.backtesting.alpha_model.signal import Signal
 from qf_lib.backtesting.contract.contract import Contract
-from qf_lib.backtesting.order.execution_style import MarketOrder, StopOrder
+from qf_lib.backtesting.order.execution_style import MarketOrder
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.backtesting.portfolio.position import Position
-from qf_lib.containers.futures.future_ticker import FutureTicker
+from qf_lib.backtesting.trading_session.trading_session import TradingSession
+from qf_lib.common.exceptions.future_contracts_exceptions import NoValidTickerException
+from qf_lib.common.tickers.tickers import Ticker
+from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 
 
 class FuturesAlphaModelStrategy(AlphaModelStrategy):
+    def __init__(self, ts: TradingSession, model_tickers_dict: Dict[AlphaModel, Sequence[Ticker]],
+                 use_stop_losses=True):
+
+        # Initialize timer and data provider in the FutureTickers
+        for model_tickers in model_tickers_dict.values():
+            future_tickers = [ticker for ticker in model_tickers if isinstance(ticker, FutureTicker)]
+            for future_ticker in future_tickers:
+                future_ticker.initialize_data_provider(ts.timer, ts.data_handler.data_provider)
+
+        super().__init__(ts, model_tickers_dict, use_stop_losses)
+
     def _place_orders(self, signals):
         self.logger.info("Closing positions with old futures contracts")
 
         self.logger.info("Converting Signals to Orders using: {}".format(self._position_sizer.__class__.__name__))
-        orders = self._position_sizer.size_signals(signals)
+        orders = self._position_sizer.size_signals(signals, self._use_stop_losses)
 
         self.logger.info("Close all positions for expired contracts")
         close_orders = self._close_old_futures_contracts(signals)
 
-        self.logger.info("Placing close orders for expired contracts")
-        self._broker.place_orders(close_orders)
-
         self.logger.info("Cancelling all open orders")
         self._broker.cancel_all_open_orders()
 
-        market_orders = [order for order in orders if isinstance(order.execution_style, MarketOrder)]
-        self.logger.info("Placing market orders")
-        self._broker.place_orders(market_orders)
+        self.logger.info("Placing close orders for expired contracts")
+        self._broker.place_orders(close_orders)
 
-        if self._use_stop_losses:
-            stop_orders = [order for order in orders if isinstance(order.execution_style, StopOrder)]
-            self.logger.info("Placing stop orders")
-            self._broker.place_orders(stop_orders)
+        self.logger.info("Placing orders")
+        self._broker.place_orders(orders)
 
     def _close_old_futures_contracts(self, signals: Sequence[Signal]) -> Sequence[Order]:
         # Close contracts for which a new futures contract from the same futures family should be open
@@ -117,7 +126,7 @@ class FuturesAlphaModelStrategy(AlphaModelStrategy):
             # The position for the previous contract is still open (it was not possible to close the position - e.g.
             # no prices for this contract) and the position for the new contract has been already opened
             # In this case, we need to match the position based on the specific ticker
-            print("Matching positions: {}".format(len(matching_position_quantities)))
+            self.logger.info("Matching positions: {}".format(len(matching_position_quantities)))
             matching_position_quantities = [position.quantity() for position in current_positions if
                                             matching_contract(position.contract(), contract, True)]
 
@@ -145,9 +154,24 @@ class FuturesAlphaModelStrategy(AlphaModelStrategy):
 
             self.logger.info(signal)
             if isinstance(ticker, FutureTicker):
-                ticker_str = ticker.family_id + "@" + model_name
+                ticker_str = ticker.name + "@" + model_name
             else:
                 ticker_str = ticker.as_string() + "@" + model_name
             self._signals[ticker_str].append((self._timer.now().date(), signal))
 
         self._signals_dates.append(self._timer.now())
+
+    def _log_configuration(self):
+        self.logger.info("FuturesAlphaModelStrategy configuration:")
+        for model, tickers in self._model_tickers_dict.items():
+            self.logger.info('Model: {}'.format(str(model)))
+            for ticker in tickers:
+                try:
+                    if isinstance(ticker, FutureTicker):
+                        # Print the FutureTicker names instead of printing the specific tickers returned by the
+                        # as_string() function
+                        self.logger.info('\t Ticker: {}'.format(ticker.name))
+                    else:
+                        self.logger.info('\t Ticker: {}'.format(ticker.as_string()))
+                except NoValidTickerException as e:
+                    self.logger.info(e)

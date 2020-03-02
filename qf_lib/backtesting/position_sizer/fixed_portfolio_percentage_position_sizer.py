@@ -11,7 +11,7 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-from typing import Optional
+from typing import Optional, List
 
 from qf_lib.backtesting.alpha_model.signal import Signal
 from qf_lib.backtesting.broker.broker import Broker
@@ -42,13 +42,17 @@ class FixedPortfolioPercentagePositionSizer(PositionSizer):
 
         self.fixed_percentage = fixed_percentage
 
-    def _generate_market_order(self, contract, signal: Signal) -> Optional[Order]:
-        target_percentage = signal.suggested_exposure.value * self.fixed_percentage
+    def _generate_market_orders(self, signals: List[Signal]) -> List[Optional[Order]]:
+        def signal_to_contract(signal):
+            # Map signal to contract
+            return self._contract_ticker_mapper.ticker_to_contract(signal.ticker)
+
+        target_percentages = {
+            signal_to_contract(signal): signal.suggested_exposure.value * self.fixed_percentage
+            for signal in signals
+        }
 
         market_order_list = self._order_factory.target_percent_orders(
-            {contract: target_percentage}, MarketOrder(), TimeInForce.OPG)
-        if len(market_order_list) == 0:
-            return None
+            target_percentages, MarketOrder(), TimeInForce.OPG)
 
-        assert len(market_order_list) == 1, "Only one order should be generated"
-        return market_order_list[0]
+        return market_order_list

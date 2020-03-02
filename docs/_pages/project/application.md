@@ -1,5 +1,5 @@
 ---
-permalink: /docs/application/
+permalink: /application/
 title: "Application"
 ---
 ## Timeseries Analysis

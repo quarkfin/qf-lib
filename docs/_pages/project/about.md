@@ -1,5 +1,5 @@
 ---
-permalink: /docs/about/
+permalink: /about/
 title: "About"
 multi-tool-gallery:
   - url: /assets/images/about/multi-tool-example-1.png

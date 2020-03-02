@@ -11,9 +11,11 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
+from typing import List, Optional
 
 from qf_lib.backtesting.alpha_model.signal import Signal
 from qf_lib.backtesting.order.execution_style import MarketOrder
+from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.backtesting.position_sizer.position_sizer import PositionSizer
 
@@ -23,13 +25,16 @@ class SimplePositionSizer(PositionSizer):
     This SimplePositionSizer converts signals to orders which are the size of 100% of the current portfolio value
     """
 
-    def _generate_market_order(self, contract, signal: Signal):
-        target_percentage = signal.suggested_exposure.value
+    def _generate_market_orders(self, signals: List[Signal]) -> List[Optional[Order]]:
+        def signal_to_contract(signal):
+            # Map signal to contract
+            return self._contract_ticker_mapper.ticker_to_contract(signal.ticker)
+
+        target_percentages = {
+            signal_to_contract(signal): signal.suggested_exposure.value for signal in signals
+        }
         market_order_list = self._order_factory.target_percent_orders(
-            {contract: target_percentage}, MarketOrder(), TimeInForce.OPG)
+            target_percentages, MarketOrder(), TimeInForce.OPG
+        )
 
-        if len(market_order_list) == 0:
-            return None
-
-        assert len(market_order_list) == 1, "Only one order should be generated"
-        return market_order_list[0]
+        return market_order_list

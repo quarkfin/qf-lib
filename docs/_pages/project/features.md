@@ -1,5 +1,5 @@
 ---
-permalink: /docs/features/
+permalink: /features/
 title: "Features"
 ---
 

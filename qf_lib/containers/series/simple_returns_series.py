@@ -12,7 +12,7 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-from numpy import log, append
+from numpy import log, append, nan
 
 from qf_lib.containers.series.returns_series import ReturnsSeries
 
@@ -42,6 +42,12 @@ class SimpleReturnsSeries(ReturnsSeries):
 
     def total_cumulative_return(self) -> float:
         return (self + 1.0).prod() - 1.0
+
+    def total_cumulative_returns_keep_nans(self) -> float:
+        if self.isna().all():  # If all values in series are Nan
+            return nan
+        else:
+            return self.total_cumulative_return()
 
     def _to_prices_values(self, initial_price):
         prices_values = append([1], self.values + 1)

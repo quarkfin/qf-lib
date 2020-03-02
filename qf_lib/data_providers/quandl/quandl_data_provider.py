@@ -27,6 +27,7 @@ from qf_lib.common.utils.dateutils.date_to_string import date_to_str
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
+from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.helpers import tickers_dict_to_data_array, \
@@ -283,7 +284,7 @@ class QuandlDataProvider(DataProvider):
 
         return table
 
-    def get_futures_chain_tickers(self, tickers: Union[Ticker, Sequence[Ticker]], date: datetime,
-                                  include_expired_contracts: bool = True) -> Dict[Ticker, QFSeries]:
+    def get_futures_chain_tickers(self, tickers: Union[FutureTicker, Sequence[FutureTicker]]) \
+            -> Dict[FutureTicker, QFSeries]:
         raise NotImplementedError("Downloading Future Chain Tickers in QuandlDataProvider is not supported yet")
 

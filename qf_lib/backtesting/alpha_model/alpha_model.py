@@ -98,8 +98,8 @@ class AlphaModel(object, metaclass=ABCMeta):
         """
         Returns the expected Exposure, which is the key part of a generated Signal. Exposure suggests the trend
         direction for managing the trading position.
-        Uses DataHandler and num_of_rows_needed both passed when the AlphaModel (child) is initialized - all required
-        data is provided in the child class.
+        Uses DataHandler passed when the AlphaModel (child) is initialized - all required data is provided in the child
+        class.
 
         Parameters
         ----------

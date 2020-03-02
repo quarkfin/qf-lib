@@ -1,6 +1,6 @@
 ---
-permalink: /docs/getting_started/
-title: "Getting started"
+permalink: /installation/
+title: "Installation"
 toc: true
 toc_sticky: true
 toc_label: "On this page"

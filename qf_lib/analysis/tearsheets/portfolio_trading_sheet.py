@@ -14,7 +14,6 @@
 
 from datetime import datetime
 from itertools import groupby
-from os import path
 
 import matplotlib as plt
 from pandas.tseries.frequencies import to_offset
@@ -23,6 +22,7 @@ from pandas import Timedelta
 from qf_lib.analysis.common.abstract_document import AbstractDocument
 from qf_lib.backtesting.monitoring.backtest_result import BacktestResult
 from qf_lib.common.enums.frequency import Frequency
+from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.documents_utils.document_exporting.element.chart import ChartElement
 from qf_lib.documents_utils.document_exporting.element.paragraph import ParagraphElement
 from qf_lib.documents_utils.document_exporting.element.table import Table
@@ -50,6 +50,7 @@ class PortfolioTradingSheet(AbstractDocument):
         """
         super().__init__(settings, pdf_exporter, title=title)
         self.backtest_result = backtest_result
+        self.full_image_axis_position = (0.08, 0.1, 0.915, 0.80)  # (left, bottom, width, height)
 
     def build_document(self):
         self._add_header()
@@ -61,6 +62,8 @@ class PortfolioTradingSheet(AbstractDocument):
         self._add_number_of_transactions_chart('D', 'Number of transactions per day')
         self._add_number_of_transactions_chart('30D', 'Number of transactions per month')
         self._add_number_of_transactions_chart('365D', 'Number of transactions per year')
+        self._add_volume_traded()
+
         self._add_avg_time_in_the_market_per_ticker()
 
     def _add_leverage_chart(self):
@@ -77,13 +80,15 @@ class PortfolioTradingSheet(AbstractDocument):
         # Find all not NaN values (not NaN values indicate that the position was open for this contract at that time)
         # and count their number for each row (for each of the dates)
         number_of_assets = assets_history.notnull().sum(axis=1)
+        self._add_line_chart_element(number_of_assets, "Number of assets in the portfolio")
 
-        assets_number_chart = self._get_line_chart(number_of_assets, "Number of assets in the portfolio")
+    def _add_line_chart_element(self, series, title):
+        chart = self._get_line_chart(series, title)
 
         position_decorator = AxesPositionDecorator(*self.full_image_axis_position)
-        assets_number_chart.add_decorator(position_decorator)
+        chart.add_decorator(position_decorator)
 
-        self.document.add_element(ChartElement(assets_number_chart, figsize=self.full_image_size, dpi=self.dpi))
+        self.document.add_element(ChartElement(chart, figsize=self.full_image_size, dpi=self.dpi))
 
     def _add_concentration_of_portfolio_chart(self, top_assets_numbers: tuple = (1, 5)):
         chart = LineChart(rotate_x_axis=False)
@@ -125,11 +130,6 @@ class PortfolioTradingSheet(AbstractDocument):
         self.document.add_element(ChartElement(chart, figsize=self.full_image_size, dpi=self.dpi))
 
     def _add_number_of_transactions_chart(self, pandas_freq: str, title: str):
-        chart = LineChart(rotate_x_axis=False)
-
-        position_decorator = AxesPositionDecorator(*self.full_image_axis_position)
-        chart.add_decorator(position_decorator)
-
         transactions = self.backtest_result.portfolio.transactions_series()
         if transactions.empty:
             raise ValueError("Transactions series is empty")
@@ -151,14 +151,30 @@ class PortfolioTradingSheet(AbstractDocument):
         elif to_offset(pandas_freq) < to_offset('D'):
             raise ValueError("The provided pandas frequency can not be higher than the daily frequency")
 
-        transactions_decorator = DataElementDecorator(transactions)
-        chart.add_decorator(transactions_decorator)
+        self._add_line_chart_element(transactions, title)
 
-        # Add title
-        title_decorator = TitleDecorator(title)
-        chart.add_decorator(title_decorator)
+    def _add_volume_traded(self):
+        transactions = self.backtest_result.portfolio.transactions_series()
+        if transactions.empty:
+            raise ValueError("Transactions series is empty")
 
-        self.document.add_element(ChartElement(chart, figsize=self.full_image_size, dpi=self.dpi))
+        # Add the chart containing the volume traded in terms of quantity
+        quantities = [abs(t.quantity) for t in transactions]
+        quantities_series = QFSeries(data=quantities, index=transactions.index)
+
+        # Aggregate the quantities for each day
+        quantities_series = quantities_series.resample(Frequency.DAILY.to_pandas_freq()).sum()
+
+        # Generate chart and add it to the document
+        self._add_line_chart_element(quantities_series, "Volume traded per day [in contracts]")
+
+        # Add the chart containing the exposure of the traded assets
+        total_exposures = [abs(t.quantity) * t.price * t.contract.contract_size for t in transactions]
+        total_exposures_series = QFSeries(data=total_exposures, index=transactions.index)
+        total_exposures_series = total_exposures_series.resample(Frequency.DAILY.to_pandas_freq()).sum()
+
+        # Generate chart and add it to the document
+        self._add_line_chart_element(total_exposures_series, "Volume traded per day [notional in currency units]")
 
     def _add_gini_coefficient_chart(self):
         chart = LineChart(rotate_x_axis=False)
@@ -238,7 +254,7 @@ class PortfolioTradingSheet(AbstractDocument):
             shorts = shorts / number_of_days
             outs = outs / number_of_days
 
-            table.add_row([future_ticker.family_id, "{:.2%}".format(longs), "{:.2%}".format(shorts), "{:.2%}".format(outs)])
+            table.add_row([future_ticker.name, "{:.2%}".format(longs), "{:.2%}".format(shorts), "{:.2%}".format(outs)])
 
         self.document.add_element(table)
 
