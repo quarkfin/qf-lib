@@ -220,11 +220,11 @@ class DailyDataHandler(DataHandler):
         # Compute the time ranges, used further by the get_price function
         current_datetime = self.timer.now()
 
-        # We download the prices since the last 10 days. In case of getting the last available price, we assume that
-        # within each 10 consecutive days, at least one price will occur. If not, in case e.g. future contracts, we
+        # We download the prices since the last 7 days. In case of getting the last available price, we assume that
+        # within each 7 consecutive days, at least one price will occur. If not, in case e.g. future contracts, we
         # assume that the contract ended and we need to e.g. close the position for this ticker in the portfolio, if
         # open.
-        start_date = current_datetime - RelativeDelta(days=10)
+        start_date = current_datetime - RelativeDelta(days=7)
         current_date = self._zero_out_time_component(current_datetime)
 
         price_fields = [PriceField.Open, PriceField.Close]

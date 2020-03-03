@@ -19,6 +19,7 @@ from os.path import basename
 from typing import Union, Sequence, Tuple, List, Optional
 
 from qf_lib.common.enums.quandl_db_type import QuandlDBType
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 
 
 @total_ordering
@@ -29,7 +30,7 @@ class Ticker(metaclass=ABCMeta):
             identifier of the security in a specific database
         """
         self.ticker = ticker
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = qf_logger.getChild(self.__class__.__name__)
 
     def __str__(self):
         return "{}:{}".format(self.__class__.__name__, self.ticker)
@@ -61,6 +62,14 @@ class Ticker(metaclass=ABCMeta):
 
     def __hash__(self):
         return hash((self.ticker, type(self)))
+
+    def __getstate__(self):
+        self.logger = None
+        return self.__dict__
+
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.logger = qf_logger.getChild(self.__class__.__name__)
 
 
 class BloombergTicker(Ticker):

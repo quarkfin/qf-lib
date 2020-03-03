@@ -97,7 +97,7 @@ class FuturesChain(pd.Series):
         prices_df = self._data_provider.get_price(self._future_ticker, fields, last_date_in_chain, end_date)
 
         # Discard the row containing last_date_in_chain
-        if prices_df.index[0] == last_date_in_chain:
+        if not prices_df.empty and prices_df.index[0] == last_date_in_chain:
             prices_df = prices_df.iloc[1:]
 
         # If no changes to the PricesDataFrame should be applied return the existing chain

@@ -33,6 +33,32 @@ class ExcelImporter(object):
     def __init__(self):
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
+    def import_cell(
+            self, file_path: str, cell_address: str, sheet_name: str = None) -> Union[int, float, str]:
+        """
+        Imports a container of given type (e.g. Series/DataFrame) from the Excel file of a given name.
+
+        Parameters
+        ----------
+        file_path
+            path to the file containing the data to be imported
+        cell_address
+            address of the cell that you want to get (e.g. 'A1')
+        sheet_name
+            the name of the sheet from which the container should be imported. If no name is given, the active worksheet
+            is used.
+
+        Returns
+        -------
+        container
+            object containing the imported value
+        """
+        self.logger.info("Started importing data from {}".format(file_path))
+        work_book = self._get_work_book(file_path)
+        work_sheet = self._get_work_sheet(work_book, sheet_name)
+        result = work_sheet[cell_address]
+        return result.value
+
     def import_container(
             self, file_path: str, starting_cell: str, ending_cell: str, container_type: type = None,
             sheet_name: str = None, include_index: bool = True, include_column_names: bool = False) \

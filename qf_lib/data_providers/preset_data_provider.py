@@ -41,7 +41,7 @@ class PresetDataProvider(DataProvider):
 
     def __init__(
             self, data: QFDataArray, start_date: datetime, end_date: datetime, frequency: Frequency,
-            check_data_availability: bool = True, exp_dates: Dict[FutureTicker, QFSeries] = None):
+            exp_dates: Dict[FutureTicker, QFSeries] = None):
         """
         Parameters
         ----------
@@ -53,23 +53,18 @@ class PresetDataProvider(DataProvider):
             end of the cached period (not necessarily the last date in the `data`)
         frequency
             frequency of the data
-        check_data_availability
-            True by default. If False then if there's a call for a non-existent piece of data, some strange behaviour
-            may occur (e.g. nans returned).
         exp_dates
             dictionary mapping FutureTickers to QFSeries of contracts expiration dates, belonging to the certain
             future ticker family
         """
         self._data_bundle = data
-        self._check_data_availability = check_data_availability
         self.frequency = frequency
         self._exp_dates = exp_dates
 
-        if self._check_data_availability:
-            self._tickers_cached_set = set(data.tickers.values)
-            self._fields_cached_set = set(data.fields.values)
-            self._start_date = start_date
-            self._end_date = end_date
+        self._tickers_cached_set = set(data.tickers.values)
+        self._fields_cached_set = set(data.fields.values)
+        self.start_date = start_date
+        self.end_date = end_date
 
         self._ticker_types = {type(ticker) for ticker in data.tickers.values}
 
@@ -108,8 +103,7 @@ class PresetDataProvider(DataProvider):
             bool(start_date and (start_date == end_date))
         )
 
-        if self._check_data_availability:
-            self._check_if_cached_data_available(specific_tickers, fields, start_date, end_date)
+        self._check_if_cached_data_available(specific_tickers, fields, start_date, end_date)
 
         data_array = self._data_bundle.loc[start_date:end_date, specific_tickers, fields]
 
@@ -140,7 +134,7 @@ class PresetDataProvider(DataProvider):
 
         uncached_tickers = set(tickers) - self._tickers_cached_set
         if uncached_tickers:
-            tickers_str = [t.as_string() for t in tickers]
+            tickers_str = [t.as_string() for t in uncached_tickers]
             raise ValueError("Tickers: {} are not available in the Data Bundle".format(tickers_str))
 
         # fields which are not cached but were requested
@@ -148,12 +142,12 @@ class PresetDataProvider(DataProvider):
         if uncached_fields:
             raise ValueError("Fields: {} are not available in the Data Bundle".format(fields))
 
-        if start_date < self._start_date:
+        if start_date < self.start_date:
             raise ValueError("Requested start date {} is before data bundle start date {}".
-                             format(start_date, self._start_date))
-        if end_date > self._end_date:
+                             format(start_date, self.start_date))
+        if end_date > self.end_date:
             raise ValueError("Requested end date {} is after data bundle end date {}".
-                             format(end_date, self._end_date))
+                             format(end_date, self.end_date))
 
     def get_history(self, tickers: Union[Ticker, Sequence[Ticker]],
                     fields: Union[str, Sequence[str]],
@@ -183,8 +177,7 @@ class PresetDataProvider(DataProvider):
             (start_date + frequency.time_delta() >= end_date)
         )
 
-        if self._check_data_availability:
-            self._check_if_cached_data_available(specific_tickers, fields, start_date, end_date)
+        self._check_if_cached_data_available(specific_tickers, fields, start_date, end_date)
 
         data_array = self._data_bundle.loc[start_date:end_date, specific_tickers, fields]
 
@@ -210,12 +203,11 @@ class PresetDataProvider(DataProvider):
 
         tickers, got_single_ticker = convert_to_list(tickers, Ticker)
 
-        if self._check_data_availability:
-            # Check if the futures tickers are in the exp_dates keys
-            uncached_future_tickers = set(tickers) - set(self._exp_dates.keys())
-            if uncached_future_tickers:
-                tickers_str = [t.name for t in tickers]
-                raise ValueError("Tickers: {} are not available in the Data Bundle".format(tickers_str))
+        # Check if the futures tickers are in the exp_dates keys
+        uncached_future_tickers = set(tickers) - set(self._exp_dates.keys())
+        if uncached_future_tickers:
+            tickers_str = [t.name for t in tickers]
+            raise ValueError("Tickers: {} are not available in the Data Bundle".format(tickers_str))
 
         future_chain_tickers = {
             ticker: self._exp_dates[ticker] for ticker in tickers

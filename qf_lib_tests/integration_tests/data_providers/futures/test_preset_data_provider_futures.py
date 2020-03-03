@@ -66,8 +66,7 @@ class TestPresetDataProviderWithFutures(unittest.TestCase):
                                                 self.TICKER_2,
                                                 PriceField.ohlcv(),
                                                 self.start_date, self.end_date,
-                                                self.frequency,
-                                                check_data_availability=True)
+                                                self.frequency)
 
         self.timer.set_current_time(self.end_date)
 

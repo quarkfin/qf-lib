@@ -34,8 +34,7 @@ class PrefetchingDataProvider(PresetDataProvider):
                  tickers: Union[Ticker, Sequence[Ticker]],
                  fields: Sequence[PriceField],
                  start_date: datetime, end_date: datetime,
-                 frequency: Frequency,
-                 check_data_availability: bool = True):
+                 frequency: Frequency):
         """
         The tickers parameter denotes one or a list of tickers, used further to download the futures contracts related
         data. The list can contain either Tickers or FutureTickers. In case of the Tickers, simply the given fields
@@ -57,5 +56,4 @@ class PrefetchingDataProvider(PresetDataProvider):
                          exp_dates=all_future_tickers_dict,
                          start_date=start_date,
                          end_date=end_date,
-                         frequency=frequency,
-                         check_data_availability=check_data_availability)
+                         frequency=frequency)

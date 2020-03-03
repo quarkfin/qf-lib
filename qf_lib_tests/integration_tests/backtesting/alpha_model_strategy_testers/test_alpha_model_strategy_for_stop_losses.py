@@ -47,7 +47,7 @@ class TestAlphaModelStrategy(TestCase):
 
         self._mocked_prices_arr = self._make_mock_data_array(self.tickers, all_fields)
         self._price_provider_mock = PresetDataProvider(self._mocked_prices_arr, self.data_start_date, self.end_date,
-                                                       self.frequency, check_data_availability=False)
+                                                       self.frequency)
 
         risk_estimation_factor = 0.05
         self.alpha_model = DummyAlphaModel(risk_estimation_factor)
