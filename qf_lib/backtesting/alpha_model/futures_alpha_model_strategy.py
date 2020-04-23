@@ -11,7 +11,7 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-from typing import Sequence, List, Set, Dict
+from typing import Sequence, List, Set, Dict, Optional
 
 import numpy as np
 
@@ -32,7 +32,7 @@ from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 
 class FuturesAlphaModelStrategy(AlphaModelStrategy):
     def __init__(self, ts: TradingSession, model_tickers_dict: Dict[AlphaModel, Sequence[Ticker]],
-                 use_stop_losses=True):
+                 use_stop_losses=True, max_open_positions: Optional[int] = None):
 
         # Initialize timer and data provider in the FutureTickers
         for model_tickers in model_tickers_dict.values():
@@ -40,7 +40,7 @@ class FuturesAlphaModelStrategy(AlphaModelStrategy):
             for future_ticker in future_tickers:
                 future_ticker.initialize_data_provider(ts.timer, ts.data_handler.data_provider)
 
-        super().__init__(ts, model_tickers_dict, use_stop_losses)
+        super().__init__(ts, model_tickers_dict, use_stop_losses, max_open_positions)
 
     def _place_orders(self, signals):
         self.logger.info("Closing positions with old futures contracts")

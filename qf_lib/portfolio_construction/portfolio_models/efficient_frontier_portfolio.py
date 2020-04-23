@@ -28,7 +28,7 @@ class EfficientFrontierPortfolio(Portfolio):
     the weight of the covariance of assets.
     """
 
-    def __init__(self, cov_matrix: QFDataFrame, mean_returns: QFSeries, k: int,
+    def __init__(self, cov_matrix: QFDataFrame, mean_returns: QFSeries, k: float,
                  upper_constraint: Union[float, Sequence[float]] = None):
         self.upper_constraint = upper_constraint
         self.cov_matrix = cov_matrix

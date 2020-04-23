@@ -11,7 +11,6 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-
 from datetime import datetime
 from itertools import groupby
 
@@ -20,14 +19,21 @@ from pandas.tseries.frequencies import to_offset
 from pandas import Timedelta
 
 from qf_lib.analysis.common.abstract_document import AbstractDocument
+from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.monitoring.backtest_result import BacktestResult
 from qf_lib.common.enums.frequency import Frequency
+from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
+from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.documents_utils.document_exporting.element.chart import ChartElement
+from qf_lib.documents_utils.document_exporting.element.df_table import DFTable
+from qf_lib.documents_utils.document_exporting.element.heading import HeadingElement
+from qf_lib.documents_utils.document_exporting.element.new_page import NewPageElement
 from qf_lib.documents_utils.document_exporting.element.paragraph import ParagraphElement
 from qf_lib.documents_utils.document_exporting.element.table import Table
 from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.plotting.charts.line_chart import LineChart
+from qf_lib.plotting.decorators.axes_label_decorator import AxesLabelDecorator
 from qf_lib.plotting.decorators.axes_position_decorator import AxesPositionDecorator
 from qf_lib.plotting.decorators.data_element_decorator import DataElementDecorator
 from qf_lib.plotting.decorators.legend_decorator import LegendDecorator
@@ -65,6 +71,7 @@ class PortfolioTradingSheet(AbstractDocument):
         self._add_volume_traded()
 
         self._add_avg_time_in_the_market_per_ticker()
+        self._add_performance_statistics()
 
     def _add_leverage_chart(self):
         lev_chart = self._get_leverage_chart(self.backtest_result.portfolio.leverage_series())
@@ -72,15 +79,62 @@ class PortfolioTradingSheet(AbstractDocument):
         position_decorator = AxesPositionDecorator(*self.full_image_axis_position)
         lev_chart.add_decorator(position_decorator)
 
+        # Add y label
+        label_decorator = AxesLabelDecorator(y_label="Leverage")
+        lev_chart.add_decorator(label_decorator)
+
         self.document.add_element(ChartElement(lev_chart, figsize=self.full_image_size, dpi=self.dpi))
 
     def _add_assets_number_in_portfolio_chart(self):
-        assets_history = self.backtest_result.portfolio.assets_eod_history()
+        chart = LineChart(rotate_x_axis=False)
+        legend = LegendDecorator(key="legend_decorator")
+
+        position_decorator = AxesPositionDecorator(*self.full_image_axis_position)
+        chart.add_decorator(position_decorator)
+
+        positions_history = self.backtest_result.portfolio.positions_eod_history()
 
         # Find all not NaN values (not NaN values indicate that the position was open for this contract at that time)
         # and count their number for each row (for each of the dates)
-        number_of_assets = assets_history.notnull().sum(axis=1)
-        self._add_line_chart_element(number_of_assets, "Number of assets in the portfolio")
+        number_of_contracts = positions_history.notnull().sum(axis=1)
+        number_of_contracts_decorator = DataElementDecorator(number_of_contracts)
+
+        chart.add_decorator(number_of_contracts_decorator)
+        legend.add_entry(number_of_contracts_decorator, "Contracts")
+
+        # Count number of assets in the portfolio (if on two contracts from same future family exist in the same time,
+        # e.g. during rolling day, in the portfolio, they are counted as one asset)
+        def contract_to_ticker(c: Contract):
+            return self.backtest_result.portfolio.contract_ticker_mapper.\
+                contract_to_ticker(c, strictly_to_specific_ticker=False)
+
+        assets_history = positions_history.rename(columns=contract_to_ticker)
+        assets_history = assets_history.groupby(level=0, axis=1).apply(func=(
+            # For each asset, group all of the corresponding columns (each of which corresponds to one contract),
+            # and check if at any given timestamp the "value" of any of the contracts was different than None - this
+            # indicates that at this point of time a position concerning the given asset was open in the portfolio
+            # (which in the resulting series will be denoted as 1, otherwise - 0, so that it will be possible to
+            # sum positions of all open assets at any given point of time)
+            lambda x: x.notna().any(axis=1).astype(int)
+        ))
+
+        number_of_assets = assets_history.sum(axis=1)
+        number_of_assets_decorator = DataElementDecorator(number_of_assets)
+        chart.add_decorator(number_of_assets_decorator)
+        legend.add_entry(number_of_assets_decorator, "Assets")
+
+        # Add title
+        title_decorator = TitleDecorator("Number of assets in the portfolio")
+        chart.add_decorator(title_decorator)
+
+        # Add legend
+        chart.add_decorator(legend)
+
+        # Add y label
+        label_decorator = AxesLabelDecorator(y_label="Number of contracts / assets")
+        chart.add_decorator(label_decorator)
+
+        self.document.add_element(ChartElement(chart, figsize=self.full_image_size, dpi=self.dpi))
 
     def _add_line_chart_element(self, series, title):
         chart = self._get_line_chart(series, title)
@@ -96,15 +150,32 @@ class PortfolioTradingSheet(AbstractDocument):
         position_decorator = AxesPositionDecorator(*self.full_image_axis_position)
         chart.add_decorator(position_decorator)
 
-        # Add top asset contribution
-        assets_history = self.backtest_result.portfolio.assets_eod_history()
-        if assets_history.empty:
-            raise ValueError("No assets found in assets history")
-
-        assets_history = assets_history.fillna(0)
-
         # Define a legend
         legend = LegendDecorator(key="legend_decorator")
+
+        # Add y label
+        label_decorator = AxesLabelDecorator(y_label="Mean total exposure of top assets [%]")
+        chart.add_decorator(label_decorator)
+
+        # Add top asset contribution
+        positions_history = self.backtest_result.portfolio.positions_eod_history()
+        if positions_history.empty:
+            raise ValueError("No positions found in positions history")
+
+        positions_history = positions_history.fillna(0)
+
+        # Map all the single contracts onto tickers (including future tickers) and take the maximal total exposure for
+        # each of the groups - in case if two contracts for a single asset will be included in the open positions in
+        # the portfolio at any point of time, only one (with higher total exposure) will be considered while generating
+        # the top assets plot
+        def contract_to_ticker(c: Contract):
+            return self.backtest_result.portfolio.contract_ticker_mapper. \
+                contract_to_ticker(c, strictly_to_specific_ticker=False)
+
+        assets_history = positions_history.rename(columns=contract_to_ticker)
+        assets_history = assets_history.groupby(level=0, axis=1).apply(func=(
+            lambda x: x.abs().max(axis=1).astype(float)
+        ))
 
         for assets_number in top_assets_numbers:
             # For each date (row), find the top_assets largest assets and compute the mean value of their market value
@@ -145,8 +216,8 @@ class PortfolioTradingSheet(AbstractDocument):
             start_date = transactions.index[0]
             transactions = transactions.loc[start_date + Timedelta(pandas_freq):]
             if transactions.empty:
-                raise ValueError("The available time period is too short to compute the statistics with the provided "
-                                 "frequency")
+                # The available time period is too short to compute the statistics with the provided frequency
+                return
 
         elif to_offset(pandas_freq) < to_offset('D'):
             raise ValueError("The provided pandas frequency can not be higher than the daily frequency")
@@ -183,7 +254,7 @@ class PortfolioTradingSheet(AbstractDocument):
         chart.add_decorator(position_decorator)
 
         # Get the assets history
-        assets_history = self.backtest_result.portfolio.assets_eod_history()
+        assets_history = self.backtest_result.portfolio.positions_eod_history()
         assets_history = assets_history.fillna(0)
 
         def gini(group):
@@ -208,11 +279,13 @@ class PortfolioTradingSheet(AbstractDocument):
         self.document.add_element(ChartElement(chart, figsize=self.full_image_size, dpi=self.dpi))
 
     def _add_avg_time_in_the_market_per_ticker(self):
+        self.document.add_element(NewPageElement())
+        self.document.add_element(HeadingElement(level=2, text="Average time in the market per asset"))
         # Get the assets history
-        assets_history = self.backtest_result.portfolio.assets_eod_history()
+        assets_history = self.backtest_result.portfolio.positions_eod_history()
         assets_history = assets_history.fillna(0)
 
-        table = Table(column_names=['Tickers', 'Longs', 'Shorts', 'Out'], css_class="table stats-table")
+        table = Table(column_names=['Tickers name', 'Longs', 'Shorts', 'Out'], css_class="table stats-table left-align")
 
         future_contracts = [contract for contract in assets_history.columns if contract.security_type == 'FUT']
         stock_contracts = [contract for contract in assets_history.columns if contract.security_type == 'STK']
@@ -256,6 +329,39 @@ class PortfolioTradingSheet(AbstractDocument):
 
             table.add_row([future_ticker.name, "{:.2%}".format(longs), "{:.2%}".format(shorts), "{:.2%}".format(outs)])
 
+        self.document.add_element(table)
+
+    def _add_performance_statistics(self):
+        self.document.add_element(NewPageElement())
+        self.document.add_element(HeadingElement(level=2, text="Performance of each asset"))
+
+        def contract_to_ticker_name(contract: Contract) -> str:
+            contract_ticker_mapper = self.backtest_result.portfolio.contract_ticker_mapper
+            ticker = contract_ticker_mapper.contract_to_ticker(contract, strictly_to_specific_ticker=False)
+            ticker_name = ticker.name if isinstance(ticker, FutureTicker) else ticker.ticker
+            return ticker_name
+
+        # Compute the Profit and loss associated with all trades
+        trades_pnl = [
+            (contract_to_ticker_name(trade.contract), trade.pnl)
+            for trade in self.backtest_result.portfolio.trade_list()
+        ]
+
+        # Compute the unrealised Profit and loss associated with all open positions
+        open_positions_dict = self.backtest_result.portfolio.open_positions_dict
+        open_positions_unrealised_pnl = [
+            (contract_to_ticker_name(position.contract()), position.unrealised_pnl)
+            for position in open_positions_dict.values()
+        ]
+
+        pnl_df = QFDataFrame(data=trades_pnl + open_positions_unrealised_pnl, columns=["Ticker", "Performance"])
+
+        performance_df = pnl_df.groupby(['Ticker'], as_index=False).sum()
+        performance_df = performance_df.sort_values(by="Performance", ascending=False)
+        performance_df["Performance"] = performance_df["Performance"].apply(lambda pnl: "{:,.2f}".format(pnl))
+
+        table = DFTable(data=performance_df, css_classes=['table', 'left-align', 'slim-table'])
+        table.add_columns_classes(["Ticker"], 'wide-column')
         self.document.add_element(table)
 
     def save(self, report_dir: str = ""):

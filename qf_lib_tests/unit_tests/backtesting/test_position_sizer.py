@@ -124,7 +124,7 @@ class _OrderFactoryMock(object):
         self.initial_allocation = initial_allocation
 
     def target_percent_orders(self, target_percentages: Mapping[Contract, float], execution_style,
-                              time_in_force=TimeInForce.DAY) -> Sequence[Order]:
+                              time_in_force=TimeInForce.DAY, tolerance_percent=0.0) -> Sequence[Order]:
         contract, target_percentage = next(iter(target_percentages.items()))
         order_quantity = int(np.floor(self.initial_position * (target_percentage / self.initial_allocation - 1)))
         return [Order(contract, order_quantity, execution_style, time_in_force)]

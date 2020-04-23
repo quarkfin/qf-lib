@@ -488,7 +488,7 @@ class TestPortfolio(unittest.TestCase):
         dh.set_prices(self.prices_down)
         portfolio.update(record=True)
 
-        asset_history = portfolio.assets_eod_history()
+        asset_history = portfolio.positions_eod_history()
         self.assertEqual(asset_history.shape, (5, 2))
         self.assertEqual(asset_history.iloc[4, 0], 315000)
         self.assertEqual(asset_history.iloc[4, 1], 2000)

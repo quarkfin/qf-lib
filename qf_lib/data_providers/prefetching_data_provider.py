@@ -32,7 +32,7 @@ class PrefetchingDataProvider(PresetDataProvider):
     """
     def __init__(self, data_provider: DataProvider,
                  tickers: Union[Ticker, Sequence[Ticker]],
-                 fields: Sequence[PriceField],
+                 fields: Union[PriceField, Sequence[PriceField]],
                  start_date: datetime, end_date: datetime,
                  frequency: Frequency):
         """
@@ -42,12 +42,18 @@ class PrefetchingDataProvider(PresetDataProvider):
         chain tickers and their corresponding prices are being downloaded and stored.
         """
 
+        # Convert fields into list in order to return a QFDataArray as the result of get_price function
+        fields, _ = convert_to_list(fields, PriceField)
+
         tickers, _ = convert_to_list(tickers, Ticker)
         future_tickers = [ticker for ticker in tickers if isinstance(ticker, FutureTicker)]
         non_future_tickers = [ticker for ticker in tickers if not isinstance(ticker, FutureTicker)]
 
         all_future_tickers_dict = data_provider.get_futures_chain_tickers(future_tickers)
-        all_futures_tickers = [t for tickers_chain in all_future_tickers_dict.values() for t in tickers_chain.values]
+
+        # Filter out all theses specific future contracts, which expired before start_date
+        all_futures_tickers = [t for tickers_chain in all_future_tickers_dict.values()
+                               for t in tickers_chain.loc[start_date:].values]
 
         all_tickers = all_futures_tickers + non_future_tickers
         data_array = data_provider.get_price(all_tickers, fields, start_date, end_date, frequency)

@@ -17,6 +17,7 @@ from typing import Sequence, TypeVar, List
 
 import numpy as np
 import pandas as pd
+import xarray as xr
 
 T = TypeVar('T')
 
@@ -186,6 +187,49 @@ def assert_dataframes_equal(expected_frame: pd.DataFrame, actual_frame: pd.DataF
         _assert_same_series_values(expected_column, actual_column, absolute_tolerance, relative_tolerance)
 
 
+def assert_dataarrays_equal(expected_dataarray: xr.DataArray, actual_dataarray: xr.DataArray,
+                            check_dataarray_type: bool = True, check_dtype: bool = False, check_index_type: bool = False,
+                            check_names=True, absolute_tolerance: float = 1e-4,
+                            relative_tolerance: float = 0.0):
+    assert isinstance(expected_dataarray, xr.DataArray), "Expected frame is not an instance of pandas.DataFrame"
+    assert isinstance(actual_dataarray, xr.DataArray), "Actual frame is not an instance of pandas.DataFrame"
+
+    if check_dataarray_type:
+        _assert_same_container_type(expected_dataarray, actual_dataarray)
+
+    _assert_same_containers_shape(expected_dataarray, actual_dataarray)
+
+    if check_dtype:
+        _assert_same_data_type(expected_dataarray, actual_dataarray)
+
+    # Assert same dimensions
+    if set(actual_dataarray.dims) != set(expected_dataarray.dims):
+        raise AssertionError("DataArray has incorrect dimensions. Expected: {:s}, actual: {:s}".format(
+            str(expected_dataarray.dims), str(actual_dataarray.dims)))
+
+    # Assert same indices
+    for index in actual_dataarray.indexes:
+        actual_index = actual_dataarray[index].to_index()
+        expected_index = expected_dataarray[index].to_index()
+
+        assert_same_index(expected_index, actual_index, check_index_type, check_names)
+
+    dimension = actual_dataarray.dims[0]
+    index = actual_dataarray[dimension].to_index()
+
+    for i in index:
+        expected_df = actual_dataarray.loc[i].to_pandas()
+        actual_df = actual_dataarray.loc[i].to_pandas()
+
+        assert_dataframes_equal(expected_df, actual_df,
+                                check_frame_type=check_dataarray_type,
+                                check_dtype=check_dtype,
+                                check_index_type=check_index_type,
+                                check_names=check_names,
+                                absolute_tolerance=absolute_tolerance,
+                                relative_tolerance=relative_tolerance)
+
+
 def _assert_same_container_type(expected_container, actual_container):
     expected_type = type(expected_container)
     actual_type = type(actual_container)
@@ -203,9 +247,18 @@ def _assert_same_containers_shape(expected_container, actual_container):
 
 
 def _assert_same_data_type(expected_container, actual_container):
-    if actual_container.dtype != expected_container.dtype:
-        raise AssertionError("Container has an incorrect data type. Expected: {:s}, actual: {:s}"
-                             .format(str(expected_container.dtype), str(actual_container.dtype)))
+    if isinstance(expected_container, pd.Series) and isinstance(actual_container, pd.Series):
+        if actual_container.dtype != expected_container.dtype:
+            raise AssertionError("Container has an incorrect data type. Expected: {:s}, actual: {:s}"
+                                 .format(str(expected_container.dtype), str(actual_container.dtype)))
+
+    elif isinstance(expected_container, xr.DataArray) and isinstance(actual_container, xr.DataArray):
+        if actual_container.dtype != expected_container.dtype:
+            raise AssertionError("Container has an incorrect data type. Expected: {:s}, actual: {:s}"
+                                 .format(str(expected_container.dtype), str(actual_container.dtype)))
+
+    elif isinstance(expected_container, pd.DataFrame) and isinstance(actual_container, pd.DataFrame):
+        pd.testing.assert_series_equal(expected_container.dtypes, actual_container.dtypes)
 
 
 def assert_same_index(expected_index, actual_index, check_index_type, check_names):
@@ -283,3 +336,4 @@ def _assert_same_series_values(expected_series, actual_series, absolute_toleranc
             messages.append("{:s} - Expected: {:f}, actual: {:f}".format(str(label), expected_val, actual_val))
 
         raise AssertionError("Different series values for labels:\n" + "\n".join(messages))
+

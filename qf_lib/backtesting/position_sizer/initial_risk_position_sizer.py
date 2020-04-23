@@ -33,7 +33,8 @@ class InitialRiskPositionSizer(PositionSizer):
     """
 
     def __init__(self, broker: Broker, data_handler: DataHandler, order_factory: OrderFactory,
-                 contract_ticker_mapper: ContractTickerMapper, initial_risk: float, max_target_percentage: float=None):
+                 contract_ticker_mapper: ContractTickerMapper, initial_risk: float, max_target_percentage: float = None,
+                 tolerance_percentage: float = 0.0):
         """
         initial_risk
             should be set once for all signals. It corresponds to the value that we are willing to lose
@@ -42,11 +43,16 @@ class InitialRiskPositionSizer(PositionSizer):
         max_target_percentage
             max leverage that is accepted by the position sizer.
             if None, no max_target_percentage is used.
+        tolerance_percentage
+            percentage used by OrdersFactory target_percent_orders function; it defines tolerance to the
+            target percentages
         """
         super().__init__(broker, data_handler, order_factory, contract_ticker_mapper)
 
         self._initial_risk = initial_risk
         self.max_target_percentage = max_target_percentage
+        self.tolerance_percentage = tolerance_percentage
+
         self.logger.info("Initial Risk: {}".format(initial_risk))
 
     def _generate_market_orders(self, signals: List[Signal]) -> List[Optional[Order]]:
@@ -75,10 +81,8 @@ class InitialRiskPositionSizer(PositionSizer):
         }
 
         market_order_list = self._order_factory.target_percent_orders(
-            target_percentages, MarketOrder(), TimeInForce.OPG
+            target_percentages, MarketOrder(), TimeInForce.OPG, self.tolerance_percentage
         )
-
-
 
         return market_order_list
 

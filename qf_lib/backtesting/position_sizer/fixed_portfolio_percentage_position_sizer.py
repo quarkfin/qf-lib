@@ -31,7 +31,8 @@ class FixedPortfolioPercentagePositionSizer(PositionSizer):
     """
 
     def __init__(self, broker: Broker, data_handler: DataHandler, order_factory: OrderFactory,
-                 contract_ticker_mapper: ContractTickerMapper, fixed_percentage: float):
+                 contract_ticker_mapper: ContractTickerMapper, fixed_percentage: float,
+                 tolerance_percentage: float = 0.0):
         """
         fixed_percentage - should be set once for all signals. It corresponds to the fraction of a portfolio that we
         are investing in every asset on single trade.
@@ -41,6 +42,7 @@ class FixedPortfolioPercentagePositionSizer(PositionSizer):
         super().__init__(broker, data_handler, order_factory, contract_ticker_mapper)
 
         self.fixed_percentage = fixed_percentage
+        self.tolerance_percentage = tolerance_percentage
 
     def _generate_market_orders(self, signals: List[Signal]) -> List[Optional[Order]]:
         def signal_to_contract(signal):
@@ -53,6 +55,6 @@ class FixedPortfolioPercentagePositionSizer(PositionSizer):
         }
 
         market_order_list = self._order_factory.target_percent_orders(
-            target_percentages, MarketOrder(), TimeInForce.OPG)
+            target_percentages, MarketOrder(), TimeInForce.OPG, self.tolerance_percentage)
 
         return market_order_list

@@ -1,0 +1,98 @@
+#     Copyright 2016-present CERN – European Organization for Nuclear Research
+#
+#     Licensed under the Apache License, Version 2.0 (the "License");
+#     you may not use this file except in compliance with the License.
+#     You may obtain a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#     Unless required by applicable law or agreed to in writing, software
+#     distributed under the License is distributed on an "AS IS" BASIS,
+#     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#     See the License for the specific language governing permissions and
+#     limitations under the License.
+#
+#     Licensed under the Apache License, Version 2.0 (the "License");
+#     you may not use this file except in compliance with the License.
+#     You may obtain a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#     Unless required by applicable law or agreed to in writing, software
+#     distributed under the License is distributed on an "AS IS" BASIS,
+#     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#     See the License for the specific language governing permissions and
+#     limitations under the License.
+from datetime import datetime
+import matplotlib as plt
+
+from qf_lib.analysis.common.abstract_document import AbstractDocument
+from qf_lib.analysis.error_handling import ErrorHandling
+from qf_lib.backtesting.portfolio.portfolio import Portfolio
+from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
+from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
+from qf_lib.documents_utils.document_exporting.element.df_table import DFTable
+from qf_lib.documents_utils.document_exporting.element.heading import HeadingElement
+from qf_lib.documents_utils.document_exporting.element.paragraph import ParagraphElement
+from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
+from qf_lib.settings import Settings
+
+
+@ErrorHandling.class_error_logging()
+class CurrentPositionsSheet(AbstractDocument):
+    def __init__(self, settings: Settings, pdf_exporter: PDFExporter, portfolio: Portfolio,
+                 title: str = "Current Positions"):
+        super().__init__(settings, pdf_exporter, title)
+        self._portfolio = portfolio
+
+    def build_document(self):
+        self._add_header()
+
+        self.document.add_element(ParagraphElement("\n"))
+        self.document.add_element(HeadingElement(level=2, text="Open Positions in the Portfolio"))
+        self._add_open_positions_table()
+
+    def _add_open_positions_table(self):
+        open_positions_dict = self._portfolio.open_positions_dict
+
+        contracts = open_positions_dict.keys()
+
+        # Return a readable name for each ticker (name property for FutureTickers and ticker for Tickers)
+        tickers = [self._portfolio.contract_ticker_mapper.contract_to_ticker(contract,
+                                                                             strictly_to_specific_ticker=False)
+                   for contract in contracts]
+        tickers = [ticker.name if isinstance(ticker, FutureTicker) else ticker.ticker for ticker in tickers]
+
+        specific_tickers = [self._portfolio.contract_ticker_mapper.contract_to_ticker(contract).ticker
+                            for contract in contracts]
+
+        # Get the information whether it is a long or short position
+        directions = [open_positions_dict[contract].direction for contract in contracts]
+        directions = ["LONG" if direction == 1 else "SHORT" for direction in directions]
+
+        # Get the total exposure and market value for each open position
+        total_exposures = ["{:,.2f}".format(open_positions_dict[contract].total_exposure()) for contract in contracts]
+        market_values = ["{:,.2f}".format(open_positions_dict[contract].market_value()) for contract in contracts]
+
+        # Get the time of opening the positions
+        start_time = [open_positions_dict[contract].start_time.date() for contract in contracts]
+
+        data = {
+            "Tickers name": tickers,
+            "Specific ticker": specific_tickers,
+            "Direction": directions,
+            "Total Exposure": total_exposures,
+            "Market Value": market_values,
+            "Position Creation": start_time
+        }
+
+        table = DFTable(QFDataFrame.from_dict(data), css_classes=['table', 'left-align'])
+        self.document.add_element(table)
+
+    def save(self, report_dir: str = ""):
+        # Set the style for the report
+        plt.style.use(['tearsheet'])
+
+        filename = "%Y_%m_%d-%H%M Current Positions.pdf"
+        filename = datetime.now().strftime(filename)
+        return self.pdf_exporter.generate([self.document], report_dir, filename)

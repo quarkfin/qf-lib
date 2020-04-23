@@ -67,7 +67,7 @@ class Portfolio(object):
 
         # A list containing dictionaries with summarized assets information (contains a mapping from
         # contracts to market value at the specific time)
-        self._assets_history = []
+        self.positions_history = []
 
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
@@ -120,7 +120,7 @@ class Portfolio(object):
 
         self._remove_positions_acquired_or_not_active_positions(contract_to_ticker_dict, current_prices_series)
 
-        current_assets = {}
+        current_positions = {}
         for contract, position in self.open_positions_dict.items():
             ticker = contract_to_ticker_dict[contract]
             security_price = current_prices_series[ticker]
@@ -130,13 +130,13 @@ class Portfolio(object):
             self.net_liquidation += position_value
             self.gross_exposure_of_positions += abs(position_exposure)
             if record:
-                current_assets[contract] = position_exposure
+                current_positions[contract] = position_exposure
 
         if record:
             self._dates.append(self.timer.now())
             self._portfolio_values.append(self.net_liquidation)
             self._leverage_list.append(self.gross_exposure_of_positions / self.net_liquidation)
-            self._assets_history.append(current_assets)
+            self.positions_history.append(current_positions)
 
     def _remove_positions_acquired_or_not_active_positions(self, contract_to_ticker_dict, current_prices_series):
         contracts_to_be_removed = [c for c in self.open_positions_dict
@@ -168,13 +168,13 @@ class Portfolio(object):
         """
         return QFSeries(data=self._leverage_list, index=self._dates)  # type: QFSeries
 
-    def assets_eod_history(self) -> QFDataFrame:
+    def positions_eod_history(self) -> QFDataFrame:
         """
         Returns a QFDataFrame containing exposure of the positions in the portfolio for each day.
         each day contains a dict [contract -> exposure]
         """
         end_of_day_date = list(map(lambda x: datetime(x.year, x.month, x.day), self._dates))  # remove time component
-        return QFDataFrame(data=self._assets_history, index=end_of_day_date)
+        return QFDataFrame(data=self.positions_history, index=end_of_day_date)
 
     def transactions_series(self) -> QFSeries:
         """

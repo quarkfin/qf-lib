@@ -16,7 +16,7 @@ import logging
 from abc import abstractmethod, ABCMeta
 from functools import total_ordering
 from os.path import basename
-from typing import Union, Sequence, Tuple, List, Optional
+from typing import Union, Sequence, Tuple, List, Optional, Type
 
 from qf_lib.common.enums.quandl_db_type import QuandlDBType
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
@@ -282,3 +282,18 @@ def str_to_ticker(ticker_str: Union[str, Sequence[str]]) -> Union[None, Ticker, 
                 logger.warning("Value '{}' cannot be recognised as a ticker".format(faulty_ticker))
 
         return successful_tickers, unsuccessful_tickers
+
+
+def ticker_type_to_class(ticker_type: str):
+    """
+    Takes name of a specific Ticker class (e.g. "BloombergTicker") and returns a corresponding Ticker object.
+    """
+    mapping = {
+        'BloombergTicker': BloombergTicker,
+        'InternalDBTicker': InternalDBTicker,
+        'HaverTicker': HaverTicker,
+        'QuandlTicker': QuandlTicker,
+        'CcyTicker': CcyTicker
+    }
+
+    return mapping[ticker_type]

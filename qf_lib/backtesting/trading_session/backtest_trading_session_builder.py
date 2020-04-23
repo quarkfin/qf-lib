@@ -136,13 +136,15 @@ class BacktestTradingSessionBuilder(object):
     def set_slippage_model(self, slippage_model: Slippage):
         self._slippage_model = slippage_model
 
-    def set_position_sizer(self, position_sizer_type: Type[PositionSizer], param: float = None):
+    def set_position_sizer(self, position_sizer_type: Type[PositionSizer], *args, **kwargs):
         if position_sizer_type is SimplePositionSizer:
-            assert param is None
+            assert len(args) + len(kwargs) == 0
         if position_sizer_type is InitialRiskPositionSizer:
-            assert param is not None
+            assert len(args) + len(kwargs) > 0
         self._position_sizer_type = position_sizer_type
-        self._position_sizer_param = param
+
+        self._position_sizer_args = args
+        self._position_sizer_kwargs = kwargs
 
     @staticmethod
     def _create_event_manager(timer, notifiers: Notifiers):
@@ -163,7 +165,9 @@ class BacktestTradingSessionBuilder(object):
             data_handler = DailyDataHandler(data_provider, timer)
         else:
             raise ValueError("Invalid frequency parameter. The only frequencies supported by the DataHandler are "
-                             "Frequency.DAILY and Frequency.MIN_1.")
+                             "Frequency.DAILY and Frequency.MIN_1. "
+                             "\nMake sure you set the frequency in the session builder for example: "
+                             "\n\t-> 'session_builder.set_frequency(Frequency.DAILY)'")
 
         return data_handler
 
@@ -244,13 +248,9 @@ class BacktestTradingSessionBuilder(object):
         return monitor
 
     def _position_sizer_setup(self):
-        if self._position_sizer_param is None:
-            return self._position_sizer_type(
-                self._broker, self._data_handler, self._order_factory, self._contract_ticker_mapper)
-        else:
-            return self._position_sizer_type(
-                self._broker, self._data_handler, self._order_factory, self._contract_ticker_mapper,
-                self._position_sizer_param)
+        return self._position_sizer_type(
+            self._broker, self._data_handler, self._order_factory, self._contract_ticker_mapper,
+            *self._position_sizer_args, **self._position_sizer_kwargs)
 
 
 

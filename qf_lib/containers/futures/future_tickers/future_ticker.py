@@ -154,6 +154,8 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
         Returns the QFSeries with specific Tickers, indexed by their expiration dates.
         """
         futures_chain_tickers = self._data_provider.get_futures_chain_tickers(self)[self]
+        # Make sure that index will be of datetime type
+        futures_chain_tickers.index = pd.to_datetime(futures_chain_tickers.index)
         return futures_chain_tickers
 
     @ticker.setter

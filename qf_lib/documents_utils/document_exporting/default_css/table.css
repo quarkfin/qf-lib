@@ -83,3 +83,12 @@ table.table td.sorted-by-column{
 table.table td.red-row {
     color: red;
 }
+
+table.table.left-align th {
+    text-align: left;
+    padding: 5px 15px;
+}
+
+table.table td.wide-column {
+    width: 75%;
+}

@@ -63,12 +63,16 @@ class ConeProcessDecorator(ChartDecorator):
         ax = chart.axes
 
         colors = Chart.get_axes_colors()
-        mean_tms = cone.calculate_simple_cone_for_process(self._mean, self._std, 0, self._steps, self._starting_value)
-        ax.plot(mean_tms, color=colors[1])
 
         for cone_std in self._cone_stds:
-            upper_bound_tms = cone.calculate_simple_cone_for_process(
-                self._mean, self._std, cone_std, self._steps, self._starting_value)
-            lower_bound_tms = cone.calculate_simple_cone_for_process(
-                self._mean, self._std, -cone_std, self._steps, self._starting_value)
-            ax.fill_between(upper_bound_tms.index, upper_bound_tms, lower_bound_tms, alpha=self._colors_alpha)
+            if cone_std == 0:
+                # special case for mean return line (which is not a cone, but a line) == 0
+                mean_tms = cone.calculate_simple_cone_for_process(self._mean, self._std, 0, self._steps,
+                                                                  self._starting_value)
+                ax.plot(mean_tms, color=colors[1])
+            else:
+                upper_bound_tms = cone.calculate_simple_cone_for_process(
+                    self._mean, self._std, cone_std, self._steps, self._starting_value)
+                lower_bound_tms = cone.calculate_simple_cone_for_process(
+                    self._mean, self._std, -cone_std, self._steps, self._starting_value)
+                ax.fill_between(upper_bound_tms.index, upper_bound_tms, lower_bound_tms, alpha=self._colors_alpha)

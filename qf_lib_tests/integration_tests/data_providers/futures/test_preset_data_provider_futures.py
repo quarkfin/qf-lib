@@ -73,7 +73,7 @@ class TestPresetDataProviderWithFutures(unittest.TestCase):
         self.data_handler = DailyDataHandler(data_provider, self.timer)
 
     def test_data_provider_init(self):
-        self.assertCountEqual(self.data_handler.data_provider.supported_ticker_types(),
+        self.assertCountEqual(self.data_handler.data_provider.supported_ticker_types,
                               {BloombergTicker})
 
     def test_get_futures_chain_1_ticker(self):

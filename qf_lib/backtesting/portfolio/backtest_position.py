@@ -46,6 +46,16 @@ class BacktestPosition(Position, metaclass=ABCMeta):
         self.start_time = start_time  # type: datetime
         """ Time of the position creation """
 
+    @property
+    def unrealised_pnl(self) -> float:
+        """
+        Unrealised profit or loss associated with a transcation expressed in currency units
+        Does not include transaction costs and commissions
+        """
+        multiplier = self._quantity * self._contract.contract_size
+        profit_loss = (self.current_price - self.avg_price_per_unit()) * multiplier
+        return profit_loss
+
     @abstractmethod
     def market_value(self) -> float:
         """

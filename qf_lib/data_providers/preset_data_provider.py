@@ -13,7 +13,7 @@
 #     limitations under the License.
 
 from datetime import datetime
-from typing import Union, Sequence, Set, Type, Dict
+from typing import Union, Sequence, Set, Type, Dict, FrozenSet
 import numpy as np
 import pandas as pd
 
@@ -58,15 +58,52 @@ class PresetDataProvider(DataProvider):
             future ticker family
         """
         self._data_bundle = data
-        self.frequency = frequency
+        self._frequency = frequency
         self._exp_dates = exp_dates
 
-        self._tickers_cached_set = set(data.tickers.values)
-        self._fields_cached_set = set(data.fields.values)
-        self.start_date = start_date
-        self.end_date = end_date
+        self._tickers_cached_set = frozenset(data.tickers.values)
+        self._future_tickers_cached_set = frozenset(exp_dates.keys()) if exp_dates is not None else None
+        self._fields_cached_set = frozenset(data.fields.values)
+        self._start_date = start_date
+        self._end_date = end_date
 
         self._ticker_types = {type(ticker) for ticker in data.tickers.values}
+
+    @property
+    def data_bundle(self):
+        return self._data_bundle
+
+    @property
+    def frequency(self) -> Frequency:
+        return self._frequency
+
+    @property
+    def exp_dates(self) -> Dict[FutureTicker, QFSeries]:
+        return self._exp_dates
+
+    @property
+    def cached_tickers(self) -> FrozenSet[Ticker]:
+        return self._tickers_cached_set
+
+    @property
+    def cached_future_tickers(self) -> FrozenSet[FutureTicker]:
+        return self._future_tickers_cached_set
+
+    @property
+    def cached_fields(self) -> FrozenSet[Ticker]:
+        return self._fields_cached_set
+
+    @property
+    def start_date(self) -> datetime:
+        return self._start_date
+
+    @property
+    def end_date(self) -> datetime:
+        return self._end_date
+
+    @property
+    def supported_ticker_types(self) -> Set[Type[Ticker]]:
+        return self._ticker_types
 
     def get_price(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
                   start_date: datetime, end_date: datetime = None, frequency: Frequency = Frequency.DAILY) -> \
@@ -76,10 +113,10 @@ class PresetDataProvider(DataProvider):
 
         # The passed desired data frequency should be at most equal to the frequency of the initially loaded data
         # (in case of downsampling the data may be aggregated, but no data upsampling is supported).
-        assert frequency <= self.frequency, "The passed data frequency should be at most equal to the frequency of " \
+        assert frequency <= self._frequency, "The passed data frequency should be at most equal to the frequency of " \
                                             "the initially loaded data"
         # The PresetDataProvider does not support data aggregation for frequency lower than daily frequency
-        if frequency < self.frequency and frequency <= Frequency.DAILY:
+        if frequency < self._frequency and frequency <= Frequency.DAILY:
             raise NotImplementedError("Data aggregation for lower than daily frequency is not supported yet")
 
         if frequency > Frequency.DAILY:
@@ -108,7 +145,7 @@ class PresetDataProvider(DataProvider):
         data_array = self._data_bundle.loc[start_date:end_date, specific_tickers, fields]
 
         # Data aggregation (allowed only for the Intraday Data and in case if more then 1 data point is found)
-        if frequency < self.frequency and len(data_array[DATES]) > 0:
+        if frequency < self._frequency and len(data_array[DATES]) > 0:
             data_array = self._aggregate_intraday_data(data_array, start_date, end_date,
                                                        specific_tickers, fields, frequency)
 
@@ -125,8 +162,7 @@ class PresetDataProvider(DataProvider):
         elif isinstance(normalized_result, PricesSeries):
             # Name of the PricesSeries can only contain strings
             ticker = tickers[0]
-            ticker_name = ticker.name if isinstance(ticker, FutureTicker) else ticker.ticker
-            normalized_result = normalized_result.rename(ticker_name)
+            normalized_result = normalized_result.rename(ticker.ticker)
 
         return normalized_result
 
@@ -142,12 +178,12 @@ class PresetDataProvider(DataProvider):
         if uncached_fields:
             raise ValueError("Fields: {} are not available in the Data Bundle".format(fields))
 
-        if start_date < self.start_date:
+        if start_date < self._start_date:
             raise ValueError("Requested start date {} is before data bundle start date {}".
-                             format(start_date, self.start_date))
-        if end_date > self.end_date:
+                             format(start_date, self._start_date))
+        if end_date > self._end_date:
             raise ValueError("Requested end date {} is after data bundle end date {}".
-                             format(end_date, self.end_date))
+                             format(end_date, self._end_date))
 
     def get_history(self, tickers: Union[Ticker, Sequence[Ticker]],
                     fields: Union[str, Sequence[str]],
@@ -155,7 +191,7 @@ class PresetDataProvider(DataProvider):
                     ) -> Union[QFSeries, QFDataFrame, QFDataArray]:
 
         # Verify whether the passed frequency parameter is correct and can be used with the preset data
-        assert frequency == self.frequency, "Currently, for the get history does not support data sampling"
+        assert frequency == self._frequency, "Currently, for the get history does not support data sampling"
 
         if frequency > Frequency.DAILY:
             # In case of high frequency - the data array should not include the end_date. The data range is
@@ -214,12 +250,6 @@ class PresetDataProvider(DataProvider):
         }
 
         return future_chain_tickers
-
-    def supported_ticker_types(self) -> Set[Type[Ticker]]:
-        return self._ticker_types
-
-    def cached_tickers(self) -> Set[Ticker]:
-        return self._tickers_cached_set
 
     def _aggregate_intraday_data(self, data_array, start_date: datetime, end_date: datetime,
                                  tickers: Sequence[Ticker], fields, frequency: Frequency):
