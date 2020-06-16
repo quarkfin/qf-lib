@@ -18,6 +18,7 @@ from typing import Union, Sequence, Dict
 
 import pandas as pd
 import quandl
+from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
@@ -41,6 +42,7 @@ class QuandlDataProvider(DataProvider):
     The table database: WIKI/PRICES offers stock prices, dividends and splits for 3000 US publicly-traded companies.
     This database is updated at 9:15 PM EST every weekday.
     """
+
     def __init__(self, settings: Settings):
         self.key = settings.quandl_key
         quandl.ApiConfig.api_key = self.key
@@ -284,7 +286,10 @@ class QuandlDataProvider(DataProvider):
 
         return table
 
-    def get_futures_chain_tickers(self, tickers: Union[FutureTicker, Sequence[FutureTicker]]) \
-            -> Dict[FutureTicker, QFSeries]:
+    def get_futures_chain_tickers(self, tickers: Union[FutureTicker, Sequence[FutureTicker]],
+                                  expiration_date_fields: Union[ExpirationDateField, Sequence[ExpirationDateField]]) \
+            -> Dict[FutureTicker, Union[QFSeries, QFDataFrame]]:
         raise NotImplementedError("Downloading Future Chain Tickers in QuandlDataProvider is not supported yet")
 
+    def expiration_date_field_str_map(self, ticker: Ticker = None) -> Dict[ExpirationDateField, str]:
+        pass

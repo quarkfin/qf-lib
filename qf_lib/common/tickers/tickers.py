@@ -16,7 +16,7 @@ import logging
 from abc import abstractmethod, ABCMeta
 from functools import total_ordering
 from os.path import basename
-from typing import Union, Sequence, Tuple, List, Optional, Type
+from typing import Union, Sequence, Tuple, List, Optional
 
 from qf_lib.common.enums.quandl_db_type import QuandlDBType
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
@@ -47,8 +47,8 @@ class Ticker(metaclass=ABCMeta):
 
     def __eq__(self, other):
         return self is other or (
-                type(self) == type(other)
-                and self.ticker == other.ticker
+            isinstance(self, type(other)) and
+            self.ticker == other.ticker
         )
 
     def __lt__(self, other):

@@ -125,7 +125,7 @@ class Table(Element):
         """
         return self._column_cells
 
-    def add_row(self, values: List[Any], css_class: str="") -> None:
+    def add_row(self, values: List[Any], css_class: str = "") -> None:
         """
         Adds a new row to the table. The ``values`` parameter must contain the same amount of elements as this
         table's columns count.
@@ -148,7 +148,7 @@ class Table(Element):
             formatted_values.append(self._create_cell(value, css_class))
         self.rows.append(formatted_values)
 
-    def insert_column(self, header: Union[str, ColumnCell], cells: List[Any], location: int, css_class: str="") -> None:
+    def insert_column(self, header: Union[str, ColumnCell], cells: List[Any], location: int, css_class: str = "") -> None:
         """
         Inserts a full column including a header and cells into the table at the specified location.
 

@@ -17,10 +17,12 @@ from typing import Tuple
 
 import pandas as pd
 
+from qf_lib.containers.time_indexed_container import TimeIndexedContainer
 
-def get_common_start_and_end(*containers: "TimeIndexedContainer") -> Tuple[datetime, datetime]:
+
+def get_common_start_and_end(*containers: TimeIndexedContainer) -> Tuple[datetime, datetime]:
     """
-    Finds the firt and last valid dates (with a value different than NaN) for each column and then returns the latest
+    Finds the first and last valid dates (with a value different than NaN) for each column and then returns the latest
     of starting dates and the soonest ending date.
 
     If one of containers is dataframe then it is split into separate columns first.

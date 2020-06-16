@@ -83,7 +83,7 @@ class MaxDiversificationPortfolio(Portfolio):
         Parameters
         ----------
         weights
-            series of weights indexed with names of assets 
+            series of weights indexed with names of assets
 
         Returns
         -------

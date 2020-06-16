@@ -158,7 +158,7 @@ class TestMiscellaneousUtils(TestCase):
 
         ret = 0.005750
         self.assertAlmostEqual(abs(managed_series[window_size]), ret, places=5)
-        self.assertAlmostEqual(abs(managed_series[window_size+1]), ret, places=5)
+        self.assertAlmostEqual(abs(managed_series[window_size + 1]), ret, places=5)
         self.assertAlmostEqual(abs(managed_series[-2]), ret, places=5)
         self.assertAlmostEqual(abs(managed_series[-1]), ret, places=5)
 

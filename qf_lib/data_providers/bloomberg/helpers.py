@@ -14,9 +14,12 @@
 
 import datetime
 
+import blpapi
+
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
-from qf_lib.data_providers.bloomberg.bloomberg_names import *
+from qf_lib.data_providers.bloomberg.bloomberg_names import SECURITIES, SECURITY, FIELDS, RESPONSE_ERROR, SECURITY_DATA, \
+    BAR_DATA, FIELD_EXCEPTIONS, SECURITY_ERROR
 from qf_lib.data_providers.bloomberg.exceptions import BloombergError
 
 
@@ -144,15 +147,3 @@ def check_security_data_for_errors(security_data):
         error_message = "Response contains security error:\n" + str(security_data)
         logger.error(error_message)
         raise BloombergError(error_message)
-
-
-def field_name_to_intraday(field_name):
-    price_field_dict = {
-        'PX_OPEN': OPEN,
-        'PX_HIGH': HIGH,
-        'PX_LOW': LOW,
-        'PX_LAST': CLOSE,
-        "PX_VOLUME": VOLUME
-    }
-
-    return price_field_dict[field_name]

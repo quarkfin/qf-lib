@@ -23,7 +23,7 @@ from qf_lib.documents_utils.document_exporting.element import Element
 
 class ParagraphElement(Element):
     def __init__(self, text: str, grid_proportion: GridProportion = GridProportion.Eight, css_classes:
-    Union[str, Sequence[str]] = ""):
+                 Union[str, Sequence[str]] = ""):
         """
         Constructs a new Paragraph element.
 

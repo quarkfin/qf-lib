@@ -24,11 +24,11 @@ from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.data_providers.bloomberg.bloomberg_names import REF_DATA_SERVICE_URI, CURRENCY, START_DATE, END_DATE, \
     PERIODICITY_SELECTION, PERIODICITY_ADJUSTMENT, SECURITY, FIELD_DATA, DATE, \
-    START_DATE_TIME, END_DATE_TIME, INTERVAL, BAR_TICK_DATA, OPEN
+    START_DATE_TIME, END_DATE_TIME, INTERVAL, BAR_TICK_DATA
 from qf_lib.data_providers.bloomberg.exceptions import BloombergError
 from qf_lib.data_providers.bloomberg.helpers import set_tickers, set_fields, convert_to_bloomberg_date, \
     convert_to_bloomberg_freq, get_response_events, check_event_for_errors, check_security_data_for_errors, \
-    extract_security_data, set_ticker, extract_bar_data, field_name_to_intraday
+    extract_security_data, set_ticker, extract_bar_data
 from qf_lib.data_providers.helpers import tickers_dict_to_data_array
 
 
@@ -187,8 +187,6 @@ class HistoricalDataProvider(object):
     def _receive_intraday_response(self, requested_ticker, requested_fields):
         """
         The response for intraday bar is related to a single ticker.
-        TODO Add correlationIDs to match responses to requests (currently it is assumed, that after a request for a
-        certain security, the next incoming response should be considered
         """
         response_events = get_response_events(self._session)
         tickers_data_dict = dict()
@@ -210,9 +208,8 @@ class HistoricalDataProvider(object):
                 dates_fields_values = pd.DataFrame(data, index=dates, columns=requested_fields)
 
                 for field_name in requested_fields:
-                    intraday_field_name = field_name_to_intraday(field_name)
                     dates_fields_values.loc[:, field_name] = [
-                        self._get_float_or_nan(data_of_date_elem, intraday_field_name)
+                        self._get_float_or_nan(data_of_date_elem, field_name)
                         for data_of_date_elem in bar_tick_data_list
                     ]
 

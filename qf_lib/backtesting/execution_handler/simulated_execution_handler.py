@@ -17,12 +17,13 @@ from typing import List, Sequence, Dict
 
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
+from qf_lib.backtesting.events.time_event.periodic_event.intraday_bar_event import IntradayBarEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.after_market_close_event import AfterMarketCloseEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
-from qf_lib.backtesting.events.time_event.single_time_event.schedule_order_execution_event import ScheduleOrderExecutionEvent
-from qf_lib.backtesting.events.time_event.periodic_event.intraday_bar_event import IntradayBarEvent
 from qf_lib.backtesting.events.time_event.scheduler import Scheduler
+from qf_lib.backtesting.events.time_event.single_time_event.schedule_order_execution_event import \
+    ScheduleOrderExecutionEvent
 from qf_lib.backtesting.execution_handler.commission_models.commission_model import CommissionModel
 from qf_lib.backtesting.execution_handler.execution_handler import ExecutionHandler
 from qf_lib.backtesting.execution_handler.market_on_close_orders_executor import MarketOnCloseOrdersExecutor
@@ -53,7 +54,7 @@ class SimulatedExecutionHandler(ExecutionHandler):
     def __init__(self, data_handler: DataHandler, timer: Timer, scheduler: Scheduler, monitor: AbstractMonitor,
                  commission_model: CommissionModel, contracts_to_tickers_mapper: ContractTickerMapper,
                  portfolio: Portfolio, slippage_model: Slippage,
-                 scheduling_time_delay: RelativeDelta = RelativeDelta(minutes = 1),
+                 scheduling_time_delay: RelativeDelta = RelativeDelta(minutes=1),
                  frequency: Frequency = Frequency.DAILY) -> None:
 
         self.logger = qf_logger.getChild(self.__class__.__name__)
@@ -179,9 +180,9 @@ class SimulatedExecutionHandler(ExecutionHandler):
 
     def get_open_orders(self) -> List[Order]:
         orders = self._market_orders_executor.get_open_orders() \
-                 + self._stop_orders_executor.get_open_orders() \
-                 + self._market_on_close_orders_executor.get_open_orders() \
-                 + self._market_on_open_orders_executor.get_open_orders()
+            + self._stop_orders_executor.get_open_orders() \
+            + self._market_on_close_orders_executor.get_open_orders() \
+            + self._market_on_open_orders_executor.get_open_orders()
         return orders
 
     def cancel_all_open_orders(self):

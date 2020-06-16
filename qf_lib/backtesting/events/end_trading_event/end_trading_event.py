@@ -12,9 +12,6 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-from datetime import datetime
-from typing import Optional
-
 from qf_lib.backtesting.events.event_base import Event
 
 

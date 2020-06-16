@@ -11,12 +11,12 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-
+import pandas as pd
 from datetime import datetime
 from typing import Union, Sequence, Dict, List
 
 import blpapi
-from pandas import to_datetime
+from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
@@ -29,9 +29,10 @@ from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 from qf_lib.data_providers.bloomberg.bloomberg_names import REF_DATA_SERVICE_URI
+from qf_lib.data_providers.bloomberg.exceptions import BloombergError
 from qf_lib.data_providers.bloomberg.futures_data_provider import FuturesDataProvider
 from qf_lib.data_providers.bloomberg.historical_data_provider import HistoricalDataProvider
-from qf_lib.data_providers.bloomberg.reference_data_provider import ReferenceDataProvider, BloombergError
+from qf_lib.data_providers.bloomberg.reference_data_provider import ReferenceDataProvider
 from qf_lib.data_providers.bloomberg.tabular_data_provider import TabularDataProvider
 from qf_lib.data_providers.helpers import normalize_data_array, cast_dataframe_to_proper_type
 from qf_lib.data_providers.tickers_universe_provider import TickersUniverseProvider
@@ -77,8 +78,9 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
 
         self.connected = True
 
-    def get_futures_chain_tickers(self, tickers: Union[BloombergFutureTicker, Sequence[BloombergFutureTicker]]) \
-            -> Dict[BloombergFutureTicker, QFSeries]:
+    def get_futures_chain_tickers(self, tickers: Union[BloombergFutureTicker, Sequence[BloombergFutureTicker]],
+                                  expiration_date_fields: Union[ExpirationDateField, Sequence[ExpirationDateField]]) \
+            -> Dict[BloombergFutureTicker, Union[QFSeries, QFDataFrame]]:
         """
         Returns tickers of futures contracts, which belong to the same futures contract chain as the provided ticker
         (tickers), along with their expiration dates.
@@ -87,10 +89,13 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
         ----------
         tickers
             future tickers for which future chains should be retrieved
+        expiration_date_fields
+            field that should be downloaded as the expiration date field
         Returns
         -------
-        Dictionary mapping each BloombergFutureTicker to a QFSeries, containing specific future contracts tickers
-        (BloombergTickers), indexed by expiration dates (datetime type): Dict[BloombergFutureTicker, QFSeries]
+        Dictionary mapping each BloombergFutureTicker to a QFSeries or QFDataFrame, containing specific future
+        contracts tickers (BloombergTickers), indexed by these tickers:
+        Dict[BloombergFutureTicker, Union[QFSeries, QFDataFrame]]
 
         Raises
         -------
@@ -101,18 +106,21 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
         self._assert_is_connected()
 
         tickers, got_single_ticker = convert_to_list(tickers, BloombergFutureTicker)
+        expiration_date_fields, got_single_expiration_date_field = convert_to_list(expiration_date_fields,
+                                                                                   ExpirationDateField)
 
         # Create a dictionary, which is mapping BloombergFutureTickers to lists of tickers related to specific future
         # contracts belonging to the chain, e.g. it will map Cotton Bloomberg future ticker into:
         # [BloombergTicker("CTH7 Comdty"), BloombergTicker("CTK7 Comdty"), BloombergTicker("CTN7 Comdty"),
         # BloombergTicker("CTV7 Comdty"), BloombergTicker("CTZ7 Comdty") ... ]
-        future_ticker_to_chain_tickers_list = self._futures_data_provider.get_list_of_tickers_in_the_future_chain(tickers)
+        future_ticker_to_chain_tickers_list = self._futures_data_provider.get_list_of_tickers_in_the_future_chain(
+            tickers)  # type: Dict[BloombergFutureTicker, List[BloombergTicker]]
 
         def get_futures_expiration_dates(specific_tickers: Union[BloombergTicker, Sequence[BloombergTicker]]) -> \
-                QFSeries:
+                Union[QFSeries, QFDataFrame]:
             """
-            For a ticker (tickers) it returns a QFSeries consisting of the expiration dates of Future Contracts, that
-            are defined by the given tickers.
+            For a ticker (tickers) it returns a QFSeries or QFDataFrame consisting of the expiration dates fields of
+            Future Contracts, that are defined by the given tickers.
 
             Parameters
             ----------
@@ -120,23 +128,36 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
                 tickers for which the expiration dates of future contracts should be retrieved
             Returns
             -------
-            QFSeries, containing tickers, indexed by expiration dates (datetime type)
+            QFSeries or QFDataFrame, containing all the dates, indexed by tickers
             """
 
             # Download the expiration dates for each of the future contracts
-            EXPIRATION_DATE_FIELD = "FUT_DLV_DT_FIRST"
-            exp_dates = self.get_current_values(specific_tickers, EXPIRATION_DATE_FIELD)  # type: QFSeries
+            mapping_dict = self.expiration_date_field_str_map()
+            expiration_date_fields_str = [mapping_dict[field] for field in expiration_date_fields]
+            exp_dates = self.get_current_values(specific_tickers, expiration_date_fields_str)  # type: Union[QFSeries, QFDataFrame]
 
             # Drop these futures, for which no expiration date was found and cast all string dates into datetime
-            exp_dates = exp_dates.dropna()
-            exp_dates = to_datetime(exp_dates)
-            exp_dates = cast_dataframe_to_proper_type(exp_dates)
+            exp_dates = exp_dates.dropna(how="all")
+            exp_dates = exp_dates.astype('datetime64[ns]')
+            exp_dates = exp_dates.rename(columns=self.str_to_expiration_date_field_map())
 
-            return QFSeries(data=exp_dates.index, index=exp_dates.values)
+            return exp_dates
+
+        all_specific_tickers = [ticker for specific_tickers_list in future_ticker_to_chain_tickers_list.values()
+                                for ticker in specific_tickers_list]
+        futures_expiration_dates = get_futures_expiration_dates(all_specific_tickers)
+
+        def specific_futures_index(future_ticker) -> pd.Index:
+            """
+            Returns an Index of specific tickers for the given future ticker, which appeared in the futures
+            expiration dates dataframe / series.
+            """
+            specific_tickers_list = future_ticker_to_chain_tickers_list[future_ticker]
+            return futures_expiration_dates.index.intersection(specific_tickers_list)
 
         ticker_to_future_expiration_dates = {
-            future_ticker: get_futures_expiration_dates(specific_tickers_list)
-            for future_ticker, specific_tickers_list in future_ticker_to_chain_tickers_list.items()
+            future_ticker: futures_expiration_dates.loc[specific_futures_index(future_ticker)]
+            for future_ticker in tickers
         }
 
         return ticker_to_future_expiration_dates
@@ -239,6 +260,13 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
     def supported_ticker_types(self):
         return {BloombergTicker, BloombergFutureTicker}
 
+    def expiration_date_field_str_map(self, ticker: BloombergTicker = None) -> Dict[ExpirationDateField, str]:
+        expiration_date_field_dict = {
+            ExpirationDateField.FirstNotice: "FUT_NOTICE_FIRST",
+            ExpirationDateField.LastTradeableDate: "LAST_TRADEABLE_DT"
+        }
+        return expiration_date_field_dict
+
     def price_field_to_str_map(self, ticker: BloombergTicker = None) -> Dict[PriceField, str]:
         price_field_dict = {
             PriceField.Open: 'PX_OPEN',
@@ -246,16 +274,6 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
             PriceField.Low: 'PX_LOW',
             PriceField.Close: 'PX_LAST',
             PriceField.Volume: 'PX_VOLUME'
-        }
-        return price_field_dict
-
-    def str_to_price_field_map(self, ticker: BloombergTicker = None) -> Dict[str, PriceField]:
-        price_field_dict = {
-            'PX_OPEN': PriceField.Open,
-            'PX_HIGH': PriceField.High,
-            'PX_LOW': PriceField.Low,
-            'PX_LAST': PriceField.Close,
-            'PX_VOLUME': PriceField.Volume
         }
         return price_field_dict
 

@@ -21,7 +21,7 @@ from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 
 
 class TestEquityPosition(unittest.TestCase):
-    
+
     def setUp(self):
         self.contract_size = 75
         self.contract = Contract('CTZ9 Comdty', security_type='FUT', exchange='CME', contract_size=self.contract_size)
@@ -122,14 +122,14 @@ class TestEquityPosition(unittest.TestCase):
         self.assertEqual(position.market_value(), 0)  # before update_price
 
         bid_price = 110
-        position.update_price(bid_price=bid_price, ask_price=bid_price+1)
+        position.update_price(bid_price=bid_price, ask_price=bid_price + 1)
 
-        market_value = (bid_price - price)*quantity*self.contract_size
+        market_value = (bid_price - price) * quantity * self.contract_size
         self.assertEqual(position.market_value(), market_value)
 
         bid_price = 120
-        position.update_price(bid_price=bid_price, ask_price=bid_price+1)
-        market_value = (bid_price - price)*quantity*self.contract_size
+        position.update_price(bid_price=bid_price, ask_price=bid_price + 1)
+        market_value = (bid_price - price) * quantity * self.contract_size
         self.assertEqual(position.market_value(), market_value)
 
     def test_market_value2(self):
@@ -145,15 +145,16 @@ class TestEquityPosition(unittest.TestCase):
         ask_price = 120
         position.update_price(bid_price=bid_price, ask_price=ask_price)
 
-        market_value = (ask_price - price)*quantity*self.contract_size
+        market_value = (ask_price - price) * quantity * self.contract_size
         self.assertEqual(position.market_value(), market_value)
 
         bid_price = 120
         ask_price = 130
         position.update_price(bid_price=bid_price, ask_price=ask_price)
 
-        market_value = (ask_price - price)*quantity*self.contract_size
+        market_value = (ask_price - price) * quantity * self.contract_size
         self.assertEqual(position.market_value(), market_value)
+
 
 if __name__ == "__main__":
     unittest.main()

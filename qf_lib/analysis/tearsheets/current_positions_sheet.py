@@ -11,19 +11,8 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-#
-#     Licensed under the Apache License, Version 2.0 (the "License");
-#     you may not use this file except in compliance with the License.
-#     You may obtain a copy of the License at
-#
-#         http://www.apache.org/licenses/LICENSE-2.0
-#
-#     Unless required by applicable law or agreed to in writing, software
-#     distributed under the License is distributed on an "AS IS" BASIS,
-#     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#     See the License for the specific language governing permissions and
-#     limitations under the License.
 from datetime import datetime
+
 import matplotlib as plt
 
 from qf_lib.analysis.common.abstract_document import AbstractDocument
@@ -72,7 +61,7 @@ class CurrentPositionsSheet(AbstractDocument):
 
         # Get the total exposure and market value for each open position
         total_exposures = ["{:,.2f}".format(open_positions_dict[contract].total_exposure()) for contract in contracts]
-        market_values = ["{:,.2f}".format(open_positions_dict[contract].market_value()) for contract in contracts]
+        pnls = ["{:,.2f}".format(open_positions_dict[contract].unrealised_pnl) for contract in contracts]
 
         # Get the time of opening the positions
         start_time = [open_positions_dict[contract].start_time.date() for contract in contracts]
@@ -82,7 +71,7 @@ class CurrentPositionsSheet(AbstractDocument):
             "Specific ticker": specific_tickers,
             "Direction": directions,
             "Total Exposure": total_exposures,
-            "Market Value": market_values,
+            "PnL": pnls,
             "Position Creation": start_time
         }
 

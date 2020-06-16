@@ -13,12 +13,13 @@
 #     limitations under the License.
 from abc import ABCMeta, abstractmethod
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 from numpy import sign
 
 from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.portfolio.position import Position
+from qf_lib.backtesting.portfolio.trade import Trade
 from qf_lib.backtesting.portfolio.transaction import Transaction
 
 
@@ -45,6 +46,9 @@ class BacktestPosition(Position, metaclass=ABCMeta):
 
         self.start_time = start_time  # type: datetime
         """ Time of the position creation """
+
+        self._remaining_total_commission_to_build_position = 0.0  # type: float
+        self._avg_price_per_unit = 0.0
 
     @property
     def unrealised_pnl(self) -> float:
@@ -106,25 +110,9 @@ class BacktestPosition(Position, metaclass=ABCMeta):
         For short positions it tells us what was the average value we received for one share of the position.
         return calculates share weighted average of the price without any transaction costs
         """
-        total_sum = 0.0
-        shares = 0
-
-        for transaction in self.transactions:
-            # take into account only BUY transaction if the position is long
-            # take into account only SELL transaction if the position is short
-            if sign(transaction.quantity) == self.direction:
-                total_sum += transaction.quantity * transaction.price
-                shares += transaction.quantity
-        if shares == 0:
+        if self._quantity == 0:
             return 0
-        return total_sum / shares
-
-    def total_commission_to_build_position(self) -> float:
-        """
-        return sum of all commission costs only for transactions that go into the direction of the position
-        (only the transactions that build the position)
-        """
-        return sum(t.commission for t in self.transactions if sign(t.quantity) == self.direction)
+        return self._avg_price_per_unit
 
     def transact_transaction(self, transaction: Transaction) -> float:
         """
@@ -147,6 +135,17 @@ class BacktestPosition(Position, metaclass=ABCMeta):
 
         # has to be called before we modify the quantity of the original position
         cash_move = self._cash_to_buy_or_proceeds_from_sale(transaction)
+
+        # Adjust the remaining total commission to build the position
+        is_a_trade = sign(transaction.quantity) * sign(self._quantity) == -1
+        if not is_a_trade:
+            self._remaining_total_commission_to_build_position += transaction.commission
+            # Take weighted average of the previous average price per unit and transactions price per unit
+            # Use position and transactions quantities as weights
+            self._avg_price_per_unit = (self._avg_price_per_unit * self._quantity + transaction.price * transaction.quantity) / (self._quantity + transaction.quantity)
+        else:
+            fraction_of_position = min([abs(transaction.quantity), abs(self._quantity)]) / abs(self._quantity)
+            self._remaining_total_commission_to_build_position *= (1 - fraction_of_position)
 
         self.transactions.append(transaction)
         self._quantity += transaction.quantity
@@ -176,7 +175,47 @@ class BacktestPosition(Position, metaclass=ABCMeta):
     def quantity(self) -> int:
         return self._quantity
 
+    def remaining_total_commission(self) -> float:
+        return self._remaining_total_commission_to_build_position
+
     def _check_if_open(self):
         assert not self.is_closed, "The position has already been closed"
 
+    def check_if_transaction_generates_trade(self, transaction: Transaction) -> Optional[Trade]:
+        """
+        In case if the given transaction would result in a trade, the potential trade is returned.
+        In other case the function returns None.
 
+        Trade is defined as a transaction that goes in the direction of making your position smaller.
+        For example:
+           selling part or entire long position is a trade
+           buying back part or entire short position is a trade
+           buying additional shares of existing long position is NOT a trade
+
+
+        """
+        total_quantity = self._quantity
+
+        is_a_trade = sign(transaction.quantity) * sign(total_quantity) == -1
+        if not is_a_trade:
+            return None
+
+        # Compute the fraction of the total position before the last transaction (only the part that goes in the
+        # opposite direction is considered as a trade)
+        quantity = min([abs(transaction.quantity), abs(total_quantity)])
+        quantity *= sign(total_quantity)
+
+        # commission = fraction of the remaining commission (before transaction) to build the position + 100% of the
+        # cost to reduce the position
+        fraction_of_position = quantity / total_quantity
+        commission = self._remaining_total_commission_to_build_position * fraction_of_position
+        commission += transaction.commission
+
+        trade = Trade(start_time=self.start_time,
+                      end_time=transaction.time,
+                      contract=transaction.contract,
+                      quantity=quantity,
+                      entry_price=self.avg_price_per_unit(),
+                      exit_price=transaction.price,
+                      commission=commission)
+        return trade

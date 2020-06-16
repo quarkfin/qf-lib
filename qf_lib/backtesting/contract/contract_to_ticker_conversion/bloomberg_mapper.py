@@ -23,6 +23,7 @@ class DummyBloombergContractTickerMapper(ContractTickerMapper):
     """
     Dummy BloombergTicker-Contract mapper.
     """
+
     def __init__(self):
         self._contract_to_future_ticker = {}
 

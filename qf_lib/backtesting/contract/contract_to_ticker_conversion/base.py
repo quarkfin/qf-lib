@@ -30,4 +30,3 @@ class ContractTickerMapper(metaclass=ABCMeta):
     @abstractmethod
     def ticker_to_contract(self, ticker: Ticker) -> Contract:
         pass
-

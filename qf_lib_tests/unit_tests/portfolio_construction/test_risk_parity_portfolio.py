@@ -50,4 +50,3 @@ if __name__ == '__main__':
     # unittest.main()
     rpp = RiskParityPortfolio(assets_df, upper_constraint=0.06)
     actual_weights = rpp.get_weights()
-

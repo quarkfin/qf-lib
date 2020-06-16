@@ -50,8 +50,8 @@ from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.containers.series.qf_series import QFSeries
-from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
 from qf_lib.data_providers.data_provider import DataProvider
+from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
 from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.documents_utils.excel.excel_exporter import ExcelExporter
 from qf_lib.settings import Settings
@@ -72,7 +72,8 @@ class BacktestTradingSessionBuilder(object):
         self._commission_model = FixedCommissionModel(0.0)
         self._slippage_model = PriceBasedSlippage(0.0)
         self._position_sizer_type = SimplePositionSizer
-        self._position_sizer_param = None
+        self._position_sizer_args = tuple()
+        self._position_sizer_kwargs = dict()
 
         self._data_provider = data_provider
         self._settings = settings
@@ -251,6 +252,3 @@ class BacktestTradingSessionBuilder(object):
         return self._position_sizer_type(
             self._broker, self._data_handler, self._order_factory, self._contract_ticker_mapper,
             *self._position_sizer_args, **self._position_sizer_kwargs)
-
-
-

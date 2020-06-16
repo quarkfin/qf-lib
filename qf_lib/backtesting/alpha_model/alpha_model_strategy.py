@@ -17,15 +17,15 @@ from typing import List, Dict, Sequence, Optional
 
 import numpy as np
 
-from qf_lib.backtesting.alpha_model.signal import Signal
-from qf_lib.backtesting.contract.contract import Contract
-from qf_lib.backtesting.portfolio.position import Position
-from qf_lib.backtesting.trading_session.trading_session import TradingSession
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
+from qf_lib.backtesting.alpha_model.signal import Signal
+from qf_lib.backtesting.contract.contract import Contract
+from qf_lib.backtesting.events.time_event.regular_time_event.before_market_open_event import BeforeMarketOpenEvent
+from qf_lib.backtesting.portfolio.position import Position
+from qf_lib.backtesting.trading_session.trading_session import TradingSession
 from qf_lib.common.exceptions.future_contracts_exceptions import NoValidTickerException
 from qf_lib.common.tickers.tickers import Ticker
-from qf_lib.backtesting.events.time_event.regular_time_event.before_market_open_event import BeforeMarketOpenEvent
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 

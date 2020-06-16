@@ -16,9 +16,9 @@
 import datetime
 from typing import Dict
 
+from qf_lib.backtesting.events.time_event.periodic_event.periodic_event import PeriodicEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
-from qf_lib.backtesting.events.time_event.periodic_event.periodic_event import PeriodicEvent
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 

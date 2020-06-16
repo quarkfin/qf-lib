@@ -19,7 +19,6 @@ import pandas as pd
 
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
-from qf_lib.backtesting.events.time_event.periodic_event.intraday_bar_event import IntradayBarEvent
 from qf_lib.backtesting.execution_handler.commission_models.commission_model import CommissionModel
 from qf_lib.backtesting.execution_handler.simulated_executor import SimulatedExecutor
 from qf_lib.backtesting.execution_handler.slippage.base import Slippage

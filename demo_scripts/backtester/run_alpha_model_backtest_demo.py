@@ -11,8 +11,13 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-
 import matplotlib.pyplot as plt
+plt.ion()  # required for dynamic chart, good to keep this at the beginning of imports
+
+from qf_lib.common.utils.dateutils.string_to_date import str_to_date
+from qf_lib.common.tickers.tickers import QuandlTicker
+from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
+from qf_lib.backtesting.position_sizer.initial_risk_position_sizer import InitialRiskPositionSizer
 
 from demo_scripts.backtester.moving_average_alpha_model import MovingAverageAlphaModel
 from demo_scripts.demo_configuration.demo_ioc import container
@@ -23,13 +28,6 @@ from qf_lib.backtesting.execution_handler.commission_models.ib_commission_model 
 from qf_lib.backtesting.monitoring.backtest_monitor import BacktestMonitor
 from qf_lib.backtesting.monitoring.past_signals_generator import get_all_tickers_used
 from qf_lib.common.enums.frequency import Frequency
-
-plt.ion()  # required for dynamic chart, good to keep this at the beginning of imports
-
-from qf_lib.backtesting.position_sizer.initial_risk_position_sizer import InitialRiskPositionSizer
-from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
-from qf_lib.common.tickers.tickers import QuandlTicker
-from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 
 
 def main():

@@ -22,7 +22,7 @@ from qf_lib.plotting.decorators.simple_legend_item import SimpleLegendItem
 
 class ScatterDecorator(ChartDecorator, SimpleLegendItem):
     def __init__(
-            self, x_data: Sequence, y_data: Sequence, size: int=40, color=None, key: str = None, **plot_settings: Any):
+            self, x_data: Sequence, y_data: Sequence, size: int = 40, color=None, key: str = None, **plot_settings: Any):
         """
         Creates a scatter plot based on the data specified.
 
@@ -42,7 +42,7 @@ class ScatterDecorator(ChartDecorator, SimpleLegendItem):
             RGB or RGBA, however, including the case of a single row to specify the same color for all points.
         plot_settings
             other settings like for example: alpha, linewidths, verts, edgecolors
-        
+
         """
         ChartDecorator.__init__(self, key)
         SimpleLegendItem.__init__(self)

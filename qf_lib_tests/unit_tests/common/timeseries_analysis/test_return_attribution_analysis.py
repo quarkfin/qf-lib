@@ -31,7 +31,7 @@ class TestReturnAttributionAnalysis(TestCase):
 
         dates = pd.date_range(start='2015-01-01', periods=dates_span, freq='D')
 
-        fund_returns_tms = SimpleReturnsSeries(data=[i / 100 for i in range(1, dates_span+1)], index=dates)
+        fund_returns_tms = SimpleReturnsSeries(data=[i / 100 for i in range(1, dates_span + 1)], index=dates)
         deviation = 0.005
         fit_returns_tms = SimpleReturnsSeries(data=(fund_returns_tms.values + deviation), index=dates)
 
@@ -56,7 +56,7 @@ class TestReturnAttributionAnalysis(TestCase):
                                                index=self.coefficients.index)
         expected_unexplained_return = -1.6784e+62
         assert_series_equal(expected_regressors_return, actual_regressors_return, absolute_tolerance=1.0e57)
-        self.assertAlmostEqual(expected_unexplained_return/1e+62, actual_unexplained_return/1e+62, delta=1e-05)
+        self.assertAlmostEqual(expected_unexplained_return / 1e+62, actual_unexplained_return / 1e+62, delta=1e-05)
 
 
 if __name__ == '__main__':

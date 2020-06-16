@@ -15,6 +15,7 @@
 from typing import Sequence
 
 import numpy as np
+
 from qf_lib.containers.dataframe.simple_returns_dataframe import SimpleReturnsDataFrame
 
 

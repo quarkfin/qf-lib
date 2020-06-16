@@ -34,7 +34,6 @@ class TestFrequency(TestCase):
         self.assertEqual(Frequency.SEMI_ANNUALLY, Frequency.from_string('semi_annually'))
         self.assertEqual(Frequency.YEARLY, Frequency.from_string('yearly'))
 
-
     def test_get_lowest(self):
         self.assertEqual(Frequency.get_lowest_freq({"A": Frequency.DAILY, "B": Frequency.WEEKLY, "C": Frequency.YEARLY}),
                          "C")

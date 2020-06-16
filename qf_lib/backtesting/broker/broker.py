@@ -33,7 +33,7 @@ class Broker(object, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def get_open_orders(self)-> Optional[List[Order]]:
+    def get_open_orders(self) -> Optional[List[Order]]:
         pass
 
     @abstractmethod

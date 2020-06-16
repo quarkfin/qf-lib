@@ -11,27 +11,26 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
+import matplotlib.pyplot as plt
+plt.ion()  # required for dynamic chart
 
+from qf_lib.backtesting.monitoring.backtest_monitor import BacktestMonitor
+# order of the imports is important. BacktestMonitor has to be imported before anything else form qf_lib
+
+from qf_lib.settings import Settings
+from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
+from qf_lib.common.utils.dateutils.string_to_date import str_to_date
+from qf_lib.backtesting.portfolio.portfolio import Portfolio
+from qf_lib.backtesting.portfolio.transaction import Transaction
+from qf_lib.backtesting.contract.contract import Contract
+from qf_lib.backtesting.monitoring.backtest_result import BacktestResult
+from qf_lib.documents_utils.excel.excel_exporter import ExcelExporter
 import time
 from datetime import timedelta
 from random import randint
 
-import matplotlib.pyplot as plt
 
 from demo_scripts.demo_configuration.demo_ioc import container
-
-plt.ion()  # required for dynamic chart
-
-# order of the imports is important. BacktestMonitor has to be imported before anything else form qf_lib
-from qf_lib.backtesting.monitoring.backtest_monitor import BacktestMonitor
-from qf_lib.documents_utils.excel.excel_exporter import ExcelExporter
-from qf_lib.backtesting.monitoring.backtest_result import BacktestResult
-from qf_lib.backtesting.contract.contract import Contract
-from qf_lib.backtesting.portfolio.transaction import Transaction
-from qf_lib.backtesting.portfolio.portfolio import Portfolio
-from qf_lib.common.utils.dateutils.string_to_date import str_to_date
-from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
-from qf_lib.settings import Settings
 
 
 def main():

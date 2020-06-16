@@ -39,7 +39,7 @@ class BacktestBroker(Broker):
     def cancel_order(self, order_id: int):
         self.execution_handler.cancel_order(order_id)
 
-    def get_open_orders(self)-> List[Order]:
+    def get_open_orders(self) -> List[Order]:
         return self.execution_handler.get_open_orders()
 
     def cancel_all_open_orders(self):

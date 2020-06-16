@@ -14,6 +14,7 @@
 
 from os.path import join, dirname, abspath
 
+
 def _get_ioc_container():
     """
     Creates and returns the IoC container. If it already exists the existing instance is returned.

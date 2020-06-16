@@ -75,7 +75,7 @@ class GridElement(Element):
     def generate_json(self):
         """
         Iterates through the charts currently added to this grid and gets the base64 encoding of each one.
-        
+
         Returns
         -------
         An array of base64 images (with the encoding prefix)

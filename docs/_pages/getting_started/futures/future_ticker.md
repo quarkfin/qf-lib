@@ -3,7 +3,7 @@ permalink: /futures/future_ticker
 title: "FutureTicker"
 classes: wide
 ---
-# `class FutureTicker(family_id, N, days_before_exp_date, point_value=1.0, name="")`
+# `class FutureTicker(name, family_id, N, days_before_exp_date, point_value=1.0)`
 
 The `FutureTicker` class extends the standard `Ticker` class. It allows the user to use only a Ticker abstraction, which provides all of the standard Ticker functionalities (e.g.
 just as standard tickers, it can be used along with `DataHandler` functions `get_price`, `get_last_available_price`, `get_current_price` etc.), without the need to manually manage

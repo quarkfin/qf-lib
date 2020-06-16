@@ -40,7 +40,7 @@ class RiskContributionAnalysis(object):
 
         Returns
         -------
-        Series of risk contributions (one for each asset) to the portfolio. It's indexed with names of assets. 
+        Series of risk contributions (one for each asset) to the portfolio. It's indexed with names of assets.
         """
         volatility_of_returns = factors_rets.std(axis=0)
 
@@ -109,14 +109,14 @@ class RiskContributionAnalysis(object):
     def is_equal_risk_contribution(cls, returns_covariance: pd.DataFrame, weights_of_assets: pd.Series) -> bool:
         """
         Tells whether each asset has an equal risk contribution to the portfolio.
-        
+
         Parameters
         ----------
         returns_covariance
             DataFrame which is a covariance matrix. Columns and rows are both indexed with names of assets.
         weights_of_assets
             Series of weights (one weight for each asset). It's indexed with names of assets.
-            
+
         Returns
         -------
         True if each asset has and equal risk contribution. False -- otherwise.

@@ -25,7 +25,7 @@ from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
 
 
-def get_aggregate_returns(series: QFSeries, convert_to: Frequency, multi_index: bool = False, keep_nans:bool = False) \
+def get_aggregate_returns(series: QFSeries, convert_to: Frequency, multi_index: bool = False, keep_nans: bool = False) \
         -> SimpleReturnsSeries:
     """
     Aggregates returns by week, month, or year. Note: The cumulative returns function replaces all Nans with 0.000.

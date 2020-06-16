@@ -15,10 +15,11 @@ from datetime import datetime
 from itertools import groupby
 
 import matplotlib as plt
-from pandas.tseries.frequencies import to_offset
 from pandas import Timedelta
+from pandas.tseries.frequencies import to_offset
 
 from qf_lib.analysis.common.abstract_document import AbstractDocument
+from qf_lib.analysis.error_handling import ErrorHandling
 from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.monitoring.backtest_result import BacktestResult
 from qf_lib.common.enums.frequency import Frequency
@@ -39,7 +40,6 @@ from qf_lib.plotting.decorators.data_element_decorator import DataElementDecorat
 from qf_lib.plotting.decorators.legend_decorator import LegendDecorator
 from qf_lib.plotting.decorators.title_decorator import TitleDecorator
 from qf_lib.settings import Settings
-from qf_lib.analysis.error_handling import ErrorHandling
 
 
 @ErrorHandling.class_error_logging()
@@ -154,7 +154,7 @@ class PortfolioTradingSheet(AbstractDocument):
         legend = LegendDecorator(key="legend_decorator")
 
         # Add y label
-        label_decorator = AxesLabelDecorator(y_label="Mean total exposure of top assets [%]")
+        label_decorator = AxesLabelDecorator(y_label="Mean total exposure of top assets")
         chart.add_decorator(label_decorator)
 
         # Add top asset contribution
@@ -371,4 +371,3 @@ class PortfolioTradingSheet(AbstractDocument):
         filename = "%Y_%m_%d-%H%M Portfolio Trading Sheet.pdf"
         filename = datetime.now().strftime(filename)
         return self.pdf_exporter.generate([self.document], report_dir, filename)
-

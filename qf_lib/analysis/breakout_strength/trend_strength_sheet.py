@@ -76,7 +76,7 @@ class TrendStrengthSheet(object):
                        use_next_open_instead_of_close=False, title="Trend Strength"):
         """
         tickers
-            tickers of all tested instruments 
+            tickers of all tested instruments
         start_date
             start date of the study
         end_date

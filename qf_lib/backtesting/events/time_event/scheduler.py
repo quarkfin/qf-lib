@@ -18,7 +18,8 @@ from typing import Dict, Type, TypeVar, List, Any, Generator, Tuple
 from qf_lib.backtesting.events.time_event.periodic_event.intraday_bar_event import IntradayBarEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
-from qf_lib.backtesting.events.time_event.single_time_event.schedule_order_execution_event import ScheduleOrderExecutionEvent
+from qf_lib.backtesting.events.time_event.single_time_event.schedule_order_execution_event import \
+    ScheduleOrderExecutionEvent
 from qf_lib.backtesting.events.time_event.time_event import TimeEvent
 from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger

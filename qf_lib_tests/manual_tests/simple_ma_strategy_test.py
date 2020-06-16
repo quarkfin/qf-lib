@@ -21,8 +21,6 @@ from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
 from qf_lib.common.enums.frequency import Frequency
 
-plt.ion()  # required for dynamic chart, good to keep this at the beginning of imports
-
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.backtesting.order.execution_style import MarketOrder
@@ -30,6 +28,8 @@ from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.backtesting.events.time_event.regular_time_event.before_market_open_event import BeforeMarketOpenEvent
 from qf_lib.backtesting.trading_session.backtest_trading_session import BacktestTradingSession
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
+
+plt.ion()  # required for dynamic chart, good to keep this at the beginning of imports
 
 
 class SimpleMAStrategy(object):

@@ -36,10 +36,10 @@ class RollingDataPresenter(object):
         return 'Values are calculated based on {window_size:d} data samples rolling \n' \
                'with {num_of_samples:d} sample(s) shift. \n' \
                'Frequency of the data points is {frequency:s}. \n'.format(
-            window_size=self.rolling_model.window_size_,
-            num_of_samples=self.rolling_model.step_,
-            frequency=str(self.rolling_model.input_data.frequency)
-        )
+                   window_size=self.rolling_model.window_size_,
+                   num_of_samples=self.rolling_model.step_,
+                   frequency=str(self.rolling_model.input_data.frequency)
+               )
 
     def regression_coefficients_chart(self) -> LineChart:
         rolling_coeffs = self.rolling_model.coefficients_df

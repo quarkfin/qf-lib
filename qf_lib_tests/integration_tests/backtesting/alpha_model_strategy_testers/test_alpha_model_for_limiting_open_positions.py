@@ -20,17 +20,18 @@ from qf_lib.backtesting.alpha_model.futures_alpha_model_strategy import FuturesA
 from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
+from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import BloombergTicker, Ticker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
+from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.futures.future_tickers.bloomberg_future_ticker import BloombergFutureTicker
 
 import pandas as pd
 import numpy as np
 
 from qf_lib.containers.qf_data_array import QFDataArray
-from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.preset_data_provider import PresetDataProvider
 from qf_lib_tests.integration_tests.backtesting.trading_session_for_tests import TestingTradingSession
 
@@ -103,9 +104,16 @@ class TestAlphaModelPositionsLimit(TestCase):
 
         # Mock expiration dates
         exp_dates = {
-            BloombergFutureTicker("Heating Oil", "HO{} Comdty", 1, 1, 100): QFSeries(
-                data=[BloombergTicker("HOZ9 Comdty"), BloombergTicker("HOF0 Comdty"), BloombergTicker("HOG0 Comdty")],
-                index=[str_to_date("2019-12-01"), str_to_date("2020-01-07"), str_to_date("2020-02-03")]
+            BloombergFutureTicker("Heating Oil", "HO{} Comdty", 1, 1, 100): QFDataFrame(
+                data={
+                    ExpirationDateField.FirstNotice: [
+                        str_to_date("2019-12-01"), str_to_date("2020-01-07"), str_to_date("2020-02-03")
+                    ],
+                    ExpirationDateField.LastTradeableDate: [
+                        str_to_date("2019-12-01"), str_to_date("2020-01-07"), str_to_date("2020-02-03")
+                    ],
+                },
+                index=[BloombergTicker("HOZ9 Comdty"), BloombergTicker("HOF0 Comdty"), BloombergTicker("HOG0 Comdty")]
             )
         }
 

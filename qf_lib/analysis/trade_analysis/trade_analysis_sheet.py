@@ -17,11 +17,10 @@ from math import sqrt
 from os.path import join
 from typing import Union, Tuple
 
-from pandas import Timedelta, to_timedelta
-import numpy as np
-
 import matplotlib as plt
+import numpy as np
 from matplotlib.ticker import FormatStrFormatter, MaxNLocator
+from pandas import Timedelta, to_timedelta
 
 from qf_lib.analysis.error_handling import ErrorHandling
 from qf_lib.backtesting.fast_alpha_model_tester.scenarios_generator import ScenariosGenerator
@@ -231,7 +230,7 @@ class TradeAnalysisSheet(object):
             trades_count = trades_df.shape[0]
             trade_returns = SimpleReturnsSeries(trades_df[TradeField.Return])
 
-            table.add_row(["% of {} Trades".format(trade_type),  "{:.2%}".format(trades_count / all_trades_count)])
+            table.add_row(["% of {} Trades".format(trade_type), "{:.2%}".format(trades_count / all_trades_count)])
 
             avg_return = trade_returns.mean()
             table.add_row(["Average return of {} Trade".format(trade_type), "{:.2%}".format(avg_return)])
@@ -283,7 +282,6 @@ class TradeAnalysisSheet(object):
         # Add the "Chances of dropping below" and "Simulations summary" tables
         ruin_chances_table = self._get_chances_of_dropping_below_table(scenarios_df)
         self.document.add_element(ruin_chances_table)
-
 
     def _get_scenarios(self, num_of_scenarios: int = 2500) -> Tuple[PricesDataFrame, SimpleReturnsSeries]:
         # Generate scenarios, each of which consists of a certain number of trades, equal to the average number
@@ -393,7 +391,7 @@ class TradeAnalysisSheet(object):
         table.add_row(["Median Maximum Drawdown", "{:.2%}".format(median_drawdown)])
 
         # Add the Median Return / Median Drawdown
-        table.add_row(["Return / Drawdown", "{:.2f}".format(median_return/median_drawdown)])
+        table.add_row(["Return / Drawdown", "{:.2f}".format(median_return / median_drawdown)])
 
         # Probability, that the return will be > 0
         scenarios_with_positive_result = total_returns[total_returns > 1.0].count()

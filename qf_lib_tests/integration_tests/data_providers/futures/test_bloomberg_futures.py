@@ -11,29 +11,18 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-#
-#     Licensed under the Apache License, Version 2.0 (the "License");
-#     you may not use this file except in compliance with the License.
-#     You may obtain a copy of the License at
-#
-#         http://www.apache.org/licenses/LICENSE-2.0
-#
-#     Unless required by applicable law or agreed to in writing, software
-#     distributed under the License is distributed on an "AS IS" BASIS,
-#     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#     See the License for the specific language governing permissions and
-#     limitations under the License.
 import unittest
 
 from qf_lib.backtesting.data_handler.daily_data_handler import DailyDataHandler
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
+from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.date_format import DateFormat
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.dateutils.timer import SettableTimer
+from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.futures.future_tickers.bloomberg_future_ticker import BloombergFutureTicker
-from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.bloomberg import BloombergDataProvider
 from qf_lib_tests.unit_tests.config.test_settings import get_test_settings
 
@@ -75,22 +64,26 @@ class TestBloombergFutures(unittest.TestCase):
             str_to_date("2017-03-17"): BloombergTicker('ESH17 Index')
         }
 
-        future_ticker =  BloombergFutureTicker("Euroswiss", "ES{} Index", 1, 1, 100, "HMUZ")
+        future_ticker = BloombergFutureTicker("Euroswiss", "ES{} Index", 1, 1, 100, "HMUZ")
         future_ticker.initialize_data_provider(self.timer, bbg_provider)
 
         # Check dates before 2016-12-16
         self.timer.set_current_time(str_to_date('2016-11-11'))
-        self.assertEqual(future_ticker.get_current_specific_ticker(), exp_dates_to_ticker_str[str_to_date("2016-12-16")])
+        self.assertEqual(future_ticker.get_current_specific_ticker(),
+                         exp_dates_to_ticker_str[str_to_date("2016-12-16")])
 
         self.timer.set_current_time(str_to_date('2016-12-15'))
-        self.assertEqual(future_ticker.get_current_specific_ticker(), exp_dates_to_ticker_str[str_to_date("2016-12-16")])
+        self.assertEqual(future_ticker.get_current_specific_ticker(),
+                         exp_dates_to_ticker_str[str_to_date("2016-12-16")])
 
         self.timer.set_current_time(str_to_date('2016-12-15 23:55:00.0', DateFormat.FULL_ISO))
-        self.assertEqual(future_ticker.get_current_specific_ticker(), exp_dates_to_ticker_str[str_to_date("2016-12-16")])
+        self.assertEqual(future_ticker.get_current_specific_ticker(),
+                         exp_dates_to_ticker_str[str_to_date("2016-12-16")])
 
         # On the expiry day, the next contract should be returned
         self.timer.set_current_time(str_to_date('2016-12-16'))
-        self.assertEqual(future_ticker.get_current_specific_ticker(), exp_dates_to_ticker_str[str_to_date("2017-03-17")])
+        self.assertEqual(future_ticker.get_current_specific_ticker(),
+                         exp_dates_to_ticker_str[str_to_date("2017-03-17")])
 
     def test_get_ticker_1st_contract_6_days_before_exp_date(self):
         exp_dates_to_ticker_str = {
@@ -98,71 +91,81 @@ class TestBloombergFutures(unittest.TestCase):
             str_to_date("2017-03-17"): BloombergTicker('ESH17 Index')
         }
 
-        future_ticker =  BloombergFutureTicker("Euroswiss", "ES{} Index", 1, 6, 100, "HMUZ")
+        future_ticker = BloombergFutureTicker("Euroswiss", "ES{} Index", 1, 6, 100, "HMUZ")
         future_ticker.initialize_data_provider(self.timer, bbg_provider)
 
         # Check dates before 2016-12-16
         self.timer.set_current_time(str_to_date('2016-11-11'))
-        self.assertEqual(future_ticker.get_current_specific_ticker(), exp_dates_to_ticker_str[str_to_date("2016-12-16")])
+        self.assertEqual(future_ticker.get_current_specific_ticker(),
+                         exp_dates_to_ticker_str[str_to_date("2016-12-16")])
 
         self.timer.set_current_time(str_to_date('2016-12-10'))
-        self.assertEqual(future_ticker.get_current_specific_ticker(), exp_dates_to_ticker_str[str_to_date("2016-12-16")])
+        self.assertEqual(future_ticker.get_current_specific_ticker(),
+                         exp_dates_to_ticker_str[str_to_date("2016-12-16")])
 
         self.timer.set_current_time(str_to_date('2016-12-10 23:55:00.0', DateFormat.FULL_ISO))
-        self.assertEqual(future_ticker.get_current_specific_ticker(), exp_dates_to_ticker_str[str_to_date("2016-12-16")])
+        self.assertEqual(future_ticker.get_current_specific_ticker(),
+                         exp_dates_to_ticker_str[str_to_date("2016-12-16")])
 
         self.timer.set_current_time(str_to_date('2016-12-16'))
-        self.assertEqual(future_ticker.get_current_specific_ticker(), exp_dates_to_ticker_str[str_to_date("2017-03-17")])
+        self.assertEqual(future_ticker.get_current_specific_ticker(),
+                         exp_dates_to_ticker_str[str_to_date("2017-03-17")])
 
     def test_get_ticker_2nd_contract_1_day_before_exp_date(self):
         exp_dates_to_ticker_str = {
-            str_to_date("2016-07-01"): BloombergTicker('C N16 Comdty'),
-            str_to_date("2016-09-01"): BloombergTicker('C U16 Comdty'),
-            str_to_date("2016-12-01"): BloombergTicker('C Z16 Comdty')
+            str_to_date("2016-06-30"): BloombergTicker('C N16 Comdty'),
+            str_to_date("2016-08-31"): BloombergTicker('C U16 Comdty'),
+            str_to_date("2016-11-30"): BloombergTicker('C Z16 Comdty')
         }
 
         future_ticker = BloombergFutureTicker("Corn", "C {} Comdty", 2, 1, 100, "HKNUZ")
         future_ticker.initialize_data_provider(self.timer, bbg_provider)
 
         self.timer.set_current_time(str_to_date('2016-06-03'))
-        self.assertEqual(future_ticker.get_current_specific_ticker(), exp_dates_to_ticker_str[str_to_date("2016-09-01")])
+        self.assertEqual(future_ticker.get_current_specific_ticker(),
+                         exp_dates_to_ticker_str[str_to_date("2016-08-31")])
+
+        self.timer.set_current_time(str_to_date('2016-06-29'))
+        self.assertEqual(future_ticker.get_current_specific_ticker(),
+                         exp_dates_to_ticker_str[str_to_date("2016-08-31")])
+
+        self.timer.set_current_time(str_to_date('2016-06-29 23:59:59.0', DateFormat.FULL_ISO))
+        self.assertEqual(future_ticker.get_current_specific_ticker(),
+                         exp_dates_to_ticker_str[str_to_date("2016-08-31")])
 
         self.timer.set_current_time(str_to_date('2016-06-30'))
-        self.assertEqual(future_ticker.get_current_specific_ticker(), exp_dates_to_ticker_str[str_to_date("2016-09-01")])
-
-        self.timer.set_current_time(str_to_date('2016-06-30 23:59:59.0', DateFormat.FULL_ISO))
-        self.assertEqual(future_ticker.get_current_specific_ticker(), exp_dates_to_ticker_str[str_to_date("2016-09-01")])
-
-        self.timer.set_current_time(str_to_date('2016-07-01'))
-        self.assertEqual(future_ticker.get_current_specific_ticker(), exp_dates_to_ticker_str[str_to_date("2016-12-01")])
+        self.assertEqual(future_ticker.get_current_specific_ticker(),
+                         exp_dates_to_ticker_str[str_to_date("2016-11-30")])
 
     def test_get_ticker_2nd_contract_6_days_before_exp_date(self):
         exp_dates_to_ticker_str = {
-            str_to_date("2016-07-01"): BloombergTicker('C N16 Comdty'),
-            str_to_date("2016-09-01"): BloombergTicker('C U16 Comdty'),
-            str_to_date("2016-12-01"): BloombergTicker('C Z16 Comdty')
+            str_to_date("2016-06-30"): BloombergTicker('C N16 Comdty'),
+            str_to_date("2016-08-31"): BloombergTicker('C U16 Comdty'),
+            str_to_date("2016-11-30"): BloombergTicker('C Z16 Comdty')
         }
 
         future_ticker = BloombergFutureTicker("Corn", "C {} Comdty", 2, 6, 100, "HKNUZ")
         future_ticker.initialize_data_provider(self.timer, bbg_provider)
 
         self.timer.set_current_time(str_to_date('2016-06-03'))
-        self.assertEqual(future_ticker.get_current_specific_ticker(), exp_dates_to_ticker_str[str_to_date("2016-09-01")])
+        self.assertEqual(future_ticker.get_current_specific_ticker(),
+                         exp_dates_to_ticker_str[str_to_date("2016-08-31")])
 
-        self.timer.set_current_time(str_to_date('2016-06-25 23:59:59.0', DateFormat.FULL_ISO))
-        self.assertEqual(future_ticker.get_current_specific_ticker(), exp_dates_to_ticker_str[str_to_date("2016-09-01")])
+        self.timer.set_current_time(str_to_date('2016-06-24 23:59:59.0', DateFormat.FULL_ISO))
+        self.assertEqual(future_ticker.get_current_specific_ticker(),
+                         exp_dates_to_ticker_str[str_to_date("2016-08-31")])
 
-        self.timer.set_current_time(str_to_date('2016-06-26'))
-        self.assertEqual(future_ticker.get_current_specific_ticker(), exp_dates_to_ticker_str[str_to_date("2016-12-01")])
+        self.timer.set_current_time(str_to_date('2016-07-09'))
+        self.assertEqual(future_ticker.get_current_specific_ticker(),
+                         exp_dates_to_ticker_str[str_to_date("2016-11-30")])
 
     # ========================================= Test get_expiration_dates ==============================================
 
     def test_get_expiration_dates(self):
-        date = str_to_date("2016-07-14")
-        tickers_dict = bbg_provider.get_futures_chain_tickers(self.ticker_1)
+        tickers_dict = bbg_provider.get_futures_chain_tickers(self.ticker_1, ExpirationDateField.all_dates())
         exp_dates = tickers_dict[self.ticker_1]
 
-        self.assertEqual(type(exp_dates), QFSeries)
+        self.assertEqual(type(exp_dates), QFDataFrame)
 
     # ========================================= Test BloombergFutureTicker =============================================
 

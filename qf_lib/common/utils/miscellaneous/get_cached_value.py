@@ -15,6 +15,7 @@
 import pickle
 from os.path import exists
 from typing import Any, Callable
+
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 
 
@@ -42,5 +43,3 @@ def cached_value(func: Callable[[], Any], path) -> Any:
             logger.error('Error while processing {}'.format(func))
 
     return result
-
-
