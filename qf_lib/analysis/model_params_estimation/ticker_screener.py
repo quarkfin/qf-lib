@@ -14,7 +14,6 @@
 
 from datetime import datetime
 from os.path import join
-from typing import Collection
 
 import matplotlib.pyplot as plt
 import numpy as np

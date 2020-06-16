@@ -16,10 +16,10 @@ import queue
 import warnings
 from typing import Dict, Type, Sequence
 
-from qf_lib.backtesting.events.time_event.time_event import TimeEvent
 from qf_lib.backtesting.events.empty_queue_event.empty_queue_event import EmptyQueueEvent
 from qf_lib.backtesting.events.end_trading_event.end_trading_event import EndTradingEvent
 from qf_lib.backtesting.events.event_base import Event, EventNotifier, EventListener
+from qf_lib.backtesting.events.time_event.time_event import TimeEvent
 from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 

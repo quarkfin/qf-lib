@@ -59,8 +59,6 @@ def _inner_setup_logging(logger, level, console_logging, log_dir, log_file_base_
             logger.addHandler(file_handler)
 
 
-
-
 def remove_stream_handler(logger, log_dir, log_file_base_name):
     # Assume logger is setup
     stream_handler = logging.StreamHandler(sys.stdout)

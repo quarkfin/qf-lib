@@ -26,8 +26,8 @@ from qf_lib_tests.helpers.testing_tools.sample_column_names import generate_samp
 
 def get_analysed_tms_and_regressors(dates_span: int = 1000, num_of_regressors: int = 7,
                                     start_date: datetime.datetime = str_to_date('2016-01-01'),
-                                    mean_return: float=0.001, std_of_returns: float = 0.02,
-                                    a_coeff: float = -0.25, b_coeff: float=1.25, intercept: float = 0.004)\
+                                    mean_return: float = 0.001, std_of_returns: float = 0.02,
+                                    a_coeff: float = -0.25, b_coeff: float = 1.25, intercept: float = 0.004)\
         -> Tuple[SimpleReturnsSeries, SimpleReturnsDataFrame]:
     """
     Creates a dataframe with simple returns of sample timeseries (regressors). Then creates a series which linearly
@@ -41,7 +41,7 @@ def get_analysed_tms_and_regressors(dates_span: int = 1000, num_of_regressors: i
     regressors_df = SimpleReturnsDataFrame(data=regressors_data, index=dates, columns=regressors_names)
 
     analyzed_data = a_coeff * regressors_data[:, 0] + b_coeff * regressors_data[:, 1] + \
-                    np.random.normal(0, 0.02, dates_span) + intercept
+        np.random.normal(0, 0.02, dates_span) + intercept
 
     analysed_tms = SimpleReturnsSeries(data=analyzed_data, index=dates, name='Fund')
 

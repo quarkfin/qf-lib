@@ -11,18 +11,6 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-#
-#     Licensed under the Apache License, Version 2.0 (the "License");
-#     you may not use this file except in compliance with the License.
-#     You may obtain a copy of the License at
-#
-#         http://www.apache.org/licenses/LICENSE-2.0
-#
-#     Unless required by applicable law or agreed to in writing, software
-#     distributed under the License is distributed on an "AS IS" BASIS,
-#     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#     See the License for the specific language governing permissions and
-#     limitations under the License.
 import abc
 
 import pandas as pd
@@ -129,12 +117,12 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
             # Therefore, in case if the data with expiration dates is not available for the current date, the
             # _get_current_specific_ticker function will raise a LookupError.
 
-            raise NoValidTickerException("No valid ticker for the FutureTicker found on {}".format(
+            raise NoValidTickerException("No valid ticker for the FutureTicker {} found on {}".format(
                 self.name,
                 self._timer.now()
             ))
 
-    def get_expiration_dates(self):
+    def get_expiration_dates(self) -> QFSeries:
         """
         Returns the QFSeries containing the list of specific future contracts Tickers, indexed by their expiration
         dates. The index contains original expiration dates, as returned by the data handler, without shifting it by the
@@ -149,14 +137,14 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
     def get_days_before_exp_date(self):
         return self._days_before_exp_date
 
-    def _get_futures_chain_tickers(self):
+    @abc.abstractmethod
+    def _get_futures_chain_tickers(self) -> QFSeries:
         """
         Returns the QFSeries with specific Tickers, indexed by their expiration dates.
+        Each class, inheriting from the Future Ticker has to implement some strategy of obtaining  the expiration dates
+        from the available fields (e.g. first notice, last tradeable date etc.)
         """
-        futures_chain_tickers = self._data_provider.get_futures_chain_tickers(self)[self]
-        # Make sure that index will be of datetime type
-        futures_chain_tickers.index = pd.to_datetime(futures_chain_tickers.index)
-        return futures_chain_tickers
+        pass
 
     @ticker.setter
     def ticker(self, _):
@@ -165,12 +153,12 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
 
     def __eq__(self, other):
         return self is other or (
-                type(self) == type(other)
-                and self.name == other.name
-                and self.family_id == other.family_id
-                and self.point_value == other.point_value
-                and self._N == other.get_N()
-                and self._days_before_exp_date == other.get_days_before_exp_date()
+            type(self) == type(other)
+            and self.name == other.name
+            and self.family_id == other.family_id
+            and self.point_value == other.point_value
+            and self._N == other.get_N()
+            and self._days_before_exp_date == other.get_days_before_exp_date()
         )
 
     def __hash__(self):
@@ -196,5 +184,3 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
         identified by the FutureTicker.
         """
         pass
-
-

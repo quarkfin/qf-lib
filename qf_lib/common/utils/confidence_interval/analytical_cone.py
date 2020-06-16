@@ -27,7 +27,7 @@ from qf_lib.containers.series.qf_series import QFSeries
 
 class AnalyticalCone(AnalyticalConeBase):
 
-    def __init__(self, series: QFSeries=None):
+    def __init__(self, series: QFSeries = None):
         self.series = series
         self.log_returns_tms = series.to_log_returns()
 

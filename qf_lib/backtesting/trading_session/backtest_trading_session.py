@@ -67,4 +67,5 @@ class BacktestTradingSession(TradingSession):
         if time_delta is None:
             time_delta = RelativeDelta(years=1)
         data_history_start = self.start_date - time_delta
-        self.data_handler.use_data_bundle(tickers, PriceField.ohlcv(), data_history_start, self.end_date, self.frequency)
+        self.data_handler.use_data_bundle(tickers, PriceField.ohlcv(), data_history_start, self.end_date,
+                                          self.frequency)

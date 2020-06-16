@@ -27,8 +27,9 @@ class AlphaModelSettings(object):
     """
     Holds parameters of parametrized alpha models
     """
-    def __init__(self, parameters: Sequence[float]=None, risk_estimation_factor: float=None,
-                 tickers_dict: Dict[str, Ticker]=None):
+
+    def __init__(self, parameters: Sequence[float] = None, risk_estimation_factor: float = None,
+                 tickers_dict: Dict[str, Ticker] = None):
         """
 
         Parameters

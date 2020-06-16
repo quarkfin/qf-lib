@@ -79,7 +79,7 @@ class OrderFactory(object):
             execution style of an order (e.g. MarketOrder, StopOrder, etc.)
         time_in_force
             e.g. 'DAY' (Order valid for one trading session), 'GTC' (good till cancelled)
-        tolerance_quantities 
+        tolerance_quantities
             tells what is a tolerance for the target_quantities (in both directions) for each Contract.
             The tolerance is expressed in shares.
             For example: assume that currently the portfolio contains 100 shares of asset A.

@@ -13,10 +13,11 @@
 #     limitations under the License.
 
 from datetime import date, datetime
-from typing import Dict, Optional, Sequence, Union, List
+from typing import Dict, Optional, Sequence, Union
 
 import pandas as pd
 from bs4 import BeautifulSoup as BS
+from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from requests import Session
 
 from qf_lib.common.enums.price_field import PriceField
@@ -36,7 +37,6 @@ class CryptoCurrencyDataProvider(AbstractPriceDataProvider):
     """
     Constructs a new ``CryptoCurrencyDataProvider`` instance
     """
-
     DATE_COLUMN = 'Date'
 
     def __init__(self):
@@ -98,13 +98,13 @@ class CryptoCurrencyDataProvider(AbstractPriceDataProvider):
 
         data_url = "http://coinmarketcap.com/currencies/{ticker_str}/historical-data/?" \
                    "start={start_date_str}&end={end_date_str}".format(
-                    ticker_str=ticker.as_string(),
-                    start_date_str=start_date.strftime("%Y%m%d"),
-                    end_date_str=end_date.strftime("%Y%m%d"))
+                       ticker_str=ticker.as_string(),
+                       start_date_str=start_date.strftime("%Y%m%d"),
+                       end_date_str=end_date.strftime("%Y%m%d"))
 
         request = session.get(data_url)
 
-        if request.status_code is not 200:
+        if request.status_code != 200:
             if request.status_code == 404:
                 self.logger.error("The ticker {} does not exist on the API".format(ticker.as_string()))
             else:
@@ -188,7 +188,10 @@ class CryptoCurrencyDataProvider(AbstractPriceDataProvider):
 
         return table
 
-    def get_futures_chain_tickers(self, tickers: Union[FutureTicker, Sequence[FutureTicker]]) \
-            -> Dict[FutureTicker, QFSeries]:
+    def get_futures_chain_tickers(self, tickers: Union[FutureTicker, Sequence[FutureTicker]],
+                                  expiration_date_fields: Union[ExpirationDateField, Sequence[ExpirationDateField]]) \
+            -> Dict[FutureTicker, Union[QFSeries, QFDataFrame]]:
         raise NotImplementedError("Downloading Future Chain Tickers in CryptoCurrencyDataProvider is not supported yet")
 
+    def expiration_date_field_str_map(self, ticker: Ticker = None) -> Dict[ExpirationDateField, str]:
+        pass

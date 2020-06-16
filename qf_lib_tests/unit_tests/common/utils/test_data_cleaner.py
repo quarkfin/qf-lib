@@ -30,12 +30,12 @@ class TestDataCleaner(TestCase):
 
     @classmethod
     def _create_test_dataframe(cls):
-        values = [[pd.np.nan, 0.0,       0.0,       0.0,       0.0],
-                  [1.0,       pd.np.nan, 1.0,       1.0,       1.0],
-                  [2.0,       pd.np.nan, pd.np.nan, 2.0,       2.0],
-                  [3.0,       3.0,       3.0,       pd.np.nan, 3.0],
-                  [4.0,       4.0,       4.0,       4.0,       4.0],
-                  [5.0,       5.0,       5.0,       5.0,       5.0]]
+        values = [[pd.np.nan, 0.0, 0.0, 0.0, 0.0],
+                  [1.0, pd.np.nan, 1.0, 1.0, 1.0],
+                  [2.0, pd.np.nan, pd.np.nan, 2.0, 2.0],
+                  [3.0, 3.0, 3.0, pd.np.nan, 3.0],
+                  [4.0, 4.0, 4.0, 4.0, 4.0],
+                  [5.0, 5.0, 5.0, 5.0, 5.0]]
 
         index = pd.date_range(start='2015-01-01', periods=6)
         columns = ['a', 'b', 'c', 'd', 'e']
@@ -68,11 +68,11 @@ class TestDataCleaner(TestCase):
 
     def test_proxy_using_regression(self):
         expected_values = [[pd.np.nan, 0.0, 0.0, 0.0],
-                           [1.0,       1.0, 1.0, 1.0],
-                           [2.0,       2.0, 2.0, 2.0],
-                           [3.0,       3.0, 3.0, 3.0],
-                           [4.0,       4.0, 4.0, 4.0],
-                           [5.0,       5.0, 5.0, 5.0]]
+                           [1.0, 1.0, 1.0, 1.0],
+                           [2.0, 2.0, 2.0, 2.0],
+                           [3.0, 3.0, 3.0, 3.0],
+                           [4.0, 4.0, 4.0, 4.0],
+                           [5.0, 5.0, 5.0, 5.0]]
         expected_columns = ['a', 'c', 'd', 'e']
         expected_dates = self.test_dataframe.index.copy()
         expected_dataframe = SimpleReturnsDataFrame(data=expected_values, columns=expected_columns, index=expected_dates)

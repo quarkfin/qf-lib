@@ -11,11 +11,9 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-
-import unittest
-from typing import List
-from unittest import TestCase, skip
-
+import datetime
+from typing import List, Tuple
+from unittest import TestCase
 from qf_lib.backtesting.events.empty_queue_event.empty_queue_event import EmptyQueueEvent
 from qf_lib.backtesting.events.empty_queue_event.empty_queue_event_listener import EmptyQueueEventListener
 from qf_lib.backtesting.events.end_trading_event.end_trading_event import EndTradingEvent
@@ -130,7 +128,7 @@ class TestEventManagement(TestCase):
         listener = DummyListener(notifiers, event_manager, timer)
 
         last_event = None
-        while type(last_event) != EndTradingEvent:
+        while not isinstance(last_event, EndTradingEvent):
             event_manager.dispatch_next_event()
             last_event, _ = listener.registered_events[-1]
 

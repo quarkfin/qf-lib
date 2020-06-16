@@ -92,3 +92,8 @@ table.table.left-align th {
 table.table td.wide-column {
     width: 75%;
 }
+
+table.table td.highlight {
+    font-weight: 900;
+    text-decoration: underline;
+}

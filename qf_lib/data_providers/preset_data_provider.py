@@ -18,6 +18,7 @@ import numpy as np
 import pandas as pd
 
 from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
+from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
@@ -41,7 +42,7 @@ class PresetDataProvider(DataProvider):
 
     def __init__(
             self, data: QFDataArray, start_date: datetime, end_date: datetime, frequency: Frequency,
-            exp_dates: Dict[FutureTicker, QFSeries] = None):
+            exp_dates: Dict[FutureTicker, QFDataFrame] = None):
         """
         Parameters
         ----------
@@ -54,7 +55,7 @@ class PresetDataProvider(DataProvider):
         frequency
             frequency of the data
         exp_dates
-            dictionary mapping FutureTickers to QFSeries of contracts expiration dates, belonging to the certain
+            dictionary mapping FutureTickers to QFDataFrame of contracts expiration dates, belonging to the certain
             future ticker family
         """
         self._data_bundle = data
@@ -78,7 +79,7 @@ class PresetDataProvider(DataProvider):
         return self._frequency
 
     @property
-    def exp_dates(self) -> Dict[FutureTicker, QFSeries]:
+    def exp_dates(self) -> Dict[FutureTicker, QFDataFrame]:
         return self._exp_dates
 
     @property
@@ -114,7 +115,7 @@ class PresetDataProvider(DataProvider):
         # The passed desired data frequency should be at most equal to the frequency of the initially loaded data
         # (in case of downsampling the data may be aggregated, but no data upsampling is supported).
         assert frequency <= self._frequency, "The passed data frequency should be at most equal to the frequency of " \
-                                            "the initially loaded data"
+            "the initially loaded data"
         # The PresetDataProvider does not support data aggregation for frequency lower than daily frequency
         if frequency < self._frequency and frequency <= Frequency.DAILY:
             raise NotImplementedError("Data aggregation for lower than daily frequency is not supported yet")
@@ -234,8 +235,9 @@ class PresetDataProvider(DataProvider):
 
         return normalized_result
 
-    def get_futures_chain_tickers(self, tickers: Union[FutureTicker, Sequence[FutureTicker]]) \
-            -> Dict[FutureTicker, QFSeries]:
+    def get_futures_chain_tickers(self, tickers: Union[FutureTicker, Sequence[FutureTicker]],
+                                  expiration_date_fields: Union[ExpirationDateField, Sequence[ExpirationDateField]]) \
+            -> Dict[FutureTicker, Union[QFSeries, QFDataFrame]]:
 
         tickers, got_single_ticker = convert_to_list(tickers, Ticker)
 

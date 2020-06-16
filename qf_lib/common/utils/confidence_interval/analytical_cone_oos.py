@@ -79,4 +79,3 @@ class AnalyticalConeOOS(AnalyticalConeBase):
             'Strategy': strategy_values_tms,
             'Expectation': expected_tms,
         })
-

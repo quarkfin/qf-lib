@@ -26,7 +26,7 @@ from qf_lib.plotting.decorators.scatter_decorator import ScatterDecorator
 from qf_lib.plotting.decorators.title_decorator import TitleDecorator
 
 
-def create_dd_probability_chart(prices_tms: QFSeries, bear_market_definition: float=0.2) -> Tuple[Chart, Chart]:
+def create_dd_probability_chart(prices_tms: QFSeries, bear_market_definition: float = 0.2) -> Tuple[Chart, Chart]:
 
     def count_dd_above_threshold(drawdown_series: Sequence, threshold: float):
         return sum(1 for dd in drawdown_series if dd > threshold)

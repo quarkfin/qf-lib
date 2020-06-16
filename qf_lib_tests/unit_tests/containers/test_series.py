@@ -90,7 +90,7 @@ class TestSeries(TestCase):
         self.assertEqual(expected_frequency, actual_frequency)
 
         expected_interval = pd.Timedelta("1 day")
-        expected_frequency = 2/3
+        expected_frequency = 2 / 3
         dates = pd.date_range('2016-04-01', periods=4, freq='b')
         test_series = QFSeries(data=[0, 0, 0, 0], index=dates)
 

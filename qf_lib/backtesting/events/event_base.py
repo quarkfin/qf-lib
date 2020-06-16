@@ -13,8 +13,7 @@
 #     limitations under the License.
 
 import abc
-from datetime import datetime
-from typing import Generic, TypeVar, Set, Type, Optional
+from typing import Generic, TypeVar, Set, Type
 
 
 class Event(object, metaclass=abc.ABCMeta):

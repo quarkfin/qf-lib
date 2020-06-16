@@ -14,7 +14,6 @@
 
 from abc import ABCMeta
 from datetime import datetime
-from os import path
 from typing import List
 
 import matplotlib as plt

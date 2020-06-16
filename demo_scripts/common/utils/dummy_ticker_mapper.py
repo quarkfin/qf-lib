@@ -27,4 +27,3 @@ class DummyTickerMapper(ContractTickerMapper):
 
     def ticker_to_contract(self, ticker: Ticker) -> Contract:
         return Contract(symbol=ticker.ticker, security_type='STK', exchange='SIM_EXCHANGE')
-

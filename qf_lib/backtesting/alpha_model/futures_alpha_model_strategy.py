@@ -86,7 +86,7 @@ class FuturesAlphaModelStrategy(AlphaModelStrategy):
         expired_contracts = {
             contract for contract in open_positions_contracts
             if belongs_to_any_of_future_families(contract, signals_future_tickers) and
-               contract.symbol not in signals_future_tickers_strings
+            contract.symbol not in signals_future_tickers_strings
         }
 
         # Create close market orders for each of the overlapping, old future contracts
@@ -122,7 +122,7 @@ class FuturesAlphaModelStrategy(AlphaModelStrategy):
 
         assert len(matching_position_quantities) in [0, 1, 2]
 
-        if len(matching_position_quantities) is 2:
+        if len(matching_position_quantities) == 2:
             # The position for the previous contract is still open (it was not possible to close the position - e.g.
             # no prices for this contract) and the position for the new contract has been already opened
             # In this case, we need to match the position based on the specific ticker

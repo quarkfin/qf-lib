@@ -74,7 +74,7 @@ class DailyDataHandler(DataHandler):
                 tickers_as_strings = ", ".join(ticker.as_string() for ticker in tickers)
             raise ValueError("Not enough data points for \ntickers: {} \ndate: {}."
                              "\n{} Data points requested, \n{} Data points available.".format(
-                tickers_as_strings, end_date, nr_of_bars, num_of_dates_available))
+                                 tickers_as_strings, end_date, nr_of_bars, num_of_dates_available))
 
         if isinstance(container, QFDataArray):
             return container.isel(dates=slice(-nr_of_bars, None))

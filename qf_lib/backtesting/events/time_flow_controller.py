@@ -90,7 +90,8 @@ class LiveSessionTimeFlowController(TimeFlowController):
         self.sleep_until(next_time_of_event)
 
         for time_event in time_events_list:
-            self.logger.info("Wake up!".format(time_event.__class__.__name__, next_time_of_event))
+            self.logger.info("Wake up! Current event: {}, Next event: {}".format(
+                time_event.__class__.__name__, next_time_of_event))
             self.event_manager.publish(time_event)
 
     def sleep_until(self, time_of_next_time_event: datetime):

@@ -29,7 +29,7 @@ from qf_lib.containers.series.qf_series import QFSeries
 
 class FuturesChain(pd.Series):
     def __init__(self, future_ticker: FutureTicker, data_provider: "DataProvider", method: FuturesAdjustmentMethod =
-    FuturesAdjustmentMethod.NTH_NEAREST):
+                 FuturesAdjustmentMethod.NTH_NEAREST):
         """
         The index consists of expiry dates of the future contracts.
         """
@@ -62,59 +62,32 @@ class FuturesChain(pd.Series):
         regenerated.
 
         """
-
-        def preload_data_and_generate_chain() -> Union[PricesDataFrame, PricesSeries]:
-            """
-            Function, which at first preloads all of the necessary data, by initializing the Futures Chain object with
-            the self._initialize_futures_chain function. Afterwards, it generates the PricesDataFrame (PricesSeries)
-            using the self._generate_chain function and updates the self._specific_ticker. It returns the resulting
-            PricesDataFrame (PricesSeries).
-            """
-            # At first, initialize the FuturesChain with all the necessary data. If the selected futures adjustment
-            # method is the BACK_ADJUST, verify whether the fields contain the PriceField.Open and PriceField.Close
-            # and add them if needed.
-            necessary_fields = set(fields_list).union({PriceField.Open, PriceField.Close})
-            necessary_fields = necessary_fields.union(self._cached_fields)
-            necessary_fields = list(necessary_fields)
-
-            self._initialize_futures_chain(necessary_fields, start_date, end_date, frequency)
-            # Secondly, generate the PricesDataFrame (PricesSeries)
-            self._chain = self._generate_chain(fields, start_date, end_date)
-            # Update the specific ticker
-            self._specific_ticker = self._future_ticker.ticker
-            self._cached_fields = set(fields_list)
-
-            return self._chain[fields_list].loc[start_date:end_date]
-
         # 1 - Check if the chain was generated at least once, if not - preload the necessary data using the
-        # self._initialize_futures_chain function, and then generate the chain of prices, otherwise - store the last
-        # and first available dates from the chain
+        # self._preload_data_and_generate_chain function, and then generate the chain of prices,
+        # otherwise - store the last and first available dates from the chain
         fields_list, _ = convert_to_list(fields, PriceField)
 
-        try:
+        if self._chain is not None and not self._chain.empty:
             last_date_in_chain = self._chain.index[-1]
             first_date_in_chain = self._first_cached_date
-        except AttributeError:
-            return preload_data_and_generate_chain()
+        else:
+            return self._preload_data_and_generate_chain(fields, start_date, end_date, frequency)
 
         # 2 - Check if all the necessary data is available (if start_date >= first_cached_date) and cached fields
         # include all fields from fields_list, if not - preload it by initializing the Futures Chain
-        if start_date < first_date_in_chain:
-            preload_data_and_generate_chain()
-
         uncached_fields = set(fields_list) - self._cached_fields
-        if uncached_fields:
-            preload_data_and_generate_chain()
+        if start_date < first_date_in_chain or uncached_fields:
+            self._preload_data_and_generate_chain(fields, start_date, end_date, frequency)
 
         # 3 - Download the prices since the last date available in the chain
         prices_df = self._data_provider.get_price(self._future_ticker, fields, last_date_in_chain, end_date)
 
-        # Discard the row containing last_date_in_chain
-        if not prices_df.empty and prices_df.index[0] == last_date_in_chain:
-            prices_df = prices_df.iloc[1:]
-
         # If no changes to the PricesDataFrame should be applied return the existing chain
         if prices_df.empty:
+            return self._chain[fields_list].loc[start_date:end_date]
+
+        prices_after_last_date_in_chain = prices_df.iloc[1:] if prices_df.index[0] == last_date_in_chain else prices_df
+        if prices_after_last_date_in_chain.empty:
             return self._chain[fields_list].loc[start_date:end_date]
 
         # 4 - Check if between last_date_in_chain and end_date an expiration date occurred
@@ -122,8 +95,21 @@ class FuturesChain(pd.Series):
             """
             Returns True if an expiration day occurred since last price was added to the chain, otherwise it returns
             False.
+
+            If the price for the last_date_in_chain in self._chain differs from the value for the same date in prices_df
+            it means that the expiration day occurred a few days ago, but no data was shifted yet (e.g. it happened on
+            saturday and thus there was no new data for the next ticker, which could have been used for data shifting)
+
             """
-            return self._specific_ticker != self._future_ticker.ticker
+            different_ticker = self._specific_ticker != self._future_ticker.ticker
+
+            if last_date_in_chain in prices_df.index:
+                different_prices = not self._chain[fields].loc[last_date_in_chain].equals(
+                    prices_df[fields].loc[last_date_in_chain])
+            else:
+                different_prices = True
+
+            return different_ticker or different_prices
 
         if expiration_day_occurred():
             # After expiration day the FutureChain has to be regenerated in case of both FuturesAdjustmentMethods, also
@@ -136,12 +122,43 @@ class FuturesChain(pd.Series):
             # chain will still point to 13th. Therefore, the prices_df will contain prices for C2 within e.g. 14 - 16th
             # July. As the expiration of C1 occurred on the 16th, the computed prices_df data frame cannot be appended
             # to the chain and the chain should be regenerated.
-            return preload_data_and_generate_chain()
+            return self._preload_data_and_generate_chain(fields, start_date, end_date, frequency)
         else:
             # Append the new prices to the existing PricesDataFrame chain
-            self._chain = self._chain.append(prices_df)
+            self._chain = self._chain.append(prices_after_last_date_in_chain)
             self._specific_ticker = self._future_ticker.ticker
             return self._chain[fields_list].loc[start_date:end_date]
+
+    def _preload_data_and_generate_chain(self, fields: Union[PriceField, Sequence[PriceField]], start_date: datetime,
+                                         end_date: datetime, frequency: Frequency) -> \
+            Union[PricesDataFrame, PricesSeries]:
+        """
+        Function, which at first preloads all of the necessary data, by initializing the Futures Chain object with
+        the self._initialize_futures_chain function. Afterwards, it generates the PricesDataFrame (PricesSeries)
+        using the self._generate_chain function and updates the self._specific_ticker. It returns the resulting
+        PricesDataFrame (PricesSeries).
+
+        At first, it initializes the FuturesChain with all the necessary data. If the selected futures adjustment
+        method is the BACK_ADJUST, verify whether the fields contain the PriceField.Open and PriceField.Close
+        and add them if needed.
+        """
+
+        fields_list, _ = convert_to_list(fields, PriceField)
+
+        necessary_fields = set(fields_list).union({PriceField.Open, PriceField.Close})
+        necessary_fields = necessary_fields.union(self._cached_fields)
+        necessary_fields = list(necessary_fields)
+
+        self._initialize_futures_chain(necessary_fields, start_date, end_date, frequency)
+
+        # Generate the PricesDataFrame (PricesSeries)
+        self._chain = self._generate_chain(fields, start_date, end_date)
+
+        # Update the specific ticker
+        self._specific_ticker = self._future_ticker.ticker
+        self._cached_fields = set(fields_list)
+
+        return self._chain[fields_list].loc[start_date:end_date]
 
     def _generate_chain(self, fields, start_time: datetime, end_time: datetime) -> PricesDataFrame:
         """
@@ -328,7 +345,7 @@ class FuturesChain(pd.Series):
         # which expired before the start_date
         future_tickers_exp_dates_series = future_tickers_exp_dates_series[
             future_tickers_exp_dates_series.index >= start_date
-            ]
+        ]
         # Exclude contracts which will not be used while building the current futures chain. All of the newer contracts,
         # which will be used for later futures chains building will be downloaded later anyway, as
         # _initialize_futures_chain() is called after each expiration of a contract.

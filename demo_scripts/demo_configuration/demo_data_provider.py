@@ -16,11 +16,8 @@ from os.path import join
 from pandas import read_csv
 
 from demo_scripts.common.utils.dummy_ticker import DummyTicker
-from qf_lib.backtesting.data_handler.daily_data_handler import DailyDataHandler
-from qf_lib.backtesting.data_handler.intraday_data_handler import IntradayDataHandler
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
-from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.data_providers.preset_data_provider import PresetDataProvider
 from qf_lib.starting_dir import get_starting_dir_abs_path

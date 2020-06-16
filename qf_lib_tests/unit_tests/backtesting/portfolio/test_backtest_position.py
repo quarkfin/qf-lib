@@ -52,7 +52,6 @@ class TestBacktestPosition(unittest.TestCase):
         self.assertEqual(position.direction, 0)
         self.assertEqual(position.start_time, self.start_time)
         self.assertEqual(position.avg_price_per_unit(), 0.0)
-        self.assertEqual(position.total_commission_to_build_position(), 0.0)
 
     def test_transact_transaction_1(self):
         position = DummyPosition(self.contract, start_time=self.start_time)
@@ -60,7 +59,10 @@ class TestBacktestPosition(unittest.TestCase):
         price = 100
         commission = 5
 
-        position.transact_transaction(Transaction(self.random_time, self.contract, quantity, price, commission))
+        transaction = Transaction(self.random_time, self.contract, quantity, price, commission)
+        self.assertEqual(position.check_if_transaction_generates_trade(transaction), None)
+
+        position.transact_transaction(transaction)
 
         self.assertEqual(position.contract(), self.contract)
         self.assertEqual(position.is_closed, False)
@@ -69,7 +71,6 @@ class TestBacktestPosition(unittest.TestCase):
         self.assertEqual(position.direction, 1)
         self.assertEqual(position.start_time, self.start_time)
         self.assertEqual(position.avg_price_per_unit(), price)  # taken from the list of transactions
-        self.assertEqual(position.total_commission_to_build_position(), commission)
 
     def test_transact_transaction_2(self):
         position = DummyPosition(self.contract, start_time=self.start_time)
@@ -77,19 +78,21 @@ class TestBacktestPosition(unittest.TestCase):
         quantity1 = 50
         price1 = 100
         commission1 = 5
-        position.transact_transaction(Transaction(self.random_time, self.contract, quantity1, price1, commission1))
+        transaction1 = Transaction(self.random_time, self.contract, quantity1, price1, commission1)
+        position.transact_transaction(transaction1)
 
         quantity2 = 30
         price2 = 120
         commission2 = 7
-        position.transact_transaction(Transaction(self.random_time, self.contract, quantity2, price2, commission2))
+        transaction2 = Transaction(self.random_time, self.contract, quantity2, price2, commission2)
+        self.assertEqual(position.check_if_transaction_generates_trade(transaction2), None)
+        position.transact_transaction(transaction2)
 
         self.assertEqual(position.contract(), self.contract)
         self.assertEqual(position.is_closed, False)
         self.assertEqual(position.quantity(), quantity1 + quantity2)
         self.assertEqual(position.direction, 1)
         self.assertEqual(position.start_time, self.start_time)
-        self.assertEqual(position.total_commission_to_build_position(), commission1 + commission2)
         avg_price = (quantity1 * price1 + quantity2 * price2) / (quantity1 + quantity2)
         self.assertEqual(position.avg_price_per_unit(), avg_price)  # taken from the list of transactions
 
@@ -111,18 +114,20 @@ class TestBacktestPosition(unittest.TestCase):
         quantity3 = -40
         price3 = 150
         commission3 = 11
-        position.transact_transaction(Transaction(self.random_time, self.contract, quantity3, price3, commission3))
+        transaction3 = Transaction(self.random_time, self.contract, quantity3, price3, commission3)
+        # Check the commission, that would be generated for a trade
+        self.assertEqual(position.check_if_transaction_generates_trade(transaction3).commission,
+                         (commission1 + commission2) / 2 + commission3)
+        position.transact_transaction(transaction3)
 
         self.assertEqual(position.contract(), self.contract)
         self.assertEqual(position.is_closed, False)
         self.assertEqual(position.quantity(), quantity1 + quantity2 + quantity3)
         self.assertEqual(position.direction, 1)
         self.assertEqual(position.start_time, self.start_time)
-        self.assertEqual(position.total_commission_to_build_position(), commission1 + commission2)
-        avg_price = (quantity1 * price1 + quantity2 * price2) / (quantity1 + quantity2)
-        self.assertEqual(position.avg_price_per_unit(), avg_price)  # taken from the list of transactions
 
-        self.assertEqual(position.current_price, 0)  # set by update_price
+        avg_price = (quantity1 * price1 + quantity2 * price2) / (quantity1 + quantity2)
+        self.assertEqual(position.avg_price_per_unit(), avg_price)
 
     def test_update_price(self):
         position = DummyPosition(self.contract, start_time=self.start_time)
@@ -134,48 +139,60 @@ class TestBacktestPosition(unittest.TestCase):
         self.assertEqual(position.current_price, 0)  # set by update_price
 
         bid_price = 110
-        position.update_price(bid_price=bid_price, ask_price=bid_price+1)
+        position.update_price(bid_price=bid_price, ask_price=bid_price + 1)
 
         self.assertEqual(position.current_price, bid_price)
 
         bid_price = 120
-        position.update_price(bid_price=bid_price, ask_price=bid_price+1)
+        position.update_price(bid_price=bid_price, ask_price=bid_price + 1)
         self.assertEqual(position.current_price, bid_price)
 
     def test_without_commission_position(self):
         position = DummyPosition(self.contract, start_time=self.start_time)
 
-        position.transact_transaction(Transaction(self.start_time, self.contract, 50, 100, 0))
-        position.transact_transaction(Transaction(self.start_time, self.contract, 30, 120, 0))
-        position.transact_transaction(Transaction(self.start_time, self.contract, -20, 175, 0))
-        position.transact_transaction(Transaction(self.start_time, self.contract, -30, 160, 0))
-        position.transact_transaction(Transaction(self.start_time, self.contract, 10, 150, 0))
-        position.transact_transaction(Transaction(self.start_time, self.contract, 10, 170, 0))
-        position.transact_transaction(Transaction(self.start_time, self.contract, -20, 150, 0))
-        position.update_price(110, 120)
+        transactions = [
+            Transaction(self.start_time, self.contract, 50, 100, 0),
+            Transaction(self.start_time, self.contract, 30, 120, 0),
+            Transaction(self.start_time, self.contract, -20, 175, 0),
+            Transaction(self.start_time, self.contract, -30, 160, 0),
+            Transaction(self.start_time, self.contract, 10, 150, 0),
+            Transaction(self.start_time, self.contract, 10, 170, 0),
+            Transaction(self.start_time, self.contract, -20, 150, 0)
+        ]
+
+        for transaction in transactions:
+            position.transact_transaction(transaction)
+
+        current_price = 110
+        position.update_price(current_price, 120)
 
         self.assertEqual(position.contract(), self.contract)
-        self.assertEqual(position._quantity, 30)
-        self.assertEqual(position.current_price, 110)
-        self.assertEqual(position.avg_price_per_unit(), 118.0)
+
+        position_quantity = sum(t.quantity for t in transactions)
+        self.assertEqual(position._quantity, position_quantity)
+
+        self.assertEqual(position.current_price, current_price)
 
     def test_position(self):
         position = DummyPosition(self.contract, start_time=self.start_time)
 
-        position.transact_transaction(Transaction(self.start_time, self.contract, 50, 100, 5))
-        position.transact_transaction(Transaction(self.start_time, self.contract, 30, 120, 3))
-        position.transact_transaction(Transaction(self.start_time, self.contract, -20, 175, 2))
-        position.transact_transaction(Transaction(self.start_time, self.contract, -30, 160, 1))
-        position.transact_transaction(Transaction(self.start_time, self.contract, 10, 150, 7))
-        position.transact_transaction(Transaction(self.start_time, self.contract, 10, 170, 4))
-        position.transact_transaction(Transaction(self.start_time, self.contract, -20, 150, 5))
+        transactions = (
+            Transaction(self.start_time, self.contract, 50, 100, 5),
+            Transaction(self.start_time, self.contract, 30, 120, 3),
+            Transaction(self.start_time, self.contract, -20, 175, 2),
+            Transaction(self.start_time, self.contract, -30, 160, 1),
+            Transaction(self.start_time, self.contract, 10, 150, 7),
+            Transaction(self.start_time, self.contract, 10, 170, 4),
+            Transaction(self.start_time, self.contract, -20, 150, 5)
+        )
+
+        for transaction in transactions:
+            position.transact_transaction(transaction)
         position.update_price(110, 120)
 
         self.assertEqual(position.contract(), self.contract)
         self.assertEqual(position._quantity, 30)
         self.assertEqual(position.current_price, 110)
-        avg_price = (50*100+30*120+10*150+10*170)/100
-        self.assertEqual(position.avg_price_per_unit(), avg_price)
 
     def test_position_close(self):
         position = DummyPosition(self.contract, start_time=self.start_time)
@@ -189,9 +206,13 @@ class TestBacktestPosition(unittest.TestCase):
 
     def test_position_stats_on_close(self):
         position = DummyPosition(self.contract, start_time=self.start_time)
-        position.transact_transaction(Transaction(self.start_time, self.contract, 20, 100, 0))
+        position.transact_transaction(Transaction(self.start_time, self.contract, 20, 100, 50))
         position.update_price(110, 120)
-        position.transact_transaction(Transaction(self.start_time, self.contract, -20, 120, 0))
+
+        closing_transaction = Transaction(self.start_time, self.contract, -20, 120, 50)
+        self.assertEqual(position.check_if_transaction_generates_trade(closing_transaction).commission, 100)
+
+        position.transact_transaction(closing_transaction)
 
         self.assertEqual(position.contract(), self.contract)
         self.assertEqual(position.is_closed, True)
@@ -200,7 +221,6 @@ class TestBacktestPosition(unittest.TestCase):
         self.assertEqual(position.direction, 0)
         self.assertEqual(position.start_time, self.start_time)
         self.assertEqual(position.avg_price_per_unit(), 0)
-        self.assertEqual(position.total_commission_to_build_position(), 0)
 
     def test_position_direction1(self):
         position = DummyPosition(self.contract, start_time=self.start_time)

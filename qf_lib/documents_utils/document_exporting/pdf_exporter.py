@@ -49,7 +49,7 @@ class PDFExporter(DocumentExporter):
         """
         Sets the document_css_dir one level above 'default css', to enable applying css classes in other folders.
         Using the generate function demands inputting css_file_names as paths from newly set level.
-        e.g: 'default_css\main'
+        e.g: 'default_css\main"
         """
         self._document_css_dir = abspath(dirname(__file__))
 

@@ -17,7 +17,7 @@ from datetime import datetime
 from typing import Dict
 
 from qf_lib.backtesting.events.time_event.regular_date_time_rule import RegularDateTimeRule
-from qf_lib.backtesting.events.time_event.regular_time_event .regular_time_event import RegularTimeEvent
+from qf_lib.backtesting.events.time_event.regular_time_event.regular_time_event import RegularTimeEvent
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 
 

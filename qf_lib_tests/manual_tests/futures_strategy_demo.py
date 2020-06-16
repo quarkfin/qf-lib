@@ -160,7 +160,7 @@ def main():
     ts.start_trading()
 
     actual_end_value = ts.portfolio.portfolio_eod_series()[-1]
-    expected_value = 10367095.046761528
+    expected_value = 10317477.750000006
 
     print("Expected End Value = {}".format(expected_value))
     print("Actual End Value   = {}".format(actual_end_value))

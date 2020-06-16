@@ -74,7 +74,7 @@ class PositionSizer(object, metaclass=ABCMeta):
             orders = market_orders + stop_orders
 
             for order in stop_orders:
-                    self.logger.info("Stop Order for {}, {}".format(order.contract, order))
+                self.logger.info("Stop Order for {}, {}".format(order.contract, order))
 
         return orders
 

@@ -20,7 +20,7 @@ from qf_lib.common.utils.volatility.get_volatility import get_volatility
 from qf_lib.containers.series.qf_series import QFSeries
 
 
-def sharpe_ratio(qf_series: QFSeries, frequency: Frequency, risk_free: float=0) -> float:
+def sharpe_ratio(qf_series: QFSeries, frequency: Frequency, risk_free: float = 0) -> float:
     """
     Calculates the Sharpe Ratio for a given timeseries of returns and given frequency.
 

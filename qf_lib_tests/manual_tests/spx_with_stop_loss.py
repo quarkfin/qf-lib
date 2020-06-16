@@ -18,8 +18,6 @@ import matplotlib.pyplot as plt
 
 from qf_lib.common.enums.frequency import Frequency
 
-plt.ion()  # required for dynamic chart, good to keep this at the beginning of imports
-
 from qf_lib.backtesting.execution_handler.commission_models.ib_commission_model import IBCommissionModel
 from demo_scripts.demo_configuration.demo_ioc import container
 from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
@@ -30,6 +28,8 @@ from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.backtesting.events.time_event.regular_time_event.before_market_open_event import BeforeMarketOpenEvent
 from qf_lib.backtesting.trading_session.backtest_trading_session import BacktestTradingSession
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
+
+plt.ion()  # required for dynamic chart, good to keep this at the beginning of imports
 
 
 class SpxWithStopLoss(object):

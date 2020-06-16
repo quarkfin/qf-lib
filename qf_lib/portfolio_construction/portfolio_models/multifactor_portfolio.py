@@ -39,7 +39,7 @@ class MultiFactorPortfolio(Portfolio):
     """
 
     def __init__(self, covariance_matrix: pd.DataFrame,
-                 variance: pd.Series, mean: pd.Series, max_drawdown: pd.Series, skewness:  pd.Series,
+                 variance: pd.Series, mean: pd.Series, max_drawdown: pd.Series, skewness: pd.Series,
                  parameters: PortfolioParameters, upper_constraint: Union[float, Sequence[float]] = None):
         self.covariance_matrix = covariance_matrix
         self.variance = variance

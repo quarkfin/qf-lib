@@ -26,7 +26,7 @@ from qf_lib.documents_utils.document_exporting import templates
 
 class DFTable(Element):
     def __init__(self, data: QFDataFrame = None, columns: Sequence[str] = None, css_classes: Union[str, Sequence[str]] =
-    "table", title: str = "", grid_proportion: GridProportion = GridProportion.Eight):
+                 "table", title: str = "", grid_proportion: GridProportion = GridProportion.Eight):
         super().__init__(grid_proportion)
 
         self.model = ModelController(data=data, index=data.index,

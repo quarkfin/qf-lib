@@ -134,7 +134,9 @@ def create_bar_chart(
         else:
             show_every = 4  # Every year (4 quarters).
             date_format = date_label_format[0]
-        func = lambda x, pos: _quarterly_formatter(x, pos, show_every, date_format)
+
+        def func(x, pos):
+            return _quarterly_formatter(x, pos, show_every, date_format)
         axes_formatter = AxesFormatterDecorator(x_major=FuncFormatter(func), key="formatter")
         bar_chart.add_decorator(axes_formatter)
 

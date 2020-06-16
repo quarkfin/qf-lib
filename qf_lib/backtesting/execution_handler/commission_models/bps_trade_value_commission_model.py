@@ -20,6 +20,7 @@ class BpsTradeValueCommissionModel(CommissionModel):
     """
     Commission model which uses fixed bps rate for trade value. For example always 2pbs of the $ value ot the trade.
     """
+
     def __init__(self, commission: float):
         """
         Parameters

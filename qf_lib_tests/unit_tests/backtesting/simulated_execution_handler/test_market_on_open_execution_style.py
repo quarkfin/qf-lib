@@ -82,7 +82,7 @@ class TestMarketOnOpenExecutionStyle(TestCase):
         MarketCloseEvent.set_trigger_time({"hour": 20, "minute": 0, "second": 0, "microsecond": 0})
 
         before_close = self.start_date + MarketCloseEvent.trigger_time() - \
-                       RelativeDelta(minutes=self.number_of_minutes)
+            RelativeDelta(minutes=self.number_of_minutes)
 
         self.msft_contract = Contract(self.MSFT_TICKER_STR, security_type='STK', exchange='TEST')
         self.msft_ticker = BloombergTicker(self.MSFT_TICKER_STR)
@@ -206,7 +206,7 @@ class TestMarketOnOpenExecutionStyle(TestCase):
         verify(self.portfolio, times=1).transact_transaction(...)
 
         actual_orders = self.exec_handler.get_open_orders()
-        expected_orders = [self.order_1,  self.order_2, self.order_3]
+        expected_orders = [self.order_1, self.order_2, self.order_3]
         self.assertCountEqual(expected_orders, actual_orders)
 
         self.exec_handler.on_market_open(...)
@@ -281,4 +281,3 @@ class TestMarketOnOpenExecutionStyle(TestCase):
         when(self.data_handler).get_current_price([self.msft_ticker]).thenReturn(
             pd.Series(data=[price], index=pd.Index([self.msft_ticker]))
         )
-

@@ -12,8 +12,10 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 from datetime import datetime
+
 import matplotlib as plt
 
+from qf_lib.analysis.error_handling import ErrorHandling
 from qf_lib.analysis.tearsheets.abstract_tearsheet import AbstractTearsheet
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.documents_utils.document_exporting.element.chart import ChartElement
@@ -21,7 +23,6 @@ from qf_lib.documents_utils.document_exporting.element.paragraph import Paragrap
 from qf_lib.plotting.charts.cone_chart_oos import ConeChartOOS
 from qf_lib.plotting.decorators.axes_position_decorator import AxesPositionDecorator
 from qf_lib.settings import Settings
-from qf_lib.analysis.error_handling import ErrorHandling
 
 
 @ErrorHandling.class_error_logging()
@@ -46,7 +47,7 @@ class StrategyMonitoringDocument(AbstractTearsheet):
 
         self._add_cone_chart()
         self.document.add_element(ParagraphElement("\n\n"))
-        
+
         self._add_rolling_chart(self.strategy_series)
 
     def set_in_sample_statistics(self, is_mean_return, is_sigma):

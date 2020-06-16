@@ -16,6 +16,7 @@ from abc import abstractmethod, ABCMeta
 from datetime import datetime
 from typing import Union, Sequence, Dict
 
+from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
@@ -77,6 +78,24 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
 
         Ticker is optional and might be use by particular data providers to create appropriate dictionary
         """
+
+    @abstractmethod
+    def expiration_date_field_str_map(self, ticker: Ticker = None) -> Dict[ExpirationDateField, str]:
+        """
+        Method has to be implemented in each data provider in order to be able to use get_futures_chain_tickers.
+        Returns dictionary containing mapping between ExpirationDateField and corresponding string that has to be used
+        by get_futures_chain_tickers method.
+
+        Ticker is optional and might be use by particular data providers to create appropriate dictionary
+        """
+
+    def str_to_expiration_date_field_map(self, ticker: Ticker = None) -> Dict[str, ExpirationDateField]:
+        """"
+        Inverse of str_to_expiration_date_field_map.
+        """
+        field_str_dict = self.expiration_date_field_str_map(ticker)
+        inv_dict = {v: k for k, v in field_str_dict.items()}
+        return inv_dict
 
     def str_to_price_field_map(self, ticker: Ticker = None) -> Dict[str, PriceField]:
         """"

@@ -1,7 +1,7 @@
 """
 Copyright (C) 2016 Interactive Brokers LLC. All rights reserved.  This code is
 subject to the terms and conditions of the IB API Non-Commercial License or the
- IB API Commercial License, as applicable. 
+ IB API Commercial License, as applicable.
 """
 
 #     Copyright 2016-present CERN – European Organization for Nuclear Research
@@ -83,7 +83,7 @@ class AvailableAlgoParams(Object):
         baseOrder.algoParams.append(TagValue("monetaryValue", monetaryValue))
 
     @staticmethod
-    def FillAccumulateDistributeParams(baseOrder: Order, componentSize: int,timeBetweenOrders: int,
+    def FillAccumulateDistributeParams(baseOrder: Order, componentSize: int, timeBetweenOrders: int,
                                        randomizeTime20: bool, randomizeSize55: bool, giveUp: int, catchUp: bool,
                                        waitForFill: bool, startTime: str, endTime: str):
         baseOrder.algoStrategy = "AD"
@@ -207,4 +207,3 @@ class AvailableAlgoParams(Object):
         baseOrder.algoParams.append(TagValue("MinBlockSize", minBlockSize))
         baseOrder.algoParams.append(TagValue("MaxBlockSize", maxBlockSize))
         baseOrder.algoParams.append(TagValue("IWouldPrice", iWouldPrice))
-

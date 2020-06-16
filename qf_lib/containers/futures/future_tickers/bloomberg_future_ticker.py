@@ -11,12 +11,14 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-
+import pandas as pd
 import re
 from itertools import cycle
 
+from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
+from qf_lib.containers.series.qf_series import QFSeries
 
 
 class BloombergFutureTicker(FutureTicker, BloombergTicker):
@@ -50,7 +52,7 @@ class BloombergFutureTicker(FutureTicker, BloombergTicker):
         # Used for the purpose of random specific ticker computation
         self._random_year_codes = cycle(['09', '9', '99', '19'])
 
-    def get_random_specific_ticker(self)-> BloombergTicker:
+    def get_random_specific_ticker(self) -> BloombergTicker:
         """
         Returns sample ticker from the family id that can be used in BBG to get further data (future chain members for
         example).
@@ -65,7 +67,12 @@ class BloombergFutureTicker(FutureTicker, BloombergTicker):
         futures tickers. It uses the list of month codes of designated contracts and filter out these, that should not
         be considered by the future ticker.
         """
-        futures_chain_tickers = super()._get_futures_chain_tickers()
+        futures_chain_tickers_df = self._data_provider.get_futures_chain_tickers(self,
+                                                                                 ExpirationDateField.all_dates())[self]
+        # Get the minimum date
+        futures_chain_tickers = futures_chain_tickers_df.min(axis=1)
+        futures_chain_tickers = QFSeries(data=futures_chain_tickers.index, index=futures_chain_tickers.values)
+        futures_chain_tickers.index = pd.to_datetime(futures_chain_tickers.index)
 
         # Filter out the non-designated contracts
         seed = self.family_id.split("{}")[0]

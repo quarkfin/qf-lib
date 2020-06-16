@@ -23,7 +23,7 @@ from qf_lib.containers.series.qf_series import QFSeries
 InputData = TypeVar('InputData', QFSeries, QFDataFrame)
 
 
-def drawdown_tms(input_data: InputData, frequency: Frequency=None) -> InputData:
+def drawdown_tms(input_data: InputData, frequency: Frequency = None) -> InputData:
     """
     Calculates the timeseries of the same dates as prices_tms, which contains the drawdown value for each date.
 

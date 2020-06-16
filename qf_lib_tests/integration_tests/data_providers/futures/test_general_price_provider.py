@@ -14,6 +14,7 @@
 import unittest
 
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
+from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.dateutils.timer import SettableTimer
@@ -50,9 +51,8 @@ class TestGeneralPriceProvider(unittest.TestCase):
         MarketCloseEvent.set_trigger_time({"hour": 20, "minute": 00, "second": 0, "microsecond": 0})
 
     def test_get_futures_chain_tickers(self):
-        fut_chain_dict = data_provider.get_futures_chain_tickers(self.tickers)
-        bbg_fut_chain_dict = bbg_provider.get_futures_chain_tickers(self.tickers)
+        fut_chain_dict = data_provider.get_futures_chain_tickers(self.tickers, ExpirationDateField.all_dates())
+        bbg_fut_chain_dict = bbg_provider.get_futures_chain_tickers(self.tickers, ExpirationDateField.all_dates())
 
         for ticker in self.tickers:
             self.assertCountEqual(fut_chain_dict[ticker], bbg_fut_chain_dict[ticker])
-

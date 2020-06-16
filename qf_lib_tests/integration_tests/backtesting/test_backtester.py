@@ -24,8 +24,6 @@ from qf_lib.common.enums.frequency import Frequency
 from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_series_equal
 from qf_lib_tests.unit_tests.config.test_settings import get_test_settings
 
-matplotlib.use("Agg")
-
 from qf_lib_tests.integration_tests.backtesting.trading_session_for_tests import TestingTradingSession
 from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.order.execution_style import MarketOrder
@@ -37,6 +35,8 @@ from qf_lib.backtesting.order.order_factory import OrderFactory
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
+
+matplotlib.use("Agg")
 
 
 class BuyAndHoldStrategy(object):

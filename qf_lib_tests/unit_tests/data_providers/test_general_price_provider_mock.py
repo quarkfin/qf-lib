@@ -57,7 +57,7 @@ class TestGeneralPriceProviderMock(unittest.TestCase):
         ])
 
         data = [
-            [[263.7628], [None],   [111.02], [321.8249]],
+            [[263.7628], [None], [111.02], [321.8249]],
             [[263.9803], [106.39], [121.29], [322.0949]],
             [[264.1640], [106.36], [121.22], [322.3203]],
             [[264.0932], [106.25], [121.05], [322.4172]],
@@ -68,7 +68,7 @@ class TestGeneralPriceProviderMock(unittest.TestCase):
             [[264.8223], [106.50], [121.10], [322.7489]],
             [[264.4531], [106.23], [121.31], [322.9710]],
             [[264.4690], [106.16], [121.14], [323.0688]],
-            [[None],     [106.06], [121.01], [323.1553]]
+            [[None], [106.06], [121.01], [323.1553]]
         ]
 
         bloomberg = mock(strict=True)
@@ -76,7 +76,7 @@ class TestGeneralPriceProviderMock(unittest.TestCase):
             .get_price(self.BBG_TICKERS, self.PRICE_FIELDS, self.START_DATE, self.END_DATE, self.FREQUENCY) \
             .thenReturn(
                 QFDataArray.create(dates=datetime_index, tickers=self.BBG_TICKERS, fields=self.PRICE_FIELDS, data=data)
-            )
+        )
         when(bloomberg).supported_ticker_types().thenReturn({BloombergTicker})
 
         quandl = mock(strict=True)
@@ -86,7 +86,7 @@ class TestGeneralPriceProviderMock(unittest.TestCase):
                 QFDataArray.create(
                     dates=datetime_index, tickers=self.QUANDL_TICKERS, fields=self.PRICE_FIELDS, data=data
                 )
-            )
+        )
         when(quandl).supported_ticker_types().thenReturn({QuandlTicker})
 
         haver = mock(strict=True)
@@ -96,7 +96,7 @@ class TestGeneralPriceProviderMock(unittest.TestCase):
                 QFDataArray.create(
                     dates=datetime_index, tickers=self.HAVER_TICKERS, fields=self.PRICE_FIELDS, data=data
                 )
-            )
+        )
         when(haver).supported_ticker_types().thenReturn({HaverTicker})
 
         ccy = mock(strict=True)
@@ -106,7 +106,7 @@ class TestGeneralPriceProviderMock(unittest.TestCase):
                 QFDataArray.create(
                     dates=datetime_index, tickers=self.CCY_TICKERS, fields=self.PRICE_FIELDS, data=data
                 )
-            )
+        )
         when(ccy).supported_ticker_types().thenReturn({CcyTicker})
 
         self.price_provider = GeneralPriceProvider(bloomberg, quandl, haver, ccy)

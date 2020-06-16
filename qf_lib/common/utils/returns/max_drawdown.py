@@ -22,7 +22,7 @@ from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
 
 
-def max_drawdown(input_data: Union[QFSeries, QFDataFrame], frequency: Frequency=None) -> Union[float, pd.Series]:
+def max_drawdown(input_data: Union[QFSeries, QFDataFrame], frequency: Frequency = None) -> Union[float, pd.Series]:
     """
     Finds maximal drawdown for the given timeseries of prices.
 

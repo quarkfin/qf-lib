@@ -12,23 +12,22 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
+from qf_lib.common.utils.dateutils.string_to_date import str_to_date
+from qf_lib.backtesting.order.order_factory import OrderFactory
+from qf_lib.backtesting.events.time_event.scheduler import Scheduler
+from qf_lib.backtesting.events.time_event.regular_time_event.before_market_open_event import BeforeMarketOpenEvent
+from qf_lib.common.tickers.tickers import BloombergTicker
+from qf_lib.backtesting.order.execution_style import MarketOrder
+from qf_lib.backtesting.contract.contract import Contract
+from qf_lib.backtesting.broker.broker import Broker
+from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
+from demo_scripts.demo_configuration.demo_ioc import container
 import matplotlib.pyplot as plt
 
 from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.common.enums.frequency import Frequency
 
 plt.ion()  # required for dynamic chart, keep before other imports
-
-from demo_scripts.demo_configuration.demo_ioc import container
-from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
-from qf_lib.backtesting.broker.broker import Broker
-from qf_lib.backtesting.contract.contract import Contract
-from qf_lib.backtesting.order.execution_style import MarketOrder
-from qf_lib.common.tickers.tickers import BloombergTicker
-from qf_lib.backtesting.events.time_event.regular_time_event.before_market_open_event import BeforeMarketOpenEvent
-from qf_lib.backtesting.events.time_event.scheduler import Scheduler
-from qf_lib.backtesting.order.order_factory import OrderFactory
-from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 
 
 class BuyAndHoldStrategy(object):

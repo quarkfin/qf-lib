@@ -67,7 +67,7 @@ class TestOrderFactory(unittest.TestCase):
 
     def test_order_value(self):
         value = 100.0
-        quantity = floor(100.0/self.share_price)  # type: int
+        quantity = floor(100.0 / self.share_price)  # type: int
         execution_style = StopOrder(4.20)
         time_in_force = TimeInForce.DAY
 

@@ -336,4 +336,3 @@ def _assert_same_series_values(expected_series, actual_series, absolute_toleranc
             messages.append("{:s} - Expected: {:f}, actual: {:f}".format(str(label), expected_val, actual_val))
 
         raise AssertionError("Different series values for labels:\n" + "\n".join(messages))
-

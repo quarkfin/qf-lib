@@ -13,9 +13,9 @@
 #     limitations under the License.
 #
 
+from collections import defaultdict
 from datetime import datetime
 from typing import Dict, List
-from collections import defaultdict
 
 from qf_lib.backtesting.events.time_event.single_time_event.single_time_event import SingleTimeEvent
 from qf_lib.backtesting.execution_handler.simulated_executor import SimulatedExecutor

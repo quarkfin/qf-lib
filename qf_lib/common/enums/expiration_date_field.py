@@ -11,22 +11,13 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-
 from enum import Enum
-from typing import List
 
 
-class PriceField(Enum):
-    """
-    Represents one of the data fields that corresponds to OHLC and Volume.
-    """
-
-    Open = 1
-    High = 2
-    Low = 3
-    Close = 4
-    Volume = 5
+class ExpirationDateField(Enum):
+    FirstNotice = 1
+    LastTradeableDate = 2
 
     @staticmethod
-    def ohlcv() -> List["PriceField"]:
-        return [PriceField.Open, PriceField.High, PriceField.Low, PriceField.Close, PriceField.Volume]
+    def all_dates():
+        return [ExpirationDateField.FirstNotice, ExpirationDateField.LastTradeableDate]

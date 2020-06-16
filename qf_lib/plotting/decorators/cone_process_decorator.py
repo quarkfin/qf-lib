@@ -22,8 +22,8 @@ from qf_lib.plotting.decorators.chart_decorator import ChartDecorator
 class ConeProcessDecorator(ChartDecorator):
 
     def __init__(self, mean: float, std: float, steps: int, starting_value=1,
-                 cone_stds: Union[Sequence[Union[float, int]], float, int]=(1, 2),
-                 colors_alpha: float=0.25, key: str=None):
+                 cone_stds: Union[Sequence[Union[float, int]], float, int] = (1, 2),
+                 colors_alpha: float = 0.25, key: str = None):
         """
         Puts cone on top of the timeseries starting form given date.
 

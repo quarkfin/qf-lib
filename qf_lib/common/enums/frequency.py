@@ -13,13 +13,14 @@
 #     limitations under the License.
 
 import math
-import numpy as np
-
 from enum import Enum
 from functools import total_ordering
 from statistics import mode
 from typing import Dict
+
+import numpy as np
 from pandas import DatetimeIndex, infer_freq
+from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 
 
 @total_ordering
@@ -72,9 +73,7 @@ class Frequency(Enum):
     def nr_of_calendar_days(self) -> int:
         return int(math.floor(365 / self.occurrences_in_year))
 
-    def time_delta(self) -> "RelativeDelta":
-        from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
-
+    def time_delta(self) -> RelativeDelta:
         frequency_to_delta = {
             Frequency.MIN_1: RelativeDelta(minutes=1),
             Frequency.MIN_5: RelativeDelta(minutes=5),

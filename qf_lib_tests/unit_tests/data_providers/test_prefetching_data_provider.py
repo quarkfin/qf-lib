@@ -64,7 +64,7 @@ class TestPrefetchingDataProvider(unittest.TestCase):
         when(data_provider).get_price(self.cached_tickers, self.cached_fields, self.start_date, self.end_date,
                                       self.frequency).thenReturn(result)
 
-        when(data_provider).get_futures_chain_tickers(ANY).thenReturn(dict())
+        when(data_provider).get_futures_chain_tickers(ANY, ANY).thenReturn(dict())
 
         return data_provider
 

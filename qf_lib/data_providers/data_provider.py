@@ -16,6 +16,7 @@ from abc import ABCMeta, abstractmethod
 from datetime import datetime
 from typing import Union, Sequence, Type, Set, Dict
 
+from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
@@ -36,7 +37,8 @@ class DataProvider(object, metaclass=ABCMeta):
 
     @abstractmethod
     def get_price(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
-                  start_date: datetime, end_date: datetime = None, frequency: Frequency = None) -> Union[None, PricesSeries, PricesDataFrame, QFDataArray]:
+                  start_date: datetime, end_date: datetime = None, frequency: Frequency = None) -> Union[
+            None, PricesSeries, PricesDataFrame, QFDataArray]:
         """
         Gets adjusted historical Prices (OPEN HIGH LOW CLOSE) and VOLUME
 
@@ -72,8 +74,9 @@ class DataProvider(object, metaclass=ABCMeta):
 
     @abstractmethod
     def get_history(
-            self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[None, str, Sequence[str]],
-            start_date: datetime, end_date: datetime = None, frequency: Frequency = None, **kwargs) -> Union[QFSeries, QFDataFrame, QFDataArray]:
+        self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[None, str, Sequence[str]],
+        start_date: datetime, end_date: datetime = None, frequency: Frequency = None, **kwargs) -> Union[
+            QFSeries, QFDataFrame, QFDataArray]:
         """
         Gets historical attributes(fields) of different securities(tickers).
 
@@ -126,8 +129,9 @@ class DataProvider(object, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def get_futures_chain_tickers(self, tickers: Union[FutureTicker, Sequence[FutureTicker]]) \
-            -> Dict[FutureTicker, QFSeries]:
+    def get_futures_chain_tickers(self, tickers: Union[FutureTicker, Sequence[FutureTicker]],
+                                  expiration_date_fields: Union[ExpirationDateField, Sequence[ExpirationDateField]]) \
+            -> Dict[FutureTicker, Union[QFSeries, QFDataFrame]]:
         """
         Returns tickers of futures contracts, which belong to the same futures contract chain as the provided ticker
         (tickers), along with their expiration dates in form of a QFSeries.
@@ -136,6 +140,8 @@ class DataProvider(object, metaclass=ABCMeta):
         ----------
         tickers
             tickers for which should the future chain tickers be retrieved
+        expiration_date_field
+            field that should be downloaded as the expiration date field, by default last tradeable date
         Returns
         -------
             Returns a dictionary, which maps Tickers to QFSeries, consisting of the expiration dates of Future
@@ -144,4 +150,3 @@ class DataProvider(object, metaclass=ABCMeta):
             the specific future contracts.
         """
         pass
-

@@ -45,9 +45,9 @@ class TestInitialRiskStatsFactory(TestCase):
         expected_stats = pd.DataFrame(
             index=[0.01, 0.02, 0.03], columns=[InitialRiskStatsFactory.FAILED, InitialRiskStatsFactory.SUCCEEDED],
             data=[
-                [1/3, 2/3],
-                [0.0, 1/3],
-                [2/3, 1/3]
+                [1 / 3, 2 / 3],
+                [0.0, 1 / 3],
+                [2 / 3, 1 / 3]
             ]
         )
 

@@ -85,10 +85,13 @@ class Portfolio(object):
             new_position = self._create_new_position(transaction)
             transaction_cost += new_position.transact_transaction(transaction)
         else:  # there is already an existing position
-            self._record_potential_trade(existing_position, transaction)
-
             results_in_opposite_direction, basic_transaction, remaining_transaction \
                 = self._split_if_results_in_opposite_direction(existing_position, transaction)
+
+            # Check if the basic_transaction would result in a trade and if so - record the trade
+            potential_trade = existing_position.check_if_transaction_generates_trade(basic_transaction)
+            if potential_trade:
+                self._trades.append(potential_trade)
 
             transaction_cost += existing_position.transact_transaction(basic_transaction)
 
@@ -210,43 +213,7 @@ class Portfolio(object):
 
         return False, transaction, None
 
-    def _record_potential_trade(self, existing_position: BacktestPosition, transaction: Transaction):
-        """
-        existing_position
-            is a position that we held in the portfolio, before the transaction was booked
-        transaction
-            describes how we change the existing position
-
-        Trade is defined as a transaction that goes in the direction of making your position smaller.
-        For example:
-           selling part or entire long position is a trade
-           buying back part or entire short position is a trade
-           buying additional shares of existing long position is NOT a trade
-        """
-        existing_quantity = existing_position.quantity()
-        is_a_trade = sign(transaction.quantity) * sign(existing_quantity) == -1
-        if is_a_trade:
-            # only the part that goes in the opposite direction is considered as a trade
-            quantity = min([abs(transaction.quantity), abs(existing_quantity)])
-            quantity *= sign(existing_quantity)  # sign of the position should be preserved
-
-            # commission = fraction of the commission to build the position + 100% of the cost to reduce the position
-            fraction_of_positon = quantity / existing_position.quantity()
-            commission = existing_position.total_commission_to_build_position() * fraction_of_positon
-            commission += transaction.commission
-
-            trade = Trade(start_time=existing_position.start_time,
-                          end_time=transaction.time,
-                          contract=transaction.contract,
-                          quantity=quantity,
-                          entry_price=existing_position.avg_price_per_unit(),
-                          exit_price=transaction.price,
-                          commission=commission)
-            self._trades.append(trade)
-
     def _create_new_position(self, transaction: Transaction):
         new_position = BacktestPositionFactory.create_position(transaction.contract, transaction.time)
         self.open_positions_dict[transaction.contract] = new_position
         return new_position
-
-

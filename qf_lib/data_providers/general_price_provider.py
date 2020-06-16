@@ -16,6 +16,7 @@ from datetime import datetime
 from itertools import groupby
 from typing import Sequence, Union, Dict, Type
 
+from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
@@ -39,6 +40,7 @@ class GeneralPriceProvider(DataProvider):
     """
     The main class that should be used in order to access prices of financial instruments.
     """
+
     def __init__(self, bloomberg: BloombergDataProvider = None, quandl: QuandlDataProvider = None,
                  haver: HaverDataProvider = None, cryptocurrency: CryptoCurrencyDataProvider = None):
         self._ticker_type_to_data_provider_dict = {}  # type: Dict[Type[Ticker], DataProvider]
@@ -69,8 +71,9 @@ class GeneralPriceProvider(DataProvider):
 
         return normalized_result
 
-    def get_futures_chain_tickers(self, tickers: Union[FutureTicker, Sequence[FutureTicker]]) \
-            -> Dict[FutureTicker, QFSeries]:
+    def get_futures_chain_tickers(self, tickers: Union[FutureTicker, Sequence[FutureTicker]],
+                                  expiration_date_fields: Union[ExpirationDateField, Sequence[ExpirationDateField]]) \
+            -> Dict[FutureTicker, Union[QFSeries, QFDataFrame]]:
         """"
         Implements the functionality of DataProvider using duck-typing.
         """
@@ -78,7 +81,7 @@ class GeneralPriceProvider(DataProvider):
         results = {}
 
         def get_data_func(data_prov: DataProvider, tickers_for_single_data_provider) -> Dict[FutureTicker, QFSeries]:
-            return data_prov.get_futures_chain_tickers(tickers_for_single_data_provider)
+            return data_prov.get_futures_chain_tickers(tickers_for_single_data_provider, ExpirationDateField.all_dates())
 
         for ticker_class, ticker_group in groupby(tickers, lambda t: type(t)):
             data_provider = self._identify_data_provider(ticker_class)

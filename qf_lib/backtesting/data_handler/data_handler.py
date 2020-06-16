@@ -18,6 +18,7 @@ from typing import Union, Sequence, Type, Optional, Dict
 import pandas as pd
 
 from qf_lib.backtesting.events.time_event.regular_time_event.regular_time_event import RegularTimeEvent
+from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
@@ -30,8 +31,8 @@ from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
-from qf_lib.data_providers.prefetching_data_provider import PrefetchingDataProvider
 from qf_lib.data_providers.data_provider import DataProvider
+from qf_lib.data_providers.prefetching_data_provider import PrefetchingDataProvider
 
 
 class DataHandler(DataProvider):
@@ -58,8 +59,7 @@ class DataHandler(DataProvider):
         self.is_optimised = False
 
     def use_data_bundle(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
-                        start_date: datetime, end_date: datetime, frequency: Frequency = Frequency.DAILY,
-                        **kwargs):
+                        start_date: datetime, end_date: datetime, frequency: Frequency = Frequency.DAILY):
         """
         Optimises running of the backtest. All the data will be downloaded before the backtest.
         Note that requesting during the backtest any other ticker or price field than the ones in the params
@@ -74,7 +74,7 @@ class DataHandler(DataProvider):
         self.fixed_data_provider_frequency = frequency
 
         self.data_provider = PrefetchingDataProvider(self.data_provider, tickers, fields, start_date, end_date,
-                                                     frequency, **kwargs)
+                                                     frequency)
 
         self.is_optimised = True
 
@@ -126,9 +126,10 @@ class DataHandler(DataProvider):
         """
         pass
 
-    def get_futures_chain_tickers(self, tickers: Union[FutureTicker, Sequence[FutureTicker]]) \
-            -> Dict[FutureTicker, QFSeries]:
-        return self.data_provider.get_futures_chain_tickers(tickers)
+    def get_futures_chain_tickers(self, tickers: Union[FutureTicker, Sequence[FutureTicker]],
+                                  expiration_date_fields: Union[ExpirationDateField, Sequence[ExpirationDateField]]) \
+            -> Dict[FutureTicker, Union[QFSeries, QFDataFrame]]:
+        return self.data_provider.get_futures_chain_tickers(tickers, expiration_date_fields)
 
     @abstractmethod
     def get_last_available_price(self, tickers: Union[Ticker, Sequence[Ticker]],

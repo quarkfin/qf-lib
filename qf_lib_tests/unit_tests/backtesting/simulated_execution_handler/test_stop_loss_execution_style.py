@@ -72,7 +72,7 @@ class TestStopLossExecutionStyle(TestCase):
         self.number_of_minutes = 5
 
         before_close = self.start_date + MarketCloseEvent.trigger_time() - \
-                            RelativeDelta(minutes=self.number_of_minutes)
+            RelativeDelta(minutes=self.number_of_minutes)
 
         self.msft_contract = Contract(self.MSFT_TICKER_STR, security_type='STK', exchange='TEST')
         self.msft_ticker = BloombergTicker(self.MSFT_TICKER_STR)

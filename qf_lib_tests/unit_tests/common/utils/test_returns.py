@@ -59,7 +59,7 @@ class TestReturnsUtils(TestCase):
 
     def test_compound_annual_growth_rate_monthly(self):
         actual_return = cagr(self.test_dd_prices_tms)
-        expected_return = pow(1.5, 12.0/12.0)-1
+        expected_return = pow(1.5, 12.0 / 12.0) - 1
         self.assertAlmostEqual(expected_return, actual_return, delta=0.001)
 
     def test_annualise_total_return(self):
@@ -175,7 +175,7 @@ class TestReturnsUtils(TestCase):
 
     def test_avg_drawdown_duration(self):
         avg_duration = avg_drawdown_duration(self.test_dd_prices_tms)
-        self.assertEqual(avg_duration, (93+62+1)/3.0)
+        self.assertEqual(avg_duration, (93 + 62 + 1) / 3.0)
 
     def test_avg_drawdown(self):
         avg_drawdown_value = avg_drawdown(self.test_dd_prices_tms)
