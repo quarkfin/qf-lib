@@ -75,7 +75,7 @@ class EventManager(object):
         notifier.subscribe(listener)
 
     def unsubscribe(self, event_type: _EventType, listener: EventListener):
-        """"
+        """
         Stop notifications of events' occurrences of type event_type.
 
         DEPRECATED

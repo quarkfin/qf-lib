@@ -22,27 +22,37 @@ from qf_lib.containers.series.qf_series import QFSeries
 
 
 class BloombergFutureTicker(FutureTicker, BloombergTicker):
+    """Representation of a Future Ticker, designed to be used by the BloombergDataProvider.
+
+    Parameters
+    ----------
+    name: str
+        Field which contains a name (or a short description) of the FutureTicker.
+    family_id: str
+        Used to to verify if a specific BloombergTicker belongs to a certain futures family and to build a specific,
+        random Ticker, which can be further used by the data provider to download the chain of corresponding Tickers.
+        The family ID pattern - e.g. for Cotton, an exemplary ticker string is of the following
+        form: "CTZ9 Comdty". The "Z9" part denotes the month and year codes - this is the only variable part of the ticker. Thus, in
+        order to verify if a ticker belongs to the cotton family, it should be in form of "CT{} Comdty".
+        For all other ticker families, the family_id should be in the form of specific ticker with the month and
+        year codes replaced with the "{}" placeholder.
+    N: int
+        Used to identify which specific Ticker should be considered by the Backtester, while using the general
+        Future Ticker class. For example N parameter set to 1, denotes the front future contract.
+    days_before_exp_date: int
+        Number of days before the expiration day of each of the contract, when the “current” specific contract
+        should be substituted with the next consecutive one.
+    point_value: float
+        Used to define the size of the contract.
+    designated_contracts: str
+        It is a string, which represents all month codes, that are being downloaded and stored
+        in the chain of future contracts. Any specific order of letters is not required. E.g. providing this
+        parameter value equal to "HMUZ", would restrict the future chain to only the contracts, which expire in
+        March, June, September and December, even if contracts for any other months exist and are returned by the
+        BloombergDataProvider get_futures_chain_tickers function.
+    """
     def __init__(self, name: str, family_id: str, N: int, days_before_exp_date: int, point_value: float = 1.0,
                  designated_contracts: str = "FGHJKMNQUVXZ"):
-        """
-        family_id
-            Used to describe the FutureTicker and also, in case of BloombergFutureTickers:
-            - (main purpose) to verify if a specific BloombergTicker belongs to a certain futures family,
-            - to build a specific, random Ticker, which can be further used by the data provider to download the chain
-            of corresponding Tickers.
-
-            The family ID pattern - e.g. for Cotton, an exemplary ticker string is of the following form: "CTZ9 Comdty".
-            The "Z9" part denotes the month and year codes - this is the only variable part of the ticker. Thus, in
-            order to verify if a ticker belongs to the cotton family, it should be in form of "CT{} Comdty".
-            For all other ticker families, the family_id should be in the form of specific ticker with the month and
-            year codes replaced with the "{}" placeholder.
-        designated_contracts
-            It is a string, which represents all month codes, that are being downloaded and stored
-            in the chain of future contracts. Any specific order of letters is not required. E.g. providing this
-            parameter value equal to "HMUZ", would restrict the future chain to only the contracts, which expire in
-            March, June, September and December, even if contracts for any other months exist and are returned by the
-            BloombergDataProvider get_futures_chain_tickers function.
-        """
         self.designated_contracts = designated_contracts
         if not len(designated_contracts) > 0:
             raise ValueError("At least one month code should be provided.")
@@ -54,8 +64,12 @@ class BloombergFutureTicker(FutureTicker, BloombergTicker):
 
     def get_random_specific_ticker(self) -> BloombergTicker:
         """
-        Returns sample ticker from the family id that can be used in BBG to get further data (future chain members for
-        example).
+        Returns sample ticker from the family id that can be used in Bloomberg to get further data (future chain members
+        for example).
+
+        Returns
+        -------
+        BloombergTicker
         """
         seed = self.designated_contracts[-1] + next(self._random_year_codes)
         specific_ticker_string = self.family_id.format(seed)
@@ -86,6 +100,10 @@ class BloombergFutureTicker(FutureTicker, BloombergTicker):
         """
         Function, which takes a specific BloombergTicker, and verifies if it belongs to the family of futures contracts,
         identified by the FutureTicker.
+
+        Returns
+        -------
+        bool
         """
         def ticker_to_family_id(t: BloombergTicker) -> str:
             """

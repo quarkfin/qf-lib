@@ -34,15 +34,6 @@ class ReturnsSeries(QFSeries):
     def _constructor_expanddim(self):
         raise NotImplementedError()
 
-    def to_log_returns(self):
-        raise NotImplementedError()
-
-    def to_simple_returns(self):
-        raise NotImplementedError()
-
-    def total_cumulative_return(self) -> float:
-        raise NotImplementedError()
-
     def to_prices(self, initial_price: float = None, suggested_initial_date: Union[datetime, int, float] = None,
                   frequency=None) -> "PricesSeries":
         if suggested_initial_date is None:

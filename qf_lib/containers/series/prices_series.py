@@ -12,8 +12,7 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-import datetime
-
+from datetime import datetime
 from numpy.ma import log
 
 from qf_lib.containers.series.qf_series import QFSeries
@@ -21,7 +20,7 @@ from qf_lib.containers.series.qf_series import QFSeries
 
 class PricesSeries(QFSeries):
     """
-    Series of prices (e.g. prices of the SPY).
+    Series of prices (for example prices of the SPY).
     """
 
     def __init__(self, data=None, index=None, dtype=None, name=None, copy=False, fastpath=False):

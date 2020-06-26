@@ -28,6 +28,19 @@ from qf_lib.containers.series.qf_series import QFSeries
 
 
 class FuturesChain(pd.Series):
+    """Class which facilitates the futures contracts management. Its main functionality is provided by the
+    get_price function, which returns a PricesDataFrame (PricesSeries) of prices for the given FutureTicker,
+    automatically managing the contracts chaining.
+
+    Parameters
+    ------------
+    future_ticker: FutureTicker
+        The FutureTicker used to download the futures contracts, further chained and joined in order to obtain the result of get_price function.
+    data_provider: DataProvider
+        Reference to the data provider, necessary to download latest prices, returned by the get_price function.
+    method: FuturesAdjustmentMethod
+        FuturesAdjustmentMethod corresponding to one of two available methods of chaining the futures contracts.
+    """
     def __init__(self, future_ticker: FutureTicker, data_provider: "DataProvider", method: FuturesAdjustmentMethod =
                  FuturesAdjustmentMethod.NTH_NEAREST):
         """
@@ -47,19 +60,22 @@ class FuturesChain(pd.Series):
 
     def get_price(self, fields: Union[PriceField, Sequence[PriceField]], start_date: datetime, end_date: datetime,
                   frequency: Frequency = Frequency.DAILY) -> Union[PricesDataFrame, PricesSeries]:
-        """
-        Updates the self._chain with new prices.
+        """Combines consecutive specific FutureContracts data, in order to obtain a chain of prices.
 
-        At first, the function downloads the prices since the last date, which is available in the chain (self._chain),
-        up to the given time. If the downloaded prices data frame / series is empty, the unchanged chain is returned.
-        In case if any new prices were returned, it is verified whether any contract expired within this time frame.
-        If so - the _initialize_futures_chain and _generate_chain functions are used to regenerate the chain, else -
-        prices are appended to the chain and returned.
+        Parameters
+        ----------
+        fields: PriceField, Sequence[PriceField]
+            Data fields, corresponding to Open, High, Low, Close prices and Volume, that should be returned by the function.
+        start_date: datetime
+            First date for which the chain needs to be created.
+        end_date: datetime
+            Last date for which the chain needs to be created.
+        frequency: Frequency
+            Frequency of the returned data, by default set to daily frequency.
 
-        Important note: It regenerates the chain in case if an expiration day occurs. The expiration of a contract is
-        stated basing on the specific ticker, which is returned on the given day and the last specific ticker, that
-        was returned for this future chain. If these tickers do not match - it is assumed, that the chain has to be
-        regenerated.
+        Returns
+        ---------
+        PricesDataFrame, PricesSeries
 
         """
         # 1 - Check if the chain was generated at least once, if not - preload the necessary data using the

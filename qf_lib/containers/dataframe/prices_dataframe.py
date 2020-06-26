@@ -16,7 +16,9 @@ from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 
 
 class PricesDataFrame(QFDataFrame):
-
+    """
+    DataFrame containing prices (for example prices of the SPY).
+    """
     @property
     def _constructor_sliced(self):
         from qf_lib.containers.series.prices_series import PricesSeries

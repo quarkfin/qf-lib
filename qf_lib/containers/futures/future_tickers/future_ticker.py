@@ -22,24 +22,26 @@ from qf_lib.containers.series.qf_series import QFSeries
 
 
 class FutureTicker(Ticker, metaclass=abc.ABCMeta):
-    def __init__(self, name: str, family_id: str, N: int, days_before_exp_date: int, point_value: float = 1.0):
-        """
-        name
-            Field which contains a name (or a short description) of the FutureTicker.
-        family_id
-            Identificator used to describe the whole family of future contracts. In case of specific Future Tickers
-            its purpose is to build an identificator, used by the data provider to download the chain of corresponding
-            Tickers, and to verify whether a specific Ticker belongs to a certain futures family.
-        N
-            Used to identify which specific Ticker should be considered by the Backtester, while using the general
-            Future Ticker class. For example N parameter set to 1, denotes the front future contract.
-        days_before_exp_date
-            Number of days before the expiration day of each of the contract, when the “current” specific contract
-            should be substituted with the next consecutive one.
-        point_value
-            Used to define the size of the contract.
-        """
+    """Class to represent a Ticker, which gathers multiple future contracts.
 
+    Parameters
+    -----------
+    name: str
+        Field which contains a name (or a short description) of the FutureTicker.
+    family_id: str
+        Identificator used to describe the whole family of future contracts. In case of specific Future Tickers
+        its purpose is to build an identificator, used by the data provider to download the chain of corresponding
+        Tickers, and to verify whether a specific Ticker belongs to a certain futures family.
+    N: int
+        Used to identify which specific Ticker should be considered by the Backtester, while using the general
+        Future Ticker class. For example N parameter set to 1, denotes the front future contract.
+    days_before_exp_date: int
+        Number of days before the expiration day of each of the contract, when the “current” specific contract
+        should be substituted with the next consecutive one.
+    point_value: float
+        Used to define the size of the contract.
+    """
+    def __init__(self, name: str, family_id: str, N: int, days_before_exp_date: int, point_value: float = 1.0):
         super().__init__(family_id)
         self.name = name
         self.family_id = family_id
@@ -57,6 +59,15 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
         self._last_cached_date = None
 
     def initialize_data_provider(self, timer: Timer, data_provider: "DataProvider"):
+        """ Initialize the future ticker with data provider and ticker.
+
+        Parameters
+        ----------
+        timer: Timer
+            Timer which is used further when computing the current ticker.
+        data_provider: DataProvider
+            Data provider which is used to download symbols of tickers, belonging to the given future ticker family
+        """
         if self._ticker_initialized:
             self.logger.warning("The FutureTicker {} has been already initialized with Timer and Data Provider. "
                                 "The previous Timer and Data Provider references will be overwritten".format(self.name))
@@ -70,9 +81,13 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
     def ticker(self) -> str:
         """
         Property which returns the value of 'ticker' attribute of the currently valid, specific Ticker.
-
         E.g. in case of Cotton FutureTicker in the beginning of December, before the expiration date of December ticker,
         the function will return the Ticker("CTZ9 Comdty").ticker string value.
+
+        Returns
+        -------
+        str
+            String of the current specific ticker.
         """
         return self.get_current_specific_ticker().ticker
 
@@ -84,6 +99,11 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
         the day (they can expire only at 0:00 a.m.), the ticker value is being cached for a certain date.
         If the function will be called for a date, for which the ticker value was already computed once, the cached
         value is being returned.
+
+        Returns
+        -------
+        Ticker
+            The current specific ticker.
         """
 
         try:
@@ -124,10 +144,15 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
 
     def get_expiration_dates(self) -> QFSeries:
         """
-        Returns the QFSeries containing the list of specific future contracts Tickers, indexed by their expiration
+        Returns QFSeries containing the list of specific future contracts Tickers, indexed by their expiration
         dates. The index contains original expiration dates, as returned by the data handler, without shifting it by the
         days_before_exp_date days (it is important to store the original values, instead of shifted ones, as this
         function is public and used by multiple other components).
+
+        Returns
+        --------
+        QFSeries
+            QFSeries containing the list of specific future contracts Tickers, indexed by their expiration dates
         """
         return self._exp_dates
 
@@ -182,5 +207,9 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
         """
         Function, which takes a specific Ticker, and verifies if it belongs to the family of futures contracts,
         identified by the FutureTicker.
+
+        Returns
+        -------
+        bool
         """
         pass

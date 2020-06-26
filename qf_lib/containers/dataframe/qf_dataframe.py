@@ -26,7 +26,7 @@ from qf_lib.containers.time_indexed_container import TimeIndexedContainer
 
 class QFDataFrame(pd.DataFrame, TimeIndexedContainer):
     """
-    Base class for all data frames (2-D matrix-like objects) used in the quant-fin project. All the columns within
+    Base class for all data frames (2-D matrix-like objects) used in the project. All the columns within
     the dataframe contain values for the same date range and have the same frequencies. All the columns are
     of the same types (e.g. log-returns/prices).
     """
@@ -58,7 +58,7 @@ class QFDataFrame(pd.DataFrame, TimeIndexedContainer):
 
         Returns
         -------
-        returns_df
+        LogReturnsDataFrame
             dataframe of log returns
         """
         from qf_lib.containers.dataframe.log_returns_dataframe import LogReturnsDataFrame
@@ -76,7 +76,7 @@ class QFDataFrame(pd.DataFrame, TimeIndexedContainer):
 
         Returns
         -------
-        returns_df
+        SimpleReturnsDataFrame
             dataframe of simple returns
         """
         from qf_lib.containers.dataframe.simple_returns_dataframe import SimpleReturnsDataFrame
@@ -112,7 +112,7 @@ class QFDataFrame(pd.DataFrame, TimeIndexedContainer):
 
         Returns
         -------
-        prices
+        PricesDataFrame
             dataframe of prices
         """
         initial_prices = self._prepare_value_per_column_list(initial_prices)
@@ -149,7 +149,7 @@ class QFDataFrame(pd.DataFrame, TimeIndexedContainer):
 
         Returns
         -------
-        normalized_dataframe
+        QFDataFrame
             dataframe of normalized values
         """
         # assert that user specified either both min and max values or none of them
@@ -178,7 +178,8 @@ class QFDataFrame(pd.DataFrame, TimeIndexedContainer):
 
         Returns
         -------
-        smoothed version (exponential average) of the data frame
+        QFDataFrame
+            smoothed version (exponential average) of the data frame
 
         """
         lambda_coefficients = self._prepare_value_per_column_list(lambda_coeff)
@@ -199,7 +200,8 @@ class QFDataFrame(pd.DataFrame, TimeIndexedContainer):
 
         Returns
         -------
-        pandas.Series containing total cumulative return for each column of the original DataFrame.
+        pandas.Series
+            Series containing total cumulative return for each column of the original DataFrame.
         """
         series_type = self._constructor_sliced
         series = self.apply(series_type.total_cumulative_return, axis=0)
@@ -266,7 +268,8 @@ class QFDataFrame(pd.DataFrame, TimeIndexedContainer):
 
         Returns
         -------
-        data frame containing the transformed data
+        QFDataFrame
+            data frame containing the transformed data
         """
         if optimised:
             assert step == 1, "Optimised rolling is only possible with a step of 1."
@@ -303,9 +306,9 @@ class QFDataFrame(pd.DataFrame, TimeIndexedContainer):
 
         Returns
         -------
-        None (if the result of running the rolling window was empty)
-        or QFSeries (if the function applied returned scalar value for each window)
-        or QFDataFrame (if the function applied returned QFSeries for each window)
+        None, QFSeries, QFDataFrame
+            None (if the result of running the rolling window was empty) or QFSeries (if the function applied returned
+            scalar value for each window) or QFDataFrame (if the function applied returned QFSeries for each window)
         """
         results_dict = dict()  # type: Dict[datetime, pd.Series]
         end_idx = self.num_of_rows

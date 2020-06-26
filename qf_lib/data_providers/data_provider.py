@@ -29,8 +29,7 @@ from qf_lib.containers.series.qf_series import QFSeries
 
 
 class DataProvider(object, metaclass=ABCMeta):
-    """
-    An interface for price providers (e.g. AbstractPriceDataProvider or GeneralPriceProvider).
+    """An interface for data providers (for example AbstractPriceDataProvider or GeneralPriceProvider).
     """
 
     frequency = None
@@ -58,15 +57,13 @@ class DataProvider(object, metaclass=ABCMeta):
 
         Returns
         -------
-        historical_data
+        None, PricesSeries, PricesDataFrame, QFDataArray
             If possible the result will be squeezed so that instead of returning QFDataArray (3-D structure),
             data of lower dimensionality will be returned.
-
             QFDataArray with 3 dimensions: dates, tickers, fields
             PricesDataFrame with 2 dimensions: dates, tickers or fields (depending if many tickers or fields were
-                provided). It is also possible to get 2 dimensions ticker and field if single date was provided.
+            provided). It is also possible to get 2 dimensions ticker and field if single date was provided.
             PricesSeries with 1 dimension: dates
-
             All the containers will be indexed with PriceField whenever possible
             (for example: instead of 'Close' column in the PricesDataFrame there will be PriceField.Close)
         """
@@ -105,17 +102,15 @@ class DataProvider(object, metaclass=ABCMeta):
         kwargs
             kwargs should not be used on the level of AbstractDataProvider. They are here to provide a common interface
             for all data providers since some of the specific data providers accept additional arguments
+
         Returns
         -------
-        historical_data
-            If possible the result will be squeezed, so that instead of returning QFDataArray,
-            data of lower dimensionality will be returned.
-
+        QFSeries, QFDataFrame, QFDataArray
+            If possible the result will be squeezed, so that instead of returning QFDataArray, data of lower dimensionality will be returned.
             QFDataArray with 3 dimensions: date, ticker, field
             QFDataFrame  with 2 dimensions: date, ticker or field (depending if many tickers or fields were provided)
-                it is also possible to get 2 dimensions ticker and field if single date was provided.
-            QFSeries     with 1 dimensions: date
-
+            it is also possible to get 2 dimensions ticker and field if single date was provided.
+            QFSeries with 1 dimensions: date
             If no data is available in the database or an non existing ticker was provided an empty structure
             (QFSeries, QFDataFrame or QFDataArray) will be returned returned.
         """
@@ -140,10 +135,11 @@ class DataProvider(object, metaclass=ABCMeta):
         ----------
         tickers
             tickers for which should the future chain tickers be retrieved
-        expiration_date_field
+        expiration_date_fields
             field that should be downloaded as the expiration date field, by default last tradeable date
         Returns
         -------
+        Dict[FutureTicker, Union[QFSeries, QFDataFrame]]
             Returns a dictionary, which maps Tickers to QFSeries, consisting of the expiration dates of Future
             Contracts: Dict[FutureTicker, QFSeries]. The QFSeries contain the specific Tickers, which belong to the
             corresponding futures family, same as the FutureTicker, and are indexed by the expiration dates of

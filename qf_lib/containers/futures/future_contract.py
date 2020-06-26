@@ -18,17 +18,18 @@ from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 
 
 class FutureContract(object):
+    """ Class representing a single future contract.
+
+    Parameters
+    ----------
+    ticker: Ticker
+        symbol of the future contract
+    exp_date: datetime
+        expiration date
+    data: PricesDataFrame
+        data frame containing dates with price fields values
+    """
     def __init__(self, ticker: Ticker, exp_date: datetime, data: PricesDataFrame):
-        """
-        Parameters
-        ----------
-        ticker
-            symbol of the future contract
-        exp_date
-            expiration date
-        data
-            data frame containing dates with price fields values
-        """
         self.ticker = ticker
         self.exp_date = exp_date
         self.data = data

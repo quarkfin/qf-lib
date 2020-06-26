@@ -225,7 +225,7 @@ class CcyTicker(Ticker):
 
 
 def tickers_as_strings(tickers: Union[Ticker, Sequence[Ticker]]) -> Union[str, List[str]]:
-    """"
+    """
     Converts a single ticker or sequence of tickers to strings representations.
     if single ticker is passed -> returns a single string
     if sequence of tickers is passed -> returns list of strings
@@ -237,7 +237,7 @@ def tickers_as_strings(tickers: Union[Ticker, Sequence[Ticker]]) -> Union[str, L
 
 
 def str_to_ticker(ticker_str: Union[str, Sequence[str]]) -> Union[None, Ticker, Tuple[List[Ticker], List[str]]]:
-    """"
+    """
     Converts a single string or sequence of strings to ticker representation.
 
     if single ticker is passed -> returns single_ticker or None

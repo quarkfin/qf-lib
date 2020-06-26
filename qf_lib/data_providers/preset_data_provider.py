@@ -38,26 +38,25 @@ from qf_lib.data_providers.data_provider import DataProvider
 class PresetDataProvider(DataProvider):
     """
     Wrapper on QFDataArray which makes it a DataProvider.
+
+    Parameters
+    ----------
+    data
+        data to be wrapped, indexed by date, (specific) tickers and fields
+    start_date
+        beginning of the cached period (not necessarily the first date in the `data`)
+    end_date
+        end of the cached period (not necessarily the last date in the `data`)
+    frequency
+        frequency of the data
+    exp_dates
+        dictionary mapping FutureTickers to QFDataFrame of contracts expiration dates, belonging to the certain
+        future ticker family
     """
 
     def __init__(
             self, data: QFDataArray, start_date: datetime, end_date: datetime, frequency: Frequency,
             exp_dates: Dict[FutureTicker, QFDataFrame] = None):
-        """
-        Parameters
-        ----------
-        data
-            data to be wrapped, indexed by date, (specific) tickers and fields
-        start_date
-            beginning of the cached period (not necessarily the first date in the `data`)
-        end_date
-            end of the cached period (not necessarily the last date in the `data`)
-        frequency
-            frequency of the data
-        exp_dates
-            dictionary mapping FutureTickers to QFDataFrame of contracts expiration dates, belonging to the certain
-            future ticker family
-        """
         self._data_bundle = data
         self._frequency = frequency
         self._exp_dates = exp_dates

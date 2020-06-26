@@ -38,7 +38,7 @@ def trend_strength(prices_df: PricesDataFrame, use_next_open_instead_of_close=Fa
 
 
 def down_trend_strength(prices_df: PricesDataFrame, use_next_open_instead_of_close=False):
-    """"
+    """
     Calculated only for down days. We study how much it moved down compared to how high it went before going down.
     High figure suggests tha we can easily short when instruments starts to go down given day
     """
@@ -66,7 +66,7 @@ def down_trend_strength(prices_df: PricesDataFrame, use_next_open_instead_of_clo
 
 
 def up_trend_strength(prices_df: PricesDataFrame, use_next_open_instead_of_close=False):
-    """"
+    """
     Calculated only for up days. We study how much it moved down compared to how low it went before going down.
     High figure suggests tha we can go long when instruments starts to go up given day
     """

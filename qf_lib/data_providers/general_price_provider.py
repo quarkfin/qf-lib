@@ -51,7 +51,7 @@ class GeneralPriceProvider(DataProvider):
 
     def get_price(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
                   start_date: datetime, end_date: datetime = None, frequency: Frequency = Frequency.DAILY) -> Union[None, PricesSeries, PricesDataFrame, QFDataArray]:
-        """"
+        """
         Implements the functionality of AbstractPriceDataProvider using duck-typing.
         """
         use_prices_types = True
@@ -62,7 +62,7 @@ class GeneralPriceProvider(DataProvider):
     def get_history(
             self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[str, Sequence[str]], start_date: datetime,
             end_date: datetime = None, frequency: Frequency = Frequency.DAILY, **kwargs) -> Union[QFSeries, QFDataFrame, QFDataArray]:
-        """"
+        """
         Implements the functionality of DataProvider using duck-typing.
         """
         use_prices_types = False
@@ -74,7 +74,7 @@ class GeneralPriceProvider(DataProvider):
     def get_futures_chain_tickers(self, tickers: Union[FutureTicker, Sequence[FutureTicker]],
                                   expiration_date_fields: Union[ExpirationDateField, Sequence[ExpirationDateField]]) \
             -> Dict[FutureTicker, Union[QFSeries, QFDataFrame]]:
-        """"
+        """
         Implements the functionality of DataProvider using duck-typing.
         """
         tickers, got_single_ticker = convert_to_list(tickers, Ticker)

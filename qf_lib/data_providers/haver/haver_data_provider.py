@@ -41,30 +41,36 @@ except ImportError:
 
 
 class HaverDataProvider(AbstractPriceDataProvider):
+    """
+    Constructs a new ``HaverDataProvider`` instance.
+
+    Parameters
+    ----------
+    settings
+        Settings object, which should contain path to the directory with the Haver database
+    """
     get_lock = threading.Lock()
 
     def __init__(self, settings: Settings):
-        """
-        Constructs a new ``HaverDataProvider`` instance.
-
-        Parameters
-        ----------
-        db_location
-            path to the directory containing the Haver database
-        """
         self.db_location = settings.haver_path
         self.connected = False
 
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
     def get_history(self, tickers: Union[HaverTicker, Sequence[HaverTicker]], fields=None, start_date: datetime = None,
-                    end_date: datetime = None, **kwargs) -> Union[QFSeries, QFDataFrame, QFDataArray]:
-        """
-        fields
-            should None as each ticker corresponds to one timeseries and there is no such thing as a field in
-            the Haver DB.
+                    end_date: datetime = None, **kwargs) -> Union[QFSeries, QFDataFrame]:
+        """ Gets historical fields for Haver tickers.
 
-        this method will never return a QFDataArray.
+        Parameters
+        -------------
+        tickers: HaverTicker, Sequence[HaverTicker]
+            Haver tickers, for which the prices should be returned
+        fields
+            should None as each ticker corresponds to one timeseries and there is no such thing as a field in the Haver DB.
+
+        Returns
+        ------------
+        QFSeries, QFDataFrame
         """
         if fields is not None:
             self.logger.warning("Data field is provided but it will nor be used")

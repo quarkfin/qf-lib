@@ -41,7 +41,7 @@ from qf_lib.settings import Settings
 
 class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
     """
-    Provides financial data from Bloomberg.
+    Data Provider which provides financial data from Bloomberg.
     """
 
     def __init__(self, settings: Settings):
@@ -93,10 +93,9 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
             field that should be downloaded as the expiration date field
         Returns
         -------
-        Dictionary mapping each BloombergFutureTicker to a QFSeries or QFDataFrame, containing specific future
-        contracts tickers (BloombergTickers), indexed by these tickers:
         Dict[BloombergFutureTicker, Union[QFSeries, QFDataFrame]]
-
+            Dictionary mapping each BloombergFutureTicker to a QFSeries or QFDataFrame, containing specific future
+            contracts tickers (BloombergTickers), indexed by these tickers
         Raises
         -------
         BloombergError
@@ -128,7 +127,8 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
                 tickers for which the expiration dates of future contracts should be retrieved
             Returns
             -------
-            QFSeries or QFDataFrame, containing all the dates, indexed by tickers
+            QFSeries, QFDataFrame
+                Container containing all the dates, indexed by tickers
             """
 
             # Download the expiration dates for each of the future contracts
@@ -177,8 +177,7 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
 
         Returns
         -------
-        historical_data: QFDataFrame/QFSeries
-
+        QFDataFrame/QFSeries
             QFDataFrame  with 2 dimensions: ticker, field
             QFSeries     with 1 dimensions: ticker of field (depending if many tickers or fields was provided)
 
@@ -218,8 +217,7 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
         """
         Gets historical data from Bloomberg from the (start_date - end_date) time range. In case of frequency, which is
         higher than daily frequency (intraday data), the data is indexed by the start_date.
-        E.g.
-        Time range: 8:00 - 8:01, frequency: 1 minute - indexed with the 8:00 timestamp
+        E.g. Time range: 8:00 - 8:01, frequency: 1 minute - indexed with the 8:00 timestamp
         """
         if fields is None:
             raise ValueError("Fields being None is not supported by {}".format(self.__class__.__name__))

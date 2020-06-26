@@ -47,7 +47,7 @@ class QFSeries(pd.Series, TimeIndexedContainer):
 
         Returns
         -------
-        returns_tms
+        LogReturnsSeries
             timeseries of log returns
         """
         raise NotImplementedError()
@@ -59,7 +59,7 @@ class QFSeries(pd.Series, TimeIndexedContainer):
 
         Returns
         -------
-        returns_tms
+        SimpleReturnsSeries
             timeseries of simple returns
         """
         raise NotImplementedError()
@@ -86,7 +86,7 @@ class QFSeries(pd.Series, TimeIndexedContainer):
 
         Returns
         -------
-        prices
+        PricesSeries
             series of prices
         """
         raise NotImplementedError()
@@ -134,7 +134,8 @@ class QFSeries(pd.Series, TimeIndexedContainer):
 
         Returns
         -------
-        exponential average of the series
+        QFSeries
+            exponential average of the series
 
         """
         smoothed_series = self.copy(deep=True)
@@ -172,7 +173,8 @@ class QFSeries(pd.Series, TimeIndexedContainer):
 
         Returns
         -------
-        A ``QFSeries`` containing the transformed data.
+        QFSeries
+            A ``QFSeries`` containing the transformed data.
         """
 
         result = QFSeries()
@@ -230,7 +232,8 @@ class QFSeries(pd.Series, TimeIndexedContainer):
 
         Returns
         -------
-        A ``QFSeries`` containing the transformed data.
+        QFSeries
+            A ``QFSeries`` containing the transformed data.
         """
         if optimised:
             from qf_lib.containers.series.cast_series import cast_series

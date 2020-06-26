@@ -16,7 +16,9 @@ from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 
 
 class SimpleReturnsDataFrame(QFDataFrame):
-
+    """
+    DataFrame containing simple returns.
+    """
     @property
     def _constructor_sliced(self):
         from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries

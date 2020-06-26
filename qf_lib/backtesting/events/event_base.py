@@ -56,7 +56,7 @@ class EventNotifier(Generic[_EventSubclass, _EventListenerSubclass], metaclass=a
         self.listeners.add(listener)
 
     def unsubscribe(self, listener: EventListener):
-        """"
+        """
         Stop notifications of events' occurrences for the given listener.
         """
         self.listeners.remove(listener)

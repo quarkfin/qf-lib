@@ -33,7 +33,7 @@ class Location(Enum):
 
 
 class AxisLocation(Enum):
-    """"
+    """
     Custom location for legend placements. In axis lengths for placement.
     e.g (1,0) = (x=1, y=0) = BOTTOM_RIGHT
     """
