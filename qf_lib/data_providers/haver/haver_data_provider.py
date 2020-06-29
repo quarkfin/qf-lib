@@ -66,7 +66,13 @@ class HaverDataProvider(AbstractPriceDataProvider):
         tickers: HaverTicker, Sequence[HaverTicker]
             Haver tickers, for which the prices should be returned
         fields
-            should None as each ticker corresponds to one timeseries and there is no such thing as a field in the Haver DB.
+            should be equal to None as each ticker corresponds to one timeseries and there is no such thing as a field
+            in the Haver DB
+        start_date: datetime
+            date representing the beginning of historical period from which data should be retrieved
+        end_date: datetime
+            date representing the end of historical period from which data should be retrieved;
+            if no end_date was provided, by default the current date will be used
 
         Returns
         ------------

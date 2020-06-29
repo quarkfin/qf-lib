@@ -76,8 +76,17 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
         Returns dictionary containing mapping between PriceField and corresponding string that has to be used by
         get_history method to get appropriate type of price series.
 
-        Ticker is optional and might be use by particular data providers to create appropriate dictionary
+        Parameters
+        -----------
+        ticker: None, Ticker
+            ticker is optional and might be uses by particular data providers to create appropriate dictionary
+
+        Returns
+        -------
+        Dict[PriceField, str]
+             mapping between PriceFields and corresponding strings
         """
+        raise NotImplementedError()
 
     @abstractmethod
     def expiration_date_field_str_map(self, ticker: Ticker = None) -> Dict[ExpirationDateField, str]:
@@ -86,8 +95,17 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
         Returns dictionary containing mapping between ExpirationDateField and corresponding string that has to be used
         by get_futures_chain_tickers method.
 
-        Ticker is optional and might be use by particular data providers to create appropriate dictionary
+        Parameters
+        -----------
+        ticker: None, Ticker
+            ticker is optional and might be uses by particular data providers to create appropriate dictionary
+
+        Returns
+        -------
+        Dict[ExpirationDateField, str]
+             mapping between ExpirationDateField and corresponding strings
         """
+        pass
 
     def str_to_expiration_date_field_map(self, ticker: Ticker = None) -> Dict[str, ExpirationDateField]:
         """
