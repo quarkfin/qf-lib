@@ -18,11 +18,11 @@ from qf_lib.backtesting.events.time_event.regular_time_event.daily_market_event 
 
 class AfterMarketCloseEvent(DailyMarketEvent):
     """
-    Rule which is triggered every day after market closes
+    Rule which is triggered every day after market closes.
     For example in order to set up 23:30 call before using the event:
-        BeforeMarketOpenEvent.set_trigger_time({"hour": 23, "minute": 30, "second": 0, "microsecond": 0})
+    ``BeforeMarketOpenEvent.set_trigger_time({"hour": 23, "minute": 30, "second": 0, "microsecond": 0})``
 
-    The listeners for this event should implement the on_after_market_close() method.
+    The listeners for this event should implement the ``on_after_market_close()`` method.
     """
 
     def notify(self, listener) -> None:

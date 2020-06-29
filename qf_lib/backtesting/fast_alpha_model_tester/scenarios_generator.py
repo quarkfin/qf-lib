@@ -25,7 +25,7 @@ class ScenariosGenerator(object):
     investment strategy.
     """
 
-    def make_scenarios(self, trade_rets: Sequence[float], scenarios_length=100, num_of_scenarios=10000) -> \
+    def make_scenarios(self, trade_rets: Sequence[float], scenarios_length: int = 100, num_of_scenarios: int = 10000) -> \
             SimpleReturnsDataFrame:
         """
         Creates a number of scenarios of a given length by randomly choosing (with replacement) returns from
@@ -34,16 +34,17 @@ class ScenariosGenerator(object):
 
         Parameters
         ----------
-        trade_rets
+        trade_rets: Sequence[float]
             sequence of floats which represent the returns on Trades performed by some investment strategy
-        scenarios_length
+        scenarios_length: int
             number of Trades which should simulated for each scenario
-        num_of_scenarios
+        num_of_scenarios: int
             number of scenarios which should be generated
 
         Returns
         -------
-        DataFrame of size scenarios_length (rows) by num_of_scenarios (columns). It contains float numbers.
+        SimpleReturnsDataFrame
+            DataFrame of size scenarios_length (rows) by num_of_scenarios (columns). It contains float numbers.
         """
         values = np.random.choice(trade_rets, scenarios_length * num_of_scenarios)
         values = np.reshape(values, (scenarios_length, num_of_scenarios))

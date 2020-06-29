@@ -20,9 +20,9 @@ class MarketCloseEvent(DailyMarketEvent):
     """
     Rule which is triggered every day when the market closes.
     For example in order to set up (16:00 for NASDAQ and NYSE) call before using the event:
-        MarketCloseEvent.set_trigger_time({"hour": 16, "minute": 0, "second": 0, "microsecond": 0})
+    ``MarketCloseEvent.set_trigger_time({"hour": 16, "minute": 0, "second": 0, "microsecond": 0})``
 
-    The listeners for this event should implement the on_market_close() method.
+    The listeners for this event should implement the ``on_market_close()`` method.
     """
 
     def notify(self, listener) -> None:

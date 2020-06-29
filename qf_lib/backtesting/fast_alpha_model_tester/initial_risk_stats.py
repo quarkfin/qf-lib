@@ -39,17 +39,17 @@ class InitialRiskStatsFactory(object):
 
         Parameters
         ----------
-        initial_risks
+        initial_risks: Sequence[float]
             list of initial_risk parameters where initial_risk is a float number
-        scenarios_list
+        scenarios_list: Sequence[pandas.DataFrame]
             list with scenarios (pd.DataFrame) where each DataFrame corresponds to one initial_risk value
             Each DataFrame has columns corresponding to different scenarios and its indexed by Trades' ordinal number.
             Its values are returns of Trades.
 
         Returns
         -------
-        initial_risk_stats
-            pd.DataFrame indexed with initial_risk values and with columns FAILED (fraction of scenarios that failed)
+        pandas.DataFrame
+            DataFrame indexed with initial_risk values and with columns FAILED (fraction of scenarios that failed)
             and SUCCEEDED (fraction of scenarios that met the objective and didn't fail on the way)
         """
         result = pd.DataFrame(

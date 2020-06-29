@@ -34,23 +34,22 @@ class VolumeShareSlippage(Slippage):
 
     This model needs to know the daily volume of the traded asset, thus the model can be only applied at the end
     of the day, when the full bar for that day is already available.
+
+    Parameters
+    ----------
+    volume_share_limit: float
+        number from range [0,1] which denotes how big (volume-wise) the Order can be i.e. if it's 0.5 and a daily
+        volume for a given asset is 1,000,000 USD, then max volume of the Order can be 500,000 USD
+    price_impact: float
+        factor which implies how big will be the slippage
+    data_handler: DataHandler
+        DataHandler component
+    contract_ticker_mapper: ContractTickerMapper
+        ContractTickerMapper component
     """
 
     def __init__(self, volume_share_limit: float, price_impact: float, data_handler: DataHandler,
                  contract_ticker_mapper: ContractTickerMapper):
-        """
-        Parameters
-        ----------
-        volume_share_limit
-            number from range [0,1] which denotes how big (volume-wise) the Order can be i.e. if it's 0.5 and a daily
-            volume for a given asset is 1,000,000 USD, then max volume of the Order can be 500,000 USD
-        price_impact
-            factor which implies how big will be the slippage
-        data_handler
-            DataHandler component
-        contract_ticker_mapper
-            ContractTickerMapper component
-        """
         self.max_volume_share_limit = volume_share_limit
         self.price_impact = price_impact
 

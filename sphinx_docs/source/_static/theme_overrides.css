@@ -6,8 +6,15 @@
          this as on RTD they are loaded after this stylesheet */
       white-space: normal !important;
    }
-
+   
    .wy-table-responsive {
       overflow: visible !important;
    }
+   
+}
+
+
+.py.class dt {
+   word-break: break-word;
+   display: inline-block;
 }
