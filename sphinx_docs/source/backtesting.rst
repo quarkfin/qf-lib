@@ -141,3 +141,18 @@ order
 	order_factory.OrderFactory
 	order.Order
 	time_in_force.TimeInForce
+
+portfolio
+===========
+.. currentmodule:: qf_lib.backtesting.portfolio
+
+.. autosummary::	
+	:nosignatures:
+	:toctree: _autosummary
+	:template: short_class.rst
+	
+	portfolio.Portfolio
+	backtest_position.BacktestPosition
+	trade.Trade
+	transaction.Transaction
+
