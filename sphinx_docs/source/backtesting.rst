@@ -112,3 +112,32 @@ fast_alpha_model_tester
 	initial_risk_stats.InitialRiskStatsFactory	
 	scenarios_generator.ScenariosGenerator
 
+monitoring
+============
+.. currentmodule:: qf_lib.backtesting.monitoring
+
+.. autosummary::	
+	:nosignatures:
+	:toctree: _autosummary
+	:template: short_class.rst
+	
+	abstract_monitor.AbstractMonitor
+	backtest_monitor.BacktestMonitor
+	backtest_result.BacktestResult
+	light_backtest_monitor.LightBacktestMonitor
+	live_trading_monitor.LiveTradingMonitor
+	past_signals_generator.PastSignalsGenerator
+	
+order
+==========
+.. currentmodule:: qf_lib.backtesting.order
+
+.. autosummary::	
+	:nosignatures:
+	:toctree: _autosummary
+	:template: short_class.rst
+	
+
+	order_factory.OrderFactory
+	order.Order
+	time_in_force.TimeInForce
