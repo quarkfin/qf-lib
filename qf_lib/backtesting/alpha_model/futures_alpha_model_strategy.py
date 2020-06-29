@@ -31,8 +31,24 @@ from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 
 
 class FuturesAlphaModelStrategy(AlphaModelStrategy):
+    """
+    An alpha model strategy which is capable of handling futures contracts.
+
+    Parameters
+    ----------
+    ts: TradingSession
+        Trading session
+    model_tickers_dict: Dict[AlphaModel, Sequence[Ticker]]
+        Dict mapping models to list of tickers that the model trades. (The tickers for which the
+        model gives recommendations)
+    use_stop_losses: bool
+        flag indicating if the stop losses should be used or not. If False, all stop orders are ignored
+    max_open_positions: None, int
+        maximal number of positions that may be open at the same time in the portfolio. If the value is set to None,
+        the number of maximal open positions is not limited.
+    """
     def __init__(self, ts: TradingSession, model_tickers_dict: Dict[AlphaModel, Sequence[Ticker]],
-                 use_stop_losses=True, max_open_positions: Optional[int] = None):
+                 use_stop_losses: bool = True, max_open_positions: Optional[int] = None):
 
         # Initialize timer and data provider in the FutureTickers
         for model_tickers in model_tickers_dict.values():

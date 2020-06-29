@@ -7,6 +7,7 @@ Welcome to QF Lib's documentation!
    
    containers
    data_providers
+   backtesting
 
 
 Indices and tables

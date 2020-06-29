@@ -32,26 +32,24 @@ from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 
 class AlphaModelStrategy(object):
     """
-    Puts together models and all settings around it and generates orders on before market open
+    Puts together models and all settings around it and generates orders on before market open.
+
+    Parameters
+    ----------
+    ts: TradingSession
+        Trading session
+    model_tickers_dict: Dict[AlphaModel, Sequence[Ticker]]
+        Dict mapping models to list of tickers that the model trades. (The tickers for which the
+        model gives recommendations)
+    use_stop_losses: bool
+        flag indicating if the stop losses should be used or not. If False, all stop orders are ignored
+    max_open_positions: None, int
+        maximal number of positions that may be open at the same time in the portfolio. If the value is set to None,
+        the number of maximal open positions is not limited.
     """
 
     def __init__(self, ts: TradingSession, model_tickers_dict: Dict[AlphaModel, Sequence[Ticker]], use_stop_losses=True,
                  max_open_positions: Optional[int] = None):
-        """
-        Parameters
-        ----------
-        ts
-            Trading session
-        model_tickers_dict
-            Dict mapping models to list of tickers that the model trades. (The tickers for which the
-            model gives recommendations)
-        use_stop_losses
-            flag indicating if the stop losses should be used or not. If False, all stop orders are ignored
-        max_open_positions
-            maximal number of positions that may be open at the same time in the portfolio. If the value is set to None,
-            the number of maximal open positions is not limited.
-        """
-
         self._broker = ts.broker
         self._order_factory = ts.order_factory
         self._data_handler = ts.data_handler
@@ -204,6 +202,11 @@ class AlphaModelStrategy(object):
         """
         Returns a QFDataFrame with all generated signals. The columns names are of the form TickerName@ModelName,
         and the rows are indexed by the time of signals generation.
+
+        Returns
+        --------
+        QFDataFrame
+            QFDataFrame with all generated signals
         """
         return QFDataFrame(data=self._signals, index=self._signals_dates)
 
