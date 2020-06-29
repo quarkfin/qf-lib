@@ -28,17 +28,26 @@ class FixedPortfolioPercentagePositionSizer(PositionSizer):
     """
     This PositionSizer converts signals to orders using Fixed Percentage value.
     Each signal will be sized based on that percentage of the portfolio.
+
+    Parameters
+    ----------
+    broker: Broker
+    data_handler: DataHandler
+    order_factory: OrderFactory
+    contract_ticker_mapper: ContractTickerMapper
+    fixed_percentage: float
+        should be set once for all signals. It corresponds to the fraction of a portfolio that we
+        are investing in every asset on single trade.
+        For example: fixed_percentage = 0.2, means that we are investing 20% of portfolio to
+        any signal that is long or short.
+    tolerance_percentage: float
+        used by OrderFactory
     """
 
     def __init__(self, broker: Broker, data_handler: DataHandler, order_factory: OrderFactory,
                  contract_ticker_mapper: ContractTickerMapper, fixed_percentage: float,
                  tolerance_percentage: float = 0.0):
-        """
-        fixed_percentage - should be set once for all signals. It corresponds to the fraction of a portfolio that we
-        are investing in every asset on single trade.
-        For example: fixed_percentage = 0.2, means that we are investing 20% of portfolio to
-        any signal that is long or short.
-        """
+
         super().__init__(broker, data_handler, order_factory, contract_ticker_mapper)
 
         self.fixed_percentage = fixed_percentage

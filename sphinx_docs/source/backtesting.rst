@@ -156,3 +156,17 @@ portfolio
 	trade.Trade
 	transaction.Transaction
 
+position_sizer
+===============
+.. currentmodule:: qf_lib.backtesting.position_sizer
+
+.. autosummary::	
+	:nosignatures:
+	:toctree: _autosummary
+	:template: short_class.rst
+	
+	position_sizer.PositionSizer
+	simple_position_sizer.SimplePositionSizer
+	initial_risk_position_sizer.InitialRiskPositionSizer
+	ixed_portfolio_percentage_position_sizer.FixedPortfolioPercentagePositionSizer
+
