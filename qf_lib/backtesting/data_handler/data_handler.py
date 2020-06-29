@@ -45,6 +45,13 @@ class DataHandler(DataProvider):
     The goal of a DataHandler is to provide backtester's components with financial data. It also makes sure that
     no data from the future (relative to a "current" time of a backtester) is being accessed, that is: that there
     is no look-ahead bias.
+
+    Parameters
+    -----------
+    data_provider: DataProvider
+        the underlying data provider
+    timer: Timer
+        timer used to keep track of the data "from the future"
     """
 
     def __init__(self, data_provider: DataProvider, timer: Timer):
@@ -64,6 +71,19 @@ class DataHandler(DataProvider):
         Optimises running of the backtest. All the data will be downloaded before the backtest.
         Note that requesting during the backtest any other ticker or price field than the ones in the params
         of this function will result in an Exception.
+
+        Parameters
+        ----------
+        tickers: Ticker, Sequence[Ticker]
+            ticker or sequence of tickers of the securities
+        fields: PriceField, Sequence[PriceField]
+            PriceField or sequence of PriceFields of the securities
+        start_date: datetime
+            initial date that should be downloaded
+        end_date: datetime
+            last date that should be downloaded
+        frequency
+            frequency of the data
         """
         assert not self.is_optimised, "Multiple calls on use_data_bundle() are forbidden"
 
@@ -103,6 +123,10 @@ class DataHandler(DataProvider):
             Note: while requesting more than one ticker, some tickers may have fewer than n_of_bars data points
         frequency
             frequency of the data
+
+        Returns
+        --------
+        PricesSeries, PricesDataFrame, QFDataArray
         """
         pass
 
@@ -113,6 +137,10 @@ class DataHandler(DataProvider):
         """
         Acceses prices, using the DataProvider get_price functionality, but before makes sure that the query doesn't
         concern data from the future.
+
+        See Also
+        --------
+        DataProvider.get_price
         """
         pass
 
@@ -123,6 +151,10 @@ class DataHandler(DataProvider):
             Union[QFSeries, QFDataFrame, QFDataArray]:
         """
         Runs DataProvider.get_history(...) but before makes sure that the query doesn't concern data from the future.
+
+        See Also
+        --------
+        DataProvider.get_history
         """
         pass
 
@@ -137,10 +169,17 @@ class DataHandler(DataProvider):
         """
         Gets the latest available price for given assets.
 
+        Parameters
+        -----------
+        tickers: Ticker, Sequence[Ticker]
+            tickers of the securities which prices should be downloaded
+        frequency: Frequency
+            frequency of the data
+
         Returns
         -------
-        last_prices
-            Series where:
+        float, pandas.Series
+            last_prices series where:
             - last_prices.name contains a date of current prices,
             - last_prices.index contains tickers
             - last_prices.data contains latest available prices for given tickers
@@ -153,10 +192,17 @@ class DataHandler(DataProvider):
         Works just like get_last_available_price() but it can return NaNs if data is not available at the current
         moment.
 
+        Parameters
+        -----------
+        tickers: Ticker, Sequence[Ticker]
+            tickers of the securities which prices should be downloaded
+        frequency: Frequency
+            frequency of the data
+
         Returns
         -------
-        current_prices
-            Series where:
+        float, pandas.Series
+            current_prices series where:
             - current_prices.name contains a date of current prices,
             - current_prices.index contains tickers
             - current_prices.data contains latest available prices for given tickers
@@ -167,6 +213,18 @@ class DataHandler(DataProvider):
             -> Union[pd.Series, pd.DataFrame]:
         """
         Gets the current bar(s) for given Ticker(s). If the bar is not available yet, None is returned.
+
+        Parameters
+        -----------
+        tickers: Ticker, Sequence[Ticker]
+            tickers of the securities which prices should be downloaded
+        frequency: Frequency
+            frequency of the data
+
+        Returns
+        -------
+        pandas.Series, pandas.DataFrame
+            current bar
         """
         pass
 
