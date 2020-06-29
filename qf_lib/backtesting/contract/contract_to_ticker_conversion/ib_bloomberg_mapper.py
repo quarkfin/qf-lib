@@ -19,23 +19,24 @@ from qf_lib.common.tickers.tickers import BloombergTicker
 
 class IB_Bloomberg_ContractTickerMapper(ContractTickerMapper):
     """
-    BloombergTicker- IB Contract mapper that can be used for live trading.
+    BloombergTicker - IB Contract mapper that can be used for live trading.
     It is using the "SMART" exchange for all products
+
+    Parameters
+    -----------
+    bbg_suffix: str
+        suffix added after the first part of the BBG ticker. For example: "US Equity", "PW Equity", etc
+    security_type: str
+        corresponds to the security type that is used to create Contract. For example:
+        use "STK" for stocks, ETFs and ETNs,
+        use "CMDTY" for commodities,
+        use "BOND" for bonds
+        use "OPT" for options
+        use "FUT" for futures
+
     """
 
     def __init__(self, bbg_suffix: str, security_type: str):
-        """
-        bbg_suffix:
-            is the suffix added after the first part of the BBG ticker.
-            For example: "US Equity", "PW Equity", etc
-        security_type:
-            corresponds to the security type that is used to create Contract.
-            For example: use "STK" for stocks, ETFs and ETNs,
-                         use "CMDTY" for commodities,
-                         use "BOND" for bonds
-                         use "OPT" for options
-                         use "FUT" for futures
-        """
         self.bbg_suffix = bbg_suffix
         self.security_type = security_type
 

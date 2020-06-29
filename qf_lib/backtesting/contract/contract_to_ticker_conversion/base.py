@@ -21,12 +21,34 @@ from qf_lib.common.tickers.tickers import Ticker
 class ContractTickerMapper(metaclass=ABCMeta):
     @abstractmethod
     def contract_to_ticker(self, contract: Contract, strictly_to_specific_ticker=True) -> Ticker:
-        """
-        The parameter strictly_to_specific_ticker allows to map a Future contract to either Ticker (default) or
-        FutureTicker.
+        """Maps Contract object onto corresponding Ticker.
+
+        Parameters
+        ----------
+        contract: Contract
+            contract that should be mapped
+        strictly_to_specific_ticker: bool
+            allows to map a Future contract to either Ticker (default) or FutureTicker
+
+        Returns
+        -------
+        Ticker
+            corresponding ticker
         """
         pass
 
     @abstractmethod
     def ticker_to_contract(self, ticker: Ticker) -> Contract:
+        """Maps ticker to corresponding ticker.
+
+        Parameters
+        ----------
+        ticker: Ticker
+            ticker that should be mapped
+
+        Returns
+        -------
+        Contract
+            corresponding contract
+        """
         pass

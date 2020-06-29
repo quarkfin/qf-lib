@@ -27,12 +27,22 @@ class DummyBloombergContractTickerMapper(ContractTickerMapper):
     def __init__(self):
         self._contract_to_future_ticker = {}
 
-    def contract_to_ticker(self, contract: Contract, strictly_to_specific_ticker=True) -> BloombergTicker:
-        """
-        The parameter strictly_to_specific_ticker allows to map a Future contract to either BloombergTicker (default) or
-        BloombergFutureTicker. E.g. contract with security_type = "FUT" and symbol = "CTZ9 Comdty" can be either mapped
-        to BloombergTicker("CTZ9 Comdty") or a BloombergFutureTicker, which corresponds to the "CT{} Comdty" futures
-        family.
+    def contract_to_ticker(self, contract: Contract, strictly_to_specific_ticker: bool = True) -> BloombergTicker:
+        """Maps Contract objects into BloombergTickers.
+
+        Parameters
+        ----------
+        contract: Contract
+            contract that should be mapped
+        strictly_to_specific_ticker: bool
+            allows to map a Future contract to either BloombergTicker (default) or BloombergFutureTicker. E.g. contract
+            with security_type = "FUT" and symbol = "CTZ9 Comdty" can be either mapped to BloombergTicker("CTZ9 Comdty")
+            or a BloombergFutureTicker, which corresponds to the "CT{} Comdty" futures family.
+
+        Returns
+        -------
+        BloombergTicker
+            corresponding ticker
         """
 
         if contract.security_type == 'STK' or strictly_to_specific_ticker:
@@ -47,8 +57,19 @@ class DummyBloombergContractTickerMapper(ContractTickerMapper):
 
     def ticker_to_contract(self, ticker: Union[BloombergTicker, BloombergFutureTicker]) -> Contract:
         """
-        The security type is derived according to the type of the Ticker - in case of BloombergTicker the 'STK' security
-        type is chosen and in case of BloombergFutureTicker - the 'FUT' security type.
+        Maps ticker to corresponding ticker.  The security type is derived according to the type of the Ticker
+        - in case of BloombergTicker the 'STK' security type is chosen and in case of BloombergFutureTicker -
+        the 'FUT' security type.
+
+        Parameters
+        ----------
+        ticker: BloombergTicker, BloombergFutureTicker
+            ticker that should be mapped
+
+        Returns
+        -------
+        Contract
+            corresponding contract
         """
         if isinstance(ticker, BloombergFutureTicker):
             contract = Contract(symbol=ticker.ticker, security_type='FUT', exchange='SIM_EXCHANGE',

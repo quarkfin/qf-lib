@@ -14,17 +14,21 @@
 
 
 class Contract(object):
+    """ Represent a single contract.
+
+    Parameters
+    ----------
+    symbol: str
+        symbol of the asset handled later on by the Broker (e.g. "MSFT")
+    security_type: str
+        e.g. 'STK' for a stock
+    exchange: str
+        exchange on which the asset should be traded
+    contract_size: int
+        size of the contract (default 1)
+    """
+
     def __init__(self, symbol: str, security_type: str, exchange: str, contract_size=1):
-        """
-        Parameters
-        ----------
-        symbol
-            symbol of the asset handled later on by the Broker (e.g. "MSFT")
-        security_type
-            e.g. 'STK' for a stock
-        exchange
-            exchange on which the asset should be traded
-        """
         self.symbol = symbol
         self.security_type = security_type
         self.exchange = exchange
