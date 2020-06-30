@@ -294,9 +294,7 @@ class FuturesChain(pd.Series):
             # (exclusive)
             try:
                 return future.data[PriceField.Close].loc[future.data.index < time].asof(time)
-            except IndexError:
-                return None
-            except TypeError:
+            except (IndexError, TypeError, KeyError):
                 return None
 
         previous_contracts_close_prices = QFSeries([get_last_close_price(future, time) for time, future in
@@ -308,9 +306,7 @@ class FuturesChain(pd.Series):
             try:
                 index = future.data[PriceField.Open].loc[time:].first_valid_index()
                 return future.data[PriceField.Open].loc[time:].loc[index]
-            except IndexError:
-                return None
-            except TypeError:
+            except (IndexError, TypeError, KeyError):
                 return None
 
         next_contracts_open_prices = QFSeries([get_first_open_price(future, time) for time, future in
