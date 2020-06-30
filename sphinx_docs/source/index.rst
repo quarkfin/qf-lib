@@ -8,6 +8,8 @@ Welcome to QF Lib's documentation!
    containers
    data_providers
    backtesting
+   document_utils
+   helpers
 
 
 Indices and tables

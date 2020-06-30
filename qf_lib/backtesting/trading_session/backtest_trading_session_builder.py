@@ -58,6 +58,33 @@ from qf_lib.settings import Settings
 
 
 class BacktestTradingSessionBuilder(object):
+    """
+    Class used to build a Trading Session with all necessary elements, connections and dependencies.
+    By default it uses the following settings:
+
+    - backtest name is set to "Backtest Results"
+    - initial cash is set to 10000000
+    - montior type is set to LightBacktestMonitor
+    - DummyBloombergContractTickerMapper is used to map contracts to tickers
+    - no commissions are introduced (FixedCommissionModel(0.0))
+    - no slippage is introduced (PriceBasedSlippage(0.0))
+    - SimplePositionSizer is used
+    - BeforeMarketOpenEvent is triggered at 08:00
+    - MarketOpenEvent is triggered at 13:30
+    - MarketCloseEvent is triggered at 20:00
+    - AfterMarketCloseEvent is triggered at 23:00
+
+    Parameters
+    ------------
+    data_provider: GeneralPriceProvider
+        data provider used to download all fields and prices used during trading
+    settings: Settings
+        object containing all necessary settings, used for example for connection purposes
+    pdf_exporter: PDFExporter
+        used to export all trading statistics to PDF
+    excel_exporter: ExcelExporter
+        used to export trading data to Excel
+    """
 
     def __init__(self, data_provider: GeneralPriceProvider, settings: Settings, pdf_exporter: PDFExporter,
                  excel_exporter: ExcelExporter):
@@ -89,20 +116,59 @@ class BacktestTradingSessionBuilder(object):
         AfterMarketCloseEvent.set_trigger_time({"hour": 23, "minute": 00, "second": 0, "microsecond": 0})
 
     def set_backtest_name(self, name: str):
+        """Sets backtest name.
+
+        Parameters
+        -----------
+        name: str
+            new backtest name
+        """
         assert not any(char in name for char in ('/\\?%*:|"<>'))
         self._backtest_name = name
 
     def set_frequency(self, frequency: Frequency):
+        """Sets the frequency of the backtest. Based on this either DailyDataHandler or
+        IntradayDataHandler is chosen.
+
+        Parameters
+        -----------
+        frequency: Frequency
+            frequency of the data and prices
+        """
         self._frequency = frequency
 
     def set_scheduling_time_delay(self, time_delay: RelativeDelta):
+        """Sets the scheduling delay.
+
+        Parameters
+        -----------
+        time_delay: RelativeDelta
+            scheduling time delay
+        """
         self._scheduling_time_delay = time_delay
 
     def set_initial_cash(self, initial_cash: int):
+        """Sets the initial cash value.
+
+        Parameters
+        -----------
+        initial_cash: int
+        """
         assert type(initial_cash) is int and initial_cash > 0
         self._initial_cash = initial_cash
 
     def set_alpha_model_backtest_name(self, model_type: Type[AlphaModel], param_set: Tuple, tickers: List[Ticker]):
+        """Sets the alpha model backtest name.
+
+        Parameters
+        -----------
+        model_type: Type[AlphaModel]
+            type of the alpha model
+        param_set: Tuple
+            params of the model, included in the name creation
+        tickers: List[Ticker]
+            list of tickers
+        """
         name = model_type.__name__ + '_' + '_'.join((str(item)) for item in param_set)
 
         if len(tickers) <= 3:
@@ -119,25 +185,76 @@ class BacktestTradingSessionBuilder(object):
         self._backtest_name = name
 
     def set_data_provider(self, data_provider: DataProvider):
+        """Sets the data provider.
+
+        Parameters
+        -----------
+        data_provider: DataProvider
+            data provider used to download data and prices
+        """
         self._data_provider = data_provider
 
     def set_monitor_type(self, monitor_type: Type[AbstractMonitor]):
+        """Sets type of the monitor.
+
+        Parameters
+        -----------
+        monitor_type: Type[AbstractMonitor]
+            type of the monitor
+        """
         assert issubclass(monitor_type, AbstractMonitor)
         self._monitor_type = monitor_type
 
     def set_benchmark_tms(self, benchmark_tms: QFSeries):
+        """Sets the benchmark timeseries. If set, the TearsheetWithBenchamrk will be generated.
+
+        Parameters
+        -----------
+        benchmark_tms: QFSeries
+            timeseries of the benchmark
+        """
         self._benchmark_tms = benchmark_tms
 
     def set_contract_ticker_mapper(self, contract_ticker_mapper: ContractTickerMapper):
+        """Sets the mapping between contracts and tickers.
+
+        Parameters
+        -----------
+        contract_ticker_mapper: ContractTickerMapper
+            mapping between contracts and tickers
+        """
         self._contract_ticker_mapper = contract_ticker_mapper
 
     def set_commission_model(self, commission_model: CommissionModel):
+        """Sets commission model.
+
+        Parameters
+        -----------
+        commission_model: CommissionModel
+            object representing the commission model
+        """
         self._commission_model = commission_model
 
     def set_slippage_model(self, slippage_model: Slippage):
+        """Sets the slippage model.
+
+        Parameters
+        -----------
+        slippage_model: Slippage
+            object representing the slippage model
+        """
         self._slippage_model = slippage_model
 
     def set_position_sizer(self, position_sizer_type: Type[PositionSizer], *args, **kwargs):
+        """Sets the position sizer.
+
+        Parameters
+        -----------
+        position_sizer_type: Type[PositionSizer]
+            type of position sizer
+        kwargs:
+            all parameters which are necessary to initialize the chosen position sizer
+        """
         if position_sizer_type is SimplePositionSizer:
             assert len(args) + len(kwargs) == 0
         if position_sizer_type is InitialRiskPositionSizer:
@@ -173,6 +290,20 @@ class BacktestTradingSessionBuilder(object):
         return data_handler
 
     def build(self, start_date: datetime, end_date: datetime) -> BacktestTradingSession:
+        """Builds a backtest trading session.
+
+        Parameters
+        -----------
+        start_date: datetime
+            starting date of the backtest
+        end_date: datetime
+            last date of the backtest
+
+        Returns
+        ---------
+        BacktestTradingSession
+            trading session containing all the necessary parameters
+        """
         self._timer = SettableTimer(start_date)
         self._notifiers = Notifiers(self._timer)
         self._events_manager = self._create_event_manager(self._timer, self._notifiers)

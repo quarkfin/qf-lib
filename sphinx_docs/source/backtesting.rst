@@ -168,5 +168,19 @@ position_sizer
 	position_sizer.PositionSizer
 	simple_position_sizer.SimplePositionSizer
 	initial_risk_position_sizer.InitialRiskPositionSizer
-	ixed_portfolio_percentage_position_sizer.FixedPortfolioPercentagePositionSizer
+	fixed_portfolio_percentage_position_sizer.FixedPortfolioPercentagePositionSizer
 
+trading_session
+=====================
+.. currentmodule:: qf_lib.backtesting.trading_session
+
+.. autosummary::	
+	:nosignatures:
+	:toctree: _autosummary
+	:template: short_class.rst
+	
+	trading_session.TradingSession
+	backtest_trading_session.BacktestTradingSession
+	backtest_trading_session_builder.BacktestTradingSessionBuilder
+	live_trading_session.LiveTradingSession
+	
