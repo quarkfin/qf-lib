@@ -35,6 +35,7 @@ extensions = [
     'sphinx.ext.githubpages',
 	'sphinx_rtd_theme',
 	'sphinx.ext.autosummary',
+	'sphinx.ext.viewcode',
 	'autodocsumm'
 ]
 numpydoc_show_class_members = False

@@ -5,16 +5,15 @@ Welcome to QF Lib's documentation!
    :maxdepth: 2
    :caption: Contents:
    
+   analysis
+   backtesting
    containers
    data_providers
-   backtesting
    document_utils
-   helpers
 
 
 Indices and tables
 ==================
 
 * :ref:`genindex`
-* :ref:`modindex`
 * :ref:`search`

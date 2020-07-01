@@ -28,7 +28,24 @@ from qf_lib.settings import Settings
 
 class LiveTradingSheet(AbstractDocument):
     """
-    Contains set of statistics calculated for a strategy in live trading. Generates one page PDF with charts and tables
+    Contains set of statistics calculated for a strategy in live trading. Generates one page PDF with charts and tables.
+
+    Parameters
+    ----------
+    settings: Settings
+        settings of the project
+    pdf_exporter: PDFExporter
+        tool that creates the pdf with the result
+    strategy_tms: QFSeries
+        timeseries of the live trading of the strategy
+    strategy_leverage_tms: QFSeries
+        timeseries of the leverage during the live trading period
+    is_stats: InSampleReturnStats
+        statistics of the In Sample period of the strategy
+    title: str
+        title of the document
+    benchmark_tms: None, QFSeries
+        timeseries of the benchmark corresponding to the strategy_tms
     """
 
     def __init__(self, settings: Settings, pdf_exporter,
@@ -37,25 +54,6 @@ class LiveTradingSheet(AbstractDocument):
                  is_stats: InSampleReturnStats,
                  title: str = "Live Trading Sheet",
                  benchmark_tms: QFSeries = None):
-        """
-
-        Parameters
-        ----------
-        settings
-            settings of the project
-        pdf_exporter
-            tool that creates the pdf with the result
-        strategy_tms
-            timeseries of the live trading of the strategy
-        strategy_leverage_tms
-            timeseries of the leverage during the live trading period
-        is_stats
-            statistics of the In Sample period of the strategy
-        title
-            title of the document
-        benchmark_tms
-            timeseries of the benchmark corresponding to the strategy_tms
-        """
 
         super().__init__(settings, pdf_exporter, title)
         self.strategy_tms = strategy_tms

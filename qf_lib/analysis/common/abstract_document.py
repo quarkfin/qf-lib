@@ -43,7 +43,16 @@ from qf_lib.starting_dir import get_starting_dir_abs_path
 
 class AbstractDocument(metaclass=ABCMeta):
     """
-    Base class for Most PDF document with charts and tables.
+    Base class for most PDF documents with charts and tables.
+
+    Parameters
+    -----------
+    settings: Settings
+        settings containing all necessary information
+    pdf_exporter: PDFExporter
+        used to create PDF document
+    title: str
+        title of the document
     """
 
     def __init__(self, settings: Settings, pdf_exporter: PDFExporter, title: str = "Document Title"):

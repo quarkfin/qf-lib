@@ -40,51 +40,50 @@ from qf_lib.documents_utils.document_exporting.element.table import Table
 
 class TimeseriesAnalysis(TimeseriesAnalysisDTO):
     """
-    Used for analysing a timeseries of returns. Calculates and aggregates different statistics of the timeseries
+    Used for analysing a timeseries of returns. Calculates and aggregates different statistics of the timeseries,
+    It contains the following fields:
 
-    Fields :
-        returns_tms                      - series of simple returns
-        frequency
-        start_date
-        end_date
+    - returns_tms - series of simple returns
+    - frequency
+    - start_date
+    - end_date
 
-        total_return
-        cagr                             - annualised return
+    - total_return
+    - cagr - annualised return
 
-        annualised_vol
-        annualised_upside_vol
-        annualised_downside_vol
+    - annualised_vol
+    - annualised_upside_vol
+    - annualised_downside_vol
 
-        sharpe_ratio
-        omega_ratio
-        calmar_ratio
-        gain_to_pain_ratio
-        sorino_ratio
+    - sharpe_ratio
+    - omega_ratio
+    - calmar_ratio
+    - gain_to_pain_ratio
+    - sorino_ratio
 
-        cvar                             - 5% CVaR expressed related to the specified frequency
-        annualised_cvar                  - annualised 5% CVaR
-        max_drawdown                     - maximum drawdown
-        avg_drawdown                     - average of the whole underwater chart
-        avg_drawdown_duration            - average duration of a drawdown
+    - cvar - 5% CVaR expressed related to the specified frequency
+    - annualised_cvar - annualised 5% CVaR
+    - max_drawdown - maximum drawdown
+    - avg_drawdown - average of the whole underwater chart
+    - avg_drawdown_duration - average duration of a drawdown
 
-        best_return
-        worst_return
-        avg_positive_return
-        avg_negative_return
-        skewness
-        kurtosis
-        kelly
+    - best_return
+    - worst_return
+    - vavg_positive_return
+    - avg_negative_return
+    - skewness
+    - kurtosis
+    - kelly
+
+    Parameters
+    ----------
+    returns_timeseries: QFSeries
+        Analysed timeseries. It should be PriceSeries, SimpleReturnSeries or LogReturnSeries
+    frequency: Frequency
+        Corresponds to the frequency od data samples in the seres.
     """
 
     def __init__(self, returns_timeseries: QFSeries, frequency: Frequency):
-        """
-        Parameters
-        ----------
-        returns_timeseries: QFSeries
-            Analysed timeseries. It should be PriceSeries, SimpleReturnSeries or LogReturnSeries
-        frequency: Frequency
-            Corresponds to the frequency od data samples in the seres.
-        """
         super().__init__()
 
         self.returns_tms = returns_timeseries.to_simple_returns()  # type: SimpleReturnsSeries
@@ -135,18 +134,20 @@ class TimeseriesAnalysis(TimeseriesAnalysisDTO):
     @staticmethod
     def values_in_table(ta_collection: Union['TimeseriesAnalysis', Sequence['TimeseriesAnalysis']],
                         asset_names: Union[None, str, Sequence[str]] = None) -> str:
-        """
+        """Returns a string with all the measures in a form of table of the following format:
+
+                      Asset1    Asset2  ...
+        Nice_name1    value11   value21 ... unit1
+        Nice_name2    value12   value22 ... unit2
+        ...               ...       ... ... unitI
+        Nice_nameN    value12   value22 ... unitN
+
+        Parameters
+        ------------
         ta_collection
             single TimeseriesAnalysis object or a collection of TimeseriesAnalysis objects
         asset_names
             names of assets corresponding to objects in ta_collection
-
-        returns a string with all the measures in a form of table of the following format:
-                          Asset1    Asset2  ...
-            Nice_name1    value11   value21 ... unit1
-            Nice_name2    value12   value22 ... unit2
-            ...               ...       ... ... unitI
-            Nice_nameN    value12   value22 ... unitN
         """
         if isinstance(ta_collection, TimeseriesAnalysis):
             ta_list = [ta_collection]
@@ -191,16 +192,7 @@ class TimeseriesAnalysis(TimeseriesAnalysisDTO):
 
     @staticmethod
     def table_for_df(df: QFDataFrame, frequency: Frequency = Frequency.DAILY) -> str:
-        """
-        df
-            DataFrame of returns or prices of assets to be analysed
-
-        frequency
-            (optional) frequency of the returns or price sampling in the DataFrame. By default daily frequency is used
-
-        Returns
-        ----------
-        returns a table similar to the one below:
+        """Returns a table similar to the one below:
 
         Analysed period: start_date - end_date, using frequency data
         Name            total_ret        cagr         vol      up_vol    down_vol ...
@@ -208,6 +200,14 @@ class TimeseriesAnalysis(TimeseriesAnalysisDTO):
         Asset2              66.26       29.19       20.74       14.86       15.54 ...
         Asset3              66.26       29.19       20.74       14.86       15.54 ...
         ...                   ...         ...         ...         ...         ... ...
+
+        Parameters
+        ------------
+        df
+            DataFrame of returns or prices of assets to be analysed
+
+        frequency
+            (optional) frequency of the returns or price sampling in the DataFrame. By default daily frequency is used
 
         """
         name_ta_list = [(name, TimeseriesAnalysis(asset_tms, frequency)) for name, asset_tms in df.iteritems()]
@@ -269,7 +269,8 @@ class TimeseriesAnalysis(TimeseriesAnalysisDTO):
         """
         Returns
         -------
-        the list of tuples. Each tuple corresponds to one property of the timeseries and it is of the following format:
+        List[Tuple[str]]
+            the list of tuples. Each tuple corresponds to one property of the timeseries and it is of the following format:
             (short_name, long_name, value, unit)
 
             short_name: is a short string representation that might be treated as a key and should not have spaces in it
@@ -277,8 +278,8 @@ class TimeseriesAnalysis(TimeseriesAnalysisDTO):
             value: is the string representation of the value rounded to 2 decimal places
             unit: is an unit in which the value is expressed. Might be empty.
 
-        All elements of the tuple are strings (including the value, which is a string representation
-        of the rounded number)
+            All elements of the tuple are strings (including the value, which is a string representation
+            of the rounded number)
         """
 
         def num_to_str(value):
