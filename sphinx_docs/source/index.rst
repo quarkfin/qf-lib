@@ -12,6 +12,7 @@ Welcome to QF Lib's documentation!
    data_providers
    document_utils
    indicators
+   portfolio_construction
 
 
 Indices and tables

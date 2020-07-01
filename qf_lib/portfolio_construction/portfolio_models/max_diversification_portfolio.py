@@ -16,7 +16,7 @@ from typing import Union, Sequence
 
 import numpy as np
 import pandas as pd
-from cvxopt.base import matrix
+from cvxopt import matrix
 from cvxopt.coneprog import qp
 import warnings
 
@@ -82,11 +82,12 @@ class MaxDiversificationPortfolio(Portfolio):
 
         Parameters
         ----------
-        weights
+        weights: pandas.Series
             series of weights indexed with names of assets
 
         Returns
         -------
+        float
             Diversification Ratio
         """
         epsilon = 1e-06

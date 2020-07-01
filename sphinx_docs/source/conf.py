@@ -17,11 +17,11 @@
 # -- Project information -----------------------------------------------------
 
 project = 'QF Lib'
-copyright = '2020, Authors...'
-author = 'Authors...'
+copyright = '2020'
+#author = 'Authors...'
 
 # The full version, including alpha/beta/rc tags
-release = 'release...'
+#release = 'release...'
 
 
 # -- General configuration ---------------------------------------------------
@@ -70,3 +70,4 @@ html_context = {
 
 # -- Extension configuration -------------------------------------------------
 autosummary_generate = True
+autodoc_mock_imports = ["cvxopt", "ibapi"]

@@ -44,7 +44,7 @@ def beta_and_alpha_full_stats(
         - alpha - alpha coefficient for the linear fit (y = alpha * x + beta, where x is the benchmark return and y is the portfolio's return)
         - r_value - correlation coefficient. NOTE: this is not r_squared, r_squared = r_value**2
         - p_value - two-sided p-value for a hypothesis test whose null hypothesis is that the slope is zero
-         - std_err - standard error of the estimate
+        - std_err - standard error of the estimate
     """
     strategy_tms = strategy_tms.to_simple_returns()
     benchmark_tms = benchmark_tms.to_simple_returns()

@@ -13,12 +13,9 @@
    }
 }
 
-.wy-table-responsive table td:nth-child(1) {
-  /* !important prevents the common CSS stylesheets from overriding
-	 this as on RTD they are loaded after this stylesheet */
-	word-break: break-all;
+.rst-content table.docutils:not(.field-list) td:nth-child(1) {
+		word-break: break-all;
 	width: 50% !important;
-
 }
 
 .py.class dt {

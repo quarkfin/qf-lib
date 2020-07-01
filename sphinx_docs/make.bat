@@ -26,7 +26,7 @@ if errorlevel 9009 (
 )
 
 
-%SPHINXBUILD% -E -a -b %1 %SOURCEDIR% %BUILDDIR% %SPHINXOPTS% %O%
+%SPHINXBUILD% -b %1 %SOURCEDIR% %BUILDDIR% %SPHINXOPTS% %O%
 goto end
 
 :help

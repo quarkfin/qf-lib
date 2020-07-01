@@ -51,7 +51,7 @@ class QuadraticOptimizer(object):
 
         Returns
         -------
-        np.ndarray
+        weights
             best weights for the given problem. Sum of all weights is equal 1.
         """
         assets_number = P.shape[0]
