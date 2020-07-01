@@ -25,16 +25,17 @@ def aggregate_returns(
 
     Parameters
     ----------
-    returns
+    returns: ReturnsSeries
         returns to be aggregated
-    start_dates
+    start_dates: Sequence[datetime]
         list of start dates for aggregations
-    end_dates
+    end_dates: Sequence[datetime]
         list of end dates for aggregations (of the same length as start_dates)
 
     Returns
     -------
-    list of aggregated returns corresponding to given start dates and end dates (it has the same length)
+    Sequence[float]
+        list of aggregated returns corresponding to given start dates and end dates (it has the same length)
     """
     assert len(start_dates) == len(end_dates)
 

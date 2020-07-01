@@ -24,18 +24,18 @@ def get_volatility(qf_series: QFSeries, frequency: Frequency = None, annualise: 
 
     Parameters
     ----------
-    qf_series
+    qf_series: QFSeries
         series of prices/returns (as numbers, e.g. 0.5 corresponds to 50% return)
-    frequency
+    frequency: Frequency
         the frequency of samples in the returns series; it is only obligatory to specify frequency if the annualise
         parameter is set to True, which is a default value
-    annualise
+    annualise: bool
         True if the volatility values should be annualised; False otherwise. If it is set to True, then it is obligatory
         to specify a frequency of the returns series.
 
     Returns
     -------
-    volatility
+    float
         volatility for the whole series.
     """
     returns_tms = qf_series.to_log_returns()

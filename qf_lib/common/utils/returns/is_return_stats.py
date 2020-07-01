@@ -18,18 +18,16 @@ from qf_lib.containers.series.qf_series import QFSeries
 class InSampleReturnStats(object):
     """
     Stores values of stats used to build confidence interval (Cone Chart)
+
+    Parameters
+    ----------
+    mean_log_ret: float
+        mean log return expressed in the frequency of data samples (usually daily)
+    std_of_log_ret: float
+        std of log returns expressed in the frequency of data samples (usually daily)
     """
 
     def __init__(self, mean_log_ret: float = None, std_of_log_ret: float = None):
-        """
-
-        Parameters
-        ----------
-        mean_log_ret
-            mean log return expressed in the frequency of data samples (usually daily)
-        std_of_log_ret
-            std of log returns expressed in the frequency of data samples (usually daily)
-        """
         self.mean_log_ret = mean_log_ret
         self.std_of_log_ret = std_of_log_ret
 

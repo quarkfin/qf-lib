@@ -51,18 +51,16 @@ from qf_lib.plotting.helpers.index_translator import IndexTranslator
 class DataPresenter(object):
     """
     Class used for presenting the data stored in the FactorizationDataModel.
+    Parameters
+    ----------
+    model
+        model for the data, which should be presented
+    ticker_to_security_name_dict
+        dictionary mapping tickers to security names
     """
 
     def __init__(self, model: DataModel, ticker_to_security_name_dict: Mapping[str, str],
                  enet_factors_identifier: ElasticNetFactorsIdentifier = None):
-        """
-        Parameters
-        ----------
-        model
-            model for the data, which should be presented
-        ticker_to_security_name_dict
-            dictionary mapping tickers to security names
-        """
         self.model = model
         self.ticker_to_security_name_dict = ticker_to_security_name_dict
         self._enet_factors_identifier = enet_factors_identifier

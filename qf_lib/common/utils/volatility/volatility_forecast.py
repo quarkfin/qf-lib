@@ -22,34 +22,34 @@ from qf_lib.containers.series.qf_series import QFSeries
 
 
 class VolatilityForecast(object):
+    """
+    Creates class used for vol forecasting: describes the volatility forecast configuration as well as the input
+    and output data (output is created and assigned by calling one of the class methods).
+
+    An instance of this class should describe one specific forecast and store its parameters.
+    Parameters should NOT be modified after calling one of the calculation methods (only one call is allowed)
+
+    Parameters
+    ----------
+    returns_tms: QFSeries
+        series of returns of the asset
+    vol_process: VolatilityProcess
+        volatility process used for forecasting. For example EGARCH(p=p, o=o, q=q)
+    horizon: str
+        horizon for the volatility forecast. It is expressed in the frequency of the returns provided
+    method: int
+        method of forecast calculation. Possible: 'analytic', 'simulation' or 'bootstrap'
+        'analytic' is the fastest but is not available for EGARCH and possibly some other models.
+        For details check arch documentation
+    annualise: bool
+        flag indicating whether the result is annualised; True by default
+    frequency: Frequency
+        if annualise is True, this should be the frequency of the returns timeseries that is provided as input;
+        not used if annualise is False.
+
+    """
     def __init__(self, returns_tms: QFSeries, vol_process: VolatilityProcess, method: str = 'analytic',
                  horizon: int = 1, annualise: bool = True, frequency: Frequency = Frequency.DAILY):
-        """
-        Creates class used for vol forecasting: describes the volatility forecast configuration as well as the input
-        and output data (output is created and assigned by calling one of the class methods).
-
-        An instance of this class should describe one specific forecast and store its parameters.
-        Parameters should NOT be modified after calling one of the calculation methods (only one call is allowed)
-
-        Parameters
-        ----------
-        returns_tms
-            series of returns of the asset
-        vol_process
-            volatility process used for forecasting. For example EGARCH(p=p, o=o, q=q)
-        horizon
-            horizon for the volatility forecast. It is expressed in the frequency of the returns provided
-        method
-            method of forecast calculation. Possible: 'analytic', 'simulation' or 'bootstrap'
-            'analytic' is the fastest but is not available for EGARCH and possibly some other models.
-            For details check arch documentation
-        annualise
-            flag indicating whether the result is annualised; True by default
-        frequency
-            if annualise is True, this should be the frequency of the returns timeseries that is provided as input;
-            not used if annualise is False.
-
-        """
         self.vol_process = vol_process
         self.method = method
         self.horizon = horizon
@@ -70,16 +70,17 @@ class VolatilityForecast(object):
 
         Parameters
         ----------
-        window_len
+        window_len: int
             size of the rolling window, number of rows used as input data to calculate forecasted volatility
-        multiplier
+        multiplier: int
             ex. 100 (should be > 1)
             improves the optimization performance, as for very small values the results may be faulty;
             after optimization the results are scaled back (division by multiplier value)
 
         Returns
         -------
-        Timeseries of forecasted volatility.
+        QFSeries
+            Timeseries of forecasted volatility.
         """
 
         assert self.forecasted_volatility is None, "The forecast was already calculated."
@@ -106,14 +107,15 @@ class VolatilityForecast(object):
 
         Parameters
         ----------
-        multiplier
+        multiplier: int
             ex. 100 (should be > 1)
             improves the optimization performance, as for very small values the results may be faulty;
             after optimization the results are scaled back (division by multiplier value)
 
         Returns
         -------
-        Forecasted value of the volatility.
+        float
+            Forecasted value of the volatility.
         """
 
         assert self.forecasted_volatility is None, "The forecast was already calculated."

@@ -33,7 +33,8 @@ def get_values_for_common_dates(*containers: TimeIndexedContainer, remove_nans: 
 
     Returns
     -------
-    list composed of TimeIndexedContainers containing only values for common dates
+    List
+        list composed of TimeIndexedContainers containing only values for common dates
     """
     if remove_nans:
         dates_axis_number = 0

@@ -25,21 +25,21 @@ def rolling_volatility(qf_series: QFSeries, frequency: Frequency = None, annuali
 
     Parameters
     ----------
-    qf_series
+    qf_series: QFSeries
         series of returns or prices
-    frequency
+    frequency: Frequency
         the frequency of samples in the returns series; it is only obligatory to specify frequency if the annualise
         parameter is set to True, which is a default value
-    annualise
+    annualise: bool
         True if the volatility values should be annualised; False otherwise. If it is set to True, then it is obligatory
         to specify a frequency of the returns series.
-    window_size
+    window_size: int
         number of samples from which the rolling volatility will be calculated. If it is not set, then only overall
         volatility (of the whole series) will be calculated
 
     Returns
     -------
-    volatility_tms
+    QFSeries
         Series of volatility values for each day concerning last window_size days.
     """
     returns_tms = qf_series.to_log_returns()

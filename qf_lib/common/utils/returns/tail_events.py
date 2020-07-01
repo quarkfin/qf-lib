@@ -27,19 +27,18 @@ def tail_events(benchmark_tms: QFSeries, examined_tms: QFSeries, tail_percentile
 
     Parameters
     ----------
-    benchmark_tms
+    benchmark_tms: QFSeries
         timeseries corresponding to the benchmark
-    examined_tms
+    examined_tms: QFSeries
         timeseries corresponding to the examined asset
-    tail_percentile
+    tail_percentile: float
         Percentile to compute. Must be a number from range [0,100]
 
     Returns
     -------
-    benchmark_tail_tms
-        tail events of the benchmark
-    examined_tail_tms
-        events from the examined series corresponding to the benchmark's tail events
+    Tuple[QFSeries, QFSeries]
+        (benchmark_tail_tms, examined_tail_tms) - tail events of the benchmark, events from the
+        examined series corresponding to the benchmark's tail events
     """
     assert benchmark_tms.index.equals(examined_tms.index)
 

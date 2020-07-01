@@ -30,16 +30,16 @@ def drawdown_tms(input_data: InputData, frequency: Frequency = None) -> InputDat
     Parameters
     ----------
 
-    input_data
+    input_data: QFSeries, QFDataFrame
         QF timeseries or multiple timeseries grouped into a DataFrame
 
-    frequency
+    frequency: Frequency
         optional parameter that improves teh performance of the function as
         to_prices does not need to infer the frequency
 
     Returns
     -------
-    drawdowns_tms
+    QFSeries, QFDataFrame
         series of drawdowns (drawdown for each day). Drawdown for a given date is defined as the percentage difference
         between the the maximal price value up to the given date and the price value for that date.
     """

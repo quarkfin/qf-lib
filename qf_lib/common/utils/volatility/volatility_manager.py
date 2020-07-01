@@ -23,17 +23,16 @@ class VolatilityManager(object):
     VolatilityManager uses rolling window to asses the historical volatility of a series.
     It is then using the results to find appropriate weights to be held in time
     in order to keep the volatility constant over time.
+
+    Parameters
+    ----------
+    series: QFSeries
+        series to be volatility managed
+    frequency: Frequency
+        frequency of the series that is passed
     """
 
     def __init__(self, series: QFSeries, frequency: Frequency = Frequency.DAILY):
-        """
-        Parameters
-        ----------
-        series
-            series to be volatility managed
-        frequency
-            frequency of the series that is passed
-        """
         self.returns_tms = series.to_simple_returns()
         self.frequency = frequency
 
@@ -42,21 +41,22 @@ class VolatilityManager(object):
         """
         Parameters
         ----------
-        vol_level
+        vol_level: float
             volatility level to be maintained expressed in number. for example 0.2 means 20% volatility
-        window_size
+        window_size: int
             length of the window to asses the volatility
-        lag
+        lag: int
             how many periods do we need in order to implement the reallocation.
             1 means that already on close of the current day we adjust for the realised volatility of that day
-        min_leverage
+        min_leverage: float
             min leverage the the function is allowed to apply
-        max_leverage
+        max_leverage: float
             max leverage the the function is allowed to apply
         Returns
         -------
-        SimpleReturnsSeries containing returns of the series based on the input series passed in the constructor
-        that is volatility managed according to the above parameters
+        SimpleReturnsSeries
+            SimpleReturnsSeries containing returns of the series based on the input series passed in the constructor
+            that is volatility managed according to the above parameters
         """
 
         def volatility_fun(window):

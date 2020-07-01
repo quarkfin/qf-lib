@@ -30,7 +30,8 @@ def date_to_str(date: datetime.datetime, date_format: DateFormat = DateFormat.IS
 
     Returns
     -------
-    string representation of a given date
+    string
+        representation of a given date
     """
 
     return date.strftime(date_format.format_string)

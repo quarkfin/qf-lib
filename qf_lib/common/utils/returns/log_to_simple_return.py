@@ -21,12 +21,12 @@ def log_to_simple_return(log_return: float) -> float:
 
     Parameters
     ----------
-    log_return
+    log_return: float
         logarithmic return
 
     Returns
     -------
-    simple_return
+    float
         simple return
 
     """

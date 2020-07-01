@@ -30,24 +30,21 @@ def beta_and_alpha_full_stats(
 
     Parameters
     ----------
-    strategy_tms
+    strategy_tms: QFSeries
         Series of portfolio's returns/values
-    benchmark_tms
+    benchmark_tms: QFSeries
         Series of benchmark returns/values
 
     Returns
     -------
-    beta
-        beta coefficient for the linear fit
-    alpha
-        alpha coefficient for the linear fit
-        (y = alpha * x + beta, where x is the benchmark return and y is the portfolio's return)
-    r_value
-        correlation coefficient. NOTE: this is not r_squared, r_squared = r_value**2
-    p_value
-        two-sided p-value for a hypothesis test whose null hypothesis is that the slope is zero
-    std_err
-        standard error of the estimate
+    Tuple[float, float, float, float, float]
+        (beta, alpga, r_value, p_value, std_err)
+
+        - beta - beta coefficient for the linear fit
+        - alpha - alpha coefficient for the linear fit (y = alpha * x + beta, where x is the benchmark return and y is the portfolio's return)
+        - r_value - correlation coefficient. NOTE: this is not r_squared, r_squared = r_value**2
+        - p_value - two-sided p-value for a hypothesis test whose null hypothesis is that the slope is zero
+         - std_err - standard error of the estimate
     """
     strategy_tms = strategy_tms.to_simple_returns()
     benchmark_tms = benchmark_tms.to_simple_returns()

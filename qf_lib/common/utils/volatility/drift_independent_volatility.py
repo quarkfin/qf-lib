@@ -31,28 +31,30 @@ class DriftIndependentVolatility(object):
         Implementation of the algorithm described in 'Drift Independent Volatility Estimation Based on High, Low,
         Open and Close Prices', developed by Dennis Yang and Qiang Zhang, published in June 2000 issue of Journal
         of Business. The new estimator has the following nice properties:
-        (a) unbiased in the continuous limit,
-        (b) independent of the drift,
-        (c) dealing with opening price jumps in a consistent way,
-        (d) smallest variance among all estimators with the similar properties.
+
+        - unbiased in the continuous limit,
+        - independent of the drift,
+        - dealing with opening price jumps in a consistent way,
+        - smallest variance among all estimators with the similar properties.
 
         Parameters
         ----------
-        ohlc
+        ohlc: PricesDataFrame
             QFDataFrame consisting of four QFPricesSeries: open, high, low, close
-        frequency
+        frequency: Frequency
             the frequency of samples in the returns series; it is only obligatory to specify frequency if the annualise
             parameter is set to True, which is a default value
-        annualise
+        annualise: bool
             True if the volatility values should be annualised; False otherwise. If it is set to True, then it is obligatory
             to specify a frequency of the returns series.
-        alpha
+        alpha: float
             expectation of u(u-c)+d(d-c) squared, values in range of (1.331, 1.5);
             authors of the algorithm suggest 1.34 in practice
 
         Returns
         -------
-        Drift Independent Volatility of type float
+        float
+            Drift Independent Volatility of type float
         """
         assert ohlc.num_of_rows >= 2
         assert not annualise or frequency is not None

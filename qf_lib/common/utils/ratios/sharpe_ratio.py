@@ -26,16 +26,16 @@ def sharpe_ratio(qf_series: QFSeries, frequency: Frequency, risk_free: float = 0
 
     Parameters
     ----------
-    qf_series
+    qf_series: QFSeries
         financial series
-    frequency
+    frequency: Frequency
         frequency of the series
-    risk_free
+    risk_free: float
         risk free rate
 
     Returns
     -------
-    sharpe_ratio
+    float
         Sharpe Ratio for given series and frequency
     """
     annual_simple_return = cagr(qf_series, frequency)

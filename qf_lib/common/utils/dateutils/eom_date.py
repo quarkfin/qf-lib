@@ -13,10 +13,10 @@
 #     limitations under the License.
 
 import calendar
-import datetime
+from datetime import datetime
 
 
-def eom_date(date: datetime.datetime = None, year: int = None, month: int = None) -> datetime.datetime:
+def eom_date(date: datetime = None, year: int = None, month: int = None) -> datetime:
     """
     Tells what is the last date of the month for given date or for given year and a month.
 
@@ -31,7 +31,8 @@ def eom_date(date: datetime.datetime = None, year: int = None, month: int = None
 
     Returns
     -------
-
+    datetime
+        last date of the month for given date
     """
     if date is not None:
         assert year is None and month is None
@@ -41,4 +42,4 @@ def eom_date(date: datetime.datetime = None, year: int = None, month: int = None
         assert year is not None and month is not None
 
     weekday, last_day_in_month = calendar.monthrange(year, month)
-    return datetime.datetime(year, month, last_day_in_month)
+    return datetime(year, month, last_day_in_month)

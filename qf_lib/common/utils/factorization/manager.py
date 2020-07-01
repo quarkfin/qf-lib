@@ -30,24 +30,24 @@ from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
 class FactorizationManager(object):
     """
     Facade class for factorization.
+
+    Parameters
+    ----------
+    analysed_tms
+        must have a set name in order to be displayed properly later on
+    regressors_df
+        must have a set name for each column in order to be displayed properly later on
+    frequency
+        frequency of every series (the same for all)
+    factors_identifier
+        class used for identifying significant factors for the model (picks them up from regressors_df)
+    is_fit_intercept
+        default True; True if the calculated model should include the intercept coefficient
+
     """
 
     def __init__(self, analysed_tms: QFSeries, regressors_df: QFDataFrame, frequency: Frequency,
                  factors_identifier: FactorsIdentifier, is_fit_intercept: bool = True):
-        """
-        Parameters
-        ----------
-        analysed_tms
-            must have a set name in order to be displayed properly later on
-        regressors_df
-            must have a set name for each column in order to be displayed properly later on
-        frequency
-            frequency of every series (the same for all)
-        factors_identifier
-            class used for identifying significant factors for the model (picks them up from regressors_df)
-        is_fit_intercept
-            default True; True if the calculated model should include the intercept coefficient
-        """
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
         self.analysed_tms = analysed_tms.to_simple_returns()
@@ -68,10 +68,9 @@ class FactorizationManager(object):
 
         Returns
         -------
-        selected_regressors_df
-            Dataframe containing only those regressors which are useful for modeling fund's timeseries
-        common_analysed_tms
-            Timeseries of fund which is preprocessed (cleaned data)
+        Tuple[QFDataFrame, QFSeries]
+            Dataframe containing only those regressors which are useful for modeling fund's timeseries and a Timeseries
+            of fund which is preprocessed (cleaned data)
         """
         common_regressors_df, common_analysed_tms = self._preprocess_data(self.analysed_tms, self.regressors_df)
         selected_regressors_df = \

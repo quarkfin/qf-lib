@@ -34,7 +34,8 @@ def ta_series(func: Callable, *args, **kwargs) -> QFSeries:
 
     Returns
     -------
-    Output from the talib function encapsulated in a QFSeries
+    QFSeries
+        Output from the talib function encapsulated in a QFSeries
     """
 
     series_list = list(map(lambda series: series.values, args))

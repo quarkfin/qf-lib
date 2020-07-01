@@ -23,14 +23,14 @@ def cvar(qf_series: QFSeries, percentage: float) -> float:
 
     Parameters
     ----------
-    qf_series
+    qf_series: QFSeries
         Series of returns/prices
-    percentage
+    percentage: float
         Percentage defining CVaR (what percentage of worst-case scenarios should be considered"
 
     Returns
     -------
-    cvar
+    float
         Conditional value at risk as a number from range (-1,1). Simplifying: means how much money can be lost
         in the worst "percentage" % of all cases.
     """

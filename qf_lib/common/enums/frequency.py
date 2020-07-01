@@ -25,21 +25,37 @@ from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 
 @total_ordering
 class Frequency(Enum):
+    """
+    Frequency enumeration.
+    """
 
-    MIN_1 = 98280  # 1 minute
-    MIN_5 = 19656  # 5 minutes
+    MIN_1 = 98280
+    """1 minute frequency"""
+    MIN_5 = 1965
+    """5 minutes frequency"""
     MIN_10 = 9828
+    """10 minutes frequency"""
     MIN_15 = 6552
+    """15 minutes frequency"""
     MIN_30 = 3276
+    """30 minutes frequency"""
     MIN_60 = 1638  # 1 hour, it is assumed a day has 6.5 trading hours
+    """1 hour frequency"""
 
     DAILY = 252
+    """Daily frequency"""
     WEEKLY = 52
+    """Weekly frequency"""
     MONTHLY = 12
+    """Monthly frequency"""
     QUARTERLY = 4
+    """Quarterly frequency"""
     SEMI_ANNUALLY = 2
+    """Semi annually frequency"""
     YEARLY = 1
+    """Yearly frequency"""
     IRREGULAR = 0
+    """Irregular frequency"""
 
     def __init__(self, occurrences_in_year):
         self.occurrences_in_year = occurrences_in_year
@@ -74,6 +90,12 @@ class Frequency(Enum):
         return int(math.floor(365 / self.occurrences_in_year))
 
     def time_delta(self) -> RelativeDelta:
+        """Maps the enum value into corresponding RelativeDelta.
+
+        Returns
+        -------
+        RelativeDelta
+        """
         frequency_to_delta = {
             Frequency.MIN_1: RelativeDelta(minutes=1),
             Frequency.MIN_5: RelativeDelta(minutes=5),

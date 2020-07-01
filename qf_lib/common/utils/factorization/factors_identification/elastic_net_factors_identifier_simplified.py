@@ -24,6 +24,19 @@ class ElasticNetFactorsIdentifierSimplified(FactorsIdentifier):
     """
     Class used for identifying factors in the model with Elastic Net method (with Cross-validation). Implementation
     was simplified so that the stock ElasticNetCV optimizer was used.
+
+    Parameters
+    ----------
+    epsilon
+         if abs(coefficient) is smaller than epsilon it is considered to be zero, thus won't be included
+         in the model
+    l1_ratio
+        value between [0,1] the higher the simpler and more sensitive model is to collinear factors
+    number_of_alphas
+        number of different lambda values tested
+    is_fit_intercept
+        True if intercept should be included in the model, False otherwise
+
     """
 
     NUMBER_OF_FOLDS = 10
@@ -37,19 +50,7 @@ class ElasticNetFactorsIdentifierSimplified(FactorsIdentifier):
 
     def __init__(self, epsilon: float = 0.05, l1_ratio: float = 1,
                  number_of_alphas: int = 75, is_fit_intercept: bool = True):
-        """
-        Parameters
-        ----------
-        epsilon
-             if abs(coefficient) is smaller than epsilon it is considered to be zero, thus won't be included
-             in the model
-        l1_ratio
-            value between [0,1] the higher the simpler and more sensitive model is to collinear factors
-        number_of_alphas
-            number of different lambda values tested
-        is_fit_intercept
-            True if intercept should be included in the model, False otherwise
-        """
+        """        """
         self.epsilon = epsilon
         self.l1_ratio = l1_ratio
         self.number_of_alphas = number_of_alphas
@@ -70,7 +71,7 @@ class ElasticNetFactorsIdentifierSimplified(FactorsIdentifier):
 
         Returns
         -------
-        selected_regressors_df
+        QFDataFrame
             Subset of the original regressors_df. Only contains rows corresponding to dates common for it and
             analysed_tms. Only contains columns corresponding to coefficients which should be included in the model
         """

@@ -22,11 +22,23 @@ class PriceField(Enum):
     """
 
     Open = 1
+    """Open Price"""
     High = 2
+    """High Price"""
     Low = 3
+    """Low Price"""
     Close = 4
+    """Close Price"""
     Volume = 5
+    """Volume"""
 
     @staticmethod
     def ohlcv() -> List["PriceField"]:
+        """Return a list of all possible price field values.
+
+        Returns
+        -------
+        List[PriceField]
+            list of all price field values
+        """
         return [PriceField.Open, PriceField.High, PriceField.Low, PriceField.Close, PriceField.Volume]

@@ -25,14 +25,15 @@ def calmar_ratio(qf_series: QFSeries, frequency: Frequency) -> float:
 
     Parameters
     ----------
-    qf_series
+    qf_series: QFSeries
         financial series
-    frequency
+    frequency: Frequency
         frequency of qf_series
 
     Returns
     -------
-    calmar_ratio
+    float
+        calmar ratio
     """
 
     annualised_growth_rate = cagr(qf_series, frequency)

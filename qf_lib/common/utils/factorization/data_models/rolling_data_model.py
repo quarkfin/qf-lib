@@ -21,15 +21,14 @@ from qf_lib.containers.series.qf_series import QFSeries
 class RollingDataModel(object):
     """
     Class for preparing multiple data models using the rolling window.
+
+    Parameters
+    ----------
+    data_model_input
+        data from which the model is built
     """
 
     def __init__(self, data_model_input: DataModelInput):
-        """
-        Parameters
-        ----------
-        data_model_input
-            data from which the model is built
-        """
         self.input_data = data_model_input
 
         self.window_size_ = None

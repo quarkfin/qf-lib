@@ -21,7 +21,8 @@ from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
 
 def close_open_gap(prices_df: PricesDataFrame, initial_price: int = 1, transaction_cost_percentage: float = 0,
                    transaction_cost_value: float = 0) -> PricesSeries:
-    """
+    """Calculates price changes during the night gap (opening price compared to closing price from the
+    previous day). May be interpreted as performance of strategy based on buying at close and selling at next open.
 
     Parameters
     ----------
@@ -40,8 +41,8 @@ def close_open_gap(prices_df: PricesDataFrame, initial_price: int = 1, transacti
 
     Returns
     -------
-    PricesSeries containing price changes during the night gap (opening price compared to closing price from the
-    previous day); may be interpreted as performance of strategy based on buying at close and selling at next open
+    PricesSeries
+        price changes
 
     """
 

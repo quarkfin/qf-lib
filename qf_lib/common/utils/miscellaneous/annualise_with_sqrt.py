@@ -28,14 +28,14 @@ def annualise_with_sqrt(
 
     Parameters
     ----------
-    values
+    values: float, Series, List[float]
         value(s) to annualise
-    frequency
+    frequency: Frequency
         original sampling frequency for the given value(s)
 
     Returns
     -------
-    annualised_values
+    loat, Series, List[float]
         annualised values
     """
 
