@@ -20,16 +20,17 @@ from qf_lib.common.utils.volatility.volatility_forecast import VolatilityForecas
 
 
 class RobustCovariance(object):
+    """
+    Creates a class used for vol forecasting and covariance matrix estimation
+    NOTE: this method has a tendency to make decrease the volatility
+
+    Parameters
+    ----------
+    simple_returns: DataFrame
+        dataframe of simple returns of the assets
+    """
 
     def __init__(self, simple_returns: DataFrame):
-        """
-        Creates a class used for vol forecasting and covariance matrix estimation
-        NOTE: this method has a tendency to make decrease the volatility
-
-        simple_returns
-            dataframe of simple returns of the assets
-
-        """
         self.returns = simple_returns
 
     def calculate_covariance(self, vol_process: VolatilityProcess, horizon: int, method: str = 'analytic') -> DataFrame:
@@ -38,17 +39,21 @@ class RobustCovariance(object):
         rank correlation between the assets. Covariance matrix contains NOT annualised values.
         They are expressed in the frequency of the input returns
 
-        vol_process
+        Parameters
+        -----------
+        vol_process: VolatilityProcess
             volatility proces used for forecats calculation. For example EGARCH(p=p, o=o, q=q)
-        horizon
+        horizon: int
             horizon for the volatility forecast. It is expressed in the frequency of the returns provided
-        method (optional)
+        method (optional): str
             method of the volatility forecast calculation. Possible: 'analytic', 'simulation' or 'bootstrap'
             'analytic' is the fastest but is not available for EGARCH and possibly some other models.
             For details check arch documentation
 
-        :returns
-        cov_matrix of the assets.
+        Returns
+        ----------
+        DataFrame
+            cov_matrix of the assets.
         """
         vol_forecast_array = self._calculate_expected_volatilities(vol_process, horizon, method)
         # use spearman rank correlation instead of simple pearson correlation

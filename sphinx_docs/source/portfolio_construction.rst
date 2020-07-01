@@ -1,0 +1,22 @@
+portfolio_construction
+************
+.. currentmodule:: qf_lib.portfolio_construction
+.. autosummary::	
+	:nosignatures:
+	:toctree: _autosummary
+	:template: short_class.rst
+	
+	black_litterman.black_litterman.BlackLitterman
+	qf_lib.portfolio_construction.covariance_estimation.robust_covariance.RobustCovariance
+	qf_lib.portfolio_construction.optimizers.nonlinear_function_optimizer.NonlinearFunctionOptimizer
+	qf_lib.portfolio_construction.optimizers.quadratic_optimizer.QuadraticOptimizer
+	qf_lib.portfolio_construction.portfolio_models.portfolio.Portfolio
+	qf_lib.portfolio_construction.portfolio_models.efficient_frontier_portfolio.EfficientFrontierPortfolio
+	qf_lib.portfolio_construction.portfolio_models.equal_risk_contribution_portfolio.EqualRiskContributionPortfolio
+	qf_lib.portfolio_construction.portfolio_models.kelly_portfolio.KellyPortfolio
+	qf_lib.portfolio_construction.portfolio_models.max_diversification_portfolio.MaxDiversificationPortfolio
+	qf_lib/portfolio_construction/portfolio_models/max_excess_return_portfolio.py:25
+	qf_lib.portfolio_construction.portfolio_models.max_sharpe_ratio_portfolio.MaxSharpeRatioPortfolio
+	qf_lib.portfolio_construction.portfolio_models.min_variance_portfolio.MinVariancePortfolio
+	qf_lib.portfolio_construction.portfolio_models.multifactor_portfolio.MultiFactorPortfolio
+	qf_lib.portfolio_construction.portfolio_models.risk_parity_portfolio.RiskParityPortfolio

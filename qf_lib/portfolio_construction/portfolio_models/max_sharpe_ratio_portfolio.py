@@ -28,7 +28,7 @@ from qf_lib.portfolio_construction.portfolio_models.portfolio import Portfolio
 class MaxSharpeRatioPortfolio(Portfolio):
     """
     Class used for constructing a Max Sharpe Ratio portfolio.
-    see: http://people.stat.sc.edu/sshen/events/backtesting/reference/maximizing%20the%20sharpe%20ratio.pdf
+    See: http://people.stat.sc.edu/sshen/events/backtesting/reference/maximizing%20the%20sharpe%20ratio.pdf
     """
 
     def __init__(self, cov_matrix: QFDataFrame, mean_returns: QFSeries,

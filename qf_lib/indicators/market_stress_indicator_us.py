@@ -26,34 +26,41 @@ from qf_lib.data_providers.data_provider import DataProvider
 
 
 class MarketStressIndicator(object):
+    """Calculates market stress indicator.
+
+    Parameters
+    -----------
+    tickers: Sequence[Ticker]
+        tickers building the stress indicator
+    weights: Sequence[float]
+        weights of the tickers in the indicator, do not need to sum to 1, will be normalized anyway
+    data_provider: DataProvider
+        data provider that will be used to access the history of the individual tickers
+    """
 
     def __init__(self, tickers: Sequence[Ticker], weights: Sequence[float], data_provider: DataProvider):
-        """
-        tickers
-            tickers building the stress indicator
-        weights
-            weights of the tickers in the indicator, do not need to sum to 1, will be normalized anyway
-        data_provider
-            data provider that will be used to access the history of the individual tickers
-        """
         self.tickers = tickers
         self.weights = weights
         self.data_provider = data_provider
 
     def get_indicator(self, years_rolling: float, start_date: datetime, end_date: datetime, step: int = 1) -> QFSeries:
-        """
-        years_rolling
+        """Returns the timeseries of the indicator.
+
+        Parameters
+        ------------
+        years_rolling: float
             How may years of the history is used for to evaluate the single point
-        start_date
+        start_date: datetime
             start date of the indicator returned
-        end_date
+        end_date: datetime
             end date of the indicator returned
-        step
+        step: int
             how many day is the rolling window shifted. It aslo tells us the step of the returned indicator in days
 
         Returns
         -------
-        Timeseries of market stress indicator
+        QFSeries
+            Timeseries of market stress indicator
         """
         underlying_start_date = start_date - timedelta(days=floor(years_rolling * 365 * 1.1))
         data = self.data_provider.get_price(self.tickers, PriceField.Close, underlying_start_date, end_date)

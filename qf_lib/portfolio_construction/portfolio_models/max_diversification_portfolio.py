@@ -30,8 +30,8 @@ from qf_lib.portfolio_construction.portfolio_models.portfolio import Portfolio
 
 class MaxDiversificationPortfolio(Portfolio):
     """
-    Class used for constructing a Max Diversification portfolio
-    (see: http://allaboutalpha.com/blog/2011/03/27/the-most-diversified-portfolio/ )
+    Class used for constructing a Max Diversification portfolio.
+    See: http://allaboutalpha.com/blog/2011/03/27/the-most-diversified-portfolio/
     """
 
     optimizer_options = {
