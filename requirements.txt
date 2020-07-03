@@ -23,4 +23,4 @@ dic==1.5.2b1          # container
 Sphinx>=3.1.1
 autodocsumm>=0.1.13
 sphinx_rtd_theme
-TA-Lib==0.4.17
+# TA-Lib==0.4.17
