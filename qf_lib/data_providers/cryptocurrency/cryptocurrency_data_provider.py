@@ -194,4 +194,4 @@ class CryptoCurrencyDataProvider(AbstractPriceDataProvider):
         raise NotImplementedError("Downloading Future Chain Tickers in CryptoCurrencyDataProvider is not supported yet")
 
     def expiration_date_field_str_map(self, ticker: Ticker = None) -> Dict[ExpirationDateField, str]:
-        pass
+        raise NotImplementedError

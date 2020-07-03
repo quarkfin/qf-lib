@@ -25,6 +25,8 @@ from qf_lib.starting_dir import get_starting_dir_abs_path
 
 
 class EmailPublisher(object):
+    """Used to create and send an e-mail from given templates.
+    """
     def __init__(self, settings: Settings):
         self.smtp_settings = settings.smtp
         self.templates_path = path.join(get_starting_dir_abs_path(), settings.email_templates_directory)

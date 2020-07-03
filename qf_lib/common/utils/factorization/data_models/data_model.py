@@ -36,6 +36,11 @@ from qf_lib.containers.series.qf_series import QFSeries
 class DataModel(object):
     """
     Class grouping the results of factorization.
+
+    Parameters
+    ----------
+    data_model_input
+        data from which the model is built
     """
 
     AUTOCORR_MAX_LAG = 3
@@ -52,12 +57,6 @@ class DataModel(object):
     """
 
     def __init__(self, data_model_input: DataModelInput):
-        """
-        Parameters
-        ----------
-        data_model_input
-            data from which the model is built
-        """
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
         self.input_data = data_model_input

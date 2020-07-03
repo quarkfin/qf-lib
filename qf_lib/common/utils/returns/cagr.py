@@ -25,15 +25,15 @@ def cagr(qf_series: QFSeries, frequency=None):
 
     Parameters
     ----------
-    qf_series
+    qf_series: QFSeries
         series of returns of an asset
-    frequency
+    frequency: Frequency
         Frequency of the timeseries of returns;
         if it is None (by default) it is inferred from the timeseries of returns
 
     Returns
     -------
-    annual_compound_return: float
+    float
         annual compound return for the given series of prices
 
     """

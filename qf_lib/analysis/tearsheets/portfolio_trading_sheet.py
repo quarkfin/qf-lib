@@ -45,15 +45,22 @@ from qf_lib.settings import Settings
 @ErrorHandling.class_error_logging()
 class PortfolioTradingSheet(AbstractDocument):
     """
-    Creates a PDF containing a visual representation of portfolio changes over time
+    Creates a PDF containing a visual representation of portfolio changes over time.
+
+    Parameters
+    -----------
+    settings: Settings
+        necessary settings
+    pdf_exporter: PDFExporter
+        used to export the document to PDF
+    backtest_result: BacktestResult
+        used to access all trading records
+    title: str
+        title of the document, will be a part of the filename. Do not use special characters.
     """
 
     def __init__(self, settings: Settings, pdf_exporter: PDFExporter, backtest_result: BacktestResult,
                  title: str = "Portfolio Trading Sheet"):
-        """
-        title
-            title of the document, will be a part of the filename. Do not use special characters.
-        """
         super().__init__(settings, pdf_exporter, title=title)
         self.backtest_result = backtest_result
         self.full_image_axis_position = (0.08, 0.1, 0.915, 0.80)  # (left, bottom, width, height)

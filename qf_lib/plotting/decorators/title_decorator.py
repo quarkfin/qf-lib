@@ -18,6 +18,15 @@ from qf_lib.plotting.decorators.chart_decorator import ChartDecorator
 
 
 class TitleDecorator(ChartDecorator):
+    """Adds title to the chart.
+
+    Parameters
+    ----------
+    title: str
+        title that should be added
+    key: str
+        see: ChartDecorator.__init__#key
+    """
     def __init__(self, title: str, key: str = None):
         super().__init__(key)
         self._title = title

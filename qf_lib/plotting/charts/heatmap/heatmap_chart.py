@@ -21,24 +21,26 @@ from qf_lib.plotting.charts.chart import Chart
 
 
 class HeatMapChart(Chart):
+    """
+    Creates a Heatmap chart.
+
+    Parameters
+    ----------
+    data: pandas.DataFrame
+        DataFrame containing data that should be plotted using heat map
+    color_map
+        color map to use for coloring the heat map
+    min_value: float
+        min possible value (used for adjusting colors on the heatmap)
+    max_value: float
+        max possible value (used for adjusting colors on the heatmap)
+    start_x: Any
+        see: Chart__init__#start_x
+    end_x: Any
+        see: Chart__init__#end_x
+    """
     def __init__(self, data: pd.DataFrame, color_map=None, min_value: float = None, max_value: float = None,
                  start_x: Any = None, end_x: Any = None):
-        """
-        Parameters
-        ----------
-        data
-            DataFrame containing data that should be plotted using heat map
-        color_map
-            color map to use for coloring the heat map
-        min_value
-            min possible value (used for adjusting colors on the heatmap)
-        max_value
-            max possible value (used for adjusting colors on the heatmap)
-        start_x
-            see: Chart__init__#start_x
-        end_x
-            see: Chart__init__#end_x
-        """
         super().__init__(start_x, end_x)
         self.data = data[::-1]  # for proper plotting the matrix needs to be reversed
         self.color_map = color_map if color_map is not None else mpl.cm.Blues

@@ -25,8 +25,9 @@ def list_longest_drawdowns(prices_tms: QFSeries, count: int) -> List[Tuple[datet
 
     Returns
     -------
-    A list of 2-item tuples. The first tuple item contains the start date and the second the end date of the drawdown
-    period.
+    Tuple[datetime, datetime]
+        A list of 2-item tuples. The first tuple item contains the start date and the second the end date of the drawdown
+        period.
     """
     result = []
 

@@ -22,23 +22,23 @@ class Transaction(object):
     """
     Encapsulates the notion of a filled Order, as returned from a Brokerage. Stores the quantity of an instrument
     actually filled and at what price. In addition, stores the commission of the trade from the Brokerage.
+
+    Parameters
+    ----------
+    time: datetime
+        time when the order was filled
+    contract: Contract
+        contract identifying the asset
+    quantity: int
+        filled quantity, positive for assets bought and negative for assets sold
+    price: float
+        price at which the trade was filled
+    commission: float
+        brokerage commission for carrying out the trade. It is always a positive number
+
     """
 
     def __init__(self, time: datetime, contract: Contract, quantity: int, price: float, commission: float):
-        """
-        Parameters
-        ----------
-        time
-            time when the order was filled
-        contract
-            contract identifying the asset
-        quantity
-            filled quantity, positive for assets bought and negative for assets sold
-        price
-            price at which the trade was filled
-        commission
-            brokerage commission for carrying out the trade. It is always a positive number
-        """
         assert commission >= 0.0
 
         self.time = time

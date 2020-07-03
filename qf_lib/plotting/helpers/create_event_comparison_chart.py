@@ -35,26 +35,28 @@ def create_event_comparison_chart(
 
     Parameters
     ----------
-    series
+    series: QFSeries
         Series usually with values of an index or level of interest rates
-    event_dates_list
+    event_dates_list: Iterable[datetime]
         A list specifying the dates of the events that we would like to compare. Each date will create
         a new series in the chart
-    title
+    title: str
         The title of the graph, specify ``None`` if you don't want the chart to show a title.
-    samples_before
+    samples_before: int
         Number of samples shown on the chart that are before the event date
-    samples_after
+    samples_after: int
         Number of samples after the event date that are plotted on the chart
-    rebase_method
+    rebase_method: RebaseMethod
         Specifies the way in which the data is normalised at the date of the event.
-        'divide'    will divide all the values by the value at the date of the event
-        'subtract'  will subtract the value at the event from the whole sample
-        'none'      will show the value as is (no rebasing).
+
+        - 'divide' - will divide all the values by the value at the date of the event
+        - 'subtract' - will subtract the value at the event from the whole sample
+        - 'none - will show the value as is (no rebasing).
 
     Returns
     -------
-    The constructed ``LineChart``.
+    LineChart
+        The constructed ``LineChart``.
     """
 
     # Create a chart

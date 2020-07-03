@@ -20,19 +20,19 @@ from qf_lib.containers.series.qf_series import QFSeries
 
 
 class DataCleaner(object):
-    def __init__(self, dataframe: SimpleReturnsDataFrame, threshold: float = 0.05):
-        """
-        Cleans data which is partially incomplete, e.g. has gaps
+    """
+    Cleans data which is partially incomplete, e.g. has gaps
 
-        Parameters
-        ----------
-        dataframe
-            DataFrame of simple returns. If one column has more missing values than the threshold, it is removed
-            from the result.
-        threshold
-            top limit of missing data. If the amount of missing data in a series exceeds this limit, the series will be
-            removed. It is a relative value (e.g. 0.02, which corresponds to 2% of the data from the series).
-        """
+    Parameters
+    ----------
+    dataframe: SimpleReturnsDataFrame
+        DataFrame of simple returns. If one column has more missing values than the threshold, it is removed
+        from the result.
+    threshold: float
+        top limit of missing data. If the amount of missing data in a series exceeds this limit, the series will be
+        removed. It is a relative value (e.g. 0.02, which corresponds to 2% of the data from the series).
+    """
+    def __init__(self, dataframe: SimpleReturnsDataFrame, threshold: float = 0.05):
         assert isinstance(dataframe, SimpleReturnsDataFrame)
         self.dataframe = dataframe
         self.threshold = threshold
@@ -47,12 +47,12 @@ class DataCleaner(object):
 
         Parameters
         ----------
-        proxy_value
+        proxy_value: float
             value with which all the missing data should be filled
 
         Returns
         -------
-        result_dataframe
+        SimpleReturnsDataFrame
             completed dataframe without missing data
         """
         result_dataframe = self.dataframe.copy(deep=True)
@@ -70,14 +70,14 @@ class DataCleaner(object):
 
         Parameters
         ----------
-        benchmark_tms
+        benchmark_tms: QFSeries
             benchmark used indirectly to proxy the missing data in the Dataframe.
-        columns_type
+        columns_type: type
             type of each column (e.g. PricesSeries, LogReturnsSeries)
 
         Returns
         -------
-        result_dataframe
+        SimpleReturnsDataFrame
             completed dataframe. However it can still contain missing data, because sometimes it is not possible to
             complete all data using regression (e.g. for data that is missing in the original series there is
             no corresponding benchmark value).

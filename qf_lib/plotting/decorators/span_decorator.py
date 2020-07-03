@@ -22,23 +22,21 @@ from qf_lib.plotting.decorators.simple_legend_item import SimpleLegendItem
 
 
 class SpanDecorator(ChartDecorator, SimpleLegendItem):
+    """
+    Uses a series of periods (tuples containing start date and end date of each period) to draw vertical spans
+    (rectangles).
+
+    Parameters
+    ----------
+    shadowed_periods: Sequence[Tuple[datetime, datetime]]
+        sequence of tuples, where each tuple indicates a period that should be shadowed
+        Example: [("2017-01-01", "2017-02-03"), ("2017-03-05", "2017-03-10")]
+    key: str
+        see ChartDecorator.key.__init__#key
+    plot_settings
+        additional plot settings for matplotlib
+    """
     def __init__(self, shadowed_periods: Sequence[Tuple[datetime, datetime]], key: str = None, **plot_settings: Any):
-        """
-        Uses a series of periods (tuples containing start date and end date of each period) to draw vertical spans
-        (rectangles).
-
-        Parameters
-        ----------
-        shadowed_periods
-            sequence of tuples, where each tuple indicates a period that should be shadowed
-
-            Example:
-                [("2017-01-01", "2017-02-03"), ("2017-03-05", "2017-03-10")]
-        key
-            see ChartDecorator.key.__init__#key
-        plot_settings
-            additional plot settings for matplotlib
-        """
         super().__init__(key)
         assert shadowed_periods  # check if list is not None and is not empty
         self._shadowed_periods = shadowed_periods

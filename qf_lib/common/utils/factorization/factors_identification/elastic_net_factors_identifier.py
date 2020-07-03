@@ -30,6 +30,24 @@ from qf_lib.plotting.decorators.title_decorator import TitleDecorator
 class ElasticNetFactorsIdentifier(FactorsIdentifier):
     """
     Class used for identifying factors in the model with Elastic Net method (with Cross-validation).
+
+    Parameters
+    ----------
+    max_number_of_regressors
+        maximal number of regressors that can be included in the model
+    epsilon
+         if abs(coefficient) is smaller than epsilon it is considered to be zero, thus won't be included
+         in the model
+    l1_ratio
+        value between [0,1] the higher the simpler and more sensitive model is to collinear factors
+    number_of_alphas
+        number of different lambda values tested
+    is_intercept
+        True if intercept should be included in the model, False otherwise
+    graphic_debug
+        default False; If True, then some additional debug info will be plotted (used when tuning
+        the ElasticNetFactorsIdentifier's parameters)
+
     """
 
     NUMBER_OF_FOLDS = 10
@@ -43,24 +61,6 @@ class ElasticNetFactorsIdentifier(FactorsIdentifier):
 
     def __init__(self, max_number_of_regressors: int = 10, epsilon: float = 0.05, l1_ratio: float = 1,
                  number_of_alphas: int = 75, is_intercept: bool = True, graphic_debug: bool = False):
-        """
-        Parameters
-        ----------
-        max_number_of_regressors
-            maximal number of regressors that can be included in the model
-        epsilon
-             if abs(coefficient) is smaller than epsilon it is considered to be zero, thus won't be included
-             in the model
-        l1_ratio
-            value between [0,1] the higher the simpler and more sensitive model is to collinear factors
-        number_of_alphas
-            number of different lambda values tested
-        is_intercept
-            True if intercept should be included in the model, False otherwise
-        graphic_debug
-            default False; If True, then some additional debug info will be plotted (used when tuning
-            the ElasticNetFactorsIdentifier's parameters)
-        """
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
         self.max_number_of_regressors = max_number_of_regressors
@@ -87,7 +87,7 @@ class ElasticNetFactorsIdentifier(FactorsIdentifier):
 
         Returns
         -------
-        selected_regressors_df
+        QFDataFrame
             Subset of the original regressors_df. Only contains rows corresponding to dates common for it and
             analysed_tms. Only contains columns corresponding to coefficients which should be included in the model
         """

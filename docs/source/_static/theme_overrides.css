@@ -1,0 +1,51 @@
+/* Tables */
+@media screen and (min-width: 767px) {
+
+   .wy-table-responsive table td {
+      /* !important prevents the common CSS stylesheets from overriding
+         this as on RTD they are loaded after this stylesheet */
+      white-space: normal !important;
+
+   }
+      
+   .wy-table-responsive {
+      overflow: visible !important;
+   }
+}
+
+.wy-table-responsive table {
+    width: 100%;
+    table-layout: auto;
+}
+
+.wy-table-responsive table td:nth-child(1) {
+	width: 75%;
+	overflow-wrap: break-word;
+	white-space: normal;
+	word-break: break-all;
+}
+
+.wy-table-responsive table code {
+	white-space: normal;
+}
+
+
+/* Generated Index */
+.py.class dt {
+   word-break: break-word;
+   display: inline-block;
+}
+
+table.genindextable {
+   word-break: break-word;
+}
+
+
+.genindextable td {
+	display: block;
+	width: 100% !important;
+}
+
+h1 {
+    word-break: break-word;
+}

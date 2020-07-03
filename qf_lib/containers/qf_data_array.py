@@ -56,16 +56,8 @@ class QFDataArray(xr.DataArray):
         Helper method for creating a QFDataArray. __init__() methods can't be used for that, because its signature
         must be the same as the signature of xr.DataArray.__init__().
 
-        Example:
-        a = QFDataArray.create(
-            dates=pd.date_range('2017-01-01', periods=3),
-            tickers=['a', 'b'],
-            fields=['field'],
-            data=[
-                 [[1.0], [2.0]],
-                 [[3.0], [4.0]],
-                 [[5.0], [6.0]]
-            ])
+        Example: a = QFDataArray.create(dates=pd.date_range('2017-01-01', periods=3), tickers=['a', 'b'],
+        fields=['field'], data=[[[1.0], [2.0]], [[3.0], [4.0]], [[5.0], [6.0]]])
 
         Parameters
         ----------
@@ -121,7 +113,7 @@ class QFDataArray(xr.DataArray):
 
         See Also
         --------
-        docstring for xr.concat()
+        xr.concat()
         """
         result = xr.concat(
             objs, dim, data_vars, coords, compat, positions, indexers, mode, concat_over)  # type: xr.DataArray

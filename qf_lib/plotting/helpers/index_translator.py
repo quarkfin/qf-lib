@@ -21,16 +21,15 @@ from qf_lib.common.enums.orientation import Orientation
 class IndexTranslator(object):
     """
     Object which automatically translates label-indexed data into number-indexed data.
+
+    Parameters
+    ----------
+    labels_to_locations_dict: Mapping[str, Number]
+        Contains a mapping from labels to numbers (used as index values for plotting). Must have unique keys
+        and unique values.
     """
 
     def __init__(self, labels_to_locations_dict: Mapping[str, Number] = None):
-        """
-        Parameters
-        ----------
-        labels_to_locations_dict
-            Contains a mapping from labels to numbers (used as index values for plotting). Must have unique keys
-            and unique values.
-        """
         self._labels_to_locations_dict = dict()
 
         if labels_to_locations_dict is not None:

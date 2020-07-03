@@ -29,6 +29,20 @@ from qf_lib.settings import Settings
 
 @ErrorHandling.class_error_logging()
 class CurrentPositionsSheet(AbstractDocument):
+    """ Provides information about currently open positions in the portfolio. Provides a list of tickers, position
+    directions, total exposure value, profit and loss and time of the position creation.
+
+    Parameters
+    -----------
+    settings: Settings
+        necessary settings
+    pdf_exporter: PDFExporter
+        used to export the document to PDF
+    portfolio: Portfolio
+        portfolio containing all historical and current trading data
+    title: str
+        title of the document
+    """
     def __init__(self, settings: Settings, pdf_exporter: PDFExporter, portfolio: Portfolio,
                  title: str = "Current Positions"):
         super().__init__(settings, pdf_exporter, title)

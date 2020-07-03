@@ -47,7 +47,18 @@ from qf_lib.starting_dir import get_starting_dir_abs_path
 
 class TrendStrengthSheet(object):
     """
-    Creates a PDF containing main statistics of strength of a day trend
+    Creates a PDF containing main statistics of strength of a day trend.
+
+    Parameters
+    -----------
+    settings: Settings
+        settings containing header information (should contain company_name and logo_path)
+    pdf_exporter: PDFExporter
+        used to create PDF document
+    price_provider: DataProvider
+        data provider used to download prices
+    window_len: int
+        size of window used in rolling windows
     """
 
     def __init__(self, settings: Settings, pdf_exporter: PDFExporter, price_provider: DataProvider, window_len=128):
@@ -74,17 +85,20 @@ class TrendStrengthSheet(object):
 
     def build_document(self, tickers: Sequence[Ticker], start_date: datetime, end_date: datetime,
                        use_next_open_instead_of_close=False, title="Trend Strength"):
-        """
-        tickers
+        """Build the document.
+
+        Parameters
+        --------------
+        tickers: Sequence[Ticker]
             tickers of all tested instruments
-        start_date
+        start_date: datetime
             start date of the study
-        end_date
+        end_date: datetime
             end date of the study
-        use_next_open_instead_of_close
+        use_next_open_instead_of_close: bool
             if True, the daily trend will be calculated from Open to Open of the next day,
             if False, the daily trend will be calculated from Open to Close of the same day
-        title
+        title: str
             title of the document to be created
         """
         self.use_next_open_instead_of_close = use_next_open_instead_of_close

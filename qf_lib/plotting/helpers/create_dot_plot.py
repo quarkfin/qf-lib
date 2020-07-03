@@ -26,6 +26,22 @@ from qf_lib.plotting.decorators.title_decorator import TitleDecorator
 
 def create_dot_plot(series1: pd.Series, series2: pd.Series, x_label: str, y_label: str,
                     start_x: float = None, end_x: float = None) -> LineChart:
+    """Create a dot linechart.
+
+    Parameters
+    -----------
+    series1: pandas.Series
+    series2: pandas.Series
+    x_label: str
+    y_label: str
+    start_x: float
+    end_x: float
+
+    Returns
+    --------
+    LineChart
+    """
+
     # Combine the series.
     combined = QFDataFrame(pd.concat([series1, series2], axis=1))
     combined_series = QFSeries(data=combined.iloc[:, 0].values, index=combined.iloc[:, 1].values)

@@ -22,26 +22,25 @@ from qf_lib.plotting.decorators.chart_decorator import ChartDecorator
 
 
 class ConeDecorator(ChartDecorator):
+    """
+    Puts cone on top of the timeseries starting from given date.
 
+    Parameters
+    ----------
+    series: QFSeries
+        series that is going to be decorated by the cone
+    live_start_date: datetime
+        start date of the cone
+    cone_stds: Sequence[Union[float, int], float, int
+        defines the size of the cones in standard deviations
+    colors_alpha: float
+        sets the level of transparency of the cone
+    key: str
+        see ChartDecorator.key.__init__#key
+    """
     def __init__(self, series: QFSeries, live_start_date: datetime,
                  cone_stds: Union[Sequence[Union[float, int]], float, int] = (1, 2),
                  colors_alpha: float = 0.25, key: str = None):
-        """
-        Puts cone on top of the timeseries starting form given date.
-
-        Parameters
-        ----------
-        series
-            series that is going to be decorated by the cone
-        live_start_date
-            start date of the cone
-        cone_stds
-            defines the size of the cones in standard deviations
-        colors_alpha
-            sets the level of transparency of the cone
-        key
-            see ChartDecorator.key.__init__#key
-        """
         super().__init__(key)
         self._live_start_date = live_start_date
 

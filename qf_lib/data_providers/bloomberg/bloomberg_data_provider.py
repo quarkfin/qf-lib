@@ -41,7 +41,7 @@ from qf_lib.settings import Settings
 
 class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
     """
-    Provides financial data from Bloomberg.
+    Data Provider which provides financial data from Bloomberg.
     """
 
     def __init__(self, settings: Settings):
@@ -87,15 +87,16 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
 
         Parameters
         ----------
-        tickers
+        tickers: BloombergFutureTicker, Sequence[BloombergFutureTicker]
             future tickers for which future chains should be retrieved
-        expiration_date_fields
+        expiration_date_fields: ExpirationDateField, Sequence[ExpirationDateField]
             field that should be downloaded as the expiration date field
+
         Returns
         -------
-        Dictionary mapping each BloombergFutureTicker to a QFSeries or QFDataFrame, containing specific future
-        contracts tickers (BloombergTickers), indexed by these tickers:
         Dict[BloombergFutureTicker, Union[QFSeries, QFDataFrame]]
+            Dictionary mapping each BloombergFutureTicker to a QFSeries or QFDataFrame, containing specific future
+            contracts tickers (BloombergTickers), indexed by these tickers
 
         Raises
         -------
@@ -126,9 +127,11 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
             ----------
             specific_tickers
                 tickers for which the expiration dates of future contracts should be retrieved
+
             Returns
             -------
-            QFSeries or QFDataFrame, containing all the dates, indexed by tickers
+            QFSeries, QFDataFrame
+                Container containing all the dates, indexed by tickers
             """
 
             # Download the expiration dates for each of the future contracts
@@ -170,17 +173,16 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
 
         Parameters
         ----------
-        tickers
+        tickers: BloombergTicker, Sequence[BloombergTicker]
             tickers for securities which should be retrieved
-        fields
+        fields: str, Sequence[str]
             fields of securities which should be retrieved
 
         Returns
         -------
-        historical_data: QFDataFrame/QFSeries
-
-            QFDataFrame  with 2 dimensions: ticker, field
-            QFSeries     with 1 dimensions: ticker of field (depending if many tickers or fields was provided)
+        QFDataFrame/QFSeries
+            Either QFDataFrame with 2 dimensions: ticker, field or QFSeries with 1 dimensions: ticker of field
+            (depending if many tickers or fields was provided) is returned.
 
         Raises
         -------
@@ -217,9 +219,36 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
             -> Union[QFSeries, QFDataFrame, QFDataArray]:
         """
         Gets historical data from Bloomberg from the (start_date - end_date) time range. In case of frequency, which is
-        higher than daily frequency (intraday data), the data is indexed by the start_date.
-        E.g.
-        Time range: 8:00 - 8:01, frequency: 1 minute - indexed with the 8:00 timestamp
+        higher than daily frequency (intraday data), the data is indexed by the start_date. E.g. Time range: 8:00 - 8:01,
+        frequency: 1 minute - indexed with the 8:00 timestamp
+
+        Parameters
+        ----------
+        tickers: Ticker, Sequence[Ticker]
+            tickers for securities which should be retrieved
+        fields: None, str, Sequence[str]
+            fields of securities which should be retrieved. If None, all available fields will be returned
+            (only supported by few DataProviders)
+        start_date: datetime
+            date representing the beginning of historical period from which data should be retrieved
+        end_date: datetime
+            date representing the end of historical period from which data should be retrieved;
+            if no end_date was provided, by default the current date will be used
+        frequency: Frequency
+            frequency of the data
+        currency: str
+        override_name: str
+        override_value: str
+
+        Returns
+        -------
+        QFSeries, QFDataFrame, QFDataArray
+            If possible the result will be squeezed, so that instead of returning QFDataArray, data of lower
+            dimensionality will be returned. The results will be either an QFDataArray (with 3 dimensions: date, ticker,
+            field), a QFDataFrame (with 2 dimensions: date, ticker or field; it is also possible to get 2 dimensions
+            ticker and field if single date was provided) or QFSeries (with 1 dimensions: date).
+            If no data is available in the database or an non existing ticker was provided an empty structure
+            (QFSeries, QFDataFrame or QFDataArray) will be returned returned.
         """
         if fields is None:
             raise ValueError("Fields being None is not supported by {}".format(self.__class__.__name__))
@@ -291,6 +320,17 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
 
         Was tested on 'INDX_MEMBERS' and 'MERGERS_AND_ACQUISITIONS' requests. There is no guarantee that
         all other request will be handled, as returned data structures might vary.
+
+        Parameters
+        -----------
+        ticker: BloombergTicker
+            ticker for security that should be retrieved
+        field: str
+            field of security that should be retrieved
+        Returns
+        -------
+        List
+            tabular data for the given ticker and field
         """
         if field is None:
             raise ValueError("Field being None is not supported by {}".format(self.__class__.__name__))

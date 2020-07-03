@@ -19,14 +19,47 @@ from qf_lib.backtesting.data_handler.data_handler import DataHandler
 
 
 class AlphaModelFactory(object):
+    """
+    Factory used for AlphaModels generation.
+
+    Parameters
+    ----------
+    data_handler: DataHandler
+        DataHandler which provides data for the ticker
+    """
     def __init__(self, data_handler: DataHandler):
         self.data_handler = data_handler
 
     def make_model(self, model_type: Type[AlphaModel], *params, risk_estimation_factor=None):
+        """
+        Creates an AlphaModel instance with the given parameters.
+
+        Parameters
+        ------------
+        model_type: Type[AlphaModel]
+        params
+        risk_estimation_factor: None, float
+
+        Returns
+        -------
+        AlphaModel
+            An alpha model with the given parameters
+        """
         model = model_type(*params, risk_estimation_factor=risk_estimation_factor, data_handler=self.data_handler)
         return model
 
     def make_parametrized_model(self, model_type: Type[AlphaModel]):
+        """
+        Creates an AlphaModel instance with parameters set as AlphaModelSettings.
+
+        Parameters
+        ------------
+        model_type: Type[AlphaModel]
+        Returns
+        -------
+        AlphaModel
+            An alpha model with the given parameters
+        """
         model = model_type(*model_type.settings.parameters,
                            risk_estimation_factor=model_type.settings.risk_estimation_factor,
                            data_handler=self.data_handler)

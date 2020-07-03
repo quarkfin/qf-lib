@@ -43,29 +43,30 @@ def create_bar_chart(
 
     Parameters
     ----------
-    series_list
+    series_list: List[QFSeries]
     names_list
-    title
-    lines
+    title: str
+    lines: List[QFSeries]
         One or more series representing the lines to draw on the bar chart.
-    recession_series
+    recession_series: QFSeries
         A series that will be used to highlight recession periods using gray boxes.
-    start_x
+    start_x: datetime
         The first date to plot from the specified series.
-    end_x
+    end_x: datetime
         The last date to plot from the specified series.
-    quarterly
+    quarterly: bool
         Whether the bar chart should be formatted for quarterly frequency series.
-    date_label_format
+    date_label_format: Tuple[str, str]
         The format for the date labels in the x-axis. It can contain a format parameter which will be replaced with
         the quarter. The first format is for labels that are not shown every quarter, whereas the second format is
         used for labels that are shown on every quarter.
-    recession_name
+    recession_name: str
         Example "US Recession"
 
     Returns
     -------
     BarChart
+        A new bar chart.
     """
     assert len(names_list) > len(lines) + 1, \
         "Not all labels have been specified. Specify one in the list for each series and line."

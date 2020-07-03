@@ -71,13 +71,22 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
 
     @abstractmethod
     def price_field_to_str_map(self, ticker: Ticker = None) -> Dict[PriceField, str]:
-        """"
+        """
         Method has to be implemented in each data provider in order to be able to use get_price.
         Returns dictionary containing mapping between PriceField and corresponding string that has to be used by
         get_history method to get appropriate type of price series.
 
-        Ticker is optional and might be use by particular data providers to create appropriate dictionary
+        Parameters
+        -----------
+        ticker: None, Ticker
+            ticker is optional and might be uses by particular data providers to create appropriate dictionary
+
+        Returns
+        -------
+        Dict[PriceField, str]
+             mapping between PriceFields and corresponding strings
         """
+        raise NotImplementedError()
 
     @abstractmethod
     def expiration_date_field_str_map(self, ticker: Ticker = None) -> Dict[ExpirationDateField, str]:
@@ -86,11 +95,20 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
         Returns dictionary containing mapping between ExpirationDateField and corresponding string that has to be used
         by get_futures_chain_tickers method.
 
-        Ticker is optional and might be use by particular data providers to create appropriate dictionary
+        Parameters
+        -----------
+        ticker: None, Ticker
+            ticker is optional and might be uses by particular data providers to create appropriate dictionary
+
+        Returns
+        -------
+        Dict[ExpirationDateField, str]
+             mapping between ExpirationDateField and corresponding strings
         """
+        pass
 
     def str_to_expiration_date_field_map(self, ticker: Ticker = None) -> Dict[str, ExpirationDateField]:
-        """"
+        """
         Inverse of str_to_expiration_date_field_map.
         """
         field_str_dict = self.expiration_date_field_str_map(ticker)
@@ -98,7 +116,7 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
         return inv_dict
 
     def str_to_price_field_map(self, ticker: Ticker = None) -> Dict[str, PriceField]:
-        """"
+        """
         Inverse of price_field_to_str_map.
         """
         field_str_dict = self.price_field_to_str_map(ticker)
@@ -108,7 +126,7 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
     def _map_field_to_str(
             self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[None, PriceField, Sequence[PriceField]]) \
             -> Union[None, str, Sequence[str]]:
-        """"
+        """
         The method maps enum to sting that is recognised by the specific database.
 
         Parameters
@@ -118,8 +136,9 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
 
         Returns
         -------
-        String representation of the field or fields that corresponds the API provided by a specific data provider
-        Depending on the input it returns:
+        str, Sequence[str]
+            String representation of the field or fields that corresponds the API provided by a specific data provider
+            Depending on the input it returns:
             None -> None
             PriceField -> str
             Sequence[PriceField] -> List[str]

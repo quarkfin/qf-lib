@@ -25,6 +25,16 @@ from qf_lib.plotting.decorators.title_decorator import TitleDecorator
 
 
 def create_qq_chart(strategy: QFSeries) -> Chart:
+    """
+
+    Parameters
+    ----------
+    strategy: QFSeries
+
+    Returns
+    -------
+    Chart
+    """
     colors = Chart.get_axes_colors()
 
     strategy = strategy.to_log_returns()

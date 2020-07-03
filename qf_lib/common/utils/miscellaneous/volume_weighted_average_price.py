@@ -26,16 +26,16 @@ def volume_weighted_average_price(prices_tms: PricesSeries, volumes_tms: QFSerie
 
     Parameters
     ----------
-    prices_tms
+    prices_tms: PricesSeries
         timeseries of prices which should be aggregated
-    volumes_tms
+    volumes_tms: QFSeries
         timeseries of volumes traded; must correspond to the prices_tms
-    interval
+    interval: Timedelta
         the length of each period from which prices should be aggregated
 
     Returns
     -------
-    weighted_avg_price_tms
+    PricesSeries
         timeseries of aggregated prices; first datetimes are:
         first_price_datetime + interval, first_price_datetime + 2*interval, ..., first_price_datetime + i*interval,
         where first_price_datetime is the datetime of the first price in the original prices_tms

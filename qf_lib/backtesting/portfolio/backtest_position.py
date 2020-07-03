@@ -187,10 +187,8 @@ class BacktestPosition(Position, metaclass=ABCMeta):
         In other case the function returns None.
 
         Trade is defined as a transaction that goes in the direction of making your position smaller.
-        For example:
-           selling part or entire long position is a trade
-           buying back part or entire short position is a trade
-           buying additional shares of existing long position is NOT a trade
+        For example selling part or entire long position is a trade, buying back part or entire short position is a
+        trade, buying additional shares of existing long position is NOT a trade
 
 
         """

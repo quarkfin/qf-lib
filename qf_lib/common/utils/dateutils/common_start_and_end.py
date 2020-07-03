@@ -34,10 +34,9 @@ def get_common_start_and_end(*containers: TimeIndexedContainer) -> Tuple[datetim
 
     Returns
     -------
-    common_start
-        soonest date on which data for all series is already available
-    common_end
-        latest date on which data for all series is still available
+    Tuple[datetime, datetime]
+        (common_start, common_end) - (soonest date on which data for all series is already available, latest date on
+        which data for all series is still available)
     """
     start_dates = []
     end_dates = []

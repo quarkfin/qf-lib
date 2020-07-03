@@ -21,20 +21,22 @@ from pandas import DataFrame, Series
 
 
 class BlackLitterman(object):
+    """
+    Creates an object allowing calculation of the distribution of the returns using Black Litterman model
+
+    Parameters
+    -----------
+    hist_cov: DataFrame
+        covariance matrix of historical excess returns of assets; should be annualized
+    weights: Series
+        weights of assets in the market cap index
+    sample_size: int
+        number of simple returns used to estimate the historical covariance
+    sharpe: float
+        average sharpe ratio of the market (by default value of 0.5 is used)
+    """
 
     def __init__(self, hist_cov: DataFrame, weights: Series, sample_size: int, sharpe: float = 0.5):
-        """
-        Creates a n object allowing calculation of the distribution of the returns using Black Litterman model
-
-        hist_cov
-            covariance matrix of historical excess returns of assets; should be annualized
-        weights
-            weights of assets in the market cap index
-        sample_size
-            number of simple returns used to estimate the historical covariance
-        sharpe
-            average sharpe ratio of the market (by default value of 0.5 is used)
-        """
         self.hist_cov = hist_cov
         self.weights = weights
         self.tau = self._caltulate_tau(sample_size)
@@ -52,8 +54,9 @@ class BlackLitterman(object):
         nr of rows = number of different views
         nr of columns = number of assets
         Example for 4 assets and 2 views:
-            (0, 1, 0, 0) means go long second asset
-            (0, 1, 0, -1) means go long second asset while shorting first asset
+
+        - (0, 1, 0, 0) means go long second asset
+        - (0, 1, 0, -1) means go long second asset while shorting first asset
         """
 
         return self._p
@@ -65,8 +68,8 @@ class BlackLitterman(object):
         nr of rows = number of different views
         nr of columns = 1
         For example:
-           [0.10]
-           [0.03]
+        - [0.10]
+        - [0.03]
         means that we have two views and we expect to realise 10% above risk free rate on first view and 3% on second
         """
         return self._q
@@ -79,8 +82,8 @@ class BlackLitterman(object):
         nr of rows = number of different views
         nr of columns = number of different views
         For example:
-            (0.0001, 0.0000) means we expect volatility of the first view to be sqrt(0.0001) = 0.01 = 1%
-            (0.0000, 0.0025) means we expect volatility of the first view to be sqrt(0.0025) = 0.05 = 5%
+        - (0.0001, 0.0000) means we expect volatility of the first view to be sqrt(0.0001) = 0.01 = 1%
+        - (0.0000, 0.0025) means we expect volatility of the first view to be sqrt(0.0025) = 0.05 = 5%
         NOTE: self._omega is stored as horizontal vector. Values are copied on diagonal
         """
         if self._omega is not None:
@@ -95,15 +98,17 @@ class BlackLitterman(object):
         """
         Adds a new view that will be taken into account in calculating the posterior
 
-        short_asset_index
+        Parameters
+        -------------
+        short_asset_index: int
             index of the asset that we expect to outperform the market (indexing starts at 0)
-        outperformance
+        outperformance: float
             how much are we expecting one asset to outperform the market
-        view_vol
+        view_vol: float
             volatility of the view.
             This is the measure of a standard deviation of the outperformance value.
             For example: 0.02 means that the real outperformance will be
-                provided outperformance +- 2% within one standard deviation confidence interval.
+            provided outperformance +- 2% within one standard deviation confidence interval.
         """
         new_p_row = np.zeros((1, self.weights.size))
         new_p_row[0, asset_index] = 1
@@ -118,17 +123,19 @@ class BlackLitterman(object):
         The investor believs that outperforming_asset will outperform the underperforming_asset by outperformance
         with the volatility of the view of  view_vol
 
-        outperforming_asset_index
+        Parameters
+        ----------
+        outperforming_asset_index: int
             index of the asset that you believe will outperform (indexing starts at 0)
-        underperforming_asset_index
+        underperforming_asset_index: int
             index of the asset that you believe will underperform (indexing starts at 0)
-        outperformance
+        outperformance: float
             how much are we expecting one asset to outperform the other
-        view_vol
+        view_vol: float
             volatility of the outperformance.
             This is the measure of a standard deviation of the outperformance value.
             For example: 0.02 means that the real outperformance will be
-                provided outperformance +- 2% within one standard deviation confidence interval.
+            provided outperformance +- 2% within one standard deviation confidence interval.
         """
         new_p_row = np.zeros((1, self.weights.size))
         new_p_row[0, outperforming_asset_index] = 1
@@ -140,11 +147,13 @@ class BlackLitterman(object):
     def calculate_prior(self) -> Tuple[Series, DataFrame]:
         """
         Function calculates the prior for the BL model:
-            prior_mean = lambda * hist_cov * market_cap_weights
-            prior_cov = tau * hist_cov
+        - prior_mean = lambda * hist_cov * market_cap_weights
+        - prior_cov = tau * hist_cov
 
-        :return:
-        Tuple(prior_mean, prior_cov)
+        Returns
+        --------
+        Tuple[Series, DataFrame]
+            Tuple(prior_mean, prior_cov)
         """
 
         lambda_ = self.calculate_lambda()
@@ -158,8 +167,9 @@ class BlackLitterman(object):
         posterior_mean = prior_mean + tau * hist_cov * P' * ( tau * P * hist_cov * P' + Omega)^(-1) * (Q - P * prior_mean)
         posterior_cov = (1 + tau) * hist_cov - tau^2 * hist_cov * P' * (tau * P * hist_cov * P' + Omega)^(-1) * P * hist_cov
 
-        :return:
-        Tuple[prior_mean, prior_cov]
+        Returns
+        --------
+        Tuple[Series, DataFrame]
         """
 
         prior_mean, prior_sigma = self.calculate_prior()
@@ -205,9 +215,6 @@ class BlackLitterman(object):
 
         lambda is calculated in the followign way:
         lambda = sharpe_ratio_of_market / vol_of_market.
-
-        :return:
-        lambda
         """
         vol = self._calculate_volatility()
         lambda_ = self.sharpe / vol
@@ -223,10 +230,14 @@ class BlackLitterman(object):
         In many implementations it approximated by  1 / nr of observations, which corresponds to standard error
         That is the error of estimation of the covariance matrix
 
-        len_of_returns:
+        Parameters
+        -----------
+        len_of_returns: int
             number of returns used to calculate the historical covariance matrix
-        :return:
-        tau
+
+        Returns
+        --------
+        float
             coefficient of uncertainty in the prior estimate of the mean
         """
 

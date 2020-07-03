@@ -40,6 +40,19 @@ class AbstractTearsheet(AbstractDocument, metaclass=ABCMeta):
     Includes an equity curve, drawdown curve, monthly returns, heatmap, yearly returns summary and other statistics
 
     Can be used with or without the benchmark
+
+    Parameters
+    ----------
+    settings: Settings
+        settings of the project
+    pdf_exporter: PDFExporter
+        tool that creates the pdf with the result
+    strategy_series: QFSeries
+        timeseries of the trading of the strategy
+    live_date: datetime
+        if set it is used to generate the cone chart
+    title: str
+        title of the document
     """
 
     def __init__(self, settings: Settings, pdf_exporter: PDFExporter, strategy_series: QFSeries,

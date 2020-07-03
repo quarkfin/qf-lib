@@ -32,22 +32,22 @@ from qf_lib.documents_utils.excel.excel_exporter import ExcelExporter
 
 
 class PastSignalsGenerator(object):
+    """Class which generated all the previous signals.
+
+    Parameters
+    ----------
+    container
+        container with utils like PDF Generator, Excel Generator and others
+    live_start_date
+        date from which we will recalculate all the signals
+    initial_risk
+        value of initial risk for all the models
+    model_type_tickers_dict
+        dict of model type -> tickers traded by the model
+    """
 
     def __init__(self, container: Container, live_start_date: datetime, initial_risk: float,
                  model_type_tickers_dict: Dict[Type[AlphaModel], List[Ticker]]):
-        """
-
-        Parameters
-        ----------
-        container
-            container with utils like PDF Generator, Excel Generator and others
-        live_start_date
-            date from which we will recalculate all the signals
-        initial_risk
-            value of initial risk for all the models
-        model_type_tickers_dict
-            dict of model type -> tickers traded by the model
-        """
         self.container = container
         self.live_start_date = live_start_date
         self.end_date = datetime.now()

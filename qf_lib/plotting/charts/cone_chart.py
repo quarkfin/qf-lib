@@ -24,29 +24,31 @@ from qf_lib.plotting.decorators.data_element_decorator import DataElementDecorat
 
 class ConeChart(Chart):
     """
+    Plots a cone chart.
+
     While using a simple cone (e.g. LineChart with Cone decorator) the results of the evaluation may be very different
     depending on the live_start_date. To be immune to this, ConeChart plots only the ends of simple cones which start
     at 1 periods, 2 periods, ..., n periods before the end of the backtested series. The period length depends
     on the frequency of the data provided for the chart. If it has daily frequency, then the length of one period
     will be 1 day.
+
+    Parameters
+    ----------
+    data: QFSeries
+        data to be plotted using ConeChart
+    nr_of_data_points: int
+        number of data points for which the cone is evaluated
+    is_end_date: datetime
+        date fixing the end of the In-Sample period
+    cone_opacity: float
+        opacity of the cone
+    cone_stds: Sequence[float]
+        list/tuple of different standard deviations for which cones should be drawn
+
     """
 
     def __init__(self, data: QFSeries, nr_of_data_points: int, is_end_date: datetime, cone_opacity: float = 0.3,
                  cone_stds: Sequence[float] = (1.0, 2.0)):
-        """
-        Parameters
-        ----------
-        data
-            data to be plotted using ConeChart
-        nr_of_data_points
-            number of data points for which the cone is evaluated
-        is_end_date
-            date fixing the end of the In-Sample period
-        cone_opacity
-            opacity of the cone
-        cone_stds
-            list/tuple of different standard deviations for which cones should be drawn
-        """
         super().__init__()
         self.nr_of_data_points = nr_of_data_points  # Nr of data points for which the cone is evaluated.
         self.is_end_date = is_end_date

@@ -33,14 +33,15 @@ def create_returns_distribution(returns: QFSeries, frequency: Frequency = Freque
 
     Parameters
     ----------
-    returns
+    returns: QFSeries
         The returns series to use in the histogram.
-    frequency
+    frequency: Frequency
         frequency of the returns after aggregation
 
     Returns
     -------
-    A new ``HistogramChart`` instance.
+    HistogramChart
+        A new ``HistogramChart`` instance.
     """
     colors = Chart.get_axes_colors()
     aggregate_returns = get_aggregate_returns(returns, frequency, multi_index=True).multiply(100)

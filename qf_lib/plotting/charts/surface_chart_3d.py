@@ -25,28 +25,24 @@ import numpy as np
 
 class SurfaceChart3D(object):
     """
-    Class for 3D charts
+     Creates a 3D surface chart
+
+    Parameters
+    ----------
+    x_vector: Sequence
+        vector corresponding to points on X axis
+    y_vector: Sequence
+        vector corresponding to points on Y axis
+    z_matrix: numpy.array
+        matrix with values. The shape of the Z matrix has to be [len(Y), len(X)]
+        X values correspond to COLUMNS
+        Y values correspond to ROWS
     """
 
     # Static lock used by all charts to ensure more than one chart isn't being plotted at the same time.
     plot_lock = threading.Lock()
 
     def __init__(self, x_vector: Sequence, y_vector: Sequence, z_matrix: np.array):
-        """
-        Creates a 3D surface chart
-
-        Parameters
-        ----------
-        x_vector
-            vector corresponding to points on X axis
-        y_vector
-            vector corresponding to points on Y axis
-        z_matrix
-            matrix with values. The shape of the Z matrix has to be [len(Y), len(X)]
-            X values correspond to COLUMNS
-            Y values correspond to ROWS
-        """
-
         # convert vectors into matrices (necessary operation in order to plot)
         assert matplotlib.get_backend() == "TkAgg"
 
@@ -70,10 +66,10 @@ class SurfaceChart3D(object):
 
         Parameters
         ----------
-        figsize
+        figsize: Tuple[float, float]
             The figure size to draw the chart at in inches. This is a tuple of (width, height) passed directly
             to matplotlib's ``plot`` function. The values are expressed in inches.
-        include_contour
+        include_contour: bool
         """
 
         self._setup_axes_if_necessary(figsize)

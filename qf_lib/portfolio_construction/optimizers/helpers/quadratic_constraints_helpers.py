@@ -14,7 +14,7 @@
 
 from typing import Union, Sequence, Tuple
 
-from cvxopt.base import matrix, spmatrix, sparse
+from cvxopt import matrix, spmatrix, sparse
 
 from qf_lib.portfolio_construction.optimizers.helpers.common_constraint_helpers import prepare_upper_bounds_vector
 

@@ -65,10 +65,8 @@ class Portfolio(metaclass=abc.ABCMeta):
 
         Returns
         -------
-        portfolio_rets_tms
-            timeseries of portfolio's returns
-        allocation_df
-            dataframe indexed with dates and showing allocations in time (one column per asset)
+        Tuple[SimpleReturnsSeries, QFDataFrame]
+            timeseries of portfolio's returns, dataframe indexed with dates and showing allocations in time (one column per asset)
         """
         assert len(weights) == assets_rets_df.num_of_columns
 
@@ -105,10 +103,8 @@ class Portfolio(metaclass=abc.ABCMeta):
 
         Returns
         -------
-        portfolio_rets_tms
-            timeseries of portfolio's returns
-        allocation_df
-            dataframe indexed with dates and showing allocations in time (one column per asset)
+        Tuple[SimpleReturnsSeries, QFDataFrame]
+            timeseries of portfolio's returns, dataframe indexed with dates and showing allocations in time (one column per asset)
         """
         assert len(weights) == assets_rets_df.num_of_columns
 
@@ -154,7 +150,7 @@ class Portfolio(metaclass=abc.ABCMeta):
 
         Returns
         -------
-        portfolio_rets_tms
+        SimpleReturnsSeries
             timeseries of portfolio's returns
         """
         assert np.all(assets_rets_df.columns.values == allocations_df.columns.values), \

@@ -32,7 +32,8 @@ class PortfolioParameters(object):
 
 class MultiFactorPortfolio(Portfolio):
     """
-    Class used for constructing a portfolio which optimizes a portfolio considering:
+    Class used for constructing a portfolio. It optimizes a portfolio considering:
+
     - variance of a portfolio(minimizing),
     - mean return of portfolio's assets (maximizing),
     - max drawdown of the portfolio (minimizing).

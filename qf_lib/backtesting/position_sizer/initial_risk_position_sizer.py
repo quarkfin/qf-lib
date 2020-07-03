@@ -30,23 +30,28 @@ class InitialRiskPositionSizer(PositionSizer):
     This PositionSizer converts signals to orders using Initial Risk value that is predefined in the position sizer.
     Each signal will be sized based on fraction_at_risk.
     position size = Initial_Risk / signal.fraction_at_risk
+
+    Parameters
+    ----------
+    broker: Broker
+    data_handler: DataHandler
+    order_factory: OrderFactory
+    contract_ticker_mapper: ContractTickerMapper
+    initial_risk: float
+        should be set once for all signals. It corresponds to the value that we are willing to lose
+        on single trade. For example: initial_risk = 0.02, means that we are willing to lose 2% of portfolio value in
+        single trade
+    max_target_percentage: float
+        max leverage that is accepted by the position sizer.
+        if None, no max_target_percentage is used.
+    tolerance_percentage: float
+        percentage used by OrdersFactory target_percent_orders function; it defines tolerance to the
+        target percentages
     """
 
     def __init__(self, broker: Broker, data_handler: DataHandler, order_factory: OrderFactory,
                  contract_ticker_mapper: ContractTickerMapper, initial_risk: float, max_target_percentage: float = None,
                  tolerance_percentage: float = 0.0):
-        """
-        initial_risk
-            should be set once for all signals. It corresponds to the value that we are willing to lose
-            on single trade. For example: initial_risk = 0.02, means that we are willing to lose 2% of portfolio value in
-            single trade
-        max_target_percentage
-            max leverage that is accepted by the position sizer.
-            if None, no max_target_percentage is used.
-        tolerance_percentage
-            percentage used by OrdersFactory target_percent_orders function; it defines tolerance to the
-            target percentages
-        """
         super().__init__(broker, data_handler, order_factory, contract_ticker_mapper)
 
         self._initial_risk = initial_risk

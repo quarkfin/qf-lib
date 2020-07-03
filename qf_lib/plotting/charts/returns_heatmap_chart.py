@@ -26,13 +26,14 @@ from qf_lib.plotting.charts.chart import Chart
 class ReturnsHeatmapChart(Chart):
     """
     Constructs a new monthly returns heatmap chart based on the specified returns.
+
+    Parameters
+    ----------
+    returns: QFSeries
+        series of daily, weekly or monthly data
     """
 
     def __init__(self, returns: QFSeries):
-        """
-        returns
-            series of daily, weekly or monthly data
-        """
         super().__init__()
         self._returns = returns
 

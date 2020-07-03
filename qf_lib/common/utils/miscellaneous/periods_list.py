@@ -29,26 +29,26 @@ def periods_list_from_bool_series(series: QFSeries) -> Sequence[Tuple[datetime, 
         the series of boolean values
 
         For example:
-            2017-01-01  True
-            2017-01-02  False
-            2017-01-03  True
-            2017-01-05  False
-            2017-01-06  True
-            2017-01-07  True
-            2017-01-08  False
-            2017-01-09  True
-            2017-01-10  True
-            frequency: Frequency.DAILY
+        - 2017-01-01  True
+        - 2017-01-02  False
+        - 2017-01-03  True
+        - 2017-01-05  False
+        - 2017-01-06  True
+        - 2017-01-07  True
+        - 2017-01-08  False
+        - 2017-01-09  True
+        - 2017-01-10  True
+        frequency: Frequency.DAILY
 
         Periods:
-            2017-01-01 - 2017-01-02
-            2017-01-03 - 2017-01-05
-            2017-01-06 - 2017-01-08
-            2017-01-09 - 2017-01-11 (end date calculated based on a frequency of the series)
+        - 2017-01-01 - 2017-01-02
+        - 2017-01-03 - 2017-01-05
+        - 2017-01-06 - 2017-01-08
+        - 2017-01-09 - 2017-01-11 (end date calculated based on a frequency of the series)
 
     Returns
     -------
-    result
+    Tuple[datetime, datetime]
         list of tuples. Each tuple corresponds to one period and consists of two dates: start date and end date
         of a period.
     """

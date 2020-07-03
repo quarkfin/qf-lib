@@ -23,8 +23,8 @@ from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 
 class DailyMarketEvent(RegularTimeEvent, metaclass=ABCMeta):
     """
-    Class implementing the logic for all events happening every day such as MarketOpenEvent, MarketCloseEvent etc
-    The time has to be set up by calling set_trigger_time before being able to run the backtest
+    Class implementing the logic for all events happening every day such as MarketOpenEvent, MarketCloseEvent etc.
+    The time has to be set up by calling ``set_trigger_time`` before being able to run the backtest.
     """
 
     _trigger_time = None   # type: Dict[str, int]

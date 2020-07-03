@@ -25,25 +25,24 @@ from qf_lib.common.utils.miscellaneous.average_true_range import average_true_ra
 
 class AlphaModelSettings(object):
     """
-    Holds parameters of parametrized alpha models
+    Holds parameters of parametrized alpha models.
+
+    Parameters
+    ----------
+    parameters
+        parameters of the alpha model that are used in the logic. number of params depends on the model.
+        (for example: len of moving averages)
+    risk_estimation_factor
+        parameter for stop loss calculations
+    tickers_dict
+        dict of ticker_name -> ticker. Should contain all tickers used by the model to calculate signal.
+        Note: these are not the tickers of instruments that we want to trade.
+        These are tickers of instruments that give us some information about the market. For example VIX index.
     """
 
     def __init__(self, parameters: Sequence[float] = None, risk_estimation_factor: float = None,
                  tickers_dict: Dict[str, Ticker] = None):
-        """
 
-        Parameters
-        ----------
-        parameters
-            parameters of the alpha model that are used in the logic. number of params depends on the model.
-            (for example: len of moving averages)
-        risk_estimation_factor
-            parameter for stop loss calculations
-        tickers_dict
-            dict of ticker_name -> ticker. Should contain all tickers used by the model to calculate signal.
-            Note: these are not the tickers of instruments that we want to trade.
-            These are tickers of instruments that give us some information about the market. For example VIX index.
-        """
         self.parameters = parameters
         self.risk_estimation_factor = risk_estimation_factor
         if tickers_dict is None:
@@ -53,22 +52,26 @@ class AlphaModelSettings(object):
 
 class AlphaModel(object, metaclass=ABCMeta):
     """
-    Base class for all alpha models
+    Base class for all alpha models.
+
+    Parameters
+    ----------
+    risk_estimation_factor
+        float value which estimates the risk level of the specific AlphaModel. Corresponds to the level at which
+        the stop-loss should be placed.
+    data_handler
+        DataHandler which provides data for the ticker
+
+    Attributes
+    ----------
+    settings: AlphaModelSettings
+        Holds parameters of a parametrized model used in production
+
     """
 
-    settings = None  # type: AlphaModelSettings
-    "holds parameters of a parametrized model used in production"
+    settings: AlphaModelSettings = None
 
     def __init__(self, risk_estimation_factor: float, data_handler: DataHandler):
-        """
-        Parameters
-        ----------
-        risk_estimation_factor
-            float value which estimates the risk level of the specific AlphaModel. Corresponds to the level at which
-            the stop-loss should be placed.
-        data_handler
-            DataHandler which provides data for the ticker
-        """
         self.risk_estimation_factor = risk_estimation_factor
         self.data_handler = data_handler
 
@@ -78,14 +81,15 @@ class AlphaModel(object, metaclass=ABCMeta):
 
         Parameters
         ----------
-        ticker
+        ticker: Ticker
             A ticker of an asset for which the Signal should be generated
-        current_exposure
+        current_exposure: Exposure
             The actual exposure, based on which the AlphaModel should return its Signal. Can be different from previous
             Signal suggestions, but it should correspond with the current trading position
 
         Returns
         -------
+        Signal
             Signal being the suggestion for the next trading period
         """
         suggested_exposure = self.calculate_exposure(ticker, current_exposure)
@@ -104,9 +108,9 @@ class AlphaModel(object, metaclass=ABCMeta):
 
         Parameters
         ----------
-        ticker
+        ticker: Ticker
             Ticker for which suggested signal exposure is calculated.
-        current_exposure
+        current_exposure: Exposure
             The actual exposure, based on which the AlphaModel should return its Signal. Can be different from previous
             Signal suggestions, but it should correspond with the current trading position
 
@@ -123,11 +127,12 @@ class AlphaModel(object, metaclass=ABCMeta):
 
         Parameters
         ----------
-        ticker
+        ticker: Ticker
             Ticker for which the calculation should be made
 
         Returns
         -------
+        float
             percentage_at_risk value for an AlphaModel and a Ticker, calculated as Normalized Average True Range
             multiplied by the risk_estimation_factor, being a property of each AlphaModel:
             fraction_at_risk = ATR / last_close * risk_estimation_factor

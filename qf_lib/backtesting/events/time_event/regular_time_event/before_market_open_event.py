@@ -18,11 +18,11 @@ from qf_lib.backtesting.events.time_event.regular_time_event.daily_market_event 
 
 class BeforeMarketOpenEvent(DailyMarketEvent):
     """
-    Rule which is triggered every day before market opens
+    Rule which is triggered every day before market opens.
     For example in order to set up (01:00 AM for NASDAQ and NYSE) call before using the event:
-        BeforeMarketOpenEvent.set_trigger_time({"hour": 1, "minute": 0, "second": 0, "microsecond": 0})
+    ``BeforeMarketOpenEvent.set_trigger_time({"hour": 1, "minute": 0, "second": 0, "microsecond": 0})``
 
-    The listeners for this event should implement the on_before_market_open() method.
+    The listeners for this event should implement the ``on_before_market_open()`` method.
     """
 
     def notify(self, listener) -> None:

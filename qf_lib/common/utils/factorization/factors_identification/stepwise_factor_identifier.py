@@ -26,19 +26,18 @@ from qf_lib.containers.series.qf_series import QFSeries
 class StepwiseFactorsIdentifier(FactorsIdentifier):
     """
     Class used for identifying factors in the model with Stepwise Regression (with Forward Feature Selection).
+
+    Parameters
+    ----------
+    epsilon
+        minimal improvement of model. If adding next factor doesn't imporve the score by epsilon, then the algorithm
+        is stopped and new factor is not added.
+    is_intercept
+        True if the output model shall include the intercept, False otherwise (e.g. because data is centered
+        already).
     """
 
     def __init__(self, epsilon: float = 0.05, is_intercept: bool = True):
-        """
-        Parameters
-        ----------
-        epsilon
-            minimal improvement of model. If adding next factor doesn't imporve the score by epsilon, then the algorithm
-            is stopped and new factor is not added.
-        is_intercept
-            True if the output model shall include the intercept, False otherwise (e.g. because data is centered
-            already).
-        """
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
         self.epsilon = epsilon
@@ -63,7 +62,7 @@ class StepwiseFactorsIdentifier(FactorsIdentifier):
 
         Returns
         -------
-        selected_regressors_df
+        QFDataFrame
             Subset of the original regressors_df. Only contains rows corresponding to dates common for it and
             analysed_tms. Only contains columns corresponding to coefficients which should be included in the model
         """
@@ -82,7 +81,7 @@ class StepwiseFactorsIdentifier(FactorsIdentifier):
 
         Returns
         -------
-        selected_columns_inds
+        List[str]
             indices of columns selected for the model
         """
         total_columns_number = len(regressors_df.columns)

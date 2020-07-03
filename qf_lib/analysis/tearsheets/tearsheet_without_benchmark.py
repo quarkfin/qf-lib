@@ -26,7 +26,22 @@ from qf_lib.settings import Settings
 
 
 class TearsheetWithoutBenchmark(AbstractTearsheet):
+    """
+    Creates a PDF report without a benchamrk.
 
+    Parameters
+    ----------
+    settings: Settings
+        settings of the project
+    pdf_exporter: PDFExporter
+        tool that creates the pdf with the result
+    strategy_series: QFSeries
+        timeseries of the trading of the strategy
+    live_date: datetime
+        if set it is used to generate the cone chart
+    title: str
+        title of the document
+    """
     def __init__(self, settings: Settings, pdf_exporter, strategy_series: QFSeries, live_date: datetime = None,
                  title: str = "Strategy Analysis"):
         super().__init__(settings, pdf_exporter, strategy_series, live_date, title)

@@ -51,8 +51,28 @@ class GeneralPriceProvider(DataProvider):
 
     def get_price(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
                   start_date: datetime, end_date: datetime = None, frequency: Frequency = Frequency.DAILY) -> Union[None, PricesSeries, PricesDataFrame, QFDataArray]:
-        """"
+        """
         Implements the functionality of AbstractPriceDataProvider using duck-typing.
+
+        Parameters
+        ----------
+        tickers: Ticker, Sequence[Ticker]
+            tickers for securities which should be retrieved
+        fields: PriceField, Sequence[PriceField]
+            fields of securities which should be retrieved
+        start_date: datetime
+            date representing the beginning of historical period from which data should be retrieved
+        end_date: datetime
+            date representing the end of historical period from which data should be retrieved;
+            if no end_date was provided, by default the current date will be used
+        frequency: Frequency
+            frequency of the data
+
+        Returns
+        -------
+        None, PricesSeries, PricesDataFrame, QFDataArray
+            If possible the result will be squeezed so that instead of returning QFDataArray (3-D structure),
+            data of lower dimensionality will be returned.
         """
         use_prices_types = True
         normalized_result = self._get_data_for_multiple_tickers(tickers, fields, start_date, end_date, frequency, use_prices_types)
@@ -62,8 +82,32 @@ class GeneralPriceProvider(DataProvider):
     def get_history(
             self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[str, Sequence[str]], start_date: datetime,
             end_date: datetime = None, frequency: Frequency = Frequency.DAILY, **kwargs) -> Union[QFSeries, QFDataFrame, QFDataArray]:
-        """"
+        """
         Implements the functionality of DataProvider using duck-typing.
+
+        Parameters
+        ----------
+        tickers: Ticker, Sequence[Ticker]
+            tickers for securities which should be retrieved
+        fields: None, str, Sequence[str]
+            fields of securities which should be retrieved. If None, all available fields will be returned
+            (only supported by few DataProviders)
+        start_date: datetime
+            date representing the beginning of historical period from which data should be retrieved
+        end_date: datetime
+            date representing the end of historical period from which data should be retrieved;
+            if no end_date was provided, by default the current date will be used
+        frequency: Frequency
+            frequency of the data
+        kwargs
+            kwargs should not be used on the level of AbstractDataProvider. They are here to provide a common interface
+            for all data providers since some of the specific data providers accept additional arguments
+
+        Returns
+        -------
+        QFSeries, QFDataFrame, QFDataArray
+            If possible the result will be squeezed, so that instead of returning QFDataArray, data of lower
+            dimensionality will be returned.
         """
         use_prices_types = False
         normalized_result = self._get_data_for_multiple_tickers(tickers, fields, start_date, end_date, frequency,
@@ -74,8 +118,24 @@ class GeneralPriceProvider(DataProvider):
     def get_futures_chain_tickers(self, tickers: Union[FutureTicker, Sequence[FutureTicker]],
                                   expiration_date_fields: Union[ExpirationDateField, Sequence[ExpirationDateField]]) \
             -> Dict[FutureTicker, Union[QFSeries, QFDataFrame]]:
-        """"
+        """
         Implements the functionality of DataProvider using duck-typing.
+
+        Returns tickers of futures contracts, which belong to the same futures contract chain as the provided ticker
+        (tickers), along with their expiration dates in form of a QFSeries.
+
+        Parameters
+        ----------
+        tickers: FutureTicker, Sequence[FutureTicker]
+            tickers for which should the future chain tickers be retrieved
+        expiration_date_fields: ExpirationDateField, Sequence[ExpirationDateField]
+            field that should be downloaded as the expiration date field, by default last tradeable date
+
+        Returns
+        -------
+        Dict[FutureTicker, Union[QFSeries, QFDataFrame]]
+            Returns a dictionary, which maps Tickers to QFSeries, consisting of the expiration dates of Future
+            Contracts
         """
         tickers, got_single_ticker = convert_to_list(tickers, Ticker)
         results = {}

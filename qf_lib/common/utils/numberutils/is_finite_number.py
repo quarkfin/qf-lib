@@ -28,7 +28,7 @@ def is_finite_number(variable) -> bool:
 
     Returns
     -------
-    is_finite_number: bool
+    bool
         True if the variable is the finite number, False otherwise
 
     """

@@ -24,7 +24,8 @@ class AnalyticalConeBase(metaclass=abc.ABCMeta):
     def get_expected_value(mu, sigma, starting_price, number_of_steps, random_element) -> float:
         """
         For the mu and sigma calculated based on log returns:
-            S(t) = S(0)*exp( (mu-0.5*sigma^2)*t + sigma*N(0,1)*sqrt(t) )
+            S(t) = S(0)*exp( (mu-0.5*sigma^2)*t + sigma*N(0,1)*sqrt(t))
+
         Parameters
         ----------
         mu
@@ -42,7 +43,8 @@ class AnalyticalConeBase(metaclass=abc.ABCMeta):
 
         Returns
         -------
-        Expected value of the stock after number_of_steps given the input parameters
+        float
+            Expected value of the stock after number_of_steps given the input parameters
         """
         deterministic_part = (mu - 0.5 * pow(sigma, 2)) * number_of_steps
         random_part = sigma * random_element * sqrt(number_of_steps)
@@ -67,9 +69,11 @@ class AnalyticalConeBase(metaclass=abc.ABCMeta):
             length of the cone that we are creating
         starting_value
             corresponds to the starting price of the instrument
+
         Returns
         -------
-        Price Series of expected values
+        PriceSeries
+            expected values
         """
 
         steps = range(number_of_steps + 1)  # a list [0, 1, 2, ... N]

@@ -68,6 +68,10 @@ class IntradayDataHandler(DataHandler):
             Note: while requesting more than one ticker, some tickers may have fewer than n_of_bars data points
         frequency
             frequency of the data
+
+        Returns
+        --------
+        PricesSeries, PricesDataFrame, QFDataArray
         """
 
         frequency = frequency or self.fixed_data_provider_frequency or Frequency.MIN_1
@@ -105,10 +109,6 @@ class IntradayDataHandler(DataHandler):
     def get_price(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
                   start_date: datetime, end_date: datetime = None, frequency: Frequency = Frequency.DAILY) -> \
             Union[PricesSeries, PricesDataFrame, QFDataArray]:
-        """
-        Runs DataProvider.get_price(...) but before makes sure that the query doesn't concern data from
-        the future.
-        """
         frequency = frequency or self.fixed_data_provider_frequency or Frequency.MIN_1
         end_date_without_look_ahead = self._get_end_date_without_look_ahead(end_date)
         return self.data_provider.get_price(tickers, fields, start_date, end_date_without_look_ahead,
@@ -118,11 +118,7 @@ class IntradayDataHandler(DataHandler):
             self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[str, Sequence[str]], start_date: datetime,
             end_date: datetime = None, frequency: Frequency = None, **kwargs) -> \
             Union[QFSeries, QFDataFrame, QFDataArray]:
-        """
-        Runs DataProvider.get_history(...) but before makes sure that the query doesn't concern data from the future.
 
-        See: DataProvider.get_history(...)
-        """
         frequency = frequency or self.fixed_data_provider_frequency or Frequency.MIN_1
         end_date_without_look_ahead = self._get_end_date_without_look_ahead(end_date)
         return self.data_provider.get_history(tickers, fields, start_date, end_date_without_look_ahead, frequency)
@@ -139,10 +135,17 @@ class IntradayDataHandler(DataHandler):
         equal to "now"). If the market did not open yet, the last available CLOSE price will be returned.
         Non-zero seconds or microseconds values are omitted (e.g. 13:40:01 is always treated as 13:40:00).
 
+        Parameters
+        -----------
+        tickers: Ticker, Sequence[Ticker]
+            tickers of the securities which prices should be downloaded
+        frequency: Frequency
+            frequency of the data
+
         Returns
         -------
-        last_prices
-            Series where:
+        float, pd.Series
+            last_prices series where:
             - last_prices.name contains a date of current prices,
             - last_prices.index contains tickers
             - last_prices.data contains latest available prices for given tickers
@@ -255,10 +258,17 @@ class IntradayDataHandler(DataHandler):
         12:59 - 13:00 bar will be returned.
         If "now" contains non-zero seconds or microseconds, None will be returned.
 
+        Parameters
+        -----------
+        tickers: Ticker, Sequence[Ticker]
+            tickers of the securities which prices should be downloaded
+        frequency: Frequency
+            frequency of the data
+
         Returns
         -------
-        current_prices
-            Series where:
+        float, pd.Series
+            current_prices series where:
             - current_prices.name contains a date of current prices,
             - current_prices.index contains tickers
             - current_prices.data contains latest available prices for given tickers
@@ -320,6 +330,19 @@ class IntradayDataHandler(DataHandler):
         E.g. for 1 minute frequency, at 13:00 (if the market opens before 13:00), the 12:59 - 13:00 bar will be
         returned. In case of 15 minutes frequency, when the market opened less then 15 minutes ago, Nones will be
         returned. If current time ("now") contains non-zero seconds or microseconds, Nones will be returned.
+
+        Parameters
+        -----------
+        tickers: Ticker, Sequence[Ticker]
+            tickers of the securities which prices should be downloaded
+        frequency: Frequency
+            frequency of the data
+
+        Returns
+        -------
+        pandas.Series, pandas.DataFrame
+            current bar
+
         """
         if not tickers:
             return pd.Series()

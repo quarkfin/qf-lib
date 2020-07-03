@@ -29,12 +29,13 @@ def create_holdings_chart(positions: QFDataFrame) -> LineChart:
 
     Parameters
     ----------
-    positions
+    positions: QFDataFrame
         Positions as returned by the extract_rets_pos_txn_from_zipline function.
 
     Returns
     -------
     LineChart
+        Created line chart
     """
     # Based on:
     # https://github.com/quantopian/pyfolio/blob/5d63df4ca6e0ead83f4bebf9860732d37f532026/pyfolio/plotting.py#L323

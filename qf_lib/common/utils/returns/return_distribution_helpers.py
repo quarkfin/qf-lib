@@ -44,19 +44,25 @@ def get_cone_chart(paths_data_frame, series_list, names_list, title=None, log_sa
 
 
 def generate_random_paths(sample_len: int, sample_size: int, mean: float, std: float, leverage: float = 1.0):
-    """
-    sample_len:
+    """ Generates random paths.
+
+    Parameters
+    ------------
+    sample_len: int
         length of each path of data, equivalent to time
-    sample_size:
+    sample_size: int
         Number of paths simulated
-    mean:
+    mean: float
         mean simle return
-    std:
+    std: float
         standard deviation of returns
-    leverage:
+    leverage: float
         leverage used in the simulated investment process
 
-    Returns SimpleReturnsDataFrame indexed by steps with paths as columns
+    Returns
+    -----------
+    SimpleReturnsDataFrame
+        indexed by steps with paths as columns
     """
     mean = mean * leverage
     std = std * leverage

@@ -24,24 +24,23 @@ from qf_lib.plotting.decorators.coordinate import Coordinate
 class TextDecorator(ChartDecorator):
     """
     Adds text to the Chart at given coordinates (e.g. the label for data point).
+
+    Parameters
+    ----------
+    text: str
+        Text which should be added to the chart
+    x: Coordinate
+        x coordinate for the text
+    y: Coordinate
+        y coordinate for the text
+    key: str
+        see: ChartDecorator.__init__#key
+    plot_settings
+        additional arguments which will be passed to the matplotlib plotting function
+        (see: http://matplotlib.org/api/text_api.html#matplotlib.text.Text)
     """
 
     def __init__(self, text: str, x: Coordinate, y: Coordinate, key: str = None, **plot_settings: Any) -> None:
-        """
-        Parameters
-        ----------
-        text
-            Text which should be added to the chart
-        x
-            x coordinate for the text
-        y
-            y coordinate for the text
-        key
-            see: ChartDecorator.__init__#key
-        plot_settings
-            additional arguments which will be passed to the matplotlib plotting function
-            (see: http://matplotlib.org/api/text_api.html#matplotlib.text.Text)
-        """
         super().__init__(key)
         self.text = text
         self.x = x

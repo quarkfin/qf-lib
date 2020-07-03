@@ -57,22 +57,30 @@ from qf_lib.starting_dir import get_starting_dir_abs_path
 @ErrorHandling.class_error_logging()
 class TradeAnalysisSheet(object):
     """
-    Creates a PDF containing main statistics of the trades
+    Creates a PDF containing main statistics of the trades.
+
+    Parameters
+    -------------
+    settings: Settings
+        settings of the project
+    pdf_exporter: PDFExporter
+        tool that creates the pdf with the result
+    trades_df: QFDataFrame
+        indexed by consecutive numbers starting at 0. Columns are indexed using TradeField values
+    start_date: datetime
+    end_date: datetime
+    nr_of_assets_traded: int
+        the model can be used to trade on many instruments at the same time.
+        All aggregated trades will be in trades_df
+        nr_of_instruments_traded informs on how many instruments at the same time the model was traded.
+    title: str
+        title of the document, will be a part of the filename. Do not use special characters
+
     """
 
     def __init__(self, settings: Settings, pdf_exporter: PDFExporter, trades_df: QFDataFrame, start_date: datetime,
                  end_date: datetime, nr_of_assets_traded: int = 1, title: str = "Trades"):
-        """
-        trades_df
-            indexed by consecutive numbers starting at 0.
-            columns are indexed using TradeField values
-        nr_of_assets_traded
-            the model can be used to trade on many instruments at the same time.
-            All aggregated trades will be in trades_df
-            nr_of_instruments_traded informs on how many instruments at the same time the model was traded.
-        title
-            title of the document, will be a part of the filename. Do not use special characters
-        """
+
         self.trades_df = trades_df.sort_values([TradeField.EndDate, TradeField.StartDate]).reset_index(drop=True)
         self.start_date = start_date
         self.end_date = end_date

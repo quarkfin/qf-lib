@@ -32,7 +32,7 @@ def normalize_data_array(
         -> Union[QFSeries, QFDataFrame, QFDataArray, PricesSeries, PricesDataFrame]:
     """
     Post-processes the result of some DataProviders so that it satisfies the format of a result expected
-    from DataProviders:
+    from DataProviders. Expected format rules should cover the following:
     - proper return type (QFSeries/PricesSeries, QFDataFrame/PricesDataFrame, QFDataArray),
     - proper shape of the result (squeezed dimensions for which a single non-list value was provided, e.g. "OPEN"),
     - dimensions: "tickers" and "fields" contain all required labels and the labels are in required order.
@@ -54,6 +54,10 @@ def normalize_data_array(
     use_prices_types
         if True then proper return types are: PricesSeries, PricesDataFrame or QFDataArray;
         otherwise return types are: QFSeries, QFDataFrame or QFDataArray
+
+    Returns
+    --------
+    QFSeries, QFDataFrame, QFDataArray, PricesSeries, PricesDataFrame
     """
     # to keep the order of tickers and fields we reindex the data_array
     data_array = data_array.reindex(tickers=tickers, fields=fields)
@@ -125,11 +129,11 @@ def cast_dataframe_to_proper_type(result):
 
 def tickers_dict_to_data_array(tickers_data_dict: Dict[Ticker, pd.DataFrame], requested_tickers, requested_fields) -> QFDataArray:
     """
-    Converts a dictionary tickers->DateFrame to QFDataArray.
+    Converts a dictionary mapping tickers to DateFrame onto a QFDataArray.
 
     Parameters
     ----------
-    tickers_data_dict
+    tickers_data_dict:  Dict[Ticker, pandas.DataFrame]
         Ticker -> DataFrame[dates, fields]
     requested_tickers
     requested_fields

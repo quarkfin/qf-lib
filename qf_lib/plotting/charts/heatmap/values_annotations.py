@@ -19,19 +19,19 @@ from qf_lib.plotting.charts.heatmap.heatmap_chart_decorator import HeatMapChartD
 
 
 class ValuesAnnotations(HeatMapChartDecorator):
-    """ Adds annotations containing values for each square presented on the heat map. """
+    """ Adds annotations containing values for each square presented on the heat map.
+
+    Parameters
+    ----------
+    format_str: str
+        The format of the annotation showed inside of each element of the heat map
+    key
+        see: Chart.__init__#key
+    plot_settings
+        additional keyword arguments passed to the matplotlib's Axes.text() method
+    """
 
     def __init__(self, format_str='.2g', key=None, **plot_settings):
-        """
-        Parameters
-        ----------
-        format_str
-            The format of the annotation showed inside of each element of the heat map
-        key
-            see: Chart.__init__#key
-        plot_settings
-            additional keyword arguments passed to the matplotlib's Axes.text() method
-        """
         super().__init__(key)
         self._plot_settings = plot_settings
         self._format_str = format_str

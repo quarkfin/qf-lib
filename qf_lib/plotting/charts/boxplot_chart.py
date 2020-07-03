@@ -21,19 +21,21 @@ from qf_lib.plotting.charts.chart import Chart
 
 
 class BoxplotChart(Chart):
-    SERIES_KEY = "series"  # Used for storing the boxplot chart's series.
+    """
+    Creates a box plot consisting of the list of ``QFSeries`` specified in ``data``.
+
+    Parameters
+    ----------
+    data: List[QFSeries]
+       A list of ``QFSeries``.
+    plot_settings
+       Passed to Seaborn plotting function.
+    """
+
+    SERIES_KEY = "series"
+    """Used for storing the boxplot chart's series."""
 
     def __init__(self, data: List[QFSeries], **plot_settings):
-        """
-        Creates a box plot consisting of the list of ``QFSeries`` specified in ``data``.
-
-        Parameters
-        ----------
-        data
-            A list of ``QFSeries``.
-        plot_settings
-            Passed to Seaborn plotting function.
-        """
         super().__init__(start_x=None, end_x=None)
         self._data = data
         self.plot_settings = plot_settings

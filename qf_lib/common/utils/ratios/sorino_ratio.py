@@ -25,16 +25,16 @@ def sorino_ratio(qf_series: QFSeries, frequency: Frequency, risk_free: float = 0
 
     Parameters
     ----------
-    qf_series
+    qf_series: QFSeries
         financial series
-    frequency
+    frequency: Frequency
         frequency of the qf_series
-    risk_free
+    risk_free: float
         risk free rate
 
     Returns
     -------
-    sorino_ratio
+    float
     """
 
     annualised_growth_rate = cagr(qf_series, frequency)

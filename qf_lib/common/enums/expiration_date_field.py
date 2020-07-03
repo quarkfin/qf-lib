@@ -12,12 +12,27 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 from enum import Enum
+from typing import List
 
 
 class ExpirationDateField(Enum):
+    """
+    Enumeration representing different expiration dates for futures contracts.
+    """
+
     FirstNotice = 1
+    """Futures First Notice date"""
+
     LastTradeableDate = 2
+    """Futures Last Tradeable date"""
 
     @staticmethod
-    def all_dates():
+    def all_dates() -> List:
+        """
+
+        Returns
+        -------
+        List
+            list of all dates types
+        """
         return [ExpirationDateField.FirstNotice, ExpirationDateField.LastTradeableDate]

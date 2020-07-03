@@ -41,38 +41,39 @@ def create_line_chart(
 
     Parameters
     ----------
-    data_list
+    data_list: List[Union[QFSeries, DataElementDecorator]]
         A list of ``QFSeries`` or ``DataElementDecorator``s to plot on the chart.
-    names_list
+    names_list: List[str]
         A list of strings specifying the labels for the series, horizontal and vertical lines respectively. ``None``
         can be specified for labels to not display it for a specific series, or line.
-    title
+    title: str
         The title of the graph, specify ``None`` if you don't want the chart to show a title.
-    recession_series
+    recession_series: QFSeries
         A ``QFSeries`` specifying where recessions occurred on the chart, will be highlighted using grey rectangles
         on the graph.
-    horizontal_lines_list
+    horizontal_lines_list: List[float]
         An optional list of values where a horizontal line should be drawn.
-    vertical_lines_list
+    vertical_lines_list: List[float]
         An optional list of values where a vertical line should be drawn.
-    disable_dot
+    disable_dot: bool
         Whether a marker on the last point should be disabled.
-    start_x
+    start_x: datetime
         The date where plotting should begin.
-    end_x
+    end_x: datetime
         The date where plotting should end.
-    upper_y
+    upper_y: float
         The upper bound y-axis value at which plotting should begin.
-    lower_y
+    lower_y: float
         The lower bound y-axis value at which plotting should begin.
-    dot_decimal_points
+    dot_decimal_points: int
         How many decimal places to show after the decimal points when drawing text for "dot".
-    recession_name
+    recession_name: str
         A string specifying the recession label. If "None" or missing, will not be included.
 
     Returns
     -------
-    The constructed ``LineChart``.
+    LineChart
+        The constructed ``LineChart``.
     """
 
     # If `end_x` was not specified, use a heuristic to determine it.

@@ -27,15 +27,14 @@ def list_of_max_drawdowns(prices_tms: QFSeries) -> (List[float], List[float]):
 
     Parameters
     ----------
-    prices_tms
+    prices_tms: QFSeries
         timeseries of prices
 
     Returns
     -------
-    max_drawdowns
-        list of all maximum values in individual drawdowns
-    duration_of_drawdowns
-        list of all durations of drawdowns expressed in days
+    List[float], List[float]
+        (max_drawdowns, duration_of_drawdowns) - list of all maximum values in individual drawdowns, list of all
+        durations of drawdowns expressed in days
     """
 
     drawdown_timeseries = drawdown_tms(prices_tms)

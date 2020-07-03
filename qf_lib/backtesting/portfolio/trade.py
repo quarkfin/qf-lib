@@ -21,33 +21,34 @@ from qf_lib.common.utils.dateutils.date_to_string import date_to_str
 class Trade(object):
     """
     Trade represents a pair of transactions that go in the opposite directions.
-    For example:
-        We buy 10 shares of X and then we sell 3 shares of X. This creates a trade when we buy and sell 3 shares of X
+    For example we buy 10 shares of X and then we sell 3 shares of X. This creates a trade when we buy and sell 3
+    shares of X
+
+    Parameters
+    -----------
+    start_time: datetime
+        moment when we opened the position corresponding to this trade
+    end_time: datetime
+        moment when we close the trade
+    contract: Contract
+        contract defining the security
+    quantity: int
+        number of shares traded
+    entry_price: float
+        price at which the instrument has been bought (excluding all fees and commission)
+    exit_price: float
+        price at which the trade was closed (excluding all fees and commission)
+    commission: float
+        all the transaction costs related to the trade.
+        It includes the cost of opening the position and also cost of reducing it.
+        commission is expressed in currency units
+    risk_as_percent: float
+        max percentage risk that we aim to have on this instrument.
+        for example it could be the the percentage that is used to calculate the stop price.
     """
 
     def __init__(self, start_time: datetime, end_time: datetime, contract: Contract, quantity: int, entry_price: float,
                  exit_price: float, commission: float, risk_as_percent: float = float('nan')):
-        """
-        start_time
-            moment when we opened the position corresponding to this trade
-        end_time
-            moment when we close the trade
-        contract
-            contract defining the security
-        quantity
-            number of shares traded
-        entry_price
-            price at which the instrument has been bought (excluding all fees and commission)
-        exit_price
-            price at which the trade was closed (excluding all fees and commission)
-        commission
-            all the transaction costs related to the trade.
-            It includes the cost of opening the position and also cost of reducing it.
-            commission is expressed in currency units
-        risk_as_percent
-            max percentage risk that we aim to have on this instrument.
-            for example it could be the the percentage that is used to calculate the stop price.
-        """
         self.start_time = start_time
         self.end_time = end_time
         self.contract = contract

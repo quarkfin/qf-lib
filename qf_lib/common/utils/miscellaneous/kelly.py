@@ -29,12 +29,12 @@ def kelly(qf_series: QFSeries) -> float:
 
     Parameters
     ----------
-    qf_series
+    qf_series: QFSeries
         timeseries of returns/prices. Each return/price must correspond to one trade.
 
     Returns
     -------
-    kelly_criterion_value
+    float
         fraction of money that should be invested
     """
 
@@ -57,19 +57,19 @@ def kelly_binary(win_probability: float, win_size: float, lose_size: float) -> f
 
     Parameters
     ----------
-    win_probability
+    win_probability:float
         probability of winning. Assumes that probability of losing is 1 - win_probability.
-    win_size
+    win_size: float
         gain if we win.
         For example: 0.7 means that we get additional 70% of what we bet. (if we bet 10$ and we win we now have 17$)
         new_value = old_value * (1 + win_size)
-    lose_size
+    lose_size: float
         lose if we lose. This value should be negative.
         For example: -0.2 means that we lose 20% of what we bet. (if we bet 10$ and we lose we now have 8$)
         new_value = old_value * (1 + lose_size)
     Returns
     -------
-    kelly_criterion_value
+    float
         fraction of money that should be invested
 
     """

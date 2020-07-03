@@ -20,22 +20,26 @@ from qf_lib.plotting.charts.chart import Chart
 
 
 class HistogramChart(Chart):
+    """
+    Constructs a new histogram based on the ``series`` specified.
+
+    Parameters
+    ----------
+    series: Sequence
+        The series to plot in the histogram.
+    best_fit: boolean, default ``False``.
+        Whether a best fit line should be drawn.
+    bins: int, str
+        The amount of intervals to use for this histogram.
+    start_x: Any
+       The upper bound of the x-axis.
+    end_x: Any
+       The lower bound of the x-axis.
+    plot_settings
+        Options to pass to the ``hist`` function.
+    """
     def __init__(self, series: Sequence, best_fit: bool = False, bins: Union[int, str] = 20, start_x: Any = None,
                  end_x: Any = None, **plot_settings):
-        """
-        Constructs a new histogram based on the ``series`` specified.
-
-        Parameters
-        ----------
-        series
-            The series to plot in the histogram.
-        best_fit: boolean, default ``False``.
-            Whether a best fit line should be drawn.
-        bins
-            The amount of intervals to use for this histogram.
-        plot_settings
-            Options to pass to the ``hist`` function.
-        """
         super().__init__(start_x=start_x, end_x=end_x)
         self._series = series
         self.plot_settings = plot_settings

@@ -19,18 +19,19 @@ from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 
 
 def average_true_range(prices_df: PricesDataFrame, normalized: bool = False) -> float:
-    """
+    """Calculates the average true range.
 
     Parameters
     ----------
-    prices_df
+    prices_df: PricesDataFrame
         PricesDataFrame containing High, Low, Close PriceFields and a number of rows equal to window_length + 1
-    normalized
+    normalized: bool
         if True, each true_range is normalized to the closing price for the same day; NATR is returned
     Returns
     -------
-    Average True Range calculated as mean of True Range values; a time period is equal to the amount of rows
-    in prices_df reduced by 1
+    float
+        Average True Range calculated as mean of True Range values; a time period is equal to the amount of rows
+        in prices_df reduced by 1
 
     """
     high_tms = prices_df[PriceField.High]

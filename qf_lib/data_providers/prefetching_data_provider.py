@@ -30,6 +30,24 @@ class PrefetchingDataProvider(PresetDataProvider):
     Optimises running of the DataProvider by pre-fetching all the data at startup and then using the cached data
     instead of sending over-the-network requests every time the data is requested. If not all data requested
     is available the ValueError will be raised.
+
+    Parameters
+    -----------
+    data_provider: DataProvider
+        data provider used to download the data
+    tickers: Ticker, Sequence[Ticker]
+        one or a list of tickers, used further to download the futures contracts related data.
+        The list can contain either Tickers or FutureTickers. In case of the Tickers, simply the given fields
+        are being downloaded and stored using the PresetDataProvider. In case of the FutureTickers, the future
+        chain tickers and their corresponding prices are being downloaded and stored.
+    fields: PriceField, Sequence[PriceField]
+        fields that should be downloaded
+    start_date: datetime
+        first date to be downloaded
+    end_date: datetime
+        last date to be downlaoded
+    frequency: Frequency
+        frequency od the data
     """
 
     def __init__(self, data_provider: DataProvider,
@@ -37,13 +55,6 @@ class PrefetchingDataProvider(PresetDataProvider):
                  fields: Union[PriceField, Sequence[PriceField]],
                  start_date: datetime, end_date: datetime,
                  frequency: Frequency):
-        """
-        The tickers parameter denotes one or a list of tickers, used further to download the futures contracts related
-        data. The list can contain either Tickers or FutureTickers. In case of the Tickers, simply the given fields
-        are being downloaded and stored using the PresetDataProvider. In case of the FutureTickers, the future
-        chain tickers and their corresponding prices are being downloaded and stored.
-        """
-
         # Convert fields into list in order to return a QFDataArray as the result of get_price function
         fields, _ = convert_to_list(fields, PriceField)
 

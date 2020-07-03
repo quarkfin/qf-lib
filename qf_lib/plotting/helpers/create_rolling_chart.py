@@ -41,15 +41,15 @@ def create_rolling_chart(
 
     Parameters
     ----------
-    series
+    series: QFSeries, List[QFSeries]
         One or more series to apply the rolling window transformation on add to the resulting chart.
-    func
+    func: Callable[[Union[QFSeries, numpy.ndarray]], float]
         Called for each window. Takes one argument which is part of a series corresponding to a window. Returns a float.
-    func_name
+    func_name: str
         Used in the title to specify the function that was called.
-    window_size
-    step
-    oos_date
+    window_size: int
+    step: int
+    oos_date: str
         only the OOS date of the first series in the list will be taken into account
 
     Returns

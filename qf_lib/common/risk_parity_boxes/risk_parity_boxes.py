@@ -32,7 +32,9 @@ from qf_lib.portfolio_construction.portfolio_models.portfolio import Portfolio
 
 class ChangeDirection(Enum):
     RISING = 1
+    """Rising"""
     FALLING = 2
+    """Failing"""
 
 
 class RiskParityBoxes(object):
@@ -84,6 +86,11 @@ class RiskParityBoxes(object):
 class RiskParityBoxesFactory(object):
     """
     Makes timeseries for risk parity boxes.
+
+    Parameters
+    ----------
+    bbg_data_provider: BloombergDataProvider
+        reference to bloomberg data provider
     """
 
     def __init__(self, bbg_data_provider: BloombergDataProvider):

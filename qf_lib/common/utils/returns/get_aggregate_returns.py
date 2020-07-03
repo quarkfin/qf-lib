@@ -32,15 +32,17 @@ def get_aggregate_returns(series: QFSeries, convert_to: Frequency, multi_index: 
 
     Parameters
     ----------
-    series
+    series: QFSeries
         Daily returns of the strategy, noncumulative.
-    convert_to
+    convert_to: Frequency
         Can be 'weekly', 'monthly', or 'yearly'.
-    multi_index
+    multi_index: bool
         Determines whether the grouping multi-index should be preserved.
+
     Returns
     -------
-    Aggregated returns.
+    SimpleReturnsSeries
+        Aggregated returns.
     """
     simple_rets = series.to_simple_returns()
     grouping = get_grouping_for_frequency(convert_to)

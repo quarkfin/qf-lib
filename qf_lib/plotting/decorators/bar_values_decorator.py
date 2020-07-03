@@ -20,20 +20,18 @@ from qf_lib.plotting.decorators.chart_decorator import ChartDecorator
 
 class BarValuesDecorator(ChartDecorator):
     """
-    Adds values next to each bar on the bar chart
+    Adds values next to each bar on the bar chart.
+
+    Parameters
+    ----------
+    series: QFSeries
+        series that is going to be decorated by the cone
+    key: str
+        see ChartDecorator.key.__init__#key
+
     """
 
     def __init__(self, series: QFSeries, key: str = None):
-        """
-        Puts cone on top of the timeseries starting form given date.
-
-        Parameters
-        ----------
-        series
-            series that is going to be decorated by the cone
-        key
-            see ChartDecorator.key.__init__#key
-        """
         super().__init__(key)
         self.series = series
 

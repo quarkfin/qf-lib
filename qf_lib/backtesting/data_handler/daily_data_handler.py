@@ -56,6 +56,10 @@ class DailyDataHandler(DataHandler):
             Note: while requesting more than one ticker, some tickers may have fewer than n_of_bars data points
         frequency
             frequency of the data
+
+        Returns
+        --------
+        PricesSeries, PricesDataFrame, QFDataArray
         """
 
         frequency = frequency or self.fixed_data_provider_frequency or Frequency.DAILY
@@ -90,6 +94,24 @@ class DailyDataHandler(DataHandler):
 
         It accesses the latest fully available bar as of "today", that is: if a bar wasn't closed for today yet,
         then all the PriceFields (e.g. OPEN) will concern data from yesterday.
+
+        Parameters
+        ----------
+        tickers: Ticker, Sequence[Ticker]
+            tickers for securities which should be retrieved
+        fields: PriceField, Sequence[PriceField]
+            fields of securities which should be retrieved
+        start_date: datetime
+            date representing the beginning of historical period from which data should be retrieved
+        end_date: datetime
+            date representing the end of historical period from which data should be retrieved;
+            if no end_date was provided, by default the current date will be used
+        frequency: Frequency
+            frequency of the data
+
+        Returns
+        -------
+        None, PricesSeries, PricesDataFrame, QFDataArray
         """
         frequency = frequency or self.fixed_data_provider_frequency or Frequency.DAILY
         end_date_without_look_ahead = self._get_end_date_without_look_ahead(end_date)
@@ -100,11 +122,7 @@ class DailyDataHandler(DataHandler):
             self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[str, Sequence[str]], start_date: datetime,
             end_date: datetime = None, frequency: Frequency = None, **kwargs) -> \
             Union[QFSeries, QFDataFrame, QFDataArray]:
-        """
-        Runs DataProvider.get_history(...) but before makes sure that the query doesn't concern data from the future.
 
-        See: DataProvider.get_history(...)
-        """
         frequency = frequency or self.fixed_data_provider_frequency or Frequency.DAILY
         end_date_without_look_ahead = self._get_end_date_without_look_ahead(end_date)
         return self.data_provider.get_history(tickers, fields, start_date, end_date_without_look_ahead, frequency)
@@ -121,8 +139,8 @@ class DailyDataHandler(DataHandler):
 
         Returns
         -------
-        last_prices
-            Series where:
+        float, pd.Series
+            last_prices series where:
             - last_prices.name contains a date of current prices,
             - last_prices.index contains tickers
             - last_prices.data contains latest available prices for given tickers
@@ -144,6 +162,13 @@ class DailyDataHandler(DataHandler):
         In other cases (e.g. someone tries to get current price on a non-trading day or current time is different
         than MarketOpen or MarketClose) None will be returned (or the Series of pd.nan if multiple
         tickers were supplied).
+
+        Parameters
+        -----------
+        tickers: Ticker, Sequence[Ticker]
+            tickers of the securities which prices should be downloaded
+        frequency: Frequency
+            frequency of the data
 
         Returns
         -------
@@ -170,6 +195,18 @@ class DailyDataHandler(DataHandler):
 
         On non-working days or on working days in the time between midnight (inclusive) and MarketClose (exclusive),
         e.g. 12:00, the returned bars will contain Nones as values.
+
+        Parameters
+        -----------
+        tickers: Ticker, Sequence[Ticker]
+            tickers of the securities which prices should be downloaded
+        frequency: Frequency
+            frequency of the data
+
+        Returns
+        -------
+        pandas.Series, pandas.DataFrame
+            current bar
         """
         if not tickers:
             return pd.Series()

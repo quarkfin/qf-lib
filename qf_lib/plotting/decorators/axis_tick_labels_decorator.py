@@ -21,24 +21,23 @@ from qf_lib.plotting.decorators.chart_decorator import ChartDecorator
 class AxisTickLabelsDecorator(ChartDecorator):
     """
     Customizes tick labels for a given axis.
+
+    Parameters
+    ----------
+    axis: Axis
+        X or Y Axis object
+    labels: Sequence[str]
+        a list of labels for ticks present in the Chart
+    tick_values: Sequence[float]
+        sequence of floats that will be used as ticks
+    rotation: int, str
+        rotation of selected axis labels. For example 20 = 20 degrees rotation
+    key: str
+        see: ChartDecorator.__init__#key
     """
 
     def __init__(self, axis: Axis, labels: Sequence[str] = None, tick_values: Sequence[float] = None,
                  rotation: Union[int, str] = None, key: str = None):
-        """
-        Parameters
-        ----------
-        axis
-            X or Y Axis object
-        labels
-            a list of labels for ticks present in the Chart
-        tick_values
-            sequence of floats that will be used as ticks
-        rotation
-            rotation of selected axis labels. For example 20 = 20 degrees rotation
-        key
-            see: ChartDecorator.__init__#key
-        """
         super().__init__(key)
         self._labels = labels
         self._axis = axis

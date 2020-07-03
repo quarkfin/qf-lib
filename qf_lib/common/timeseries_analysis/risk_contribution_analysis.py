@@ -40,7 +40,8 @@ class RiskContributionAnalysis(object):
 
         Returns
         -------
-        Series of risk contributions (one for each asset) to the portfolio. It's indexed with names of assets.
+        pandas.Series
+            Series of risk contributions (one for each asset) to the portfolio. It's indexed with names of assets.
         """
         volatility_of_returns = factors_rets.std(axis=0)
 

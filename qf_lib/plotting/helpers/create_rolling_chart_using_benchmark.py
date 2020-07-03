@@ -45,18 +45,18 @@ def create_rolling_chart_using_benchmark(
 
     Parameters
     ----------
-    series
+    series: QFSeries, List[QFSeries]
         One or more series to apply the rolling window transformation on add to the resulting chart.
-    benchmark_series
+    benchmark_series: QFSeries
         benchmark for every series passed as a first argument
-    func
+    func: RollingWindowFunction
         Called for each window. Takes two arguments (series_window, benchmark_window). Returns a float.
-    func_name
+    func_name: str
         Used in the title to specify the function that was called.
-    window_size
-    step
+    window_size: int
+    step: int
         determines by how many steps we shift the rolling window
-    oos_date
+    oos_date: str
         only the OOS date of the first series in the list will be taken into account
 
     Returns

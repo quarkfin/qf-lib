@@ -29,8 +29,7 @@ from qf_lib.containers.series.qf_series import QFSeries
 
 
 class DataProvider(object, metaclass=ABCMeta):
-    """
-    An interface for price providers (e.g. AbstractPriceDataProvider or GeneralPriceProvider).
+    """An interface for data providers (for example AbstractPriceDataProvider or GeneralPriceProvider).
     """
 
     frequency = None
@@ -40,34 +39,30 @@ class DataProvider(object, metaclass=ABCMeta):
                   start_date: datetime, end_date: datetime = None, frequency: Frequency = None) -> Union[
             None, PricesSeries, PricesDataFrame, QFDataArray]:
         """
-        Gets adjusted historical Prices (OPEN HIGH LOW CLOSE) and VOLUME
+        Gets adjusted historical Prices (Open, High, Low, Close) and Volume
 
         Parameters
         ----------
-        tickers
+        tickers: Ticker, Sequence[Ticker]
             tickers for securities which should be retrieved
-        fields
+        fields: PriceField, Sequence[PriceField]
             fields of securities which should be retrieved
-        start_date
+        start_date: datetime
             date representing the beginning of historical period from which data should be retrieved
-        end_date
+        end_date: datetime
             date representing the end of historical period from which data should be retrieved;
             if no end_date was provided, by default the current date will be used
-        frequency
+        frequency: Frequency
             frequency of the data
 
         Returns
         -------
-        historical_data
+        None, PricesSeries, PricesDataFrame, QFDataArray
             If possible the result will be squeezed so that instead of returning QFDataArray (3-D structure),
-            data of lower dimensionality will be returned.
-
-            QFDataArray with 3 dimensions: dates, tickers, fields
-            PricesDataFrame with 2 dimensions: dates, tickers or fields (depending if many tickers or fields were
-                provided). It is also possible to get 2 dimensions ticker and field if single date was provided.
-            PricesSeries with 1 dimension: dates
-
-            All the containers will be indexed with PriceField whenever possible
+            data of lower dimensionality will be returned. The results will be either an QFDataArray (with 3 dimensions:
+            dates, tickers, fields), PricesDataFrame (with 2 dimensions: dates, tickers or fields.
+            It is also possible to get 2 dimensions ticker and field if single date was provided), or PricesSeries
+            with 1 dimension: dates. All the containers will be indexed with PriceField whenever possible
             (for example: instead of 'Close' column in the PricesDataFrame there will be PriceField.Close)
         """
         pass
@@ -78,11 +73,11 @@ class DataProvider(object, metaclass=ABCMeta):
         start_date: datetime, end_date: datetime = None, frequency: Frequency = None, **kwargs) -> Union[
             QFSeries, QFDataFrame, QFDataArray]:
         """
-        Gets historical attributes(fields) of different securities(tickers).
+        Gets historical attributes (fields) of different securities (tickers).
 
         All the duplicate fields and tickers will be removed (the first occurrence will remain). This is crucial
         for having the expected behavior with using label-based indices. E.g. let's assume there is a duplicate ticker
-        'SPX Index' in :tickers list and the result data frame has two columns 'SPX Index'. Then when someone
+        'SPX Index' in tickers list and the result data frame has two columns 'SPX Index'. Then when someone
         runs result.loc[:, 'SPX Index'], he expects to get a series of 'SPX Index' values. However
         he'll get a data frame with two columns, both named 'SPX Index'.
         If someone insists on keeping duplicate values in index/columns, then it's possible to reindex the result
@@ -90,32 +85,29 @@ class DataProvider(object, metaclass=ABCMeta):
 
         Parameters
         ----------
-        tickers
+        tickers: Ticker, Sequence[Ticker]
             tickers for securities which should be retrieved
-        fields
+        fields: None, str, Sequence[str]
             fields of securities which should be retrieved. If None, all available fields will be returned
             (only supported by few DataProviders)
-        start_date
+        start_date: datetime
             date representing the beginning of historical period from which data should be retrieved
-        end_date
+        end_date: datetime
             date representing the end of historical period from which data should be retrieved;
             if no end_date was provided, by default the current date will be used
-        frequency
+        frequency: Frequency
             frequency of the data
         kwargs
             kwargs should not be used on the level of AbstractDataProvider. They are here to provide a common interface
             for all data providers since some of the specific data providers accept additional arguments
+
         Returns
         -------
-        historical_data
-            If possible the result will be squeezed, so that instead of returning QFDataArray,
-            data of lower dimensionality will be returned.
-
-            QFDataArray with 3 dimensions: date, ticker, field
-            QFDataFrame  with 2 dimensions: date, ticker or field (depending if many tickers or fields were provided)
-                it is also possible to get 2 dimensions ticker and field if single date was provided.
-            QFSeries     with 1 dimensions: date
-
+        QFSeries, QFDataFrame, QFDataArray
+            If possible the result will be squeezed, so that instead of returning QFDataArray, data of lower
+            dimensionality will be returned. The results will be either an QFDataArray (with 3 dimensions: date, ticker,
+            field), a QFDataFrame (with 2 dimensions: date, ticker or field; it is also possible to get 2 dimensions
+            ticker and field if single date was provided) or QFSeries (with 1 dimensions: date).
             If no data is available in the database or an non existing ticker was provided an empty structure
             (QFSeries, QFDataFrame or QFDataArray) will be returned returned.
         """
@@ -138,12 +130,14 @@ class DataProvider(object, metaclass=ABCMeta):
 
         Parameters
         ----------
-        tickers
+        tickers: FutureTicker, Sequence[FutureTicker]
             tickers for which should the future chain tickers be retrieved
-        expiration_date_field
+        expiration_date_fields: ExpirationDateField, Sequence[ExpirationDateField]
             field that should be downloaded as the expiration date field, by default last tradeable date
+
         Returns
         -------
+        Dict[FutureTicker, Union[QFSeries, QFDataFrame]]
             Returns a dictionary, which maps Tickers to QFSeries, consisting of the expiration dates of Future
             Contracts: Dict[FutureTicker, QFSeries]. The QFSeries contain the specific Tickers, which belong to the
             corresponding futures family, same as the FutureTicker, and are indexed by the expiration dates of

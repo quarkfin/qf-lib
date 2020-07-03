@@ -28,14 +28,14 @@ def max_drawdown(input_data: Union[QFSeries, QFDataFrame], frequency: Frequency 
 
     Parameters
     ----------
-    input_data
+    input_data: QFSeries, QFDataFrame
         timeseries of prices/returns
-    frequency
+    frequency: Frequency
         optional parameter that improves teh performance of the function it is not need to infer the frequency
 
     Returns
     -------
-    max_drawdown
+    float, pandas.Series
         maximal drawdown for the given timeseries of prices expressed as the percentage value (e.g. 0.5 corresponds
         to the 50% drawdown)
     """

@@ -30,13 +30,14 @@ class Slippage(object, metaclass=ABCMeta):
 
         Parameters
         ----------
-        orders
+        orders: Sequence[Order]
             sequence of Orders for which the fill price should be calculated
-        no_slippage_fill_prices
+        no_slippage_fill_prices: Sequence[float]
             fill prices without a slippage applied. Each fill price corresponds to the Order from `orders` list
 
         Returns
         -------
-        sequence of fill prices (order corresponds to the order of orders provided as an argument of the method)
+        Tuple[Sequence[float], Sequence[int]]
+            sequence of fill prices (order corresponds to the order of orders provided as an argument of the method)
         """
         pass

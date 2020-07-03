@@ -24,11 +24,14 @@ from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 
 @total_ordering
 class Ticker(metaclass=ABCMeta):
+    """Representation of a security.
+
+    Parameters
+    --------------
+    ticker: str
+        identifier of the security in a specific database
+    """
     def __init__(self, ticker: str):
-        """
-        ticker
-            identifier of the security in a specific database
-        """
         self.ticker = ticker
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
@@ -73,6 +76,7 @@ class Ticker(metaclass=ABCMeta):
 
 
 class BloombergTicker(Ticker):
+    """Representation of bloomberg tickers."""
     def __init__(self, ticker: str):
         super().__init__(ticker)
 
@@ -89,17 +93,17 @@ class BloombergTicker(Ticker):
 
 
 class InternalDBTicker(Ticker):
-    def __init__(self, ticker: Union[int, str]):
-        """
-        ticker
-            string is either timeseriesID or 'timeseriesName'
-            for example 123 or 'My Strategy Name'
+    """Representation of tickers inside the database.
 
-            if ticker is int:
-                it corresponds to the ID of the timeseries in the DB
-            if ticker is str:
-                it corresponds to the timeseries name
-        """
+    Parameters
+    ------------
+    ticker: int, str
+       string is either timeseriesID or 'timeseriesName'
+       for example 123 or 'My Strategy Name'
+       if ticker is int - it corresponds to the ID of the timeseries in the DB
+       if ticker is str - it corresponds to the timeseries name
+   """
+    def __init__(self, ticker: Union[int, str]):
         assert isinstance(ticker, (int, str)), "Ticker value must be either series name (string) or series id (int)"
         super().__init__(ticker)
 
@@ -129,15 +133,16 @@ class InternalDBTicker(Ticker):
 
 
 class HaverTicker(Ticker):
+    """Haver tickers representation. For example E025RE@EUSRVYS -> ticker: E025RE, EUSRVYS: database_name
+
+    Parameters
+    ------------
+    ticker: str
+        string containing series ID within a specific database
+    database_name: str
+        name of the database where the series is located
+    """
     def __init__(self, ticker: str, database_name: str):
-        """
-        ticker
-            string containing series ID within a specific database
-        database_name
-            name of the database where the series is located
-        For example:
-            E025RE@EUSRVYS -> ticker: E025RE, EUSRVYS: database_name
-        """
         super().__init__(ticker)
         self.database_name = database_name
 
@@ -164,6 +169,7 @@ class HaverTicker(Ticker):
 
 
 class QuandlTicker(Ticker):
+    """Representation of Quandl tickers."""
     def __init__(self, ticker: str, database_name: str, database_type: QuandlDBType = QuandlDBType.Timeseries):
         super().__init__(ticker)
         self.database_name = database_name
@@ -200,13 +206,15 @@ class QuandlTicker(Ticker):
 
 
 class CcyTicker(Ticker):
+    """Representation of Cryptocurrency tickers.
+
+    Parameters
+    ------------
+    ticker: str
+        The name of the crypto currency. For example Bitcoin -> ticker: bitcoin
+
+    """
     def __init__(self, ticker: str):
-        """
-        ticker
-            The name of the crypto currency
-        For example:
-            Bitcoin -> ticker: bitcoin
-        """
         super().__init__(ticker)
 
     @classmethod
@@ -225,7 +233,7 @@ class CcyTicker(Ticker):
 
 
 def tickers_as_strings(tickers: Union[Ticker, Sequence[Ticker]]) -> Union[str, List[str]]:
-    """"
+    """
     Converts a single ticker or sequence of tickers to strings representations.
     if single ticker is passed -> returns a single string
     if sequence of tickers is passed -> returns list of strings
@@ -237,7 +245,7 @@ def tickers_as_strings(tickers: Union[Ticker, Sequence[Ticker]]) -> Union[str, L
 
 
 def str_to_ticker(ticker_str: Union[str, Sequence[str]]) -> Union[None, Ticker, Tuple[List[Ticker], List[str]]]:
-    """"
+    """
     Converts a single string or sequence of strings to ticker representation.
 
     if single ticker is passed -> returns single_ticker or None

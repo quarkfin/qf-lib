@@ -29,14 +29,14 @@ def omega_ratio(returns_tms: SimpleReturnsSeries, threshold: float = 0) -> float
 
     Parameters
     ----------
-    returns_tms
+    returns_tms: SimpleReturnsSeries
         time series of price returns
-    threshold
+    threshold: float
         threshold (e.g. benchmark return or target return) for the portfolio
 
     Returns
     -------
-    omega_ratio
+    float
         Omega Ratio calculated for threshold
     """
     returns_tms = returns_tms.to_simple_returns()

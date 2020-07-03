@@ -38,15 +38,16 @@ class AnalyticalCone(AnalyticalConeBase):
 
         Parameters
         ----------
-        live_start_date
+        live_start_date: datetime
             datetime or string with date, corresponds to the cone start date
-        number_of_std
+        number_of_std: float
             corresponds to the randomness of the stochastic process. reflects number of standard deviations
             to get expected values for. For example 1.0 means 1 standard deviation above the expected value.
 
         Returns
         -------
-        Price Series of expected values
+        PriceSeries
+            expected values
         """
 
         is_log_tms = self.log_returns_tms.loc[self.log_returns_tms.index < live_start_date]
@@ -91,7 +92,8 @@ class AnalyticalCone(AnalyticalConeBase):
 
         Returns
         -------
-        QFDataFrame: contains values corresponding to Strategy, Mean and Std. Values are indexed by number of days
+        QFDataFrame
+            contains values corresponding to Strategy, Mean and Std. Values are indexed by number of days
             from which given cone was evaluated
         """
 

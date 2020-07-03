@@ -33,7 +33,8 @@ def convert_to_list(
 
     Returns
     -------
-    a list of values
+    List, bool
+        a list of values and a bool value indicating whether the convertion was necessary (True) or not (False)
     """
     if isinstance(value, type_of_single_value):
         list_of_values = [value]

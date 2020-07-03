@@ -28,6 +28,17 @@ from qf_lib.common.utils.miscellaneous.function_name import get_function_name
 
 
 class OrderFactory(object):
+    """ Creates Orders.
+
+    Parameters
+    ----------
+    broker: Broker
+        broker used to access the portfolio
+    data_handler: DataHandler
+        data handler used to download prices
+    contract_to_ticker_mapper: ContractTickerMapper
+        object mapping contracts to tickers
+    """
     def __init__(self, broker: Broker, data_handler: DataHandler, contract_to_ticker_mapper: ContractTickerMapper):
         self.broker = broker
         self.data_handler = data_handler
@@ -43,13 +54,19 @@ class OrderFactory(object):
 
         Parameters
         ----------
-        quantities
+        quantities: Mapping[Contract, int]
             mapping of a Contract to an amount of shares which should be bought/sold.
             If number is positive then asset will be bought. Otherwise it will be sold.
-        execution_style
+        execution_style: ExecutionStyle
             execution style of an order (e.g. MarketOrder, StopOrder, etc.)
-        time_in_force
+        time_in_force: TimeInForce
             e.g. 'DAY' (Order valid for one trading session), 'GTC' (good till cancelled)
+
+        Returns
+        --------
+        List[Order]
+            list of generated orders
+
         """
         self._log_function_call(vars())
 
@@ -72,29 +89,30 @@ class OrderFactory(object):
 
         Parameters
         ----------
-        target_quantities
+        target_quantities: Mapping[Contract, int]
             mapping of a Contract to a target number of shares which should be present in the portfolio after the Order
             is executed. After comparing with tolerance the math.floor of the quantity will be taken.
-        execution_style
+        execution_style: ExecutionStyle
             execution style of an order (e.g. MarketOrder, StopOrder, etc.)
-        time_in_force
+        time_in_force: TimeInForce
             e.g. 'DAY' (Order valid for one trading session), 'GTC' (good till cancelled)
-        tolerance_quantities
+        tolerance_quantities: None, Mapping[Contract, int]
             tells what is a tolerance for the target_quantities (in both directions) for each Contract.
             The tolerance is expressed in shares.
             For example: assume that currently the portfolio contains 100 shares of asset A.
             then calling target_orders({A: 101}, ..., tolerance_quantities={A: 2}) will not generate any trades as
             the tolerance of 2 allows the allocation to be 100. while target value is 101.
-
             Another example:
             assume that currently the portfolio contains 100 shares of asset A.
             then calling target_value_order({A: 103}, ..., tolerance_quantities={A: 2}) will generate a BUY order
             for 3 shares
-
-            if abs(target - actual) > tolerance
-                buy or sell assets to match the target
-
+            if abs(target - actual) > tolerance buy or sell assets to match the target
             If tolerance for a specific contract is not provided it is assumed to be 0
+
+        Returns
+        --------
+        List[Order]
+            list of generated orders
         """
         self._log_function_call(vars())
 
@@ -130,13 +148,20 @@ class OrderFactory(object):
 
         Parameters
         ----------
-        values
+        values: Mapping[Contract, int]
             mapping of a Contract to the amount of money which should be spent on the asset (expressed in the currency
             in which the asset is traded)
-        execution_style
+        execution_style: ExecutionStyle
             execution style of an order (e.g. MarketOrder, StopOrder, etc.)
-        time_in_force
+        time_in_force: TimeInForce
             e.g. 'DAY' (Order valid for one trading session), 'GTC' (good till cancelled)
+        frequency: Frequency
+            frequency for the last available price sampling
+
+        Returns
+        --------
+        List[Order]
+            list of generated orders
         """
         self._log_function_call(vars())
 
@@ -153,15 +178,20 @@ class OrderFactory(object):
 
         Parameters
         ----------
-        percentages
+        percentages: Mapping[Contract, int]
             mapping of a Contract to a percentage value of the current portfolio which should be allocated in the asset.
             This is specified as a decimal value (e.g. 0.5 means 50%)
-        execution_style
+        execution_style: ExecutionStyle
             execution style of an order (e.g. MarketOrder, StopOrder, etc.)
-        time_in_force
+        time_in_force: TimeInForce
             e.g. 'DAY' (Order valid for one trading session), 'GTC' (good till cancelled)
-        frequency
+        frequency: Frequency
             frequency for the last available price sampling (daily or minutely)
+
+        Returns
+        --------
+        List[Order]
+            list of generated orders
         """
         self._log_function_call(vars())
 
@@ -177,35 +207,36 @@ class OrderFactory(object):
         Creates a list of Orders by specifying how much should be allocated in each asset after the Orders
         have been executed.
 
-        Example:
-            if we've already have 10M invested in 'SPY US Equity' and you call this method with target value of 11M
-            then only 1M will be spent on this asset
+        For example if we've already have 10M invested in 'SPY US Equity' and you call this method with target value of 11M
+        then only 1M will be spent on this asset
 
         Parameters
         ----------
-        target_values
+        target_values: Mapping[Contract, int]
             mapping of a Contract to a value which should be allocated in the asset after the Order has been executed
             (expressed in the currency in which the asset is traded)
-        execution_style
+        execution_style: ExecutionStyle
             execution style of an order (e.g. MarketOrder, StopOrder, etc.)
-        time_in_force
+        time_in_force: TimeInForce
             e.g. 'DAY' (Order valid for one trading session), 'GTC' (good till cancelled)
-        tolerance_value
+        tolerance_value: float
             tells the us what is a tolerance to the target_values (in both directions).
             The tolerance is expressed in currency units.
             For example: assume that currently the portfolio contains asset A with allocation 10 000$.
             then calling target_value_order({A: 10 500}, ..., tolerance=1 000) will not generate any trades as
             the tolerance of 1 000 allows the allocation to be 10 000$. while target value is 10 500.
-
             Another example:
             For example: assume that currently the portfolio contains asset A with allocation 10 000$.
             then calling target_value_order({A: 13 000}, ..., tolerance=1 000) will generate a BUY order
             corresponding to 3000$ of shares The tolerance of 1 000 does not allow a difference of 3000$
-
-            if abs(target - actual) > tolerance
-                buy or sell assets to match the target
-        frequency
+            if abs(target - actual) > tolerance buy or sell assets to match the target
+        frequency: Frequency
             frequency for the last available price sampling (daily or minutely)
+
+        Returns
+        --------
+        List[Order]
+            list of generated orders
         """
         self._log_function_call(vars())
 
@@ -222,27 +253,31 @@ class OrderFactory(object):
 
         Parameters
         ----------
-        target_percentages
+        target_percentages: Mapping[Contract, int]
             mapping of a Contract to a percentage of a current portfolio value which should be allocated in each asset
             after the Order has been carried out
-        execution_style
+        execution_style: ExecutionStyle
             execution style of an order (e.g. MarketOrder, StopOrder, etc.)
-        time_in_force
+        time_in_force: TimeInForce
             e.g. 'DAY' (Order valid for one trading session), 'GTC' (good till cancelled)
-        tolerance_percent
+        tolerance_percent: float
             tells the us what is a tolerance to the target_percentages (in both directions).
             The tolerance is expressed in percentage points (0.02 corresponds to 2pp of diff)
             For example: assume that currently the portfolio contains asset A with allocation weight of 0.24.
             then calling target_percent_orders({A: 0.25}, ..., tolerance=0.02) will not generate any trades as
             the tolerance of 0.02 allows the allocation to be 0.24 while target percentage is 0.25.
-
             Another example:
             assume that currently the portfolio contains asset A with allocation weight of 0.24.
             then calling target_percent_orders({A: 0.30}, ..., tolerance=0.01) will generate a BUY order corresponding
             to 0.30 - 0.24 = 0.06 of the portfolio value. The tolerance of 0.01 does not allow a difference of 0.06
+            if abs(target - actual) > tolerance buy or sell assets to match the target
+        frequency: Frequency
+            frequency for the last available price sampling (daily or minutely)
 
-            if abs(target - actual) > tolerance
-                buy or sell assets to match the target
+        Returns
+        --------
+        List[Order]
+            list of generated orders
         """
         self._log_function_call(vars())
 
@@ -259,11 +294,9 @@ class OrderFactory(object):
         """
         Returns
         ----------
-        target_quantities
-            Tells how many shares of each asset we should have in order to match the target
-
-        tolerance_quantities
-            Tells what is the tolerance (in number of shares) for each asset
+        Tuple(Mapping[Contract, float], Mapping[Contract, float])
+            Tells how many shares of each asset we should have in order to match the target and what is the tolerance
+            (in number of shares) for each asset
         """
         tickers_to_contract_and_amount_of_money = self._make_tickers_to_contract_and_amount_of_money(
             contract_to_amount_of_money)

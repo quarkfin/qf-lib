@@ -38,7 +38,8 @@ from qf_lib.settings import Settings
 
 
 class QuandlDataProvider(DataProvider):
-    """"
+    """
+    Class providing the Quandl data.
     The table database: WIKI/PRICES offers stock prices, dividends and splits for 3000 US publicly-traded companies.
     This database is updated at 9:15 PM EST every weekday.
     """

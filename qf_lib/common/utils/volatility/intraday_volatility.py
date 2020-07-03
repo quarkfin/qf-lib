@@ -23,14 +23,14 @@ def intraday_volatility(returns: ReturnsSeries, interval_in_minutes: int) -> flo
 
     Parameters
     ----------
-    returns
+    returns: ReturnsSeries
         timeseries of intraday returns
-    interval_in_minutes
+    interval_in_minutes: int
         interval between samples (in minutes)
 
     Returns
     -------
-    intraday_volatility
+    float
         annualized intraday volatility calculated from intraday returns
     """
     unannualized_volatility = std(returns.values)
