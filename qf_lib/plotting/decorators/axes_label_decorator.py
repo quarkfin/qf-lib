@@ -17,10 +17,10 @@ from qf_lib.plotting.decorators.chart_decorator import ChartDecorator
 
 
 class AxesLabelDecorator(ChartDecorator):
+    """
+    Creates a new axes label decorator that shows the specified ``x_label`` and ``y_label`` on the chart.
+    """
     def __init__(self, x_label: str = None, y_label: str = None, secondary_y_label: str = None, key: str = None):
-        """
-        Creates a new axes label decorator that shows the specified ``x_label`` and ``y_label`` on the chart.
-        """
         super().__init__(key)
         self._x_label = x_label
         self._y_label = y_label

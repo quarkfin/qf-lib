@@ -31,14 +31,15 @@ def create_skewness_chart(series: QFSeries, title: str = None) -> LineChart:
 
     Parameters
     ----------
-    series
+    series: QFSeries
         ``QFSeries`` to plot on the chart.
-    title
+    title: str
         title of the graph, specify ``None`` if you don't want the chart to show a title.
 
     Returns
     -------
-    The constructed ``LineChart``.
+    LineChart
+        The constructed ``LineChart``.
     """
 
     original_price_series = series.to_prices(1)

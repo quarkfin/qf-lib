@@ -26,15 +26,14 @@ from qf_lib.plotting.decorators.simple_legend_item import SimpleLegendItem
 class HorizontalLineDecorator(ChartDecorator, SimpleLegendItem):
     """
     A simple decorator that displays a horizontal line.
+
+    Constructs a new horizontal line decorator. The ``plot_settings`` are passed directly to matplotlib's
+    ``axhline``. See http://matplotlib.org/api/pyplot_api.html#matplotlib.pyplot.axhline for valid settings.
+
+    When plotting for the web, the ``plot_settings`` are passed directly to HighChart's plotLines options.
     """
 
     def __init__(self, y: ScalarType, color: str = 'k', key: str = None, **plot_settings: Any):
-        """
-        Constructs a new horizontal line decorator. The ``plot_settings`` are passed directly to matplotlib's
-        ``axhline``. See http://matplotlib.org/api/pyplot_api.html#matplotlib.pyplot.axhline for valid settings.
-
-        When plotting for the web, the ``plot_settings`` are passed directly to HighChart's plotLines options.
-        """
         ChartDecorator.__init__(self, key)
         SimpleLegendItem.__init__(self)
         self._y = y
@@ -73,15 +72,14 @@ class HorizontalLineDecorator(ChartDecorator, SimpleLegendItem):
 class VerticalLineDecorator(ChartDecorator, SimpleLegendItem):
     """
     A simple decorator that displays a vertical line.
+
+    Constructs a new vertical line decorator. The ``plot_settings`` are passed directly to matplotlib's ``axvline``.
+    See http://matplotlib.org/api/pyplot_api.html#matplotlib.pyplot.axvline for valid settings.
+
+    When plotting for the web, the ``plot_settings`` are passed directly to HighChart's plotLines options.
+
     """
-
     def __init__(self, x: ScalarType, color: str = 'k', key: str = None, **plot_settings: Any):
-        """
-        Constructs a new vertical line decorator. The ``plot_settings`` are passed directly to matplotlib's ``axvline``.
-        See http://matplotlib.org/api/pyplot_api.html#matplotlib.pyplot.axvline for valid settings.
-
-        When plotting for the web, the ``plot_settings`` are passed directly to HighChart's plotLines options.
-        """
         ChartDecorator.__init__(self, key)
         SimpleLegendItem.__init__(self)
         self._x = x

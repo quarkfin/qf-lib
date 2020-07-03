@@ -20,19 +20,20 @@ from qf_lib.plotting.decorators.simple_legend_item import SimpleLegendItem
 
 
 class MovingAverageDecorator(ChartDecorator, SimpleLegendItem):
-    def __init__(self, window_size: int, series: QFSeries, key: str = None, **plot_settings: Any):
-        """
-        Creates a new decorator which draws a moving average line.
+    """
+    Creates a new decorator which draws a moving average line.
 
-        Parameters
-        ----------
-        window_size
-            window size which will be used to draw moving average line
-        series
-            series to calculate the moving average line for
-        plot_settings
-            additional plot settings for matplotlib
-        """
+    Parameters
+    ----------
+    window_size: int
+       window size which will be used to draw moving average line
+    series: QFSeries
+       series to calculate the moving average line for
+    plot_settings: Any
+       additional plot settings for matplotlib
+    """
+
+    def __init__(self, window_size: int, series: QFSeries, key: str = None, **plot_settings: Any):
         ChartDecorator.__init__(self, key)
         SimpleLegendItem.__init__(self)
         self.window_size = window_size

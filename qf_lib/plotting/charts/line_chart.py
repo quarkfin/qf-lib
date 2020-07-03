@@ -23,18 +23,27 @@ from qf_lib.plotting.charts.chart import Chart
 class LineChart(Chart):
     """
     Simple line chart. It can plot both QFSeries and DataFrames.
-    """
+    By default the ``start_x`` and ``end_x`` will be determined by the series added to the chart. So whatever
+    the earliest data point is will determine the ``start_x``.
 
+    Parameters
+    ----------
+    start_x: Any
+        if not set to None, the chart x-axis will begin at the specified ``start_x`` value
+    end_x: Any
+        if not set to None, the chart x-axis will end at the specified ``end_x`` value.
+    upper_y: Anny
+       the upper bound of the y-axis.
+    lower_y: Anny
+       the lower bound of the y-axis.
+    log_scale: bool
+        use log scale.
+    rotate_x_axis: bool
+        rotate the x-axis.
+    """
     def __init__(self, start_x: any = None, end_x: any = None, upper_y: any = None, lower_y: any = None,
                  log_scale: bool = False, rotate_x_axis=False):
-        """
-        Creates a new LineChart instance.
 
-        If ``start_x`` is not None, then the chart x-axis will begin at the specified ``start_x`` value.
-        If ``end_x`` is not None, then the chart x-axis will end at the specified ``end_x`` value.
-        By default the ``start_x`` and ``end_x`` will be determined by the series added to the chart. So whatever
-        the earliest data point is will determine the ``start_x``.
-        """
         super().__init__(start_x, end_x, upper_y, lower_y)
         self.log_scale = log_scale
         self._rotate_x_axis = rotate_x_axis

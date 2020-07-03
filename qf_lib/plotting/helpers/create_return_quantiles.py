@@ -33,15 +33,16 @@ def create_return_quantiles(returns: QFSeries, live_start_date: datetime = None,
 
     Parameters
     ----------
-    returns
+    returns: QFSeries
         The returns series to plot on the chart.
-    live_start_date
+    live_start_date: datetime
         The live start date that will determine whether a swarm plot should be rendered.
-    x_axis_labels_rotation
+    x_axis_labels_rotation: int
 
     Returns
     -------
-    A new ``BoxplotChart`` instance.
+    BoxplotChart
+        A new ``BoxplotChart`` instance.
     """
 
     simple_returns = returns.to_simple_returns()

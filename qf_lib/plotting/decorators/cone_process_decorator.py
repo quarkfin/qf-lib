@@ -20,30 +20,30 @@ from qf_lib.plotting.decorators.chart_decorator import ChartDecorator
 
 
 class ConeProcessDecorator(ChartDecorator):
+    """
+    Puts cone on top of the timeseries starting from given date.
+
+    Parameters
+    ----------
+    mean: float
+        mean return of the process. expressed in the frequency of samples (not annualised)
+    std: float
+        std of returns of the process. expressed in the frequency of samples (not annualised)
+    steps: int
+        length of the cone that we are creating
+    starting_value: float
+        corresponds to the starting price of the instrument
+    cone_stds: Sequence[Union[float, int]], float, int
+        defines the size of the cones in standard deviations
+    colors_alpha: float
+        sets the level of transparency of the cone
+    key: str
+        see ChartDecorator.key.__init__#key
+    """
 
     def __init__(self, mean: float, std: float, steps: int, starting_value=1,
                  cone_stds: Union[Sequence[Union[float, int]], float, int] = (1, 2),
                  colors_alpha: float = 0.25, key: str = None):
-        """
-        Puts cone on top of the timeseries starting form given date.
-
-        Parameters
-        ----------
-        mean
-            mean return of the process. expressed in the frequency of samples (not annualised)
-        std
-            std of returns of the process. expressed in the frequency of samples (not annualised)
-        steps:
-            length of the cone that we are creating
-        starting_value
-            corresponds to the starting price of the instrument
-        cone_stds
-            defines the size of the cones in standard deviations
-        colors_alpha
-            sets the level of transparency of the cone
-        key
-            see ChartDecorator.key.__init__#key
-        """
         super().__init__(key)
 
         self._mean = mean

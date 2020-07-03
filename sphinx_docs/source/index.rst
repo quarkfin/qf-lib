@@ -11,6 +11,7 @@ Welcome to QF Lib's documentation!
    containers
    data_providers
    document_utils
+   plotting
    indicators
    portfolio_construction
 

@@ -22,6 +22,8 @@ from qf_lib.plotting.charts.surface_chart_3d import SurfaceChart3D
 
 
 def create_dd_probability_chart_3d(prices_tms: QFSeries) -> SurfaceChart3D:
+    """Create a 3d drawdowns probability chart"""
+
     def count_dd_above_threshold(drawdown_series: Sequence, threshold: float):
         return sum(1 for dd in drawdown_series if dd > threshold)
 

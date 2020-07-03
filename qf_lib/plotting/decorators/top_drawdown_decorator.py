@@ -24,24 +24,21 @@ from qf_lib.plotting.decorators.chart_decorator import ChartDecorator
 class TopDrawdownDecorator(ChartDecorator):
     """
     Highlights the top drawdowns in a specified series.
+
+    The top ``count`` amount of drawdowns will be highlighted. If ``colors`` is ``None`` then a default list of
+    colours will be used, you can override it by specifying a list of strings containing color names or hex codes.
+
+    Parameters
+    ----------
+    prices: QFSeries
+        A series from which drawdowns will be calculated.
+    count: int
+        The amount of longest drawdowns to highlight.
+    colors: List[str]
+        A list of colours to use to highlight the drawdowns.
     """
 
     def __init__(self, prices: QFSeries, count: int, colors: List[str] = None, key: str = None):
-        """
-        Construct a new TopDrawdownDecorator.
-
-        The top ``count`` amount of drawdowns will be highlighted. If ``colors`` is ``None`` then a default list of
-        colours will be used, you can override it by specifying a list of strings containing color names or hex codes.
-
-        Parameters
-        ----------
-        prices
-            A series from which drawdowns will be calculated.
-        count
-            The amount of longest drawdowns to highlight.
-        colors
-            A list of colours to use to highlight the drawdowns.
-        """
         super().__init__(key)
         if colors is None:
             self._color = Chart.get_axes_colors()[3]

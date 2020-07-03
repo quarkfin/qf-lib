@@ -31,19 +31,20 @@ def create_returns_similarity(strategy: QFSeries, benchmark: QFSeries, mean_norm
 
     Parameters
     ----------
-    strategy
+    strategy: QFSeries
         The strategy series to plot.
-    benchmark
+    benchmark: QFSeries
         The benchmark series to plot.
-    mean_normalization
+    mean_normalization: bool
         Whether to perform mean normalization on the series data.
-    std_normalization
+    std_normalization: bool
         Whether to perform variance normalization on the series data.
-    frequency:
+    frequency: Frequency
         Returns can be aggregated in to specific frequency before plotting the chart
     Returns
     -------
-    A newly created KDEChart instance.
+    KDEChart
+        A newly created KDEChart instance.
     """
     chart = KDEChart()
     colors = Chart.get_axes_colors()

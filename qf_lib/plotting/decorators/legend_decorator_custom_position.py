@@ -25,17 +25,18 @@ class LegendDecoratorCustomPosition(ChartDecorator):
     A decorator which draws a legend on the graph. The legend titles are automatically determined based on what was
     specified during decorator creation and series addition.
     Uses custom forced legend position placement.
+
+    Parameters
+    -----------
+     legend_placement: AxisLocation
+        tuple(x-coordinate, y-coordinate), referencing placement of left bottom corner of legend box.
+        Defines where the legend should be placed on the chart, in axis coordinates. e.g (1,0) bottom right corner
+        of plot
+    key: str
+        the identifier of the decorator
     """
 
     def __init__(self, legend_placement: AxisLocation = AxisLocation.LOWER_RIGHT, key: str = None):
-        """
-        legend_placement
-            tuple(x-coordinate, y-coordinate), referencing placement of left bottom corner of legend box.
-            Defines where the legend should be placed on the chart, in axis coordinates. e.g (1,0) bottom right corner
-            of plot
-        key
-            the identifier of the decorator
-        """
         super().__init__(key)
         self.legend_placement = legend_placement
         self.item_labels = []
@@ -46,9 +47,9 @@ class LegendDecoratorCustomPosition(ChartDecorator):
 
         Parameters
         ----------
-        item
+        item: SimpleLegendItem
             a decorator which should be described in the legend or the matplotlib's Artist object
-        label
+        label: str
             a label which should be assigned to a given decorator
         """
         if not isinstance(label, str):

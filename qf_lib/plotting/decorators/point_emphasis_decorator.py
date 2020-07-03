@@ -22,32 +22,35 @@ from qf_lib.plotting.decorators.simple_legend_item import SimpleLegendItem
 
 
 class PointEmphasisDecorator(ChartDecorator, SimpleLegendItem):
+    """
+    Creates a new marker for `series_data_element` for `x=series_index`. For a timeseries, you can specify
+    the time that you wish to be emphasised.
+
+    Parameters
+    ----------
+    series_data_element: DataElementDecorator
+        The DataElementDecorator which should be decorated with an emphasised point.
+    coordinates: Tuple[Any, Any]
+        The x and y coordinate of the point that should be emphasised. The x and y coordinates should be expressed
+        in data coordinates (e.g. the x coordinate should be a date if x-axis contains dates).
+    color: str
+        color of the marker; by default it will be the same as the decorated line
+    decimal_points: int
+        number of decimal points that should be shown in the point's label
+    label_format: str
+        A format string specifying how the label should be displayed. Takes two parameters: the index and value.
+        useful values: ' {:0.1E}',  '  {:0.1f}'
+    key: str
+        see: ChartDecorator.__init__#key
+    use_secondary_axes: bool
+        determines whether this PointEmphasis belongs on the secondary axis.
+    move_point: bool
+    font_size: int
+        size of font
+    """
     def __init__(self, series_data_element: DataElementDecorator, coordinates: Tuple[Any, Any], color: str = None,
                  decimal_points: int = 2, label_format: str = '  {:.4g}', key: str = None,
                  use_secondary_axes: bool = False, move_point: bool = True, font_size: int = 15):
-        """
-        Creates a new marker for `series_data_element` for `x=series_index`. For a timeseries, you can specify
-        the time that you wish to be emphasised.
-
-        Parameters
-        ----------
-        series_data_element
-            The DataElementDecorator which should be decorated with an emphasised point.
-        coordinates
-            The x and y coordinate of the point that should be emphasised. The x and y coordinates should be expressed
-            in data coordinates (e.g. the x coordinate should be a date if x-axis contains dates).
-        color
-            color of the marker; by default it will be the same as the decorated line
-        decimal_points
-            number of decimal points that should be shown in the point's label
-        label_format
-            A format string specifying how the label should be displayed. Takes two parameters: the index and value.
-            useful values: ' {:0.1E}',  '  {:0.1f}'
-        key
-            see: ChartDecorator.__init__#key
-        use_secondary_axes
-            determines whether this PointEmphasis belongs on the secondary axis.
-        """
         # label_format = ' {:0.1E}'
         ChartDecorator.__init__(self, key)
         SimpleLegendItem.__init__(self)

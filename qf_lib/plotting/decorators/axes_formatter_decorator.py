@@ -21,13 +21,24 @@ from qf_lib.plotting.decorators.chart_decorator import ChartDecorator
 
 
 class AxesFormatterDecorator(ChartDecorator):
+    """
+    Creates a new Axes Formatter decorator that changes the way tickers in the x/y-axis are displayed.
+
+    See here for a list of valid axes formatters: http://matplotlib.org/api/ticker_api.html#tick-formatting.
+
+    Parameters
+    -----------
+    x_major: Formatter
+    x_minor: Formatter
+    y_major: Formatter
+    y_minor: Formatter
+    use_secondary_axes: bool
+        use secondary axes (by default False)
+    key: str
+        see: ChartDecorator.__init__#key
+    """
     def __init__(self, x_major: Formatter = None, x_minor: Formatter = None, y_major: Formatter = None,
                  y_minor: Formatter = None, use_secondary_axes: bool = False, key: str = None):
-        """
-        Creates a new Axes Formatter decorator that changes the way tickers in the x/y-axis are displayed.
-
-        See here for a list of valid axes formatters: http://matplotlib.org/api/ticker_api.html#tick-formatting.
-        """
         super().__init__(key)
         self._x_major = x_major
         self._x_minor = x_minor

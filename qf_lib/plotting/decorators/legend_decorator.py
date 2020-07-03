@@ -26,15 +26,16 @@ class LegendDecorator(ChartDecorator):
     """
     A decorator which draws a legend on the graph. The legend titles are automatically determined based on what was
     specified during decorator creation and series addition.
+
+    Parameters
+    -----------
+    legend_placement: Location
+        where the legend should be placed on the chart
+    key: str
+        the identifier of the decorator
     """
 
     def __init__(self, legend_placement: Location = Location.BEST, key: str = None):
-        """
-        legend_placement
-            where the legend should be placed on the chart
-        key
-            the identifier of the decorator
-        """
         super().__init__(key)
         self.legend_placement = legend_placement
         self.item_labels = []
@@ -45,9 +46,9 @@ class LegendDecorator(ChartDecorator):
 
         Parameters
         ----------
-        item
+        item: SimpleLegendItem
             a decorator which should be described in the legend or the matplotlib's Artist object
-        label
+        label: str
             a label which should be assigned to a given decorator
         """
         if not isinstance(label, str):

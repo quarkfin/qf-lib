@@ -36,6 +36,17 @@ from qf_lib.plotting.decorators.legend_decorator import ChartDecorator
 class Chart(object):
     """
     Abstract class for all the charts.
+
+    Parameters
+    ----------
+    start_x: Any
+       The upper bound of the x-axis.
+    end_x: Any
+       The lower bound of the x-axis.
+    upper_y: Anny
+       The upper bound of the y-axis.
+    lower_y: Anny
+       The lower bound of the y-axis.
     """
 
     # Static lock used by all charts to ensure more than one chart isn't being plotted at the same time.
@@ -63,22 +74,21 @@ class Chart(object):
         """
         x and y ticks' labels' font weight. Acceptable values:
         For more info, see: http://matplotlib.org/api/text_api.html#matplotlib.text.Text
-
         Acceptable values:
-            [a numeric value in range 0-1000 | ‘ultralight’ | ‘light’ | ‘normal’ | ‘regular’ | ‘book’ | ‘medium’ |
-            ‘roman’ |‘semibold’ | ‘demibold’ | ‘demi’ | ‘bold’ | ‘heavy’ | ‘extra bold’ | ‘black’ ]
+        [a numeric value in range 0-1000 | ‘ultralight’ | ‘light’ | ‘normal’ | ‘regular’ | ‘book’ | ‘medium’ |
+        ‘roman’ |‘semibold’ | ‘demibold’ | ‘demi’ | ‘bold’ | ‘heavy’ | ‘extra bold’ | ‘black’ ]
         """
 
         self.tick_fontsize = None
         """
         x and y ticks' labels' font size. Acceptable values:
-            [size in points | ‘xx-small’ | ‘x-small’ | ‘small’ | ‘medium’ | ‘large’ | ‘x-large’ | ‘xx-large’ ]
+        [size in points | ‘xx-small’ | ‘x-small’ | ‘small’ | ‘medium’ | ‘large’ | ‘x-large’ | ‘xx-large’ ]
         """
 
         self.tick_color = None
         """
         Foreground color of all x and y ticks' labels. Acceptable values:
-            Any matplotlib color, for example "black" or "#8ac72e".
+        Any matplotlib color, for example "black" or "#8ac72e".
         """
 
         self._orientation = Orientation.Vertical
@@ -112,7 +122,7 @@ class Chart(object):
 
         Parameters
         ----------
-        figsize
+        figsize: Tuple[float, float]
             The figure size to draw the chart at in inches. This is a tuple of (width, height) passed directly
             to matplotlib's ``plot`` function. The values are expressed in inches.
         """
@@ -156,7 +166,7 @@ class Chart(object):
 
         Parameters
         ----------
-        data_element_decorators
+        data_element_decorators: List[DataElementDecorator]
             non-empty list of DataElementDecorators that should be plotted on the chart
         """
         raise NotImplementedError
@@ -230,6 +240,11 @@ class Chart(object):
         Each decorator must have a unique key that also doesn't clash with
         any series keys because both are used for legend label data. If there is already a decorator
         registered under the specified key, the operation will raise the AssertionError.
+
+        Parameters
+        ------------
+        decorator: ChartDecorator
+            decorator to be added
         """
         key = decorator.key
         assert key not in self._decorators, "The key '{}' is already used for another decorator.".format(key)

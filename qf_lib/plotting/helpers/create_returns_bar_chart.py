@@ -33,6 +33,17 @@ def create_returns_bar_chart(returns: QFSeries, frequency: Frequency = Frequency
     """
     Constructs a new returns bar chart based on the returns specified. By default a new annual returns bar chart will
     be created.
+
+    Parameters
+    ----------
+    returns: QFSeries
+        The returns series to use in the chart.
+    frequency: Frequency
+        frequency of the returns after aggregation
+
+    Returns
+    --------
+    BarChart
     """
     colors = Chart.get_axes_colors()
     # Calculate data.

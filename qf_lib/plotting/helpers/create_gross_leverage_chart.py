@@ -26,12 +26,13 @@ def create_gross_leverage_chart(gross_lev: QFSeries) -> LineChart:
 
     Parameters
     ----------
-    gross_lev
+    gross_lev: QFSeries
         Gross leverage as returned by the extract_rets_pos_txn_from_zipline function.
 
     Returns
     -------
     LineChart
+        Created line chart
     """
     result = LineChart()
 

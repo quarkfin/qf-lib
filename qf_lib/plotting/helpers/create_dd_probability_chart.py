@@ -27,6 +27,21 @@ from qf_lib.plotting.decorators.title_decorator import TitleDecorator
 
 
 def create_dd_probability_chart(prices_tms: QFSeries, bear_market_definition: float = 0.2) -> Tuple[Chart, Chart]:
+    """Creates drawdowns probability chart.
+
+    Parameters
+    ----------
+    prices_tms: QFSeries
+        timeseries of prices
+    bear_market_definition: float
+        definition of bear market threshold
+
+    Returns
+    -------
+    Tuple[Chart, Chart]
+        Returns two charts - one showing the probability of drawdowns going beyond a certain level and one showing the
+        marginal increase of probability of drawdowns going beyond the given level.
+    """
 
     def count_dd_above_threshold(drawdown_series: Sequence, threshold: float):
         return sum(1 for dd in drawdown_series if dd > threshold)

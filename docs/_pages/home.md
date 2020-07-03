@@ -14,7 +14,7 @@ feature_row:
     alt: "Multi-tool for any financial research"
     title: "Multi-tool for any financial research"
     excerpt: "QF-Lib provides various tools for portfolio construction, time series analysis, risk monitoring, and tools to process data and to present the results."
-    url: "/docs/about/#multi-tool-for-any-financial-research"
+    url: "/about/#multi-tool-for-any-financial-research"
     btn_class: "btn--primary"
     btn_label: "Learn more"
   - image_path: /assets/images/open-source.png
@@ -28,7 +28,7 @@ feature_row:
     alt: "Powerful, event-driven Backtester"
     title: "Powerful, event-driven Backtester"
     excerpt: "A large part of the project is dedicated to backtesting investment strategies and allows simulating events such as daily market opening or closing."
-    url: "/docs/about/#a-powerful-event-driven-backtester"
+    url: "/about/#a-powerful-event-driven-backtester"
     btn_class: "btn--primary"
     btn_label: "Learn more"
 ---

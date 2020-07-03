@@ -23,35 +23,36 @@ from qf_lib.plotting.helpers.index_translator import IndexTranslator
 
 
 class BarChart(Chart):
+    """
+    Creates a new bar chart with the specified ``orientation``.
+
+    Parameters
+    ----------
+    orientation: Orientation
+       The orientation of the bar chart, either Horizontal or Vertical.
+    stacked: bool
+       default: True; if True then bars corresponding to different DataElementDecorators will be stacked.
+       Otherwise bars will be plotted next to each other.
+    index_translator: IndexTranslator
+       the mapper of index coordinates (e.g. you may use labels as index in a pandas series and this translator
+       will ensure that it is plotted correctly)
+    thickness: float
+       how thick should each bar be (expressed in numeric data coordinates system)
+    start_x: datetime.datetime
+       The date where the x-axis should begin.
+    end_x: datetime.datetime
+       The date where the x-axis should end.
+    upper_y: float
+       The upper bound of the y-axis.
+    lower_y: float
+       The lower bound of the y-axis.
+    plot_settings
+       Keyword arguments to pass to the ``plot`` function.
+    """
+
     def __init__(self, orientation: Orientation, stacked: bool = True, index_translator: IndexTranslator = None,
                  thickness: float = 0.8, start_x: datetime.datetime = None, end_x: datetime.datetime = None,
                  upper_y: float = None, lower_y: float = None, **plot_settings):
-        """
-        Creates a new bar chart with the specified ``orientation``.
-
-        Parameters
-        ----------
-        orientation
-            The orientation of the bar chart, either Horizontal or Vertical.
-        stacked
-            default: True; if True then bars corresponding to different DataElementDecorators will be stacked.
-            Otherwise bars will be plotted next to each other.
-        index_translator:
-            the mapper of index coordinates (e.g. you may use labels as index in a pandas series and this translator
-            will ensure that it is plotted correctly)
-        thickness
-            how thick should each bar be (expressed in numeric data coordinates system)
-        start_x
-            The date where the x-axis should begin.
-        end_x
-            The date where the x-axis should end.
-        upper_y
-            The upper bound of the y-axis.
-        lower_y
-            The lower bound of the y-axis.
-        plot_settings
-            Keyword arguments to pass to the ``plot`` function.
-        """
         Chart.__init__(self, start_x, end_x, upper_y, lower_y)
 
         self.index_translator = index_translator

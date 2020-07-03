@@ -26,6 +26,20 @@ from qf_lib.plotting.decorators.axes_formatter_decorator import PercentageFormat
 
 
 class RegressionChart(Chart):
+    """
+    Creates a regression chart.
+
+    Parameters
+    -----------
+    benchmark_tms: QFSeries
+        timeseries of the benchmark
+    strategy_tms: QFSeries
+        timeseries of the strategy
+    tail_plot: bool
+        plot tail data
+    custom_title: bool
+        add custom title to the plot
+    """
     def __init__(self, benchmark_tms: QFSeries, strategy_tms: QFSeries, tail_plot=False, custom_title=False):
         super().__init__()
         self.assert_is_qfseries(benchmark_tms)
