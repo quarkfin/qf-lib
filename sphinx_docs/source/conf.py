@@ -71,3 +71,4 @@ html_context = {
 # -- Extension configuration -------------------------------------------------
 autosummary_generate = True
 autodoc_mock_imports = ["cvxopt", "ibapi", "blpapi"]
+html_show_sourcelink = False

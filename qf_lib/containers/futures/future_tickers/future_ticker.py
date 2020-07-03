@@ -24,6 +24,19 @@ from qf_lib.containers.series.qf_series import QFSeries
 class FutureTicker(Ticker, metaclass=abc.ABCMeta):
     """Class to represent a Ticker, which gathers multiple future contracts.
 
+    The FutureTicker class extends the standard Ticker class. It allows the user to use only a Ticker abstraction,
+    which provides all of the standard Ticker functionalities (e.g. just as standard tickers, it can be used along with
+    DataHandler functions get_price, get_last_available_price, get_current_price etc.), without the need to manually
+    manage the rolling of the contracts or to select a certain specific Ticker.
+
+    .. note:
+        While downloading historical data (using for example get_price function) all of the prices would be provided for
+        the current specific ticker, e.g. in case of the family of Cotton future contracts, if on a certain day the specific
+        contract returned by the FutureTicker will be the December 2019 Cotton contract, all of the prices returned by
+        get_price will pertain to this specific December contract and no prices chaining will occur.
+        In order to use the get_price function along with futures contracts chaining (and eventual adjustments),
+        the FuturesChain object has to be used.
+
     Parameters
     -----------
     name: str

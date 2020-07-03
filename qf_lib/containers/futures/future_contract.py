@@ -20,6 +20,11 @@ from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 class FutureContract(object):
     """ Class representing a single future contract.
 
+    The FutureContract is a simple class representing one futures contract. The FutureContract objects are used by the
+    FuturesChain, in order to provide the contracts chaining possibilities. It requires 3 parameters: ticker, which is
+    the symbol of the specific future contract (e.g. BloombergFutureTicker(“CTZ9 Comdty”)), expiration date of the
+    contract and a PricesDataFrame, containing dates with price field values.
+
     Parameters
     ----------
     ticker: Ticker
