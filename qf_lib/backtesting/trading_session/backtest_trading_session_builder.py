@@ -13,7 +13,7 @@
 #     limitations under the License.
 
 from datetime import datetime
-from typing import List, Tuple, Type
+from typing import List, Tuple, Type, Dict
 
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
 from qf_lib.backtesting.broker.backtest_broker import BacktestBroker
@@ -39,6 +39,7 @@ from qf_lib.backtesting.monitoring.backtest_result import BacktestResult
 from qf_lib.backtesting.monitoring.dummy_monitor import DummyMonitor
 from qf_lib.backtesting.monitoring.light_backtest_monitor import LightBacktestMonitor
 from qf_lib.backtesting.order.order_factory import OrderFactory
+from qf_lib.backtesting.orders_filter.orders_filter import OrdersFilter
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.backtesting.position_sizer.initial_risk_position_sizer import InitialRiskPositionSizer
 from qf_lib.backtesting.position_sizer.position_sizer import PositionSizer
@@ -97,10 +98,11 @@ class BacktestTradingSessionBuilder(object):
 
         self._contract_ticker_mapper = DummyBloombergContractTickerMapper()
         self._commission_model = FixedCommissionModel(0.0)
-        self._slippage_model = PriceBasedSlippage(0.0)
+        self._slippage_model = PriceBasedSlippage(0.0, data_provider, self._contract_ticker_mapper, None)
         self._position_sizer_type = SimplePositionSizer
         self._position_sizer_args = tuple()
         self._position_sizer_kwargs = dict()
+        self._orders_filter_types_params = []  # type: List[Tuple[Type[OrdersFilter], Dict]]
 
         self._data_provider = data_provider
         self._settings = settings
@@ -193,6 +195,7 @@ class BacktestTradingSessionBuilder(object):
             data provider used to download data and prices
         """
         self._data_provider = data_provider
+        self._slippage_model.set_data_provider(data_provider)
 
     def set_monitor_type(self, monitor_type: Type[AbstractMonitor]):
         """Sets type of the monitor.
@@ -264,6 +267,9 @@ class BacktestTradingSessionBuilder(object):
         self._position_sizer_args = args
         self._position_sizer_kwargs = kwargs
 
+    def add_orders_filter(self, orders_filter_type: Type[OrdersFilter], **kwargs):
+        self._orders_filter_types_params.append((orders_filter_type, kwargs))
+
     @staticmethod
     def _create_event_manager(timer, notifiers: Notifiers):
         event_manager = EventManager(timer)
@@ -326,6 +332,7 @@ class BacktestTradingSessionBuilder(object):
         self._broker = BacktestBroker(self._portfolio, self._execution_handler)
         self._order_factory = OrderFactory(self._broker, self._data_handler, self._contract_ticker_mapper)
         self._position_sizer = self._position_sizer_setup()
+        self._orders_filters = self._orders_filter_setup()
 
         self._logger.info(
             "\n".join([
@@ -359,6 +366,7 @@ class BacktestTradingSessionBuilder(object):
             start_date=start_date,
             end_date=end_date,
             position_sizer=self._position_sizer,
+            orders_filters=self._orders_filters,
             data_handler=self._data_handler,
             timer=self._timer,
             notifiers=self._notifiers,
@@ -383,3 +391,10 @@ class BacktestTradingSessionBuilder(object):
         return self._position_sizer_type(
             self._broker, self._data_handler, self._order_factory, self._contract_ticker_mapper,
             *self._position_sizer_args, **self._position_sizer_kwargs)
+
+    def _orders_filter_setup(self):
+        orders_filters = []
+        for orders_filter_type, kwargs in self._orders_filter_types_params:
+            orders_filter = orders_filter_type(self._data_handler, self._contract_ticker_mapper, **kwargs)
+            orders_filters.append(orders_filter)
+        return orders_filters

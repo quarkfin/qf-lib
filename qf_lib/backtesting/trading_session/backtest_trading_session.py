@@ -21,6 +21,7 @@ from qf_lib.backtesting.events.event_manager import EventManager
 from qf_lib.backtesting.events.notifiers import Notifiers
 from qf_lib.backtesting.monitoring.backtest_monitor import BacktestMonitor
 from qf_lib.backtesting.order.order_factory import OrderFactory
+from qf_lib.backtesting.orders_filter.orders_filter import OrdersFilter
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.backtesting.position_sizer.position_sizer import PositionSizer
 from qf_lib.backtesting.trading_session.trading_session import TradingSession
@@ -38,9 +39,9 @@ class BacktestTradingSession(TradingSession):
     """
 
     def __init__(self, contract_ticker_mapper: ContractTickerMapper, start_date, end_date,
-                 position_sizer: PositionSizer, data_handler: DataHandler, timer: SettableTimer,
-                 notifiers: Notifiers, portfolio: Portfolio, events_manager: EventManager, monitor: BacktestMonitor,
-                 broker: BacktestBroker, order_factory: OrderFactory, frequency: Frequency):
+                 position_sizer: PositionSizer, orders_filters: Sequence[OrdersFilter], data_handler: DataHandler,
+                 timer: SettableTimer, notifiers: Notifiers, portfolio: Portfolio, events_manager: EventManager,
+                 monitor: BacktestMonitor, broker: BacktestBroker, order_factory: OrderFactory, frequency: Frequency):
         """
         Set up the backtest variables according to what has been passed in.
         """
@@ -57,6 +58,7 @@ class BacktestTradingSession(TradingSession):
         self.data_handler = data_handler
         self.portfolio = portfolio
         self.position_sizer = position_sizer
+        self.orders_filters = orders_filters
         self.monitor = monitor
         self.timer = timer
         self.order_factory = order_factory

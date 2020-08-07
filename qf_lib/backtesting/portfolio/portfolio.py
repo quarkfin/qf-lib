@@ -22,7 +22,7 @@ from numpy import sign
 from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
-from qf_lib.backtesting.portfolio.backtest_position import BacktestPosition
+from qf_lib.backtesting.portfolio.backtest_position import BacktestPosition, BacktestPositionSummary
 from qf_lib.backtesting.portfolio.position_factory import BacktestPositionFactory
 from qf_lib.backtesting.portfolio.trade import Trade
 from qf_lib.backtesting.portfolio.transaction import Transaction
@@ -133,7 +133,7 @@ class Portfolio(object):
             self.net_liquidation += position_value
             self.gross_exposure_of_positions += abs(position_exposure)
             if record:
-                current_positions[contract] = position_exposure
+                current_positions[contract] = BacktestPositionSummary(position)
 
         if record:
             self._dates.append(self.timer.now())

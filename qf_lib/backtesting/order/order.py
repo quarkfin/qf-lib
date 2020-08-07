@@ -36,7 +36,7 @@ class Order(object):
         self.order_state = order_state
 
     def __str__(self):
-        return 'Order:\n' \
+        return '\nOrder:\n' \
                '\tid: {}\n' \
                '\tcontract: {}\n' \
                '\tquantity: {}\n' \

@@ -103,7 +103,7 @@ class TestMarketOnOpenExecutionStyle(TestCase):
         self.spied_monitor = spy(self.monitor)
         self.portfolio = mock()
 
-        slippage_model = PriceBasedSlippage(0.0)
+        slippage_model = PriceBasedSlippage(0.0, self.data_handler, self.contracts_to_tickers_mapper)
         self.exec_handler = SimulatedExecutionHandler(self.data_handler, self.timer, self.scheduler, self.spied_monitor,
                                                       self.commission_model, self.contracts_to_tickers_mapper,
                                                       self.portfolio, slippage_model,

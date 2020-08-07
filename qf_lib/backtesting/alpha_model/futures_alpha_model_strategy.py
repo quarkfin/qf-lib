@@ -67,6 +67,11 @@ class FuturesAlphaModelStrategy(AlphaModelStrategy):
         self.logger.info("Close all positions for expired contracts")
         close_orders = self._close_old_futures_contracts(signals)
 
+        for orders_filter in self._orders_filters:
+            self.logger.info("Filtering Orders based on selected requirements: {}".format(orders_filter))
+            orders = orders_filter.adjust_orders(orders)
+            close_orders = orders_filter.adjust_orders(close_orders)
+
         self.logger.info("Cancelling all open orders")
         self._broker.cancel_all_open_orders()
 

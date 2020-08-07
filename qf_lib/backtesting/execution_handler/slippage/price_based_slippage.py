@@ -13,12 +13,13 @@
 #     limitations under the License.
 
 import math
-from typing import Sequence, Tuple
+from datetime import datetime
+from typing import Sequence, Optional
 
+from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.execution_handler.slippage.base import Slippage
-from qf_lib.backtesting.order.execution_style import MarketOrder, StopOrder
 from qf_lib.backtesting.order.order import Order
-from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
+from qf_lib.data_providers.data_provider import DataProvider
 
 
 class PriceBasedSlippage(Slippage):
@@ -26,30 +27,23 @@ class PriceBasedSlippage(Slippage):
     Calculates the slippage by using some fixed fraction of the current securities' price (e.g. always 0.01%).
     """
 
-    def __init__(self, slippage_rate: float):
+    def __init__(self, slippage_rate: float, data_provider: DataProvider, contract_ticker_mapper: ContractTickerMapper,
+                 max_volume_share_limit: Optional[float] = None):
+        super().__init__(data_provider, contract_ticker_mapper, max_volume_share_limit)
         self.slippage_rate = slippage_rate
-        self._logger = qf_logger.getChild(self.__class__.__name__)
 
-    def apply_slippage(
-            self, orders: Sequence[Order], no_slippage_fill_prices: Sequence[float]
-    ) -> Tuple[Sequence[float], Sequence[int]]:
-        fully_filled_order_volumes = [order.quantity for order in orders]
+    def _get_fill_prices(self, date: datetime, orders: Sequence[Order], no_slippage_fill_prices: Sequence[float],
+                         fill_volumes: Sequence[int]) -> Sequence[float]:
 
         if self.slippage_rate == 0.0:
-            return no_slippage_fill_prices, fully_filled_order_volumes
+            return no_slippage_fill_prices
 
         fill_prices = []
         for order, no_slippage_price in zip(orders, no_slippage_fill_prices):
-            execution_style = order.execution_style
-            if isinstance(execution_style, (MarketOrder, StopOrder)):
-                fill_price = self._get_single_fill_price(order, no_slippage_price)
-            else:
-                self._logger.warning("Unsupported execution style: {}. No slippage was applied".format(execution_style))
-                fill_price = no_slippage_price
-
+            fill_price = self._get_single_fill_price(order, no_slippage_price)
             fill_prices.append(fill_price)
 
-        return fill_prices, fully_filled_order_volumes
+        return fill_prices
 
     def _get_single_fill_price(self, order, no_slippage_price):
         if math.isnan(no_slippage_price):

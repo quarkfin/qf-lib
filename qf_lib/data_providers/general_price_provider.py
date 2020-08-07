@@ -28,12 +28,12 @@ from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
-from qf_lib.data_providers.bloomberg.bloomberg_data_provider import BloombergDataProvider
 from qf_lib.data_providers.cryptocurrency.cryptocurrency_data_provider import CryptoCurrencyDataProvider
 from qf_lib.data_providers.haver import HaverDataProvider
 from qf_lib.data_providers.helpers import normalize_data_array
 from qf_lib.data_providers.data_provider import DataProvider
 from qf_lib.data_providers.quandl.quandl_data_provider import QuandlDataProvider
+from qf_lib.data_providers.bloomberg.bloomberg_data_provider import BloombergDataProvider
 
 
 class GeneralPriceProvider(DataProvider):

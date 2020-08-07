@@ -55,6 +55,7 @@ class AlphaModelStrategy(object):
         self._data_handler = ts.data_handler
         self._contract_ticker_mapper = ts.contract_ticker_mapper
         self._position_sizer = ts.position_sizer
+        self._orders_filters = ts.orders_filters
         self._timer = ts.timer
 
         self._model_tickers_dict = model_tickers_dict
@@ -76,11 +77,33 @@ class AlphaModelStrategy(object):
             if self._max_open_positions is not None:
                 self._adjust_number_of_open_positions(signals)
 
+            self.logger.info("on_before_market_open - Save All Original Signals")
             self._save_signals(signals)
+
+            self.logger.info("on_before_market_open - Remove Redundant Signals")
+            self._remove_redundant_signals(signals)
 
             self.logger.info("on_before_market_open - Placing Orders")
             self._place_orders(signals)
             self.logger.info("on_before_market_open - Orders Placed")
+
+    def _remove_redundant_signals(self, signals: List[Signal]):
+        """
+        Remove all these signals, which do not need to be passed into position sizer as they obviously do not change the
+        state of the portfolio (current exposure equals Exposure.OUT and suggested exposure is also Exposure.OUT).
+        """
+        open_positions = self._broker.get_positions()
+        tickers_with_open_positions = set(
+            self._contract_to_ticker(position.contract()) for position in open_positions
+        )
+
+        signals_with_suggested_exposure_out = [signal for signal in signals if
+                                               signal.suggested_exposure == Exposure.OUT]
+        redundant_signals = [signal for signal in signals_with_suggested_exposure_out
+                             if signal.ticker not in tickers_with_open_positions]
+
+        for signal in redundant_signals:
+            signals.remove(signal)
 
     def _adjust_number_of_open_positions(self, signals: List[Signal]):
         """
@@ -91,18 +114,15 @@ class AlphaModelStrategy(object):
         one for opening and one for closing a position, we ignore the opening position signal in case if during
         position closing an error would occur and the position will remain in the portfolio.
 
-        While checking the number of all possible open positions we consider tickers and not contracts. Therefore
-        (in case of e.g. a future contract) even if on a rolling day there would exist 2 contracts corresponding to one
-        ticker, they would be counted as 1 open position.
+        Regarding Futures Contracts:
+        While checking the number of all possible open positions we consider family of contracts
+        (for example Gold) and not specific contracts (Jul 2020 Gold). Therefore even if 2 or more contracts
+        corresponding to one family existed in the portfolio, they would be counted as 1 open position.
+
         """
 
-        def to_ticker(contract: Contract):
-            # Map contract to corresponding ticker, where two contracts from one future family should be mapped into
-            # the same one
-            return self._contract_ticker_mapper.contract_to_ticker(contract, strictly_to_specific_ticker=False)
-
         open_positions = self._broker.get_positions()
-        open_positions_tickers = set(to_ticker(position.contract()) for position in open_positions)
+        open_positions_tickers = set(self._contract_to_ticker(position.contract()) for position in open_positions)
 
         # Signals, which correspond to either already open positions in the portfolio or indicate that a new position
         # should be open for the given contract (with Exposure = LONG or SHORT)
@@ -125,12 +145,13 @@ class AlphaModelStrategy(object):
 
         # Compute how many signals need to be changed (their exposure has to be changed to OUT in order to fulfill the
         # requirements)
-        number_of_signals_to_change = len(new_positions_signals) - (self._max_open_positions - len(open_positions_tickers))
+        number_of_signals_to_change = len(new_positions_signals) - (
+                self._max_open_positions - len(open_positions_tickers))
         assert number_of_signals_to_change >= 0
 
         # Select a random subset of signals, for which the exposure will be set to OUT (in order not to exceed the
         # maximum), which would be deterministic across multiple backtests for the same period of time (certain seed)
-        random.seed(self._timer.now())
+        random.seed(self._timer.now().timestamp())
         new_positions_signals = sorted(new_positions_signals, key=lambda s: s.fraction_at_risk)  # type: List[Signal]
         signals_to_change = random.sample(new_positions_signals, number_of_signals_to_change)
 
@@ -138,6 +159,11 @@ class AlphaModelStrategy(object):
             signal.suggested_exposure = Exposure.OUT
 
         return signals
+
+    def _contract_to_ticker(self, contract: Contract):
+        """ Map contract to corresponding ticker, where two contracts from one future family should be mapped into
+        the same ticker"""
+        return self._contract_ticker_mapper.contract_to_ticker(contract, strictly_to_specific_ticker=False)
 
     def _calculate_signals(self):
         current_positions = self._broker.get_positions()
@@ -166,6 +192,10 @@ class AlphaModelStrategy(object):
     def _place_orders(self, signals):
         self.logger.info("Converting Signals to Orders using: {}".format(self._position_sizer.__class__.__name__))
         orders = self._position_sizer.size_signals(signals, self._use_stop_losses)
+
+        for orders_filter in self._orders_filters:
+            self.logger.info("Filtering Orders based on selected requirements: {}".format(orders_filter))
+            orders = orders_filter.adjust_orders(orders)
 
         self.logger.info("Cancelling all open orders")
         self._broker.cancel_all_open_orders()

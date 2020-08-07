@@ -11,13 +11,15 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-
-from typing import Sequence, Tuple
+from datetime import datetime
+from typing import Sequence, Optional
 
 import numpy as np
 
+from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.execution_handler.slippage.base import Slippage
 from qf_lib.backtesting.order.order import Order
+from qf_lib.data_providers.data_provider import DataProvider
 
 
 class FixedSlippage(Slippage):
@@ -25,12 +27,14 @@ class FixedSlippage(Slippage):
     Slippage which always adds (or subtracts if short sale) certain absolute amount of money to the price.
     """
 
-    def __init__(self, slippage_per_share: float):
+    def __init__(self, slippage_per_share: float, data_provider: DataProvider,
+                 contract_ticker_mapper: ContractTickerMapper, max_volume_share_limit: Optional[float] = None):
+        super().__init__(data_provider, contract_ticker_mapper, max_volume_share_limit)
         self.slippage_per_share = slippage_per_share
 
-    def apply_slippage(self, orders: Sequence[Order], no_slippage_fill_prices: Sequence[float]) \
-            -> Tuple[Sequence[float], Sequence[int]]:
+    def _get_fill_prices(self, date: datetime, orders: Sequence[Order], no_slippage_fill_prices: Sequence[float],
+                         fill_volumes: Sequence[int]) -> Sequence[float]:
         fill_volumes = np.array([order.quantity for order in orders])
         fill_prices = np.array(no_slippage_fill_prices) + np.copysign(self.slippage_per_share, fill_volumes)
 
-        return fill_prices, fill_volumes
+        return fill_prices

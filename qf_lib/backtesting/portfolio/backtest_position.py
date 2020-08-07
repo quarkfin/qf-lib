@@ -217,3 +217,12 @@ class BacktestPosition(Position, metaclass=ABCMeta):
                       exit_price=transaction.price,
                       commission=commission)
         return trade
+
+
+class BacktestPositionSummary:
+    def __init__(self, backtest_position: BacktestPosition):
+        self.contract = backtest_position.contract()
+        self.total_exposure = backtest_position.total_exposure()
+        self.market_values = backtest_position.market_value()
+        self.unrealised_pnl = backtest_position.unrealised_pnl
+        self.direction = backtest_position.direction

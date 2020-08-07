@@ -94,7 +94,7 @@ slippage
 	base.Slippage
 	fixed_slippage.FixedSlippage
 	price_based_slippage.PriceBasedSlippage
-	volume_share_slippage.VolumeShareSlippage
+	square_root_market_impact_slippage.SquareRootMarketImpactSlippage
 
 	
 fast_alpha_model_tester

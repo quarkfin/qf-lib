@@ -589,8 +589,8 @@ class TestPortfolio(unittest.TestCase):
 
         asset_history = portfolio.positions_eod_history()
         self.assertEqual(asset_history.shape, (5, 2))
-        self.assertEqual(asset_history.iloc[4, 0], 315000)
-        self.assertEqual(asset_history.iloc[4, 1], 2000)
+        self.assertEqual(asset_history.iloc[4, 0].total_exposure, 315000)
+        self.assertEqual(asset_history.iloc[4, 1].total_exposure, 2000)
 
     def test_portfolio_transactions_series(self):
         # empty portfolio

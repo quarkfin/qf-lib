@@ -20,7 +20,7 @@ class FuturesAdjustmentMethod(Enum):
     Method used to join the prices of different future contracts, belonging to one future chain.
     """
     NTH_NEAREST = 0,
-    """NTH_NEAREST - the price data for a certain period of time is taken from the N-th contract, there is no 
+    """NTH_NEAREST - the price data for a certain period of time is taken from the N-th contract, there is no
     discontinuities correction at the contract expiry dates"""
     BACK_ADJUSTED = 1
     """BACK_ADJUST - the historical price discontinuities are corrected, so that they would align smoothly on the expiry
