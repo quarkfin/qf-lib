@@ -11,13 +11,13 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
+import warnings
+
 import pandas as pd
 from datetime import datetime
 from typing import Union, Sequence, Dict, List
 
-import blpapi
 from qf_lib.common.enums.expiration_date_field import ExpirationDateField
-
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import BloombergTicker, tickers_as_strings
@@ -28,15 +28,23 @@ from qf_lib.containers.futures.future_tickers.bloomberg_future_ticker import Blo
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
-from qf_lib.data_providers.bloomberg.bloomberg_names import REF_DATA_SERVICE_URI
-from qf_lib.data_providers.bloomberg.exceptions import BloombergError
-from qf_lib.data_providers.bloomberg.futures_data_provider import FuturesDataProvider
-from qf_lib.data_providers.bloomberg.historical_data_provider import HistoricalDataProvider
-from qf_lib.data_providers.bloomberg.reference_data_provider import ReferenceDataProvider
-from qf_lib.data_providers.bloomberg.tabular_data_provider import TabularDataProvider
 from qf_lib.data_providers.helpers import normalize_data_array, cast_dataframe_to_proper_type
 from qf_lib.data_providers.tickers_universe_provider import TickersUniverseProvider
 from qf_lib.settings import Settings
+
+try:
+    import blpapi
+
+    from qf_lib.data_providers.bloomberg.futures_data_provider import FuturesDataProvider
+    from qf_lib.data_providers.bloomberg.historical_data_provider import HistoricalDataProvider
+    from qf_lib.data_providers.bloomberg.reference_data_provider import ReferenceDataProvider
+    from qf_lib.data_providers.bloomberg.tabular_data_provider import TabularDataProvider
+    from qf_lib.data_providers.bloomberg.exceptions import BloombergError
+    from qf_lib.data_providers.bloomberg.bloomberg_names import REF_DATA_SERVICE_URI
+    is_blpapi_installed = True
+except ImportError:
+    is_blpapi_installed = False
+    warnings.warn("No Bloomberg API installed.")
 
 
 class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
@@ -46,21 +54,32 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
 
     def __init__(self, settings: Settings):
         self.settings = settings
-        session_options = blpapi.SessionOptions()
+
         self.host = settings.bloomberg.host
         self.port = settings.bloomberg.port
-
-        session_options.setServerHost(self.host)
-        session_options.setServerPort(self.port)
-        session_options.setAutoRestartOnDisconnection(True)
-        self.session = blpapi.Session(session_options)
-
-        self._historical_data_provider = HistoricalDataProvider(self.session)
-        self._reference_data_provider = ReferenceDataProvider(self.session)
-        self._tabular_data_provider = TabularDataProvider(self.session)
-        self._futures_data_provider = FuturesDataProvider(self.session)
-        self.connected = False
         self.logger = qf_logger.getChild(self.__class__.__name__)
+
+        if is_blpapi_installed:
+            session_options = blpapi.SessionOptions()
+            session_options.setServerHost(self.host)
+            session_options.setServerPort(self.port)
+            session_options.setAutoRestartOnDisconnection(True)
+            self.session = blpapi.Session(session_options)
+
+            self._historical_data_provider = HistoricalDataProvider(self.session)
+            self._reference_data_provider = ReferenceDataProvider(self.session)
+            self._tabular_data_provider = TabularDataProvider(self.session)
+            self._futures_data_provider = FuturesDataProvider(self.session)
+        else:
+            self.session = None
+            self._historical_data_provider = None
+            self._reference_data_provider = None
+            self._tabular_data_provider = None
+            self._futures_data_provider = None
+
+            self.logger.warning("Couldn't import the Bloomberg API. Check if the necessary dependencies are installed.")
+
+        self.connected = False
 
     def connect(self):
         """
@@ -68,6 +87,10 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
         Connecting might take about 10-15 seconds
         """
         self.connected = False
+        if not is_blpapi_installed:
+            self.logger.warning("Couldn't import the Bloomberg API. Check if the necessary dependencies are installed.")
+            return
+
         if not self.session.start():
             self.logger.warning("Failed to start session with host: " + str(self.host) + " on port: " + str(self.port))
             return

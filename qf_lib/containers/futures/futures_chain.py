@@ -280,8 +280,13 @@ class FuturesChain(pd.Series):
 
         expiration_dates = [max(x, y) for x, y in expiration_dates]
         # In case if the first date in the expiration_dates would not be a valid date, but a NaT instead, shift the
-        # lists to the first valid date
-        index_of_first_valid_date = next(index for index, item in enumerate(expiration_dates) if not pd.isnull(item))
+        # lists to the first valid date. In case if no valid expiration dates exist (e.g. there is only one price bar)
+        # return the original data_frame
+        valid_expiration_dates = (index for index, item in enumerate(expiration_dates) if not pd.isnull(item))
+        try:
+            index_of_first_valid_date = next(valid_expiration_dates)
+        except StopIteration:
+            return data_frame
         expiration_dates = expiration_dates[index_of_first_valid_date:]
         first_day_of_next_contract_index = first_day_of_next_contract_index[index_of_first_valid_date:]
         futures_chain = futures_chain[index_of_first_valid_date:]

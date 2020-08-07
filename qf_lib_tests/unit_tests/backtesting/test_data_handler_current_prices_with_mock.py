@@ -30,7 +30,6 @@ from qf_lib.common.utils.dateutils.date_format import DateFormat
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.containers.qf_data_array import QFDataArray
-from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
 from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_series_equal, assert_dataframes_equal
 
 
@@ -196,7 +195,7 @@ def _create_price_provider_mock(tickers, price_fields):
         ]
     )
 
-    price_data_provider_mock = mock({"frequency": Frequency.DAILY}, strict=True)  # type: GeneralPriceProvider
+    price_data_provider_mock = mock({"frequency": Frequency.DAILY}, strict=True)
     when(price_data_provider_mock).get_price(tickers, [PriceField.Open, PriceField.Close], ANY(datetime), ANY(datetime),
                                              Frequency.DAILY).thenReturn(mock_data_array.loc[:, :, [PriceField.Open, PriceField.Close]])
 

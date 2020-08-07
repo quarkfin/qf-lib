@@ -13,6 +13,7 @@
 #     limitations under the License.
 
 from abc import ABCMeta
+from typing import Sequence
 
 from qf_lib.backtesting.broker.broker import Broker
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
@@ -21,6 +22,7 @@ from qf_lib.backtesting.events.event_manager import EventManager
 from qf_lib.backtesting.events.notifiers import Notifiers
 from qf_lib.backtesting.monitoring.abstract_monitor import AbstractMonitor
 from qf_lib.backtesting.order.order_factory import OrderFactory
+from qf_lib.backtesting.orders_filter.orders_filter import OrdersFilter
 from qf_lib.backtesting.position_sizer.position_sizer import PositionSizer
 from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
@@ -46,6 +48,7 @@ class TradingSession(object, metaclass=ABCMeta):
         self.contract_ticker_mapper = None  # type: ContractTickerMapper
         self.order_factory = None           # type: OrderFactory
         self.position_sizer = None          # type: PositionSizer
+        self.orders_filters = None          # type: Sequence[OrdersFilter]
         self.event_manager = None           # type: EventManager
 
         self.notifiers = None               # type: Notifiers

@@ -19,17 +19,16 @@ import numpy as np
 
 from qf_lib.common.utils.returns.max_drawdown import max_drawdown
 from qf_lib_tests.unit_tests.portfolio_construction.utils import assets_df
-from qf_lib.portfolio_construction.portfolio_models.multifactor_portfolio import MultiFactorPortfolio, \
-    PortfolioParameters
 
 try:
-    import cvxopt
+    from qf_lib.portfolio_construction.portfolio_models.multifactor_portfolio import MultiFactorPortfolio, \
+        PortfolioParameters
     cvxopt_missing = False
 except ImportError:
     cvxopt_missing = True
 
 
-@unittest.skipIf(cvxopt_missing, "Couldn't import cvxopt library")
+@unittest.skipIf(cvxopt_missing, "Couldn't import cvxopt library.")
 class TestMultiFactorPortfolio(TestCase):
     @classmethod
     def setUpClass(cls):

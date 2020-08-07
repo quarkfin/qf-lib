@@ -60,7 +60,9 @@ class BloombergFutureTicker(FutureTicker, BloombergTicker):
         super().__init__(name, family_id, N, days_before_exp_date, point_value)
 
         # Used for the purpose of random specific ticker computation
-        self._random_year_codes = cycle(['09', '9', '99', '19'])
+        random_year_codes = ['09', '9', '99', '19']
+        self._random_contract_codes = cycle([month + year for month in reversed(list(designated_contracts))
+                                             for year in random_year_codes])
 
     def get_random_specific_ticker(self) -> BloombergTicker:
         """
@@ -71,7 +73,7 @@ class BloombergFutureTicker(FutureTicker, BloombergTicker):
         -------
         BloombergTicker
         """
-        seed = self.designated_contracts[-1] + next(self._random_year_codes)
+        seed = next(self._random_contract_codes)
         specific_ticker_string = self.family_id.format(seed)
         return BloombergTicker.from_string(specific_ticker_string)
 

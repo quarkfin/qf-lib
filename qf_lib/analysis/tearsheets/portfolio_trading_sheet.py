@@ -13,16 +13,21 @@
 #     limitations under the License.
 from datetime import datetime
 from itertools import groupby
+from typing import List, Dict, Tuple
 
 import matplotlib as plt
 from pandas import Timedelta
 from pandas.tseries.frequencies import to_offset
+from numpy import sign
 
 from qf_lib.analysis.common.abstract_document import AbstractDocument
 from qf_lib.analysis.error_handling import ErrorHandling
+from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
 from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.monitoring.backtest_result import BacktestResult
+from qf_lib.backtesting.portfolio.backtest_position import BacktestPositionSummary
 from qf_lib.common.enums.frequency import Frequency
+from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 from qf_lib.containers.series.qf_series import QFSeries
@@ -112,7 +117,7 @@ class PortfolioTradingSheet(AbstractDocument):
         # Count number of assets in the portfolio (if on two contracts from same future family exist in the same time,
         # e.g. during rolling day, in the portfolio, they are counted as one asset)
         def contract_to_ticker(c: Contract):
-            return self.backtest_result.portfolio.contract_ticker_mapper.\
+            return self.backtest_result.portfolio.contract_ticker_mapper. \
                 contract_to_ticker(c, strictly_to_specific_ticker=False)
 
         assets_history = positions_history.rename(columns=contract_to_ticker)
@@ -169,7 +174,8 @@ class PortfolioTradingSheet(AbstractDocument):
         if positions_history.empty:
             raise ValueError("No positions found in positions history")
 
-        positions_history = positions_history.fillna(0)
+        positions_history = positions_history.applymap(
+            lambda x: x.total_exposure if isinstance(x, BacktestPositionSummary) else 0)
 
         # Map all the single contracts onto tickers (including future tickers) and take the maximal total exposure for
         # each of the groups - in case if two contracts for a single asset will be included in the open positions in
@@ -262,7 +268,8 @@ class PortfolioTradingSheet(AbstractDocument):
 
         # Get the assets history
         assets_history = self.backtest_result.portfolio.positions_eod_history()
-        assets_history = assets_history.fillna(0)
+        assets_history = assets_history.applymap(
+            lambda x: x.total_exposure if isinstance(x, BacktestPositionSummary) else 0)
 
         def gini(group):
             # Function computing the Gini coefficients for each row
@@ -290,7 +297,8 @@ class PortfolioTradingSheet(AbstractDocument):
         self.document.add_element(HeadingElement(level=2, text="Average time in the market per asset"))
         # Get the assets history
         assets_history = self.backtest_result.portfolio.positions_eod_history()
-        assets_history = assets_history.fillna(0)
+        assets_history = assets_history.applymap(
+            lambda x: x.direction if isinstance(x, BacktestPositionSummary) else 0)
 
         table = Table(column_names=['Tickers name', 'Longs', 'Shorts', 'Out'], css_class="table stats-table left-align")
 
@@ -312,7 +320,8 @@ class PortfolioTradingSheet(AbstractDocument):
         future_contracts.sort(key=lambda contract: contract.symbol)
         for future_ticker, futures_contracts_list in groupby(
                 future_contracts,
-                lambda c: self.backtest_result.portfolio.contract_ticker_mapper.contract_to_ticker(c, strictly_to_specific_ticker=False)
+                lambda c: self.backtest_result.portfolio.contract_ticker_mapper.contract_to_ticker(c,
+                                                                                                   strictly_to_specific_ticker=False)
         ):
             futures_contracts_list = list(futures_contracts_list)
 
@@ -339,37 +348,95 @@ class PortfolioTradingSheet(AbstractDocument):
         self.document.add_element(table)
 
     def _add_performance_statistics(self):
+        """
+        For each ticker adds a plot with overall performance, PnL of shorts and PnL longs.
+        Additionally, it generates a table containing final PnL values for each of the ticker.
+        """
         self.document.add_element(NewPageElement())
-        self.document.add_element(HeadingElement(level=2, text="Performance of each asset"))
 
-        def contract_to_ticker_name(contract: Contract) -> str:
-            contract_ticker_mapper = self.backtest_result.portfolio.contract_ticker_mapper
-            ticker = contract_ticker_mapper.contract_to_ticker(contract, strictly_to_specific_ticker=False)
-            ticker_name = ticker.name if isinstance(ticker, FutureTicker) else ticker.ticker
-            return ticker_name
+        # Initialize data used further to generate the PnL table
+        performance_data = []
+        title_to_exposures = {
+            "Long positions": ([Exposure.LONG], {"color": "#add8e6"}),
+            "Short positions": ([Exposure.SHORT], {"color": "#fa8072"}),
+            "Overall performance": ([Exposure.LONG, Exposure.SHORT], {"color": "#000000"})
+        }
 
-        # Compute the Profit and loss associated with all trades
-        trades_pnl = [
-            (contract_to_ticker_name(trade.contract), trade.pnl)
-            for trade in self.backtest_result.portfolio.trade_list()
-        ]
+        # Get all tickers used across the backtest
+        positions_history = self.backtest_result.portfolio.positions_eod_history()
+        all_contracts = list(positions_history.columns)
+        all_contracts.sort(key=lambda contract: contract.symbol)
 
-        # Compute the unrealised Profit and loss associated with all open positions
-        open_positions_dict = self.backtest_result.portfolio.open_positions_dict
-        open_positions_unrealised_pnl = [
-            (contract_to_ticker_name(position.contract()), position.unrealised_pnl)
-            for position in open_positions_dict.values()
-        ]
+        # Generate plot for each ticker
+        for ticker, contracts_list in groupby(
+                all_contracts,
+                lambda c: self.backtest_result.portfolio.contract_ticker_mapper.contract_to_ticker(c, strictly_to_specific_ticker=False)
+        ):
+            contracts_list = list(contracts_list)
+            performance_details_dict = self._add_performance_plot_for_ticker(ticker, positions_history[contracts_list],
+                                                                             contracts_list, title_to_exposures)
+            performance_data.append(performance_details_dict)
 
-        pnl_df = QFDataFrame(data=trades_pnl + open_positions_unrealised_pnl, columns=["Ticker", "Performance"])
+        # Generate the PnL table
+        performance_df = QFDataFrame(performance_data)
+        # Sort by overall performance
+        performance_df = performance_df.sort_values(by="Overall performance", ascending=False)
+        performance_df = performance_df.fillna(0)
+        for column_name in title_to_exposures.keys():
+            performance_df[column_name] = performance_df[column_name].apply(lambda pnl: "{:,.2f}".format(pnl))
+        # Set the Ticker as first column
+        columns = ["Ticker"] + performance_df.columns.drop("Ticker").tolist()
+        performance_df = performance_df[columns]
 
-        performance_df = pnl_df.groupby(['Ticker'], as_index=False).sum()
-        performance_df = performance_df.sort_values(by="Performance", ascending=False)
-        performance_df["Performance"] = performance_df["Performance"].apply(lambda pnl: "{:,.2f}".format(pnl))
-
-        table = DFTable(data=performance_df, css_classes=['table', 'left-align', 'slim-table'])
+        self.document.add_element(NewPageElement())
+        self.document.add_element(HeadingElement(level=2, text="Performance of each asset during the whole backtest"))
+        table = DFTable(data=performance_df, css_classes=['table', 'left-align'])
         table.add_columns_classes(["Ticker"], 'wide-column')
         self.document.add_element(table)
+
+    def _add_performance_plot_for_ticker(self, ticker: Ticker, df: QFDataFrame, contracts_list: List[Contract],
+                                         title_to_exposures: Dict[str, Tuple[List[Exposure], Dict]]):
+        ticker_name = ticker.name if isinstance(ticker, FutureTicker) else ticker.ticker
+        performance_results = {"Ticker": ticker_name}
+        for title in title_to_exposures.keys():
+            performance_results[title] = None
+
+        self.document.add_element(HeadingElement(level=2, text="PnL of {}".format(ticker_name)))
+        chart = LineChart()
+        legend = LegendDecorator(key="legend_decorator")
+
+        for description, (exposures, plot_settings) in title_to_exposures.items():
+            exposure_values = [exposure.value for exposure in exposures]
+            # Take all the trades in the direction of the exposure value
+            trades_for_ticker_in_exposure_direction = [trade for trade in self.backtest_result.portfolio.trade_list() if
+                                                       trade.contract in contracts_list and
+                                                       sign(trade.quantity) in exposure_values]
+
+            # Compute the unrealized pnl of each contract
+            directional_df = df.applymap(lambda x: x.unrealised_pnl if (isinstance(x, BacktestPositionSummary)
+                                                                        and x.direction in exposure_values) else None)
+
+            # check if any transaction in this direction were made
+            trades_in_the_direction = not directional_df.dropna(how="all").empty
+
+            if trades_in_the_direction:
+                # Create a series of trades PnL
+                trades_series = QFSeries(data=None, index=directional_df.index)
+                for trade in trades_for_ticker_in_exposure_direction:
+                    trades_series.loc[trade.end_time.date()] = trade.pnl
+                trades_series = trades_series.fillna(0).cumsum()
+                unrealised_pnl_series = directional_df.fillna(0).apply(func=sum, axis=1)
+                total_pnl_series = unrealised_pnl_series + trades_series
+
+                data_series = DataElementDecorator(total_pnl_series, **plot_settings)
+                legend.add_entry(data_series, description)
+                chart.add_decorator(data_series)
+
+                performance_results[description] = total_pnl_series.iloc[-1]
+
+        chart.add_decorator(legend)
+        self.document.add_element(ChartElement(chart, figsize=self.full_image_size, dpi=self.dpi))
+        return performance_results
 
     def save(self, report_dir: str = ""):
         # Set the style for the report

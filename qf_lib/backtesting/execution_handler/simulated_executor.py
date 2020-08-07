@@ -55,6 +55,12 @@ class SimulatedExecutor(metaclass=abc.ABCMeta):
         for order in orders:
             self._awaiting_orders[order.id] = order
 
+    def cancel_all_open_orders(self):
+        """
+        Cancels all open orders
+        """
+        self._awaiting_orders.clear()
+
     def cancel_order(self, order_id: int) -> Optional[Order]:
         """
         Cancel Order of given id (if it exists). Returns the cancelled Order or None if couldn't find the Order
@@ -62,12 +68,6 @@ class SimulatedExecutor(metaclass=abc.ABCMeta):
         """
         cancelled_order = self._awaiting_orders.pop(order_id, None)
         return cancelled_order
-
-    def cancel_all_open_orders(self):
-        """
-        Cancels all open orders
-        """
-        self._awaiting_orders.clear()
 
     def get_open_orders(self) -> List[Order]:
         """
@@ -79,9 +79,6 @@ class SimulatedExecutor(metaclass=abc.ABCMeta):
         """
         Converts Orders into Transactions. Preserves the dictionary of unexecuted Orders (order_id -> Order)
         """
-        if not self._awaiting_orders:
-            return
-
         open_orders_list = self.get_open_orders()
         if not open_orders_list:
             return
@@ -91,32 +88,34 @@ class SimulatedExecutor(metaclass=abc.ABCMeta):
         no_slippage_fill_prices_list, to_be_executed_orders, expired_orders_list = \
             self._get_orders_with_fill_prices_without_slippage(open_orders_list, tickers, market_open, market_close)
 
-        fill_prices, _ = self._slippage_model.apply_slippage(to_be_executed_orders, no_slippage_fill_prices_list)
-
-        for order, fill_price in zip(to_be_executed_orders, fill_prices):
-            self._execute_order(order, fill_price)
-            # Delete the executed orders from awaiting orders dictionary
-            del self._awaiting_orders[order.id]
-
-        # If any orders have been executed - update the portfolio
         if len(to_be_executed_orders) > 0:
+            current_time = self._timer.now()
+            fill_prices, fill_volumes = self._slippage_model.apply_slippage(current_time, to_be_executed_orders,
+                                                                            no_slippage_fill_prices_list)
+
+            for order, fill_price, fill_volume in zip(to_be_executed_orders, fill_prices, fill_volumes):
+                if fill_volume != 0:
+                    self._execute_order(order, fill_price, fill_volume)
+                    # Delete the executed orders from awaiting orders dictionary
+                    del self._awaiting_orders[order.id]
+
+            # If any orders have been executed - update the portfolio
             self._portfolio.update()
 
         # Delete all expired orders
         for expired_order_id in expired_orders_list:
             del self._awaiting_orders[expired_order_id]
 
-    def _execute_order(self, order: Order, fill_price: float):
+    def _execute_order(self, order: Order, fill_price: float, fill_volume: int):
         """
         Simulates execution of a single Order by converting the Order into Transaction.
         """
         timestamp = self._timer.now()
         contract = order.contract
-        quantity = order.quantity
 
         commission = self._commission_model.calculate_commission(order, fill_price)
 
-        transaction = Transaction(timestamp, contract, quantity, fill_price, commission)
+        transaction = Transaction(timestamp, contract, fill_volume, fill_price, commission)
 
         self._monitor.record_transaction(transaction)
         self._portfolio.transact_transaction(transaction)

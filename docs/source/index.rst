@@ -1,5 +1,8 @@
 Welcome to QF Lib's documentation!
-==================================
+************************************
+Project website: `<https://quarkfin.github.io/qf-lib-info/>`_
+=========================================================================
+
 
 .. toctree::
    :maxdepth: 2

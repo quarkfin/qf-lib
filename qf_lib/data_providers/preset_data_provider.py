@@ -119,6 +119,9 @@ class PresetDataProvider(DataProvider):
         if frequency < self._frequency and frequency <= Frequency.DAILY:
             raise NotImplementedError("Data aggregation for lower than daily frequency is not supported yet")
 
+        if end_date is None:
+            end_date = datetime.now()
+
         if frequency > Frequency.DAILY:
             # In case of high, intraday frequency - the data array should not include the end_date. The data range is
             # labeled with the beginning index time and excludes the end of the time range, therefore a new

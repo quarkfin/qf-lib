@@ -85,7 +85,7 @@ class TestingTradingSession(TradingSession):
 
         monitor = DummyMonitor()
         commission_model = FixedCommissionModel(0.0)
-        slippage_model = PriceBasedSlippage(0.0)
+        slippage_model = PriceBasedSlippage(0.0, data_provider, contract_ticker_mapper)
 
         execution_handler = SimulatedExecutionHandler(
             data_handler, timer, notifiers.scheduler, monitor, commission_model,
@@ -124,6 +124,7 @@ class TestingTradingSession(TradingSession):
         self.portfolio = portfolio
         self.execution_handler = execution_handler
         self.position_sizer = position_sizer
+        self.orders_filters = []
         self.monitor = monitor
         self.timer = timer
         self.order_factory = order_factory
