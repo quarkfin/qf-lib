@@ -73,6 +73,7 @@ class FuturesAlphaModelStrategy(AlphaModelStrategy):
             self.logger.info("Filtering Orders based on selected requirements: {}".format(orders_filter))
             orders = orders_filter.adjust_orders(orders)
             close_orders = orders_filter.adjust_orders(close_orders)
+
             for order in close_orders:
                 contract = order.contract
                 future_ticker = self._contract_ticker_mapper.contract_to_ticker(contract,
