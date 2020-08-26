@@ -166,9 +166,11 @@ class TestOrderFactory(unittest.TestCase):
         tif = TimeInForce.DAY
         tolerance = 5.0
         target_value = 113.0
+        tolerance_percentage = tolerance / target_value
 
         # tolerance is 5.0$ and the difference is 13$ -> we should buy 1 share
-        orders = self.order_factory.target_value_orders({self.contract: target_value}, execution_style, tif, tolerance)
+        orders = self.order_factory.target_value_orders({self.contract: target_value}, execution_style, tif,
+                                                        tolerance_percentage)
         quantity = 1
         self.assertEqual(orders[0], Order(self.contract, quantity, execution_style, tif))
 
@@ -178,9 +180,11 @@ class TestOrderFactory(unittest.TestCase):
         tif = TimeInForce.DAY
         tolerance = 5.0
         target_value = 219.0
+        tolerance_percentage = tolerance / target_value
 
         # tolerance is 5.0$ and the difference is 13$ -> we should buy 1 share
-        orders = self.order_factory.target_value_orders({self.contract: target_value}, execution_style, tif, tolerance)
+        orders = self.order_factory.target_value_orders({self.contract: target_value}, execution_style, tif,
+                                                        tolerance_percentage)
         quantity = 11
         self.assertEqual(orders[0], Order(self.contract, quantity, execution_style, tif))
 
@@ -190,9 +194,11 @@ class TestOrderFactory(unittest.TestCase):
         tif = TimeInForce.DAY
         tolerance = 11.0
         target_value = 110.0
+        tolerance_percentage = tolerance / target_value
 
         # tolerance is 11.0$ and the difference is 10$ -> we should not trade
-        orders = self.order_factory.target_value_orders({self.contract: target_value}, execution_style, tif, tolerance)
+        orders = self.order_factory.target_value_orders({self.contract: target_value}, execution_style, tif,
+                                                        tolerance_percentage)
         self.assertEqual(orders, [])
 
     def test_order_target_value_tolerance4(self):
@@ -201,9 +207,11 @@ class TestOrderFactory(unittest.TestCase):
         tif = TimeInForce.DAY
         tolerance = 11.0
         target_value = 110.999
+        tolerance_percentage = tolerance / target_value
 
         # tolerance is 11.0$ and the difference is 10.999$ -> we should not trade
-        orders = self.order_factory.target_value_orders({self.contract: target_value}, execution_style, tif, tolerance)
+        orders = self.order_factory.target_value_orders({self.contract: target_value}, execution_style, tif,
+                                                        tolerance_percentage)
         self.assertEqual(orders, [])
 
     def test_order_target_value_tolerance5(self):
@@ -212,9 +220,11 @@ class TestOrderFactory(unittest.TestCase):
         tif = TimeInForce.DAY
         tolerance = 10.0
         target_value = 90.1
+        tolerance_percentage = tolerance / target_value
 
         # tolerance is 10.0$ and the difference is 9.9$ -> we should not trade
-        orders = self.order_factory.target_value_orders({self.contract: target_value}, execution_style, tif, tolerance)
+        orders = self.order_factory.target_value_orders({self.contract: target_value}, execution_style, tif,
+                                                        tolerance_percentage)
         self.assertEqual(orders, [])
 
     def test_order_target_value_tolerance6(self):
@@ -223,8 +233,10 @@ class TestOrderFactory(unittest.TestCase):
         tif = TimeInForce.DAY
         tolerance = 10.0
         target_value = 89.9
+        tolerance_percentage = tolerance / target_value
 
-        orders = self.order_factory.target_value_orders({self.contract: target_value}, execution_style, tif, tolerance)
+        orders = self.order_factory.target_value_orders({self.contract: target_value}, execution_style, tif,
+                                                        tolerance_percentage)
         quantity = -2
         self.assertEqual(orders[0], Order(self.contract, quantity, execution_style, tif))
 
@@ -234,8 +246,10 @@ class TestOrderFactory(unittest.TestCase):
         tif = TimeInForce.DAY
         tolerance = 9
         target_value = 90.9
+        tolerance_percentage = tolerance / target_value
 
-        orders = self.order_factory.target_value_orders({self.contract: target_value}, execution_style, tif, tolerance)
+        orders = self.order_factory.target_value_orders({self.contract: target_value}, execution_style, tif,
+                                                        tolerance_percentage)
         quantity = -1
         self.assertEqual(orders[0], Order(self.contract, quantity, execution_style, tif))
 
@@ -245,8 +259,10 @@ class TestOrderFactory(unittest.TestCase):
         tif = TimeInForce.DAY
         tolerance = 10.0
         target_value = 45.0
+        tolerance_percentage = tolerance / target_value
 
-        orders = self.order_factory.target_value_orders({self.contract: target_value}, execution_style, tif, tolerance)
+        orders = self.order_factory.target_value_orders({self.contract: target_value}, execution_style, tif,
+                                                        tolerance_percentage)
         quantity = -6
         self.assertEqual(orders[0], Order(self.contract, quantity, execution_style, tif))
 
@@ -254,10 +270,11 @@ class TestOrderFactory(unittest.TestCase):
         # there already are 10 shares price per share is 10 so position value is 100
         execution_style = MarketOrder()
         tif = TimeInForce.DAY
-        tolerance = 10.0
         target_value = 9.0
+        tolerance_percentage = 1 / 9
 
-        orders = self.order_factory.target_value_orders({self.contract: target_value}, execution_style, tif, tolerance)
+        orders = self.order_factory.target_value_orders({self.contract: target_value}, execution_style, tif,
+                                                        tolerance_percentage)
         quantity = -10
         self.assertEqual(orders[0], Order(self.contract, quantity, execution_style, tif))
 
@@ -267,72 +284,80 @@ class TestOrderFactory(unittest.TestCase):
         tif = TimeInForce.DAY
         tolerance = 10.99
         target_value = 111.0
+        tolerance_percentage = tolerance / target_value
 
-        orders = self.order_factory.target_value_orders({self.contract: target_value}, execution_style, tif, tolerance)
+        orders = self.order_factory.target_value_orders({self.contract: target_value}, execution_style, tif,
+                                                        tolerance_percentage)
         quantity = 1
         self.assertEqual(orders[0], Order(self.contract, quantity, execution_style, tif))
 
     def test_order_target_percent_tolerance1(self):
-        # there are 10 shares price per share is 10 so position value is 100, it corresponds to 10% of portfolio
+        # there are 10 shares price per share is 10 so position value is 100
         ex_style = MarketOrder()
         tif = TimeInForce.DAY
-        tolerance = 0.01
+        tolerance_percentage = 1 / 12
         target_value = 0.12
 
-        orders = self.order_factory.target_percent_orders({self.contract: target_value}, ex_style, tif, tolerance)
+        orders = self.order_factory.target_percent_orders({self.contract: target_value}, ex_style, tif,
+                                                          tolerance_percentage)
         quantity = 2
         self.assertEqual(orders[0], Order(self.contract, quantity, ex_style, tif))
 
     def test_order_target_percent_tolerance2(self):
-        # there are 10 shares price per share is 10 so position value is 100, it corresponds to 10% of portfolio
+        # there are 10 shares, price per share is 10 so position value is 100
         ex_style = MarketOrder()
         tif = TimeInForce.DAY
-        tolerance = 0.01
+        tolerance_percentage = 1 / 11
         target_value = 0.11
 
-        orders = self.order_factory.target_percent_orders({self.contract: target_value}, ex_style, tif, tolerance)
+        orders = self.order_factory.target_percent_orders({self.contract: target_value}, ex_style, tif,
+                                                          tolerance_percentage)
         self.assertEqual(orders, [])
 
     def test_order_target_percent_tolerance3(self):
-        # there are 10 shares price per share is 10 so position value is 100, it corresponds to 10% of portfolio
+        # there are 10 shares price per share is 10 so position value is 100
         ex_style = MarketOrder()
         tif = TimeInForce.DAY
-        tolerance = 0.01
+        tolerance_percentage = 1 / 9
         target_value = 0.09
 
-        orders = self.order_factory.target_percent_orders({self.contract: target_value}, ex_style, tif, tolerance)
+        orders = self.order_factory.target_percent_orders({self.contract: target_value}, ex_style, tif,
+                                                          tolerance_percentage)
         self.assertEqual(orders, [])
 
     def test_order_target_percent_tolerance4(self):
-        # there are 10 shares price per share is 10 so position value is 100, it corresponds to 10% of portfolio
+        # there are 10 shares price per share is 10 so position value is 100
         ex_style = MarketOrder()
         tif = TimeInForce.DAY
-        tolerance = 0.01
+        tolerance_percentage = 1 / 8
         target_value = 0.08
 
-        orders = self.order_factory.target_percent_orders({self.contract: target_value}, ex_style, tif, tolerance)
+        orders = self.order_factory.target_percent_orders({self.contract: target_value}, ex_style, tif,
+                                                          tolerance_percentage)
         quantity = -2
         self.assertEqual(orders[0], Order(self.contract, quantity, ex_style, tif))
 
     def test_order_target_percent_tolerance5(self):
-        # there are 10 shares price per share is 10 so position value is 100, it corresponds to 10% of portfolio
+        # there are 10 shares price per share is 10 so position value is 100
         ex_style = MarketOrder()
         tif = TimeInForce.DAY
-        tolerance = 0.005
+        tolerance_percentage = 0.5 / 9
         target_value = 0.09
 
-        orders = self.order_factory.target_percent_orders({self.contract: target_value}, ex_style, tif, tolerance)
+        orders = self.order_factory.target_percent_orders({self.contract: target_value}, ex_style, tif,
+                                                          tolerance_percentage)
         quantity = -1
         self.assertEqual(orders[0], Order(self.contract, quantity, ex_style, tif))
 
     def test_order_target_percent_tolerance6(self):
-        # there are 10 shares price per share is 10 so position value is 100, it corresponds to 10% of portfolio
+        # there are 10 shares price per share is 10 so position value is 100
         ex_style = MarketOrder()
         tif = TimeInForce.DAY
-        tolerance = 0.02
+        tolerance_percentage = 2 / 50
         target_value = 0.5
 
-        orders = self.order_factory.target_percent_orders({self.contract: target_value}, ex_style, tif, tolerance)
+        orders = self.order_factory.target_percent_orders({self.contract: target_value}, ex_style, tif,
+                                                          tolerance_percentage)
         quantity = 40
         self.assertEqual(orders[0], Order(self.contract, quantity, ex_style, tif))
 
