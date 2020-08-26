@@ -201,7 +201,7 @@ class OrderFactory(object):
         return self.value_orders(values, execution_style, time_in_force, frequency)
 
     def target_value_orders(self, target_values: Mapping[Contract, float], execution_style: ExecutionStyle,
-                            time_in_force: TimeInForce, tolerance_value=0.0, frequency: Frequency = None) \
+                            time_in_force: TimeInForce, tolerance_percentage: float = 0.0, frequency: Frequency = None)\
             -> List[Order]:
         """
         Creates a list of Orders by specifying how much should be allocated in each asset after the Orders
@@ -219,17 +219,18 @@ class OrderFactory(object):
             execution style of an order (e.g. MarketOrder, StopOrder, etc.)
         time_in_force: TimeInForce
             e.g. 'DAY' (Order valid for one trading session), 'GTC' (good till cancelled)
-        tolerance_value: float
+        tolerance_percentage: float
             tells the us what is a tolerance to the target_values (in both directions).
-            The tolerance is expressed in currency units.
+            The tolerance is expressed as percentage of target_values.
             For example: assume that currently the portfolio contains asset A with allocation 10 000$.
-            then calling target_value_order({A: 10 500}, ..., tolerance=1 000) will not generate any trades as
-            the tolerance of 1 000 allows the allocation to be 10 000$. while target value is 10 500.
+            then calling target_value_order({A: 10 500}, ..., tolerance_percentage=0.05) will not generate any trades as
+            the tolerance of 0.05 allows the allocation to be 10 000$, while target value is 10 500$ (tolerance value
+            would be equal to 0.05 * 10 500 = 525 and the difference between current and target value would be < 525$).
             Another example:
             For example: assume that currently the portfolio contains asset A with allocation 10 000$.
-            then calling target_value_order({A: 13 000}, ..., tolerance=1 000) will generate a BUY order
-            corresponding to 3000$ of shares The tolerance of 1 000 does not allow a difference of 3000$
-            if abs(target - actual) > tolerance buy or sell assets to match the target
+            then calling target_value_order({A: 13 000}, ..., tolerance_percentage=0.1) will generate a BUY order
+            corresponding to 3000$ of shares. The tolerance of 0.1 does not allow a difference of 3000$
+            if abs(target - actual) > tolerance_percentage *  target value
         frequency: Frequency
             frequency for the last available price sampling (daily or minutely)
 
@@ -239,14 +240,15 @@ class OrderFactory(object):
             list of generated orders
         """
         self._log_function_call(vars())
+        assert 0.0 <= tolerance_percentage < 1.0, "The tolerance_percentage should belong to [0, 1) interval"
 
         target_quantities, tolerance_quantities = \
-            self._calculate_target_shares_and_tolerances(target_values, tolerance_value, frequency)
+            self._calculate_target_shares_and_tolerances(target_values, tolerance_percentage, frequency)
 
         return self.target_orders(target_quantities, execution_style, time_in_force, tolerance_quantities)
 
     def target_percent_orders(self, target_percentages: Mapping[Contract, float], execution_style: ExecutionStyle,
-                              time_in_force: TimeInForce, tolerance_percent=0.0, frequency: Frequency = None) \
+                              time_in_force: TimeInForce, tolerance_percentage: float = 0.0, frequency: Frequency = None) \
             -> List[Order]:
         """
         Creates an Order adjusting a position to a value equal to the given percentage of the portfolio.
@@ -260,17 +262,10 @@ class OrderFactory(object):
             execution style of an order (e.g. MarketOrder, StopOrder, etc.)
         time_in_force: TimeInForce
             e.g. 'DAY' (Order valid for one trading session), 'GTC' (good till cancelled)
-        tolerance_percent: float
-            tells the us what is a tolerance to the target_percentages (in both directions).
-            The tolerance is expressed in percentage points (0.02 corresponds to 2pp of diff)
-            For example: assume that currently the portfolio contains asset A with allocation weight of 0.24.
-            then calling target_percent_orders({A: 0.25}, ..., tolerance=0.02) will not generate any trades as
-            the tolerance of 0.02 allows the allocation to be 0.24 while target percentage is 0.25.
-            Another example:
-            assume that currently the portfolio contains asset A with allocation weight of 0.24.
-            then calling target_percent_orders({A: 0.30}, ..., tolerance=0.01) will generate a BUY order corresponding
-            to 0.30 - 0.24 = 0.06 of the portfolio value. The tolerance of 0.01 does not allow a difference of 0.06
-            if abs(target - actual) > tolerance buy or sell assets to match the target
+        tolerance_percentage: float
+            tells the us what is a tolerance to the target_percentages (in both directions). The tolerance is expressed
+            in percentage points (0.02 corresponds to 2pp of the target_value). For more details look at the description
+            of target_value_orders.
         frequency: Frequency
             frequency for the last available price sampling (daily or minutely)
 
@@ -280,17 +275,17 @@ class OrderFactory(object):
             list of generated orders
         """
         self._log_function_call(vars())
+        assert 0.0 <= tolerance_percentage < 1.0, "The tolerance_percentage should belong to [0, 1) interval"
 
         portfolio_value = self.broker.get_portfolio_value()
         target_values = {
             contract: portfolio_value * target_percent for contract, target_percent in target_percentages.items()}
-        tolerance_value = tolerance_percent * portfolio_value
 
-        return self.target_value_orders(target_values, execution_style, time_in_force, tolerance_value, frequency)
+        return self.target_value_orders(target_values, execution_style, time_in_force, tolerance_percentage, frequency)
 
     def _calculate_target_shares_and_tolerances(
-            self, contract_to_amount_of_money: Mapping[Contract, float], tolerance_value=0.0, frequency: Frequency = None) \
-            -> (Mapping[Contract, float], Mapping[Contract, float]):
+            self, contract_to_amount_of_money: Mapping[Contract, float], tolerance_percentage: float = 0.0,
+            frequency: Frequency = None) -> (Mapping[Contract, float], Mapping[Contract, float]):
         """
         Returns
         ----------
@@ -317,7 +312,7 @@ class OrderFactory(object):
             target_quantity = amount_of_money / divisor   # type: float
             target_quantities[contract] = target_quantity
 
-            tolerance_quantity = tolerance_value / divisor  # type: float
+            tolerance_quantity = target_quantity * tolerance_percentage
             tolerance_quantities[contract] = tolerance_quantity
 
         return target_quantities, tolerance_quantities

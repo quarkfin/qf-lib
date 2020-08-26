@@ -54,6 +54,9 @@ class InitialRiskPositionSizer(PositionSizer):
                  tolerance_percentage: float = 0.0):
         super().__init__(broker, data_handler, order_factory, contract_ticker_mapper)
 
+        assert is_finite_number(initial_risk), "Initial risk has to be a finite number"
+        assert initial_risk >= 0, "Initial risk has to be positive"
+
         self._initial_risk = initial_risk
         self.max_target_percentage = max_target_percentage
         self.tolerance_percentage = tolerance_percentage
@@ -61,28 +64,8 @@ class InitialRiskPositionSizer(PositionSizer):
         self.logger.info("Initial Risk: {}".format(initial_risk))
 
     def _generate_market_orders(self, signals: List[Signal]) -> List[Optional[Order]]:
-        assert is_finite_number(self._initial_risk), "Initial risk has to be a finite number"
-
-        def compute_target_percentage(signal):
-            assert is_finite_number(signal.fraction_at_risk), "fraction_at_risk has to be a finite number"
-            target_percentage = self._initial_risk / signal.fraction_at_risk
-            self.logger.info("Target Percentage for {}: {}".format(signal.ticker, target_percentage))
-
-            target_percentage = self._cap_max_target_percentage(target_percentage)
-
-            target_percentage *= signal.suggested_exposure.value  # preserve the direction (-1, 0 , 1)
-            self.logger.info("Target Percentage considering direction for {}: {}".format(signal.ticker,
-                                                                                         target_percentage))
-
-            assert is_finite_number(target_percentage), "target_percentage has to be a finite number"
-            return target_percentage
-
-        def signal_to_contract(signal):
-            # Map signal to contract
-            return self._contract_ticker_mapper.ticker_to_contract(signal.ticker)
-
         target_percentages = {
-            signal_to_contract(signal): compute_target_percentage(signal) for signal in signals
+            self._signal_to_contract(signal): self._compute_target_percentage(signal) for signal in signals
         }
 
         market_order_list = self._order_factory.target_percent_orders(
@@ -90,6 +73,10 @@ class InitialRiskPositionSizer(PositionSizer):
         )
 
         return market_order_list
+
+    def _signal_to_contract(self, signal):
+        # Map signal to contract
+        return self._contract_ticker_mapper.ticker_to_contract(signal.ticker)
 
     def _cap_max_target_percentage(self, initial_target_percentage: float):
         """
@@ -101,3 +88,17 @@ class InitialRiskPositionSizer(PositionSizer):
                              .format(initial_target_percentage, self.max_target_percentage, self.max_target_percentage))
             return self.max_target_percentage
         return initial_target_percentage
+
+    def _compute_target_percentage(self, signal):
+        assert is_finite_number(signal.fraction_at_risk), "fraction_at_risk has to be a finite number"
+        target_percentage = self._initial_risk / signal.fraction_at_risk
+        self.logger.info("Target Percentage for {}: {}".format(signal.ticker, target_percentage))
+
+        target_percentage = self._cap_max_target_percentage(target_percentage)
+
+        target_percentage *= signal.suggested_exposure.value  # preserve the direction (-1, 0 , 1)
+        self.logger.info("Target Percentage considering direction for {}: {}".format(signal.ticker,
+                                                                                     target_percentage))
+
+        assert is_finite_number(target_percentage), "target_percentage has to be a finite number"
+        return target_percentage

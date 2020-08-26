@@ -28,6 +28,7 @@ from qf_lib.backtesting.trading_session.trading_session import TradingSession
 from qf_lib.common.exceptions.future_contracts_exceptions import NoValidTickerException
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
+from qf_lib.containers.series.qf_series import QFSeries
 
 
 class FuturesAlphaModelStrategy(AlphaModelStrategy):
@@ -47,6 +48,7 @@ class FuturesAlphaModelStrategy(AlphaModelStrategy):
         maximal number of positions that may be open at the same time in the portfolio. If the value is set to None,
         the number of maximal open positions is not limited.
     """
+
     def __init__(self, ts: TradingSession, model_tickers_dict: Dict[AlphaModel, Sequence[Ticker]],
                  use_stop_losses: bool = True, max_open_positions: Optional[int] = None):
 
@@ -71,6 +73,18 @@ class FuturesAlphaModelStrategy(AlphaModelStrategy):
             self.logger.info("Filtering Orders based on selected requirements: {}".format(orders_filter))
             orders = orders_filter.adjust_orders(orders)
             close_orders = orders_filter.adjust_orders(close_orders)
+
+            for order in close_orders:
+                contract = order.contract
+                future_ticker = self._contract_ticker_mapper.contract_to_ticker(contract,
+                                                                                strictly_to_specific_ticker=False)
+                if isinstance(future_ticker, FutureTicker):
+                    exp_dates: QFSeries = future_ticker.get_expiration_dates()
+                    specific_ticker = self._contract_ticker_mapper.contract_to_ticker(contract,
+                                                                                      strictly_to_specific_ticker=True)
+                    raw_expiration_date_of_specific_ticker = exp_dates[exp_dates == specific_ticker].index[0]
+                    if raw_expiration_date_of_specific_ticker <= self._timer.now():
+                        self.logger.error("{} - {} Exceeded the expiration date".format(self._timer.now(), contract))
 
         self.logger.info("Cancelling all open orders")
         self._broker.cancel_all_open_orders()
