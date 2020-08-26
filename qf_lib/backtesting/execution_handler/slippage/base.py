@@ -111,7 +111,13 @@ class Slippage(object, metaclass=ABCMeta):
         # Look into the future in order to see the total volume traded today
         volume_df = self._data_provider.get_price(tickers, PriceField.Volume, start_date, end_date, Frequency.DAILY)
         volume_df = volume_df.fillna(0.0)
-        volumes = volume_df.loc[date.date(), tickers].values
+        try:
+            volumes = volume_df.loc[date.date(), tickers].values
+        except KeyError:
+            volumes = np.repeat(0, len(tickers))
+
+        # Replace negative values with 0
+        volumes[volumes < 0] = 0
         return volumes
 
     def _get_fill_volumes(self, order_volumes: Sequence[int], market_volumes: Sequence[int]) -> Sequence[int]:

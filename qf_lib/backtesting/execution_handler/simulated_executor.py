@@ -26,6 +26,7 @@ from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.backtesting.portfolio.transaction import Transaction
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.timer import Timer
+from qf_lib.common.utils.numberutils.is_finite_number import is_finite_number
 
 
 class SimulatedExecutor(metaclass=abc.ABCMeta):
@@ -94,7 +95,7 @@ class SimulatedExecutor(metaclass=abc.ABCMeta):
                                                                             no_slippage_fill_prices_list)
 
             for order, fill_price, fill_volume in zip(to_be_executed_orders, fill_prices, fill_volumes):
-                if fill_volume != 0:
+                if fill_volume != 0 and is_finite_number(fill_price):
                     self._execute_order(order, fill_price, fill_volume)
                     # Delete the executed orders from awaiting orders dictionary
                     del self._awaiting_orders[order.id]

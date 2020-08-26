@@ -87,7 +87,7 @@ class FuturesChain(pd.Series):
             last_date_in_chain = self._chain.index[-1]
             first_date_in_chain = self._first_cached_date
         else:
-            return self._preload_data_and_generate_chain(fields, start_date, end_date, frequency)
+            return self._preload_data_and_generate_chain(fields, start_date, end_date, frequency).squeeze()
 
         # 2 - Check if all the necessary data is available (if start_date >= first_cached_date) and cached fields
         # include all fields from fields_list, if not - preload it by initializing the Futures Chain
@@ -96,15 +96,16 @@ class FuturesChain(pd.Series):
             self._preload_data_and_generate_chain(fields, start_date, end_date, frequency)
 
         # 3 - Download the prices since the last date available in the chain
-        prices_df = self._data_provider.get_price(self._future_ticker, fields, last_date_in_chain, end_date)
+        prices_df: PricesDataFrame = self._data_provider.get_price(self._future_ticker, fields_list, last_date_in_chain,
+                                                                   end_date)
 
         # If no changes to the PricesDataFrame should be applied return the existing chain
         if prices_df.empty:
-            return self._chain[fields_list].loc[start_date:end_date]
+            return self._chain[fields_list].loc[start_date:end_date].squeeze()
 
         prices_after_last_date_in_chain = prices_df.iloc[1:] if prices_df.index[0] == last_date_in_chain else prices_df
         if prices_after_last_date_in_chain.empty:
-            return self._chain[fields_list].loc[start_date:end_date]
+            return self._chain[fields_list].loc[start_date:end_date].squeeze()
 
         # 4 - Check if between last_date_in_chain and end_date an expiration date occurred
         def expiration_day_occurred() -> bool:
@@ -120,8 +121,8 @@ class FuturesChain(pd.Series):
             different_ticker = self._specific_ticker != self._future_ticker.ticker
 
             if last_date_in_chain in prices_df.index:
-                different_prices = not self._chain[fields].loc[last_date_in_chain].equals(
-                    prices_df[fields].loc[last_date_in_chain])
+                different_prices = not self._chain[fields_list].loc[last_date_in_chain].equals(
+                    prices_df[fields_list].loc[last_date_in_chain])
             else:
                 different_prices = True
 
@@ -138,12 +139,12 @@ class FuturesChain(pd.Series):
             # chain will still point to 13th. Therefore, the prices_df will contain prices for C2 within e.g. 14 - 16th
             # July. As the expiration of C1 occurred on the 16th, the computed prices_df data frame cannot be appended
             # to the chain and the chain should be regenerated.
-            return self._preload_data_and_generate_chain(fields, start_date, end_date, frequency)
+            return self._preload_data_and_generate_chain(fields, start_date, end_date, frequency).squeeze()
         else:
             # Append the new prices to the existing PricesDataFrame chain
-            self._chain = self._chain.append(prices_after_last_date_in_chain)
+            self._chain = self._chain.append(prices_after_last_date_in_chain, sort=False)
             self._specific_ticker = self._future_ticker.ticker
-            return self._chain[fields_list].loc[start_date:end_date]
+            return self._chain[fields_list].loc[start_date:end_date].squeeze()
 
     def _preload_data_and_generate_chain(self, fields: Union[PriceField, Sequence[PriceField]], start_date: datetime,
                                          end_date: datetime, frequency: Frequency) -> \
@@ -174,7 +175,7 @@ class FuturesChain(pd.Series):
         self._specific_ticker = self._future_ticker.ticker
         self._cached_fields = set(fields_list)
 
-        return self._chain[fields_list].loc[start_date:end_date]
+        return self._chain[fields_list].loc[start_date:end_date].squeeze()
 
     def _generate_chain(self, fields, start_time: datetime, end_time: datetime) -> PricesDataFrame:
         """
@@ -234,7 +235,7 @@ class FuturesChain(pd.Series):
 
         # Get the data within the desired time ranges from corresponding contracts
         combined_data_frame = pd.concat(
-            [future.data.loc[left:right] for left, right, future in time_ranges_and_futures])
+            [future.data.loc[left:right] for left, right, future in time_ranges_and_futures], sort=False)
         # To avoid shifting data on the time ranges, we use overlapping ends and beginnings of the time ranges.
         # Therefore, we need to check if any duplicates exist and on the expiry dates, we keep the data from
         # newer contract
