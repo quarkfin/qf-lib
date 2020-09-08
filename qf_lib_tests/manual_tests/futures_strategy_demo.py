@@ -15,7 +15,7 @@
 from datetime import datetime
 from unittest import TestCase
 
-from qf_common.config.ioc import container
+from demo_scripts.demo_configuration.demo_ioc import container
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel, AlphaModelSettings
 from qf_lib.backtesting.alpha_model.alpha_model_factory import AlphaModelFactory
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
