@@ -30,11 +30,11 @@ class TestEquityPosition(unittest.TestCase):
         self.end_time = str_to_date('2018-02-03')  # dummy time
 
     def test_creating_empty_position(self):
-        position = BacktestFuturePosition(self.contract, start_time=self.start_time)
+        position = BacktestFuturePosition(self.contract)
         self.assertEqual(position.market_value(), 0)
 
     def test_transact_transaction_1(self):
-        position = BacktestFuturePosition(self.contract, start_time=self.start_time)
+        position = BacktestFuturePosition(self.contract)
         quantity = 50
         price = 100
         commission = 5
@@ -43,7 +43,7 @@ class TestEquityPosition(unittest.TestCase):
         self.assertEqual(cash_move, -commission)
 
     def test_transact_transaction_2(self):
-        position = BacktestFuturePosition(self.contract, start_time=self.start_time)
+        position = BacktestFuturePosition(self.contract)
         quantity = -50
         price = 100
         commission = 5
@@ -52,7 +52,7 @@ class TestEquityPosition(unittest.TestCase):
         self.assertEqual(cash_move, -commission)
 
     def test_transact_transaction_3(self):
-        position = BacktestFuturePosition(self.contract, start_time=self.start_time)
+        position = BacktestFuturePosition(self.contract)
 
         quantity1 = 50
         price1 = 100
@@ -70,7 +70,7 @@ class TestEquityPosition(unittest.TestCase):
         self.assertEqual(cash_move2, expected_move)
 
     def test_transact_transaction_4(self):
-        position = BacktestFuturePosition(self.contract, start_time=self.start_time)
+        position = BacktestFuturePosition(self.contract)
 
         quantity1 = -50
         price1 = 100
@@ -88,7 +88,7 @@ class TestEquityPosition(unittest.TestCase):
         self.assertEqual(cash_move2, expected_move)
 
     def test_transact_transaction_5(self):
-        position = BacktestFuturePosition(self.contract, start_time=self.start_time)
+        position = BacktestFuturePosition(self.contract)
 
         quantity1 = 50
         price1 = 100
@@ -113,13 +113,16 @@ class TestEquityPosition(unittest.TestCase):
         self.assertEqual(cash_move2, expected_move)
 
     def test_market_value(self):
-        position = BacktestFuturePosition(self.contract, start_time=self.start_time)
+        position = BacktestFuturePosition(self.contract)
         quantity = 50
         price = 100
         commission = 5
         position.transact_transaction(Transaction(self.random_time, self.contract, quantity, price, commission))
 
         self.assertEqual(position.market_value(), 0)  # before update_price
+
+        position.update_price(bid_price=100, ask_price=100 + 1)
+        self.assertEqual(position.market_value(), 0)  # price did not change yet
 
         bid_price = 110
         position.update_price(bid_price=bid_price, ask_price=bid_price + 1)
@@ -133,7 +136,7 @@ class TestEquityPosition(unittest.TestCase):
         self.assertEqual(position.market_value(), market_value)
 
     def test_market_value2(self):
-        position = BacktestFuturePosition(self.contract, start_time=self.start_time)
+        position = BacktestFuturePosition(self.contract)
         quantity = -50
         price = 100
         commission = 5

@@ -18,13 +18,13 @@ import pandas as pd
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
-from qf_lib.containers.dataframe.cast_dataframe import cast_dataframe
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.futures.future_contract import FutureContract
 from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 from qf_lib.containers.futures.futures_adjustment_method import FuturesAdjustmentMethod
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
+from qf_lib.data_providers.helpers import cast_data_array_to_proper_type
 
 
 class FuturesChain(pd.Series):
@@ -35,7 +35,8 @@ class FuturesChain(pd.Series):
     Parameters
     ------------
     future_ticker: FutureTicker
-        The FutureTicker used to download the futures contracts, further chained and joined in order to obtain the result of get_price function.
+        The FutureTicker used to download the futures contracts, further chained and joined in order to obtain the
+         result of get_price function.
     data_provider: DataProvider
         Reference to the data provider, necessary to download latest prices, returned by the get_price function.
     method: FuturesAdjustmentMethod
@@ -207,7 +208,9 @@ class FuturesChain(pd.Series):
 
         # Shift the index and data according to the start time and end time values. We shift the number of days by 1,
         # so that the days_before_exp_date=1 will use the prices on the expiration date from the newer contract.
-        shifted_index = self.index - pd.Timedelta(days=(days_before_exp_date - 1))
+        shifted_index = pd.DatetimeIndex(self.index) - pd.Timedelta(days=(days_before_exp_date - 1))
+        if shifted_index.empty:
+            return PricesDataFrame(columns=fields)
 
         # We use the backfill search for locating the start time, because we will additionally consider the time range
         # between start_time and the found starting expiry date time
@@ -387,7 +390,7 @@ class FuturesChain(pd.Series):
                 data = futures_data.loc[:, future_ticker]
             else:
                 data = futures_data.loc[:, future_ticker, :]
-                data = cast_dataframe(data.to_pandas(), PricesDataFrame)
+                data = cast_data_array_to_proper_type(data, use_prices_types=True)
 
             # Check if data is empty (some contract may have no price within the given time range) - if so do not
             # add it to the FuturesChain

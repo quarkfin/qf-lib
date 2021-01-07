@@ -22,6 +22,8 @@ from qf_lib.analysis.common.abstract_document import AbstractDocument
 from qf_lib.analysis.timeseries_analysis.timeseries_analysis import TimeseriesAnalysis
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.plotting_mode import PlottingMode
+from qf_lib.common.utils.volatility.get_volatility import get_volatility
+from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.documents_utils.document_exporting.element.chart import ChartElement
 from qf_lib.documents_utils.document_exporting.element.grid import GridElement
@@ -56,12 +58,11 @@ class AbstractTearsheet(AbstractDocument, metaclass=ABCMeta):
     """
 
     def __init__(self, settings: Settings, pdf_exporter: PDFExporter, strategy_series: QFSeries,
-                 live_date: datetime = None,
-                 title: str = "Strategy Analysis"):
+                 live_date: datetime = None, title: str = "Strategy Analysis"):
         super().__init__(settings, pdf_exporter, title)
         self.strategy_series = strategy_series
         self.live_date = live_date
-        self.frequency = Frequency.DAILY
+        self.frequency = strategy_series.get_frequency()
 
     def _add_perf_chart(self, series_list: List[QFSeries]):
         """
@@ -116,18 +117,37 @@ class AbstractTearsheet(AbstractDocument, metaclass=ABCMeta):
 
         self.document.add_element(grid)
 
-    def _add_rolling_chart(self, timeseries):
-        chart = self._get_rolling_chart(timeseries)
+    def _add_rolling_ret_and_vol_chart(self, timeseries):
+        chart = self._get_rolling_ret_and_vol_chart(timeseries)
+        self.document.add_element(ChartElement(chart, figsize=self.full_image_size, dpi=self.dpi))
+
+    def _add_rolling_vol_chart(self, timeseries_list):
+        def volatility(window):
+            return get_volatility(PricesSeries(window), Frequency.DAILY, annualise=True)
+
+        chart = self._get_rolling_chart(timeseries_list, volatility, "Volatility")
+        self.document.add_element(ChartElement(chart, figsize=self.full_image_size, dpi=self.dpi))
+
+    def _add_rolling_return_chart(self, timeseries_list):
+        def tot_return(window):
+            return PricesSeries(window).total_cumulative_return()
+
+        chart = self._get_rolling_chart(timeseries_list, tot_return, "Return")
         self.document.add_element(ChartElement(chart, figsize=self.full_image_size, dpi=self.dpi))
 
     def _add_statistics_table(self, series_list: List[QFSeries]):
         ta_list = [TimeseriesAnalysis(series, self.frequency) for series in series_list]
         super()._add_statistics_table(ta_list)
 
-    def save(self, report_dir: str = ""):
+    def save(self, report_dir: str = "", file_name=None):
         # Set the style for the report
         plt.style.use(['tearsheet'])
 
-        filename = "%Y_%m_%d-%H%M Tearsheet.pdf"
-        filename = datetime.now().strftime(filename)
-        return self.pdf_exporter.generate([self.document], report_dir, filename)
+        if file_name is None:
+            file_name = "%Y_%m_%d-%H%M Tearsheet.pdf"
+            file_name = datetime.now().strftime(file_name)
+
+        if not file_name.endswith(".pdf"):
+            file_name = "{}.pdf".format(file_name)
+
+        return self.pdf_exporter.generate([self.document], report_dir, file_name)

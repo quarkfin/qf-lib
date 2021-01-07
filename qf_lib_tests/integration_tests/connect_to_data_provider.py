@@ -11,10 +11,18 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
+from qf_lib.data_providers.bloomberg import BloombergDataProvider
+from qf_lib_tests.unit_tests.config.test_settings import get_test_settings
 
-from enum import Enum
 
+def get_data_provider():
+    """
+    Connects to Bloomberg data provider using the test settings.
+    """
+    settings = get_test_settings()
+    bbg_provider = BloombergDataProvider(settings)
+    bbg_provider.connect()
+    if not bbg_provider.connected:
+        raise ConnectionError("No Bloomberg connection")
 
-class TradeDirection(Enum):
-    Buy = 0
-    Sell = 1
+    return bbg_provider

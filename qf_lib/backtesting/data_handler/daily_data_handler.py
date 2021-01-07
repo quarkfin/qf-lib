@@ -15,8 +15,6 @@
 from datetime import datetime
 from typing import Union, Sequence
 
-import pandas as pd
-
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
@@ -31,6 +29,7 @@ from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.cast_series import cast_series
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
+from qf_lib.data_providers.helpers import cast_data_array_to_proper_type
 
 
 class DailyDataHandler(DataHandler):
@@ -128,7 +127,7 @@ class DailyDataHandler(DataHandler):
         return self.data_provider.get_history(tickers, fields, start_date, end_date_without_look_ahead, frequency)
 
     def get_last_available_price(self, tickers: Union[Ticker, Sequence[Ticker]],
-                                 frequency: Frequency = None) -> Union[float, pd.Series]:
+                                 frequency: Frequency = None) -> Union[float, QFSeries]:
         """
         Gets the latest available price for given assets (even if the full bar is not yet available).
         The frequency parameter is always casted into daily frequency, to represent the most recent price.
@@ -139,7 +138,7 @@ class DailyDataHandler(DataHandler):
 
         Returns
         -------
-        float, pd.Series
+        float, QFSeries
             last_prices series where:
             - last_prices.name contains a date of current prices,
             - last_prices.index contains tickers
@@ -149,7 +148,7 @@ class DailyDataHandler(DataHandler):
         return self._get_single_date_price(tickers, nans_allowed=False, frequency=Frequency.DAILY)
 
     def get_current_price(self, tickers: Union[Ticker, Sequence[Ticker]],
-                          frequency: Frequency = None) -> Union[float, pd.Series]:
+                          frequency: Frequency = None) -> Union[float, QFSeries]:
         """
         Works just like get_last_available_price() but it can return NaNs if data is not available at the current
         moment (e.g. it returns NaN on a non-trading day or when current time is different than the time of MarketOpen
@@ -181,12 +180,12 @@ class DailyDataHandler(DataHandler):
         return self._get_single_date_price(tickers, nans_allowed=True, frequency=Frequency.DAILY)
 
     def get_current_bar(self, tickers: Union[Ticker, Sequence[Ticker]], frequency: Frequency = None) \
-            -> Union[pd.Series, pd.DataFrame]:
+            -> Union[QFSeries, QFDataFrame]:
         """
         Gets the current bar(s) for given Ticker(s). If the bar is not available yet (e.g. before the market close),
         None is returned.
 
-        If the request for single Ticker was made, then the result is a pandas.Series indexed with PriceFields (OHLCV).
+        If the request for single Ticker was made, then the result is a QFSeries indexed with PriceFields (OHLCV).
         If the request for multiple Tickers was made, then the result has Tickers as an index and PriceFields
         as columns.
 
@@ -205,11 +204,11 @@ class DailyDataHandler(DataHandler):
 
         Returns
         -------
-        pandas.Series, pandas.DataFrame
+        QFSeries, QFDataFrame
             current bar
         """
         if not tickers:
-            return pd.Series()
+            return QFSeries()
 
         frequency = frequency or self.fixed_data_provider_frequency or Frequency.DAILY
 
@@ -218,7 +217,7 @@ class DailyDataHandler(DataHandler):
         current_datetime = self.timer.now()
 
         if self.time_helper.datetime_of_latest_market_event(MarketCloseEvent) < current_datetime:
-            last_available_bars = pd.DataFrame(index=tickers, columns=PriceField.ohlcv())
+            last_available_bars = QFDataFrame(index=tickers, columns=PriceField.ohlcv())
         else:
             current_date = self._zero_out_time_component(current_datetime)
             start_date = current_date - RelativeDelta(days=7)
@@ -226,9 +225,9 @@ class DailyDataHandler(DataHandler):
             prices_data_array = self.get_price(tickers=tickers, fields=PriceField.ohlcv(), start_date=start_date,
                                                end_date=current_date, frequency=frequency)  # type: QFDataArray
             try:
-                last_available_bars = prices_data_array.loc[current_date].to_pandas()
+                last_available_bars = cast_data_array_to_proper_type(prices_data_array.loc[current_date])
             except KeyError:
-                return pd.DataFrame(index=tickers, columns=PriceField.ohlcv())
+                return QFDataFrame(index=tickers, columns=PriceField.ohlcv())
 
         if was_single_ticker_provided:
             last_available_bars = last_available_bars.iloc[0, :]
@@ -247,12 +246,12 @@ class DailyDataHandler(DataHandler):
 
     def _get_single_date_price(
             self, tickers: Union[Ticker, Sequence[Ticker]], nans_allowed: bool, frequency: Frequency = Frequency.DAILY) \
-            -> Union[float, pd.Series]:
+            -> Union[float, QFSeries]:
         tickers, was_single_ticker_provided = convert_to_list(tickers, Ticker)
 
         # if an empty tickers list was supplied then return an empty result
         if not tickers:
-            return pd.Series()
+            return QFSeries()
 
         # Compute the time ranges, used further by the get_price function
         current_datetime = self.timer.now()
@@ -275,7 +274,7 @@ class DailyDataHandler(DataHandler):
         try:
             prices_series = prices_df.loc[current_datetime, :]
         except KeyError:
-            prices_series = pd.Series(index=tickers)
+            prices_series = QFSeries(index=tickers)
 
         prices_series.name = "Current asset prices"
 
@@ -290,7 +289,7 @@ class DailyDataHandler(DataHandler):
 
             prices_series.name = "Last available asset prices"
 
-        prices_series = cast_series(prices_series, pd.Series)
+        prices_series = cast_series(prices_series, QFSeries)
         if was_single_ticker_provided:
             return prices_series[0]
         else:

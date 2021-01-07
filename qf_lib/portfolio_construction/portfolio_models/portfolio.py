@@ -26,6 +26,7 @@ from qf_lib.containers.dataframe.simple_returns_dataframe import SimpleReturnsDa
 from qf_lib.containers.dimension_names import TICKERS
 from qf_lib.containers.series.cast_series import cast_series
 from qf_lib.containers.series.prices_series import PricesSeries
+from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
 
 
@@ -33,7 +34,7 @@ class Portfolio(metaclass=abc.ABCMeta):
     EPSILON = 1e-5
 
     @abc.abstractmethod
-    def get_weights(self) -> pd.Series:
+    def get_weights(self) -> QFSeries:
         """
         Returns
         -------
@@ -46,7 +47,7 @@ class Portfolio(metaclass=abc.ABCMeta):
         return qf_logger.getChild(cls.__name__)
 
     @classmethod
-    def constant_weights(cls, assets_rets_df: SimpleReturnsDataFrame, weights: pd.Series) \
+    def constant_weights(cls, assets_rets_df: SimpleReturnsDataFrame, weights: QFSeries) \
             -> Tuple[SimpleReturnsSeries, QFDataFrame]:
         """
         Calculates the time series of portfolio returns (given the weights of portfolio's assets). Weights of assets
@@ -86,7 +87,7 @@ class Portfolio(metaclass=abc.ABCMeta):
         return portfolio_rets_tms, allocation_df
 
     @classmethod
-    def drifting_weights(cls, assets_rets_df: SimpleReturnsDataFrame, weights: pd.Series) \
+    def drifting_weights(cls, assets_rets_df: SimpleReturnsDataFrame, weights: QFSeries) \
             -> Tuple[SimpleReturnsSeries, QFDataFrame]:
         """
         Calculates the time series of portfolio returns (given the initial weights of portfolio's assets).
@@ -176,7 +177,7 @@ class Portfolio(metaclass=abc.ABCMeta):
         return portfolio_rets_tms
 
     @classmethod
-    def one_over_n_weights(cls, tickers: Sequence[Ticker]) -> pd.Series:
+    def one_over_n_weights(cls, tickers: Sequence[Ticker]) -> QFSeries:
         """
         Calculates the one-over-n weights for given tickers.
         """
@@ -184,6 +185,6 @@ class Portfolio(metaclass=abc.ABCMeta):
         weight_of_each_asset = 1 / num_of_tickers
 
         weights_values = [weight_of_each_asset] * num_of_tickers
-        weights = pd.Series(index=pd.Index(tickers, name=TICKERS), data=weights_values)
+        weights = QFSeries(index=pd.Index(tickers, name=TICKERS), data=weights_values)
 
         return weights

@@ -19,6 +19,7 @@ import pandas as pd
 
 from qf_lib.common.utils.returns.max_drawdown import max_drawdown
 from qf_lib.containers.dataframe.cast_dataframe import cast_dataframe
+from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.dataframe.simple_returns_dataframe import SimpleReturnsDataFrame
 
 
@@ -32,7 +33,7 @@ class InitialRiskStatsFactory(object):
         self._max_accepted_dd = max_accepted_dd
         self._target_return = target_return
 
-    def make_stats(self, initial_risks: Sequence[float], scenarios_list: Sequence[pd.DataFrame]) -> pd.DataFrame:
+    def make_stats(self, initial_risks: Sequence[float], scenarios_list: Sequence[QFDataFrame]) -> QFDataFrame:
         """
         Creates a pandas.DataFrame showing how many strategies failed (reached certain draw down level) and how many
         of them succeeded (that is: reached the target return and not failed on the way).
@@ -42,7 +43,7 @@ class InitialRiskStatsFactory(object):
         initial_risks: Sequence[float]
             list of initial_risk parameters where initial_risk is a float number
         scenarios_list: Sequence[pandas.DataFrame]
-            list with scenarios (pd.DataFrame) where each DataFrame corresponds to one initial_risk value
+            list with scenarios (QFDataFrame) where each DataFrame corresponds to one initial_risk value
             Each DataFrame has columns corresponding to different scenarios and its indexed by Trades' ordinal number.
             Its values are returns of Trades.
 
@@ -52,7 +53,7 @@ class InitialRiskStatsFactory(object):
             DataFrame indexed with initial_risk values and with columns FAILED (fraction of scenarios that failed)
             and SUCCEEDED (fraction of scenarios that met the objective and didn't fail on the way)
         """
-        result = pd.DataFrame(
+        result = QFDataFrame(
             index=pd.Index(initial_risks), columns=pd.Index([self.FAILED, self.SUCCEEDED]), dtype=np.float64)
 
         for init_risk, scenarios in zip(initial_risks, scenarios_list):

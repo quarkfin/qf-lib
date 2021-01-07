@@ -14,9 +14,8 @@
 from unittest import TestCase
 
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
-from qf_lib.backtesting.alpha_model.alpha_model_factory import AlphaModelFactory
+from qf_lib.backtesting.alpha_model.alpha_model_strategy import AlphaModelStrategy
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
-from qf_lib.backtesting.alpha_model.futures_alpha_model_strategy import FuturesAlphaModelStrategy
 from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
@@ -33,7 +32,7 @@ import numpy as np
 
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.data_providers.preset_data_provider import PresetDataProvider
-from qf_lib_tests.integration_tests.backtesting.trading_session_for_tests import TestingTradingSession
+from qf_lib_tests.integration_tests.backtesting.trading_session_for_tests import TradingSessionForTests
 
 
 class TestAlphaModelPositionsLimit(TestCase):
@@ -56,7 +55,7 @@ class TestAlphaModelPositionsLimit(TestCase):
     def setUp(self):
         self.data_provider = self._mock_data_provider()
 
-        self.ts = TestingTradingSession(
+        self.ts = TradingSessionForTests(
             data_provider=self.data_provider,
             start_date=self.test_start_date,
             end_date=self.test_end_date,
@@ -65,9 +64,7 @@ class TestAlphaModelPositionsLimit(TestCase):
         )
 
         # --- Build the model --- #
-        model_type = DummyAlphaModel
-        model_factory = AlphaModelFactory(self.ts.data_handler)
-        model = model_factory.make_model(model_type, risk_estimation_factor=0.05)
+        model = DummyAlphaModel(risk_estimation_factor=0.05, data_handler=self.ts.data_handler)
         self.model_tickers_dict = {model: self.tickers}
 
     def _mock_data_provider(self):
@@ -83,16 +80,16 @@ class TestAlphaModelPositionsLimit(TestCase):
 
         # Mock price data array
         values = [
-            [   # 02-01-2020
+            [  # 02-01-2020
                 # MSFT US Equity, AUDUSD Curncy, Heating Oil (3 contracts) prices
                 [90], [90], [90], [90], [90]
-            ], [   # 03-01-2020
+            ], [  # 03-01-2020
                 [95], [95], [85], [100], [85]
-            ], [   # 06-01-2020
+            ], [  # 06-01-2020
                 [110], [100], [90], [100], [90]  # The Heating Oil contract will create an open position
-            ], [   # 07-01-2020
+            ], [  # 07-01-2020
                 [90], [110], [95], [np.nan], [95]  # Rolling for Heating Oil occurs, new Heating Oil contract is bought
-            ], [   # 08-01-2020
+            ], [  # 08-01-2020
                 [80], [120], [100], [100], [100]  # Previous Heating Oil is sold (there was no price on the 7th)
             ], [  # 09-01-2020
                 [80], [120], [100], [100], [100]
@@ -129,7 +126,7 @@ class TestAlphaModelPositionsLimit(TestCase):
         Returns series indexed by dates, containing the number of assets in the portfolio (where e.g. all Heating Oil
         contracts correspond to one asset)
         """
-        positions_history = portfolio.positions_eod_history()
+        positions_history = portfolio.positions_history()
 
         def contract_to_ticker(c: Contract):
             return portfolio.contract_ticker_mapper. \
@@ -144,8 +141,8 @@ class TestAlphaModelPositionsLimit(TestCase):
 
     def test_limiting_open_positions_1_position(self):
         max_open_positions = 1
-        FuturesAlphaModelStrategy(self.ts, self.model_tickers_dict, use_stop_losses=False,
-                                  max_open_positions=max_open_positions)
+        AlphaModelStrategy(self.ts, self.model_tickers_dict, use_stop_losses=False,
+                           max_open_positions=max_open_positions)
         self.ts.start_trading()
 
         number_of_assets = self._get_assets_number_series(self.ts.portfolio)
@@ -155,8 +152,8 @@ class TestAlphaModelPositionsLimit(TestCase):
 
     def test_limiting_open_positions_2_position(self):
         max_open_positions = 2
-        FuturesAlphaModelStrategy(self.ts, self.model_tickers_dict, use_stop_losses=False,
-                                  max_open_positions=max_open_positions)
+        AlphaModelStrategy(self.ts, self.model_tickers_dict, use_stop_losses=False,
+                           max_open_positions=max_open_positions)
         self.ts.start_trading()
 
         number_of_assets = self._get_assets_number_series(self.ts.portfolio)

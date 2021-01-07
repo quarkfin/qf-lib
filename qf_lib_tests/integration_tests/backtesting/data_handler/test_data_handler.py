@@ -28,16 +28,11 @@ from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.dimension_names import DATES, TICKERS
 from qf_lib.containers.qf_data_array import QFDataArray
-from qf_lib.data_providers.bloomberg import BloombergDataProvider
+from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_series_equal, assert_same_index
-from qf_lib_tests.unit_tests.config.test_settings import get_test_settings
-
-settings = get_test_settings()
-bbg_provider = BloombergDataProvider(settings)
-bbg_provider.connect()
+from qf_lib_tests.integration_tests.connect_to_data_provider import get_data_provider
 
 
-@unittest.skipIf(not bbg_provider.connected, "No Bloomberg connection")
 class TestDataHandler(TestCase):
     @classmethod
     def setUpClass(cls):
@@ -48,9 +43,13 @@ class TestDataHandler(TestCase):
         cls.start_date = str_to_date("2018-01-02")
         cls.end_date = str_to_date("2018-01-31")
         cls.end_date_trimmed = str_to_date("2018-01-30")
+        cls.get_history_field = "PX_TO_BOOK_RATIO"
 
     def setUp(self):
-        self.price_data_provider = bbg_provider
+        try:
+            self.price_data_provider = get_data_provider()
+        except Exception as e:
+            raise self.skipTest(e)
 
         self.timer = SettableTimer()
         self.data_handler = DailyDataHandler(self.price_data_provider, self.timer)
@@ -128,11 +127,11 @@ class TestDataHandler(TestCase):
     def test_get_last_price_with_empty_tickers_list(self):
         self.timer.set_current_time(str_to_date("2018-01-31") + MarketOpenEvent.trigger_time() + RelativeDelta(hours=1))
         last_prices = self.data_handler.get_last_available_price([])
-        assert_series_equal(pd.Series(), last_prices)
+        assert_series_equal(QFSeries(), last_prices)
 
     def test_get_history_when_end_date_is_in_the_past(self):
         self.timer.set_current_time(str_to_date("2018-02-12 00:00:00.000000", DateFormat.FULL_ISO))
-        prices_tms = self.data_handler.get_history(self.spx_index_ticker, 'PX_TO_BOOK_RATIO',
+        prices_tms = self.data_handler.get_history(self.spx_index_ticker, self.get_history_field,
                                                    self.start_date, self.end_date)
 
         self.assertEqual(self.start_date, prices_tms.index[0].to_pydatetime())
@@ -140,7 +139,7 @@ class TestDataHandler(TestCase):
 
     def test_get_history_when_end_date_is_today_after_market_close(self):
         self.timer.set_current_time(str_to_date("2018-01-31") + MarketCloseEvent.trigger_time() + RelativeDelta(hours=1))
-        prices_tms = self.data_handler.get_history(self.spx_index_ticker, 'PX_TO_BOOK_RATIO',
+        prices_tms = self.data_handler.get_history(self.spx_index_ticker, self.get_history_field,
                                                    self.start_date, self.end_date)
 
         self.assertEqual(self.start_date, prices_tms.index[0].to_pydatetime())
@@ -148,7 +147,7 @@ class TestDataHandler(TestCase):
 
     def test_get_history_when_end_date_is_today_before_market_close(self):
         self.timer.set_current_time(str_to_date("2018-01-31") + MarketOpenEvent.trigger_time() + RelativeDelta(hours=1))
-        prices_tms = self.data_handler.get_history(self.spx_index_ticker, 'PX_TO_BOOK_RATIO',
+        prices_tms = self.data_handler.get_history(self.spx_index_ticker, self.get_history_field,
                                                    self.start_date, self.end_date)
 
         self.assertEqual(self.start_date, prices_tms.index[0].to_pydatetime())
@@ -156,7 +155,7 @@ class TestDataHandler(TestCase):
 
     def test_get_history_when_end_date_is_tomorrow(self):
         self.timer.set_current_time(str_to_date("2018-01-30") + MarketCloseEvent.trigger_time() + RelativeDelta(hours=1))
-        prices_tms = self.data_handler.get_history(self.spx_index_ticker, 'PX_TO_BOOK_RATIO',
+        prices_tms = self.data_handler.get_history(self.spx_index_ticker, self.get_history_field,
                                                    self.start_date, self.end_date_trimmed)
 
         self.assertEqual(self.start_date, prices_tms.index[0].to_pydatetime())
@@ -164,7 +163,7 @@ class TestDataHandler(TestCase):
 
     def test_get_history_with_multiple_tickers(self):
         self.timer.set_current_time(str_to_date("2018-01-31") + MarketOpenEvent.trigger_time() + RelativeDelta(hours=1))
-        resilt_df = self.data_handler.get_history([self.microsoft_ticker, self.google_ticker], 'PX_TO_BOOK_RATIO',
+        resilt_df = self.data_handler.get_history([self.microsoft_ticker, self.google_ticker], self.get_history_field,
                                                   self.start_date, self.end_date_trimmed)
 
         self.assertEqual(self.microsoft_ticker, resilt_df.columns[0])

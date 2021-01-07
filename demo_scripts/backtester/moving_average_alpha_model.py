@@ -14,7 +14,7 @@
 
 import talib
 
-from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel, AlphaModelSettings
+from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.common.enums.price_field import PriceField
@@ -27,12 +27,6 @@ class MovingAverageAlphaModel(AlphaModel):
     on the recent market close prices of an asset to determine the suggested move. It suggests to go LONG on this asset
     if the shorter close prices moving average exceeds the longer one. Otherwise it suggests to go SHORT.
     """
-
-    settings = AlphaModelSettings(
-        parameters=(5, 20),
-        risk_estimation_factor=1.25
-    )
-
     def __init__(self, fast_time_period: int, slow_time_period: int,
                  risk_estimation_factor: float, data_handler: DataHandler):
         super().__init__(risk_estimation_factor, data_handler)
@@ -56,3 +50,6 @@ class MovingAverageAlphaModel(AlphaModel):
             return Exposure.LONG
         else:
             return Exposure.SHORT
+
+    def __hash__(self):
+        return hash((self.__class__.__name__, self.fast_time_period, self.slow_time_period, self.risk_estimation_factor))

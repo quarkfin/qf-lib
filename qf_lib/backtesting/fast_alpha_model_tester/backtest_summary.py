@@ -15,37 +15,44 @@
 from datetime import datetime
 from typing import Tuple, Sequence, Type, List
 
-import pandas as pd
-
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
+from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
+from qf_lib.backtesting.portfolio.trade import Trade
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
 
 
-class BacktestSummaryElement(object):
+class BacktestSummaryElement:
     """Class containing a summary of the performed backtest.
 
     Parameters
     ----------
     model_parameters: Tuple
         Parameters of the model (e.g. length of moving averages).
+    model_parameters_names: Tuple[str]
+        Names of the parameters of the model.
     returns_tms: SimpleReturnsSeries
         SimpleReturnsSeries of the Portfolio.
-    trades_df: pandas.DataFrame
-        DataFrame representing Trades (pairs of Transactions) performed by the tested strategy. Rows are indexed
-        with natural numbers (starting with 0). Columns are indexed with TradeFields (see: TradeField).
-        If there are multiple tickers, then there will be one row for each position opened and then closed.
+    trades: Sequence[Trade]
+        Sequence of Trades (groups of Transactions) performed by the tested strategy.
+    tickers: Sequence[Ticker]
+        Sequence of Tickers for which the single backtest was performed.
     """
-    def __init__(self, model_parameters: Tuple, returns_tms: SimpleReturnsSeries, trades_df: pd.DataFrame):
+    def __init__(self, model_parameters: Tuple, model_parameters_names: Tuple[str], returns_tms: SimpleReturnsSeries,
+                 trades: Sequence[Trade], tickers: Sequence[Ticker]):
         self.model_parameters = model_parameters
+        self.model_parameters_names = model_parameters_names
         self.returns_tms = returns_tms
-        self.trades_df = trades_df
-
-
-class BacktestSummary(object):
-    def __init__(self, tickers: Sequence[Ticker], alpha_model_type: Type[AlphaModel],
-                 elements_list: Sequence[BacktestSummaryElement], start_date: datetime, end_date: datetime):
+        self.trades = trades
         self.tickers = tickers
+
+
+class BacktestSummary:
+    def __init__(self, tickers: Sequence[Ticker], contract_ticker_mapper: ContractTickerMapper,
+                 alpha_model_type: Type[AlphaModel], elements_list: Sequence[BacktestSummaryElement],
+                 start_date: datetime, end_date: datetime):
+        self.tickers = tickers
+        self.contract_ticker_mapper = contract_ticker_mapper
         self.alpha_model_type = alpha_model_type
         self.elements_list = elements_list
         self.asset_class = None

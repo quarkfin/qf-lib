@@ -17,7 +17,9 @@ from typing import Tuple
 import numpy as np
 from numpy import power, sqrt
 from numpy.linalg import inv
-from pandas import DataFrame, Series
+
+from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
+from qf_lib.containers.series.qf_series import QFSeries
 
 
 class BlackLitterman(object):
@@ -26,9 +28,9 @@ class BlackLitterman(object):
 
     Parameters
     -----------
-    hist_cov: DataFrame
+    hist_cov: QFDataFrame
         covariance matrix of historical excess returns of assets; should be annualized
-    weights: Series
+    weights: QFSeries
         weights of assets in the market cap index
     sample_size: int
         number of simple returns used to estimate the historical covariance
@@ -36,7 +38,7 @@ class BlackLitterman(object):
         average sharpe ratio of the market (by default value of 0.5 is used)
     """
 
-    def __init__(self, hist_cov: DataFrame, weights: Series, sample_size: int, sharpe: float = 0.5):
+    def __init__(self, hist_cov: QFDataFrame, weights: QFSeries, sample_size: int, sharpe: float = 0.5):
         self.hist_cov = hist_cov
         self.weights = weights
         self.tau = self._caltulate_tau(sample_size)
@@ -144,7 +146,7 @@ class BlackLitterman(object):
         new_omega_elem = np.ones(1) * view_vol * view_vol  # Omega corresponds to variance of view so use the vol^2
         self._update_views(new_p_row, new_q_elem, new_omega_elem)
 
-    def calculate_prior(self) -> Tuple[Series, DataFrame]:
+    def calculate_prior(self) -> Tuple[QFSeries, QFDataFrame]:
         """
         Function calculates the prior for the BL model:
         - prior_mean = lambda * hist_cov * market_cap_weights
@@ -152,7 +154,7 @@ class BlackLitterman(object):
 
         Returns
         --------
-        Tuple[Series, DataFrame]
+        Tuple[QFSeries, QFDataFrame]
             Tuple(prior_mean, prior_cov)
         """
 
@@ -161,7 +163,7 @@ class BlackLitterman(object):
         prior_cov = self.tau * self.hist_cov
         return prior_mean, prior_cov
 
-    def calculate_posterior(self) -> Tuple[Series, DataFrame]:
+    def calculate_posterior(self) -> Tuple[QFSeries, QFDataFrame]:
         """
         Calculate shape of posterior distribution including the views. It is calculated using a numerically stable formula
         posterior_mean = prior_mean + tau * hist_cov * P' * ( tau * P * hist_cov * P' + Omega)^(-1) * (Q - P * prior_mean)
@@ -169,7 +171,7 @@ class BlackLitterman(object):
 
         Returns
         --------
-        Tuple[Series, DataFrame]
+        Tuple[QFSeries, QFDataFrame]
         """
 
         prior_mean, prior_sigma = self.calculate_prior()

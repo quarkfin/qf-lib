@@ -163,11 +163,11 @@ class DataModel(object):
         return self.fit_model.rsquared_adj
 
     @property
-    def t_values(self) -> pd.Series:
+    def t_values(self) -> QFSeries:
         return self.fit_model.tvalues
 
     @property
-    def p_values(self) -> pd.Series:
+    def p_values(self) -> QFSeries:
         return self.fit_model.pvalues
 
     def _calc_coefficients(self):
@@ -258,7 +258,7 @@ class DataModel(object):
         analysed_tms = self.input_data.analysed_tms
         regressors_df = self.input_data.regressors_df
         data_for_correlation = pd.concat((fitted_tms, regressors_df, analysed_tms), axis=1)
-        self.correlation_matrix = cast_dataframe(data_for_correlation.corr(), output_type=pd.DataFrame)
+        self.correlation_matrix = cast_dataframe(data_for_correlation.corr(), output_type=QFDataFrame)
 
     def _setup_r_square_of_each_predictor(self):
         regressors_df = self.input_data.regressors_df
@@ -266,7 +266,7 @@ class DataModel(object):
         corr_matrix = cast_dataframe(corr_matrix, output_type=QFDataFrame)
         vif = np.diagonal(inv(corr_matrix))
         r_squared_values = 1 - (1 / vif)
-        self.r_squared_of_each_predictor = pd.Series(data=r_squared_values, index=regressors_df.columns.copy())
+        self.r_squared_of_each_predictor = QFSeries(data=r_squared_values, index=regressors_df.columns.copy())
 
     def _setup_autocorrelation(self, residuals):
         lags = range(1, self.AUTOCORR_MAX_LAG + 1)

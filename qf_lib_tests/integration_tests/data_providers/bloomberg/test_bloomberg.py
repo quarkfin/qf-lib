@@ -25,16 +25,10 @@ from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
-from qf_lib.data_providers.bloomberg import BloombergDataProvider
 from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_series_equal
-from qf_lib_tests.unit_tests.config.test_settings import get_test_settings
-
-settings = get_test_settings()
-bbg_provider = BloombergDataProvider(settings)
-bbg_provider.connect()
+from qf_lib_tests.integration_tests.connect_to_data_provider import get_data_provider
 
 
-@unittest.skipIf(not bbg_provider.connected, "No Bloomberg connection")
 class TestBloomberg(unittest.TestCase):
     START_DATE = str_to_date('2014-01-01')
     END_DATE = str_to_date('2015-02-02')
@@ -51,7 +45,10 @@ class TestBloomberg(unittest.TestCase):
     MANY_PRICE_FIELDS = [PriceField.Close, PriceField.Open, PriceField.High]
 
     def setUp(self):
-        self.bbg_provider = bbg_provider
+        try:
+            self.bbg_provider = get_data_provider()
+        except Exception as e:
+            raise self.skipTest(e)
 
     # =========================== Test invalid ticker ==========================================================
 

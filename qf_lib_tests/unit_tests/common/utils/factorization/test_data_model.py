@@ -17,6 +17,8 @@ from unittest import TestCase
 
 import numpy as np
 import pandas as pd
+
+from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib_tests.unit_tests.common.utils.factorization.factorization_test_utils import get_analysed_tms_and_regressors
 
 from qf_lib.common.enums.frequency import Frequency
@@ -191,7 +193,7 @@ class TestFactorization(TestCase):
 
     def test_r_squared_of_each_predictor(self):
         actual_r_squared = self.data_model.r_squared_of_each_predictor
-        expected_r_squared = pd.Series(index=['a', 'b'], data=[0.00036403, 0.00036403])
+        expected_r_squared = QFSeries(index=['a', 'b'], data=[0.00036403, 0.00036403])
 
         self.assertTrue(np.allclose(expected_r_squared.values, actual_r_squared.values, rtol=0, atol=1e-04))
         self.assertTrue(all(expected_r_squared.index.values == actual_r_squared.index.values))

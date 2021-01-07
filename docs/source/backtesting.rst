@@ -10,12 +10,9 @@ alpha_model
 	:nosignatures:
 	:toctree: _autosummary
 	:template: short_class.rst
-	
-	alpha_model.AlphaModelSettings
+
 	alpha_model.AlphaModel
-	alpha_model_factory.AlphaModelFactory
 	alpha_model_strategy.AlphaModelStrategy
-	futures_alpha_model_strategy.FuturesAlphaModelStrategy
 	signal.Signal
 	
 contract
@@ -29,7 +26,7 @@ contract
 	
 	contract.Contract
 	contract_to_ticker_conversion.base.ContractTickerMapper
-	contract_to_ticker_conversion.bloomberg_mapper.DummyBloombergContractTickerMapper
+	contract_to_ticker_conversion.bloomberg_mapper.SimulatedBloombergContractTickerMapper
 	contract_to_ticker_conversion.ib_bloomberg_mapper.IB_Bloomberg_ContractTickerMapper
 	contract_to_ticker_conversion.quandl_mapper.DummyQuandlContractTickerMapper
 	contract_to_ticker_conversion.vol_strategy_mapper.VolStrategyContractTickerMapper
@@ -124,10 +121,8 @@ monitoring
 	abstract_monitor.AbstractMonitor
 	backtest_monitor.BacktestMonitor
 	backtest_result.BacktestResult
-	light_backtest_monitor.LightBacktestMonitor
-	live_trading_monitor.LiveTradingMonitor
-	past_signals_generator.PastSignalsGenerator
-	
+	signals_register.SignalsRegister
+
 order
 ==========
 .. currentmodule:: qf_lib.backtesting.order
@@ -182,5 +177,3 @@ trading_session
 	trading_session.TradingSession
 	backtest_trading_session.BacktestTradingSession
 	backtest_trading_session_builder.BacktestTradingSessionBuilder
-	live_trading_session.LiveTradingSession
-	

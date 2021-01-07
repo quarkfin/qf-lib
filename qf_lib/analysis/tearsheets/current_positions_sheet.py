@@ -16,7 +16,7 @@ from datetime import datetime
 import matplotlib as plt
 
 from qf_lib.analysis.common.abstract_document import AbstractDocument
-from qf_lib.analysis.error_handling import ErrorHandling
+from qf_lib.common.utils.error_handling import ErrorHandling
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
@@ -70,7 +70,7 @@ class CurrentPositionsSheet(AbstractDocument):
                             for contract in contracts]
 
         # Get the information whether it is a long or short position
-        directions = [open_positions_dict[contract].direction for contract in contracts]
+        directions = [open_positions_dict[contract].direction() for contract in contracts]
         directions = ["LONG" if direction == 1 else "SHORT" for direction in directions]
 
         # Get the total exposure and market value for each open position

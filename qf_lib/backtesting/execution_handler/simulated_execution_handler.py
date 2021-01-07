@@ -15,6 +15,8 @@
 from itertools import count, groupby
 from typing import List, Sequence, Dict
 
+import numpy as np
+
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.events.time_event.periodic_event.intraday_bar_event import IntradayBarEvent
@@ -37,6 +39,7 @@ from qf_lib.backtesting.order.execution_style import StopOrder, MarketOrder, Mar
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
+from qf_lib.backtesting.portfolio.transaction import Transaction
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.exceptions.broker_exceptions import OrderCancellingException
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
@@ -99,6 +102,7 @@ class SimulatedExecutionHandler(ExecutionHandler):
 
     def on_after_market_close(self, _: AfterMarketCloseEvent):
         # Update the portfolio and record its state, current assets and positions
+        self._remove_acquired_or_not_active_positions()
         self.portfolio.update(record=True)
         self.monitor.end_of_day_update(self.timer.now())
 
@@ -190,3 +194,27 @@ class SimulatedExecutionHandler(ExecutionHandler):
         self._stop_orders_executor.cancel_all_open_orders()
         self._market_on_close_orders_executor.cancel_all_open_orders()
         self._market_on_open_orders_executor.cancel_all_open_orders()
+
+    def _remove_acquired_or_not_active_positions(self):
+        """
+        Generate an artificial transaction to address closing a position from portfolio, which was inactive for at least
+        a week (during this time not a single price for the asset was available). The price of this transaction is the
+        last price of the asset recorded by the portfolio and the commission is set to 0, as no real order is created.
+        """
+        contract_to_ticker_dict = {
+            contract: self.contracts_to_tickers_mapper.contract_to_ticker(contract)
+            for contract in self.portfolio.open_positions_dict.keys()
+        }
+
+        all_tickers_in_portfolio = list(contract_to_ticker_dict.values())
+        current_prices_series = self.data_handler.get_last_available_price(tickers=all_tickers_in_portfolio)
+        positions_to_be_removed = [p for p in self.portfolio.open_positions_dict.values()
+                                   if np.isnan(current_prices_series[contract_to_ticker_dict[p.contract()]])]
+
+        for position in positions_to_be_removed:
+            closing_transaction = Transaction(self.timer.now(), position.contract(), -position.quantity(),
+                                              position.current_price, 0)
+            self.monitor.record_transaction(closing_transaction)
+            self.portfolio.transact_transaction(closing_transaction)
+            self.logger.warning("{}: position assigned to Ticker {} removed due to incomplete price data."
+                                .format(str(self.timer.now()), position.contract().symbol))

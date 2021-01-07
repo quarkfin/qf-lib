@@ -14,17 +14,17 @@
 
 import unittest
 from unittest import TestCase
+from unittest.mock import Mock
 
 import pandas as pd
-from mockito import mock, when
 
 from qf_lib.common.enums.frequency import Frequency
-from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.risk_parity_boxes.risk_parity_boxes import RiskParityBoxesFactory, ChangeDirection
 from qf_lib.common.tickers.tickers import str_to_ticker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
+from qf_lib.data_providers.bloomberg import BloombergDataProvider
 from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_series_equal
 
 
@@ -43,7 +43,7 @@ class TestRiskParityBoxesFactory(TestCase):
             '2017-10-30', '2017-10-31', '2017-11-01'
         ])
 
-        bbg_data_provider = mock(strict=True)
+        bbg_data_provider = Mock(spec=BloombergDataProvider)
 
         all_tickers_str = ['BCIT3T Index', 'IEF US Equity', 'LQD US Equity', 'MSBIERTR Index', 'MXUS Index',
                            'SPGSCITR Index', 'XAU Curncy']
@@ -73,9 +73,7 @@ class TestRiskParityBoxesFactory(TestCase):
             [264.4690, 106.16, 121.14, 323.0688, 2452.15, 2415.28, 1271.45],
             [264.4727, 106.06, 121.01, 323.1553, 2455.70, 2415.48, 1274.66]
         ])
-        when(bbg_data_provider).get_price(
-            all_tickers, PriceField.Close, cls.start_date, cls.end_date, cls.frequency
-        ).thenReturn(assets_prices_df)
+        bbg_data_provider.get_price.return_value = assets_prices_df
 
         cls.bbg_data_provider = bbg_data_provider
 

@@ -14,13 +14,13 @@
 import math
 import unittest
 from unittest import TestCase
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, Mock
 
 import pandas as pd
 import numpy as np
 
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.bloomberg_mapper import \
-    DummyBloombergContractTickerMapper
+from qf_lib.backtesting.contract.contract_to_ticker_conversion.simulated_bloomberg_mapper import \
+    SimulatedBloombergContractTickerMapper
 from qf_lib.backtesting.execution_handler.slippage.fixed_slippage import FixedSlippage
 from qf_lib.backtesting.execution_handler.slippage.price_based_slippage import PriceBasedSlippage
 from qf_lib.backtesting.execution_handler.slippage.square_root_market_impact_slippage import SquareRootMarketImpactSlippage
@@ -28,10 +28,11 @@ from qf_lib.backtesting.order.execution_style import MarketOrder, MarketOnCloseO
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.common.enums.price_field import PriceField
-from qf_lib.common.tickers.tickers import BloombergTicker
+from qf_lib.common.tickers.tickers import BloombergTicker, Ticker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
+from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dimension_names import TICKERS, FIELDS
-from qf_lib.data_providers.helpers import tickers_dict_to_data_array
+from qf_lib.data_providers.helpers import tickers_dict_to_data_array, normalize_data_array
 from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_lists_equal
 
 
@@ -44,7 +45,7 @@ class TestSlippage(TestCase):
         self.tickers = [msft_ticker, aapl_ticker, googl_ticker]
         self.data_provider = self._create_data_provider_mock()
 
-        self.contract_ticker_mapper = DummyBloombergContractTickerMapper()
+        self.contract_ticker_mapper = SimulatedBloombergContractTickerMapper()
 
         self.orders = [
             Order(
@@ -79,6 +80,10 @@ class TestSlippage(TestCase):
             prices_bar = [5.0, 10.0, 1.0, 4.0, 50]  # Open, High, Low, Close, Volume
 
             dates_index = pd.date_range(start_date, end_date, freq='B')
+            tickers, got_single_ticker = convert_to_list(tickers, Ticker)
+            fields, got_single_field = convert_to_list(fields, PriceField)
+            got_single_date = len(dates_index) == 1
+
             prices_df = pd.DataFrame(
                 index=pd.Index(dates_index, name=TICKERS),
                 columns=pd.Index(PriceField.ohlcv(), name=FIELDS),
@@ -88,27 +93,13 @@ class TestSlippage(TestCase):
                 ticker: prices_df for ticker in self.tickers
             }, self.tickers, PriceField.ohlcv())
 
-            return data_array.loc[start_date:end_date, tickers, fields]
+            return normalize_data_array(data_array.loc[start_date:end_date, tickers, fields], tickers, fields,
+                                        got_single_date, got_single_ticker, got_single_field)
 
         data_provider = MagicMock()
         data_provider.get_price.side_effect = get_price
 
         return data_provider
-
-    def test_slippage__set_data_provider(self):
-        slippage_rate = 0.0
-        slippage_model = PriceBasedSlippage(slippage_rate, None, self.contract_ticker_mapper)
-
-        slippage_model.set_data_provider(self.data_provider)
-
-        prices_without_slippage = [20.0, 30.0, 40.0]
-        actual_fill_prices, actual_fill_volumes = slippage_model.apply_slippage(str_to_date("2020-01-01"),
-                                                                                self.orders,
-                                                                                prices_without_slippage)
-        expected_fill_volumes = [order.quantity for order in self.orders]  # [1250, -200, 1]
-
-        assert_lists_equal(prices_without_slippage, actual_fill_prices)
-        assert_lists_equal(expected_fill_volumes, actual_fill_volumes)
 
     def test_price_based_slippage__no_volume_limits(self):
         """Volume should remain the same. Prices should be increased by the slippage rate."""
@@ -122,7 +113,7 @@ class TestSlippage(TestCase):
         # Volumes should remain equal to the initial quantities
         expected_fill_volumes = [order.quantity for order in self.orders]  # [1250, -200, 1]
 
-        actual_fill_prices, actual_fill_volumes = slippage_model.apply_slippage(str_to_date("2020-01-01"),
+        actual_fill_prices, actual_fill_volumes = slippage_model.process_orders(str_to_date("2020-01-01"),
                                                                                 self.orders,
                                                                                 prices_without_slippage)
 
@@ -144,7 +135,7 @@ class TestSlippage(TestCase):
         # is set to +/-5.0
         expected_fill_volumes = [5.0, -5.0, 1]
 
-        actual_fill_prices, actual_fill_volumes = slippage_model.apply_slippage(str_to_date("2020-01-01"),
+        actual_fill_prices, actual_fill_volumes = slippage_model.process_orders(str_to_date("2020-01-01"),
                                                                                 self.orders,
                                                                                 prices_without_slippage)
 
@@ -158,7 +149,7 @@ class TestSlippage(TestCase):
         prices_without_slippage = [float('nan'), np.nan, float('nan')]
         expected_fill_prices = [float('nan'), float('nan'), float('nan')]
 
-        actual_fill_prices, actual_fill_volumes = slippage_model.apply_slippage(str_to_date("2020-01-01"),
+        actual_fill_prices, actual_fill_volumes = slippage_model.process_orders(str_to_date("2020-01-01"),
                                                                                 self.orders,
                                                                                 prices_without_slippage)
         assert_lists_equal(expected_fill_prices, actual_fill_prices)
@@ -176,7 +167,7 @@ class TestSlippage(TestCase):
         # Volumes should remain equal to the initial quantities
         expected_fill_volumes = [order.quantity for order in self.orders]  # [1250, -200, 1]
 
-        actual_fill_prices, actual_fill_volumes = slippage_model.apply_slippage(str_to_date("2020-01-01"),
+        actual_fill_prices, actual_fill_volumes = slippage_model.process_orders(str_to_date("2020-01-01"),
                                                                                 self.orders,
                                                                                 prices_without_slippage)
 
@@ -197,7 +188,7 @@ class TestSlippage(TestCase):
         # Mean historical volume is set to 50.0 for each of the tickers.
         expected_fill_volumes = [5.0, -5.0, 1]
 
-        actual_fill_prices, actual_fill_volumes = slippage_model.apply_slippage(str_to_date("2020-01-01"),
+        actual_fill_prices, actual_fill_volumes = slippage_model.process_orders(str_to_date("2020-01-01"),
                                                                                 self.orders,
                                                                                 prices_without_slippage)
 
@@ -211,7 +202,7 @@ class TestSlippage(TestCase):
         prices_without_slippage = [float('nan'), np.nan, float('nan')]
         expected_fill_prices = [float('nan'), float('nan'), float('nan')]
 
-        actual_fill_prices, actual_fill_volumes = slippage_model.apply_slippage(str_to_date("2020-01-01"),
+        actual_fill_prices, actual_fill_volumes = slippage_model.process_orders(str_to_date("2020-01-01"),
                                                                                 self.orders,
                                                                                 prices_without_slippage)
         assert_lists_equal(expected_fill_prices, actual_fill_prices)
@@ -222,14 +213,16 @@ class TestSlippage(TestCase):
         close_prices_volatility = 0.1
         prices_without_slippage = [20.0, 30.0, 40.0]
 
-        with patch.object(SquareRootMarketImpactSlippage, '_compute_volatility', return_value=close_prices_volatility):
-            slippage_model = SquareRootMarketImpactSlippage(price_impact=price_impact,
-                                                            data_provider=self.data_provider,
-                                                            contract_ticker_mapper=self.contract_ticker_mapper)
+        slippage_model = SquareRootMarketImpactSlippage(price_impact=price_impact,
+                                                        data_provider=self.data_provider,
+                                                        contract_ticker_mapper=self.contract_ticker_mapper)
 
-            actual_fill_prices, actual_fill_volumes = slippage_model.apply_slippage(str_to_date('2020-01-01'),
-                                                                                    self.orders,
-                                                                                    prices_without_slippage)
+        slippage_model._compute_volatility = Mock()
+        slippage_model._compute_volatility.return_value = close_prices_volatility
+
+        actual_fill_prices, actual_fill_volumes = slippage_model.process_orders(str_to_date('2020-01-01'),
+                                                                                self.orders,
+                                                                                prices_without_slippage)
 
         expected_fill_prices = [20.0 + 20.0 * price_impact * close_prices_volatility * math.sqrt(1250 / 50.0),
                                 30.0 - 30.0 * price_impact * close_prices_volatility * math.sqrt(200 / 50.0),
@@ -251,7 +244,7 @@ class TestSlippage(TestCase):
                                                         data_provider=self.data_provider,
                                                         contract_ticker_mapper=self.contract_ticker_mapper)
 
-        actual_fill_prices, actual_fill_volumes = slippage_model.apply_slippage(str_to_date('2020-01-01'),
+        actual_fill_prices, actual_fill_volumes = slippage_model.process_orders(str_to_date('2020-01-01'),
                                                                                 self.orders,
                                                                                 prices_without_slippage)
 
@@ -270,15 +263,16 @@ class TestSlippage(TestCase):
         close_prices_volatility = 0.1
         prices_without_slippage = [20.0, 30.0, 40.0]
 
-        with patch.object(SquareRootMarketImpactSlippage, '_compute_volatility', return_value=close_prices_volatility):
-            slippage_model = SquareRootMarketImpactSlippage(price_impact=price_impact,
-                                                            data_provider=self.data_provider,
-                                                            contract_ticker_mapper=self.contract_ticker_mapper,
-                                                            max_volume_share_limit=max_volume_share_limit)
+        slippage_model = SquareRootMarketImpactSlippage(price_impact=price_impact,
+                                                        data_provider=self.data_provider,
+                                                        contract_ticker_mapper=self.contract_ticker_mapper,
+                                                        max_volume_share_limit=max_volume_share_limit)
+        slippage_model._compute_volatility = Mock()
+        slippage_model._compute_volatility.return_value = close_prices_volatility
 
-            actual_fill_prices, actual_fill_volumes = slippage_model.apply_slippage(str_to_date('2020-01-01'),
-                                                                                    self.orders,
-                                                                                    prices_without_slippage)
+        actual_fill_prices, actual_fill_volumes = slippage_model.process_orders(str_to_date('2020-01-01'),
+                                                                                self.orders,
+                                                                                prices_without_slippage)
 
         expected_fill_prices = [20.0 + 20.0 * price_impact * close_prices_volatility * math.sqrt(5.0 / 50.0),
                                 30.0 - 30.0 * price_impact * close_prices_volatility * math.sqrt(5.0 / 50.0),
@@ -296,15 +290,16 @@ class TestSlippage(TestCase):
         prices_without_slippage = [float('nan'), np.nan, 40]
         expected_fill_prices = [float('nan'), float('nan'), float('nan')]
 
-        with patch.object(SquareRootMarketImpactSlippage, '_compute_volatility', return_value=close_prices_volatility):
+        slippage_model = SquareRootMarketImpactSlippage(price_impact=price_impact,
+                                                        data_provider=self.data_provider,
+                                                        contract_ticker_mapper=self.contract_ticker_mapper)
 
-            slippage_model = SquareRootMarketImpactSlippage(price_impact=price_impact,
-                                                            data_provider=self.data_provider,
-                                                            contract_ticker_mapper=self.contract_ticker_mapper)
+        slippage_model._compute_volatility = Mock()
+        slippage_model._compute_volatility.return_value = close_prices_volatility
 
-            actual_fill_prices, actual_fill_volumes = slippage_model.apply_slippage(str_to_date("2020-01-01"),
-                                                                                    self.orders,
-                                                                                    prices_without_slippage)
+        actual_fill_prices, actual_fill_volumes = slippage_model.process_orders(str_to_date("2020-01-01"),
+                                                                                self.orders,
+                                                                                prices_without_slippage)
         assert_lists_equal(expected_fill_prices, actual_fill_prices)
 
     def test_square_root_market_slippage__nan_prices_without_slippage(self):
@@ -316,7 +311,7 @@ class TestSlippage(TestCase):
         prices_without_slippage = [float('nan'), np.nan, float('nan')]
         expected_fill_prices = [float('nan'), float('nan'), float('nan')]
 
-        actual_fill_prices, actual_fill_volumes = slippage_model.apply_slippage(str_to_date("2020-01-01"),
+        actual_fill_prices, actual_fill_volumes = slippage_model.process_orders(str_to_date("2020-01-01"),
                                                                                 self.orders,
                                                                                 prices_without_slippage)
         assert_lists_equal(expected_fill_prices, actual_fill_prices)
@@ -328,15 +323,14 @@ class TestSlippage(TestCase):
         prices_without_slippage = [20, 30, 40]
         expected_fill_prices = [float('nan'), float('nan'), float('nan')]
 
-        with patch.object(SquareRootMarketImpactSlippage, '_compute_average_volume', return_value=avg_daily_volume):
-
-            slippage_model = SquareRootMarketImpactSlippage(price_impact=price_impact,
-                                                            data_provider=self.data_provider,
-                                                            contract_ticker_mapper=self.contract_ticker_mapper)
-
-            actual_fill_prices, actual_fill_volumes = slippage_model.apply_slippage(str_to_date("2020-01-01"),
-                                                                                    self.orders,
-                                                                                    prices_without_slippage)
+        slippage_model = SquareRootMarketImpactSlippage(price_impact=price_impact,
+                                                        data_provider=self.data_provider,
+                                                        contract_ticker_mapper=self.contract_ticker_mapper)
+        slippage_model._compute_average_volume = Mock()
+        slippage_model._compute_average_volume.return_value = avg_daily_volume
+        actual_fill_prices, actual_fill_volumes = slippage_model.process_orders(str_to_date("2020-01-01"),
+                                                                                self.orders,
+                                                                                prices_without_slippage)
         assert_lists_equal(expected_fill_prices, actual_fill_prices)
 
 

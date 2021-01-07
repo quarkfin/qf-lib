@@ -50,7 +50,7 @@ def average_true_range(prices_df: PricesDataFrame, normalized: bool = False) -> 
     for r1, r2, r3 in zip(high_low_range, high_close_range, low_close_range):
         true_range = max(r1, r2, r3)
         if normalized:
-            true_range = true_range / prev_close_tms[-1]
+            true_range = true_range / prev_close_tms.iloc[-1]
         tr_values.append(true_range)
 
     return np.mean(tr_values).item()

@@ -15,10 +15,8 @@
 import unittest
 from unittest import TestCase
 
-import pandas as pd
-
 from qf_lib.backtesting.fast_alpha_model_tester.scenarios_generator import ScenariosGenerator
-from qf_lib.common.enums.trade_field import TradeField
+from qf_lib.containers.series.qf_series import QFSeries
 
 
 class TestScenariosGenerator(TestCase):
@@ -33,7 +31,7 @@ class TestScenariosGenerator(TestCase):
         first_ret_value = 0.05
         second_ret_value = 0.1
 
-        trade_rets = pd.Series([first_ret_value, second_ret_value], name=TradeField.Return)
+        trade_rets = QFSeries([first_ret_value, second_ret_value])
 
         scenarios_df = self.generator.make_scenarios(trade_rets, self.scenarios_length, self.num_of_scenarios)
 

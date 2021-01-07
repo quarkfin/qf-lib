@@ -83,7 +83,7 @@ class ConeChart(Chart):
             ax.fill_between(
                 cone_data_frame.index, lower_bound, upper_bound, color=next(cone_colors), alpha=self.cone_opacity)
 
-        ax.set_xlabel('Days in the past')
+        ax.set_xlabel('Observations in the past')
         ax.set_ylabel('Current valuation')
         ax.set_title('Performance vs. Expectation')
         ax.set_xlim(0, self.nr_of_data_points)

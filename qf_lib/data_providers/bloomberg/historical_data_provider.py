@@ -21,11 +21,11 @@ import pandas as pd
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
+from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.data_providers.bloomberg.bloomberg_names import REF_DATA_SERVICE_URI, CURRENCY, START_DATE, END_DATE, \
     PERIODICITY_SELECTION, PERIODICITY_ADJUSTMENT, SECURITY, FIELD_DATA, DATE, \
     START_DATE_TIME, END_DATE_TIME, INTERVAL, BAR_TICK_DATA
-from qf_lib.data_providers.bloomberg.exceptions import BloombergError
 from qf_lib.data_providers.bloomberg.helpers import set_tickers, set_fields, convert_to_bloomberg_date, \
     convert_to_bloomberg_freq, get_response_events, check_event_for_errors, check_security_data_for_errors, \
     extract_security_data, set_ticker, extract_bar_data
@@ -135,6 +135,28 @@ class HistoricalDataProvider(object):
         override.setElement("value", override_value)
 
     @staticmethod
+    def _get_float_or_nan_intraday(element, field_name):
+        fields_mapping = {
+            "PX_LAST": "close",
+            "PX_OPEN": "open",
+            "PX_LOW": "low",
+            "PX_HIGH": "high",
+            "PX_VOLUME": "volume"
+        }
+        if element.hasElement(field_name):
+            result = element.getElementAsFloat(field_name)
+            if result == '#N/A History':
+                result = float('nan')
+        elif element.hasElement(fields_mapping[field_name]):
+            result = element.getElementAsFloat(fields_mapping[field_name])
+            if result == '#N/A History':
+                result = float('nan')
+        else:
+            result = float("nan")
+
+        return result
+
+    @staticmethod
     def _get_float_or_nan(element, field_name):
         if element.hasElement(field_name):
             result = element.getElementAsFloat(field_name)
@@ -149,7 +171,7 @@ class HistoricalDataProvider(object):
         response_events = get_response_events(self._session)
 
         # mapping: ticker -> DataArray[dates, fields]
-        tickers_data_dict = dict()  # type: Dict[BloombergTicker, pd.DataFrame]
+        tickers_data_dict = dict()  # type: Dict[BloombergTicker, QFDataFrame]
 
         for event in response_events:
             check_event_for_errors(event)
@@ -158,29 +180,24 @@ class HistoricalDataProvider(object):
             security_name = security_data.getElementAsString(SECURITY)
             ticker = BloombergTicker.from_string(security_name)
 
-            try:
-                check_security_data_for_errors(security_data)
+            check_security_data_for_errors(security_data)
+            field_data_array = security_data.getElement(FIELD_DATA)
+            field_data_list = [field_data_array.getValueAsElement(i) for i in range(field_data_array.numValues())]
+            dates = [pd.to_datetime(x.getElementAsDatetime(DATE)) for x in field_data_list]
 
-                field_data_array = security_data.getElement(FIELD_DATA)
-                field_data_list = [field_data_array.getValueAsElement(i) for i in range(field_data_array.numValues())]
-                dates = [pd.to_datetime(x.getElementAsDatetime(DATE)) for x in field_data_list]
+            data = np.empty((len(dates), len(requested_fields)))
+            data[:] = np.nan
 
-                data = np.empty((len(dates), len(requested_fields)))
-                data[:] = np.nan
+            dates_fields_values = QFDataFrame(data, index=dates, columns=requested_fields)
 
-                dates_fields_values = pd.DataFrame(data, index=dates, columns=requested_fields)
+            for field_name in requested_fields:
+                dates_fields_values.loc[:, field_name] = [
+                    self._get_float_or_nan(data_of_date_elem, field_name) for data_of_date_elem in field_data_list]
 
-                for field_name in requested_fields:
-                    dates_fields_values.loc[:, field_name] = [
-                        self._get_float_or_nan(data_of_date_elem, field_name) for data_of_date_elem in field_data_list]
-
-                if ticker not in tickers_data_dict.keys():
-                    tickers_data_dict[ticker] = dates_fields_values
-                else:
-                    tickers_data_dict[ticker] = tickers_data_dict[ticker].append(dates_fields_values)
-
-            except BloombergError:
-                self.logger.exception("Error in the received historical response")
+            if ticker not in tickers_data_dict.keys():
+                tickers_data_dict[ticker] = dates_fields_values
+            else:
+                tickers_data_dict[ticker] = tickers_data_dict[ticker].append(dates_fields_values)
 
         return tickers_dict_to_data_array(tickers_data_dict, requested_tickers, requested_fields)
 
@@ -195,31 +212,27 @@ class HistoricalDataProvider(object):
             check_event_for_errors(event)
             bar_data = extract_bar_data(event)
 
-            try:
-                bar_tick_data_array = bar_data.getElement(BAR_TICK_DATA)
+            bar_tick_data_array = bar_data.getElement(BAR_TICK_DATA)
 
-                bar_tick_data_list = [bar_tick_data_array.getValueAsElement(i) for i in
-                                      range(bar_tick_data_array.numValues())]
-                dates = [pd.to_datetime(e.getElementAsDatetime("time")) for e in bar_tick_data_list]
+            bar_tick_data_list = [bar_tick_data_array.getValueAsElement(i) for i in
+                                  range(bar_tick_data_array.numValues())]
+            dates = [pd.to_datetime(e.getElementAsDatetime("time")) for e in bar_tick_data_list]
 
-                data = np.empty((len(dates), len(requested_fields)))
-                data[:] = np.nan
+            data = np.empty((len(dates), len(requested_fields)))
+            data[:] = np.nan
 
-                dates_fields_values = pd.DataFrame(data, index=dates, columns=requested_fields)
+            dates_fields_values = QFDataFrame(data, index=dates, columns=requested_fields)
 
-                for field_name in requested_fields:
-                    dates_fields_values.loc[:, field_name] = [
-                        self._get_float_or_nan(data_of_date_elem, field_name)
-                        for data_of_date_elem in bar_tick_data_list
-                    ]
+            for field_name in requested_fields:
+                dates_fields_values.loc[:, field_name] = [
+                    self._get_float_or_nan_intraday(data_of_date_elem, field_name)
+                    for data_of_date_elem in bar_tick_data_list
+                ]
 
-                if requested_ticker not in tickers_data_dict.keys():
-                    tickers_data_dict[requested_ticker] = dates_fields_values
-                else:
-                    tickers_data_dict[requested_ticker] = tickers_data_dict[requested_ticker].append(dates_fields_values)
-
-            except BloombergError:
-                self.logger.exception("Error in the received historical response")
+            if requested_ticker not in tickers_data_dict.keys():
+                tickers_data_dict[requested_ticker] = dates_fields_values
+            else:
+                tickers_data_dict[requested_ticker] = tickers_data_dict[requested_ticker].append(dates_fields_values)
 
         return tickers_data_dict[requested_ticker]
 

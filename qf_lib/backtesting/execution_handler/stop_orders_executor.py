@@ -15,8 +15,6 @@
 from itertools import count
 from typing import List, Sequence
 
-import pandas as pd
-
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.execution_handler.commission_models.commission_model import CommissionModel
@@ -29,6 +27,7 @@ from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.utils.dateutils.timer import Timer
+from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 
 
 class StopOrdersExecutor(SimulatedExecutor):
@@ -85,7 +84,7 @@ class StopOrdersExecutor(SimulatedExecutor):
         unique_tickers = list(set(tickers))
         # index=tickers, columns=fields
         current_bars_df = self._data_handler.get_current_bar(unique_tickers)
-        # type: pd.DataFrame
+        # type: QFDataFrame
 
         # Check at first if at this moment of time, expiry checks should be made or not (optimization reasons)
         if market_close:

@@ -14,6 +14,7 @@
 
 from datetime import datetime
 
+from qf_lib.common.utils.error_handling import ErrorHandling
 from qf_lib.analysis.rolling_analysis.rolling_analysis import RollingAnalysisFactory
 from qf_lib.analysis.tearsheets.abstract_tearsheet import AbstractTearsheet
 from qf_lib.common.enums.grid_proportion import GridProportion
@@ -28,6 +29,7 @@ from qf_lib.plotting.helpers.create_returns_distribution import create_returns_d
 from qf_lib.settings import Settings
 
 
+@ErrorHandling.class_error_logging()
 class TearsheetWithBenchmark(AbstractTearsheet):
     """Creates a PDF report, which additionally contains a benchamrk.
 
@@ -87,12 +89,12 @@ class TearsheetWithBenchmark(AbstractTearsheet):
         self.document.add_element(ParagraphElement("\n"))
         self.document.add_element(ParagraphElement("\n"))
 
-        self._add_rolling_chart(self.strategy_series)
+        self._add_rolling_return_chart(series_list)
 
         self.document.add_element(ParagraphElement("\n"))
         self.document.add_element(ParagraphElement("\n"))
 
-        self._add_rolling_chart(self.benchmark_series)
+        self._add_rolling_vol_chart(series_list)
 
     def _add_ret_distribution_and_similarity(self):
         grid = GridElement(mode=PlottingMode.PDF,

@@ -14,7 +14,6 @@
 
 import pandas as pd
 
-from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.plotting.charts.line_chart import LineChart
 from qf_lib.plotting.decorators.axes_label_decorator import AxesLabelDecorator
@@ -24,14 +23,14 @@ from qf_lib.plotting.decorators.point_emphasis_decorator import PointEmphasisDec
 from qf_lib.plotting.decorators.title_decorator import TitleDecorator
 
 
-def create_dot_plot(series1: pd.Series, series2: pd.Series, x_label: str, y_label: str,
+def create_dot_plot(series1: QFSeries, series2: QFSeries, x_label: str, y_label: str,
                     start_x: float = None, end_x: float = None) -> LineChart:
     """Create a dot linechart.
 
     Parameters
     -----------
-    series1: pandas.Series
-    series2: pandas.Series
+    series1: QFSeries
+    series2: QFSeries
     x_label: str
     y_label: str
     start_x: float
@@ -43,7 +42,7 @@ def create_dot_plot(series1: pd.Series, series2: pd.Series, x_label: str, y_labe
     """
 
     # Combine the series.
-    combined = QFDataFrame(pd.concat([series1, series2], axis=1))
+    combined = pd.concat([series1, series2], axis=1)
     combined_series = QFSeries(data=combined.iloc[:, 0].values, index=combined.iloc[:, 1].values)
 
     # Create a new line chart.

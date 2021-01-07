@@ -15,7 +15,6 @@
 from typing import Union, Sequence
 
 import numpy as np
-import pandas as pd
 import scipy
 
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
@@ -42,7 +41,7 @@ class MaxSharpeRatioPortfolio(Portfolio):
 
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
-    def get_weights(self) -> pd.Series:
+    def get_weights(self) -> QFSeries:
         cov_matrix = self.cov_matrix.values
         mean_returns = self.mean_returns.values
 
@@ -63,7 +62,7 @@ class MaxSharpeRatioPortfolio(Portfolio):
         k = self._find_scaling_factor_for_returns(minimised_func)
         scaled_mean_returns = -k * mean_returns
         weights = QuadraticOptimizer.get_optimal_weights(cov_matrix, scaled_mean_returns, self.upper_constraint)
-        weights_series = pd.Series(data=weights, index=self.cov_matrix.columns)
+        weights_series = QFSeries(data=weights, index=self.cov_matrix.columns)
 
         return weights_series
 

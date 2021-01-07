@@ -13,11 +13,15 @@
 #     limitations under the License.
 
 import unittest
+from unittest.mock import Mock
 
 from numpy.core.umath import sign
 
 from demo_scripts.common.utils.dummy_ticker import DummyTicker
+from qf_lib.analysis.trade_analysis.trades_generator import TradesGenerator
 from qf_lib.backtesting.contract.contract import Contract
+from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
+from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.backtesting.portfolio.transaction import Transaction
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
@@ -26,24 +30,6 @@ from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_series_equal
-
-
-class DataHandlerMock(object):
-    prices = None
-
-    def set_prices(self, prices):
-        self.prices = prices
-
-    def get_last_available_price(self, tickers):
-        if tickers:
-            return self.prices[tickers]
-        else:
-            return None
-
-
-class ContractTickerMapperMock(object):
-    def contract_to_ticker(self, contract: Contract):
-        return DummyTicker(contract.symbol)
 
 
 class TestPortfolio(unittest.TestCase):
@@ -63,6 +49,24 @@ class TestPortfolio(unittest.TestCase):
         cls.start_time = str_to_date('2017-01-01')
         cls.random_time = str_to_date('2017-02-02')
         cls.end_time = str_to_date('2018-02-03')
+        cls.trades_generator = TradesGenerator()
+
+    def setUp(self) -> None:
+        self.data_handler_prices = None
+
+    def get_portfolio_and_data_handler(self):
+        data_handler = Mock(spec=DataHandler)
+        data_handler.get_last_available_price.side_effect = lambda tickers: self.data_handler_prices[tickers] \
+            if tickers else None
+
+        contract_mapper = Mock(spec=ContractTickerMapper)
+        contract_mapper.contract_to_ticker.side_effect = lambda contract: DummyTicker(contract.symbol)
+
+        timer = SettableTimer()
+        timer.set_current_time(self.start_time)
+
+        portfolio = Portfolio(data_handler, self.initial_cash, timer, contract_mapper)
+        return portfolio, data_handler, timer
 
     def test_initial_cash(self):
         portfolio, _, _ = self.get_portfolio_and_data_handler()
@@ -110,7 +114,7 @@ class TestPortfolio(unittest.TestCase):
         portfolio.transact_transaction(transaction_1)
 
         # Set new prices
-        dh.set_prices(self.prices_series)
+        self.data_handler_prices = self.prices_series
         portfolio.update()
 
         # Get the new price of the contract
@@ -154,7 +158,7 @@ class TestPortfolio(unittest.TestCase):
         portfolio.transact_transaction(transaction_1)
 
         # Set new prices
-        dh.set_prices(self.prices_series)
+        self.data_handler_prices = self.prices_series
         portfolio.update()
 
         # Get the new price of the contract
@@ -205,7 +209,7 @@ class TestPortfolio(unittest.TestCase):
             transaction_1 = Transaction(self.random_time, contract, quantity=quantity, price=200, commission=7)
             portfolio.transact_transaction(transaction_1)
             all_commissions += transaction_1.commission
-            dh.set_prices(self.prices_series)
+            self.data_handler_prices = self.prices_series
             portfolio.update()
 
             new_price = dh.get_last_available_price(ticker)
@@ -225,14 +229,6 @@ class TestPortfolio(unittest.TestCase):
             self.assertEqual(portfolio.current_cash, self.initial_cash + pnl)
             self.assertEqual(len(portfolio.open_positions_dict), 0)
 
-            # Test generated trades - exactly one trade should be generated
-            trades_list = portfolio.trade_list()
-            self.assertEqual(len(trades_list), 1)
-
-            trade = trades_list[0]
-            self.assertEqual(trade.pnl, pnl)
-            self.assertEqual(trade.commission, all_commissions)
-
     def test_transact_transaction_split_position(self):
         portfolio, dh, _ = self.get_portfolio_and_data_handler()
         contract = self.fut_contract
@@ -250,7 +246,7 @@ class TestPortfolio(unittest.TestCase):
         portfolio.transact_transaction(transaction_1)
 
         # Set new prices
-        dh.set_prices(self.prices_series)
+        self.data_handler_prices = self.prices_series
         new_price = dh.get_last_available_price(ticker)  # == 250
         portfolio.update()
 
@@ -269,17 +265,12 @@ class TestPortfolio(unittest.TestCase):
         position = list(portfolio.open_positions_dict.values())[0]
         self.assertEqual(position.quantity(), -10)
 
-        trade = portfolio.trade_list()[0]
-        self.assertEqual(trade.pnl - position.remaining_total_commission(), pnl)
-
         self.assertEqual(portfolio.current_cash, self.initial_cash + pnl)
         self.assertEqual(portfolio.net_liquidation, self.initial_cash + pnl)
 
         self.assertEqual(portfolio.gross_exposure_of_positions,
                          abs(quantity_after_second_transaction * self.contract_size * new_price))
         self.assertEqual(len(portfolio.open_positions_dict), 1)
-        self.assertEqual(len(portfolio.trade_list()), 1)
-        self.assertEqual(len(portfolio.transactions_series()), 2)
 
     def test_transact_transaction_split_and_close(self):
         portfolio, dh, _ = self.get_portfolio_and_data_handler()
@@ -291,7 +282,7 @@ class TestPortfolio(unittest.TestCase):
         quantity = 50
 
         # Set initial price for the given ticker
-        dh.set_prices(self.prices_down)
+        self.data_handler_prices = self.prices_down
         price_1 = dh.get_last_available_price(ticker)  # == 210
 
         initial_transaction = Transaction(self.random_time, contract, quantity=quantity, price=price_1,
@@ -301,7 +292,7 @@ class TestPortfolio(unittest.TestCase):
         portfolio.update()
 
         # Change of price for the given ticker
-        dh.set_prices(self.prices_series)
+        self.data_handler_prices = self.prices_series
         price_2 = dh.get_last_available_price(ticker)  # == 250
 
         transaction_to_split = Transaction(self.random_time, contract, quantity=(-2) * quantity,
@@ -313,18 +304,9 @@ class TestPortfolio(unittest.TestCase):
         trade_pnl = (price_2 - price_1) * contract.contract_size * quantity
         trade_pnl -= initial_transaction.commission
         trade_pnl -= transaction_to_split.commission * abs(initial_transaction.quantity / transaction_to_split.quantity)
-        trade = portfolio.trade_list()[0]
-        self.assertEqual(trade_pnl, trade.pnl)
-
-        # The sum of cash moves for both transactions should be equal to pnl of the trade - remaining_total_commission
-        # (because the sum of cash_move already considers both commissions, where the trade.pnl, as the position is not
-        # closed, does not consider all of the commissions yet) - total_exposure of the remaining position
-        position = portfolio.open_positions_dict[contract]
-        cash_move = sum(self._cash_move(t) for t in transactions)
-        self.assertEqual(trade.pnl - position.total_exposure() - position.remaining_total_commission(), cash_move)
 
         # Change of price for the given ticker
-        dh.set_prices(self.prices_series)
+        self.data_handler_prices = self.prices_series
         price_3 = dh.get_last_available_price(ticker)  # == 270
         closing_transaction = Transaction(self.random_time, contract, quantity=quantity,
                                           price=price_3, commission=5)
@@ -334,19 +316,6 @@ class TestPortfolio(unittest.TestCase):
 
         # All positions should be closed at this moment
         self.assertEqual(len(portfolio.open_positions_dict), 0)
-        # Two trades should have been created
-        self.assertEqual(len(portfolio.trade_list()), 2)
-
-        # As the positions are closed, the sum of commissions for transactions should be equal to the sum of commissions
-        # of trades
-        all_transactions_commissions = sum(t.commission for t in transactions)
-        all_trades_commissions = sum(trade.commission for trade in portfolio.trade_list())
-        self.assertEqual(all_transactions_commissions, all_trades_commissions)
-
-        # As positions are closed, the sum of all cash movements should be equal to
-        cash_move = sum(self._cash_move(t) for t in transactions)
-        trades_pnl = sum(trade.pnl for trade in portfolio.trade_list())
-        self.assertEqual(cash_move, trades_pnl)
 
     def test_portfolio_eod_series(self):
         expected_portfolio_eod_series = PricesSeries()
@@ -363,7 +332,7 @@ class TestPortfolio(unittest.TestCase):
         self._shift_timer_to_next_day(timer)
         transaction_1 = Transaction(timer.time, contract, quantity=50, price=250, commission=7)
         portfolio.transact_transaction(transaction_1)
-        dh.set_prices(self.prices_series)
+        self.data_handler_prices = self.prices_series
         portfolio.update(record=True)
 
         position = portfolio.open_positions_dict[contract]
@@ -375,7 +344,7 @@ class TestPortfolio(unittest.TestCase):
 
         # Contract goes up in value
         self._shift_timer_to_next_day(timer)
-        dh.set_prices(self.prices_up)
+        self.data_handler_prices = self.prices_up
         portfolio.update(record=True)
 
         price_2 = dh.get_last_available_price(ticker)  # == 270
@@ -387,7 +356,7 @@ class TestPortfolio(unittest.TestCase):
         self._shift_timer_to_next_day(timer)
         transaction_2 = Transaction(timer.time, contract, quantity=-25, price=price_2, commission=19)
         portfolio.transact_transaction(transaction_2)
-        dh.set_prices(self.prices_up)
+        self.data_handler_prices = self.prices_up
         portfolio.update(record=True)
 
         pnl = (transaction_2.price - price_2) * transaction_2.quantity * contract.contract_size - transaction_2.commission
@@ -396,7 +365,7 @@ class TestPortfolio(unittest.TestCase):
 
         # Price goes down
         self._shift_timer_to_next_day(timer)
-        dh.set_prices(self.prices_down)
+        self.data_handler_prices = self.prices_down
         portfolio.update(record=True)
 
         price_3 = dh.get_last_available_price(ticker)  # == 210
@@ -431,7 +400,7 @@ class TestPortfolio(unittest.TestCase):
         self._shift_timer_to_next_day(timer)
         transaction_1 = Transaction(timer.now(), contract, quantity=50, price=250, commission=7)
         portfolio.transact_transaction(transaction_1)
-        dh.set_prices(self.prices_series)
+        self.data_handler_prices = self.prices_series
         portfolio.update(record=True)
 
         position = portfolio.open_positions_dict[contract]
@@ -443,7 +412,7 @@ class TestPortfolio(unittest.TestCase):
 
         # Contract goes up in value
         self._shift_timer_to_next_day(timer)
-        dh.set_prices(self.prices_up)
+        self.data_handler_prices = self.prices_up
         portfolio.update(record=True)
 
         # Compute the leverage
@@ -456,7 +425,7 @@ class TestPortfolio(unittest.TestCase):
         self._shift_timer_to_next_day(timer)
         transaction_2 = Transaction(timer.time, contract, quantity=-30, price=position.current_price, commission=9)
         portfolio.transact_transaction(transaction_2)
-        dh.set_prices(self.prices_up)
+        self.data_handler_prices = self.prices_up
         portfolio.update(record=True)
 
         # Compute the leverage
@@ -466,7 +435,7 @@ class TestPortfolio(unittest.TestCase):
 
         # Price goes down
         self._shift_timer_to_next_day(timer)
-        dh.set_prices(self.prices_down)
+        self.data_handler_prices = self.prices_down
         portfolio.update(record=True)
 
         pnl = contract.contract_size * position.quantity() * (position.current_price - transaction_2.price)
@@ -494,7 +463,7 @@ class TestPortfolio(unittest.TestCase):
 
         portfolio.transact_transaction(Transaction(new_time, self.contract, quantity, price, commission1))
         timer.set_current_time(new_time)
-        dh.set_prices(self.prices_series)
+        self.data_handler_prices = self.prices_series
         portfolio.update(record=True)
 
         gross_value = quantity * price
@@ -506,7 +475,7 @@ class TestPortfolio(unittest.TestCase):
         # contract goes up in value
         new_time = timer.time + RelativeDelta(days=1)
         timer.set_current_time(new_time)
-        dh.set_prices(self.prices_up)
+        self.data_handler_prices = self.prices_up
         portfolio.update(record=True)
 
         gross_value = quantity * 130
@@ -522,7 +491,7 @@ class TestPortfolio(unittest.TestCase):
         new_time = timer.time + RelativeDelta(days=1)
         portfolio.transact_transaction(Transaction(new_time, self.contract, quantity, price, commission2))
         timer.set_current_time(new_time)
-        dh.set_prices(self.prices_up)
+        self.data_handler_prices = self.prices_up
         portfolio.update(record=True)
 
         gross_value = 200 * 130
@@ -533,7 +502,7 @@ class TestPortfolio(unittest.TestCase):
         # price goes down
         new_time = timer.time + RelativeDelta(days=1)
         timer.set_current_time(new_time)
-        dh.set_prices(self.prices_down)
+        self.data_handler_prices = self.prices_down
         portfolio.update(record=True)
 
         gross_value = 200 * 100
@@ -561,14 +530,14 @@ class TestPortfolio(unittest.TestCase):
 
         portfolio.transact_transaction(Transaction(new_time, self.fut_contract, quantity, price, commission1))
         timer.set_current_time(new_time)
-        dh.set_prices(self.prices_series)
+        self.data_handler_prices = self.prices_series
         portfolio.update(record=True)
 
         # buy another instrument - price goes up
         portfolio.transact_transaction(Transaction(new_time, self.contract, 20, 120, commission1))
         new_time = timer.time + RelativeDelta(days=1)
         timer.set_current_time(new_time)
-        dh.set_prices(self.prices_up)
+        self.data_handler_prices = self.prices_up
         portfolio.update(record=True)
 
         # sell part of the contract
@@ -578,216 +547,19 @@ class TestPortfolio(unittest.TestCase):
         new_time = timer.time + RelativeDelta(days=1)
         portfolio.transact_transaction(Transaction(new_time, self.fut_contract, quantity, price, commission2))
         timer.set_current_time(new_time)
-        dh.set_prices(self.prices_up)
+        self.data_handler_prices = self.prices_up
         portfolio.update(record=True)
 
         # price goes down
         new_time = timer.time + RelativeDelta(days=1)
         timer.set_current_time(new_time)
-        dh.set_prices(self.prices_down)
+        self.data_handler_prices = self.prices_down
         portfolio.update(record=True)
 
-        asset_history = portfolio.positions_eod_history()
+        asset_history = portfolio.positions_history()
         self.assertEqual(asset_history.shape, (5, 2))
         self.assertEqual(asset_history.iloc[4, 0].total_exposure, 315000)
         self.assertEqual(asset_history.iloc[4, 1].total_exposure, 2000)
-
-    def test_portfolio_transactions_series(self):
-        # empty portfolio
-        portfolio, dh, timer = self.get_portfolio_and_data_handler()
-        portfolio.update(record=True)
-
-        commission = 7
-
-        # buy contracts
-        timer.set_current_time(timer.time + RelativeDelta(days=1))
-        portfolio.transact_transaction(Transaction(timer.time, self.fut_contract, 50, 250, commission))
-        dh.set_prices(self.prices_series)
-        portfolio.update(record=True)
-
-        # buy another instrument - price goes up
-        timer.set_current_time(timer.time + RelativeDelta(days=1))
-        portfolio.transact_transaction(Transaction(timer.time, self.contract, 20, 120, commission))
-        dh.set_prices(self.prices_up)
-        portfolio.update(record=True)
-
-        # sell part of the contract
-        timer.set_current_time(timer.time + RelativeDelta(days=1))
-        portfolio.transact_transaction(Transaction(timer.time, self.contract, -5, 270, commission))
-        portfolio.transact_transaction(Transaction(timer.time, self.contract, -2, 270, commission))
-        portfolio.transact_transaction(Transaction(timer.time, self.contract, -3, 270, commission))
-        portfolio.update(record=True)
-
-        # sell part of the contract - with going into opposite direction
-        timer.set_current_time(timer.time + RelativeDelta(days=1))
-        portfolio.transact_transaction(Transaction(timer.time, self.contract, -20, 271, commission))
-        portfolio.transact_transaction(Transaction(timer.time, self.fut_contract, -10, 130, commission))
-        portfolio.update(record=True)
-
-        # buy back part of the contract
-        timer.set_current_time(timer.time + RelativeDelta(days=1))
-        portfolio.transact_transaction(Transaction(timer.time, self.contract, 5, 210, commission))
-        dh.set_prices(self.prices_down)
-        portfolio.update(record=True)
-
-        transactions = portfolio.transactions_series()
-
-        self.assertEqual(transactions.shape[0], 8)
-        t = transactions.iloc[5]
-        self.assertEqual(t.price, 271)
-        self.assertEqual(t.quantity, -20)
-
-    def test_portfolio_trade_list(self):
-        # empty portfolio
-        portfolio, dh, timer = self.get_portfolio_and_data_handler()
-        portfolio.update(record=True)
-
-        commission = 7
-
-        # buy contracts
-        timer.set_current_time(timer.time + RelativeDelta(days=1))
-        portfolio.transact_transaction(Transaction(timer.time, self.fut_contract, 50, 120, commission))
-        dh.set_prices(self.prices_series)
-        portfolio.update(record=True)
-
-        # buy another instrument - price goes up
-        timer.set_current_time(timer.time + RelativeDelta(days=1))
-        portfolio.transact_transaction(Transaction(timer.time, self.contract, 20, 120, commission))
-        dh.set_prices(self.prices_up)
-        portfolio.update(record=True)
-
-        # sell part of the contract
-        timer.set_current_time(timer.time + RelativeDelta(days=1))
-        portfolio.transact_transaction(Transaction(timer.time, self.contract, -5, 270, commission))
-        portfolio.transact_transaction(Transaction(timer.time, self.contract, -2, 270, commission))
-        portfolio.transact_transaction(Transaction(timer.time, self.contract, -3, 270, commission))
-        portfolio.update(record=True)
-
-        # sell part of the contract - with going into opposite direction
-        timer.set_current_time(timer.time + RelativeDelta(days=1))
-        portfolio.transact_transaction(Transaction(timer.time, self.contract, -200, 270, commission))
-        portfolio.transact_transaction(Transaction(timer.time, self.fut_contract, -10, 130, commission))
-        portfolio.update(record=True)
-
-        # buy again part of the contract
-        timer.set_current_time(timer.time + RelativeDelta(days=1))
-        portfolio.transact_transaction(Transaction(timer.time, self.contract, 5, 210, commission))
-        dh.set_prices(self.prices_down)
-        portfolio.update(record=True)
-
-        #
-        timer.set_current_time(timer.time + RelativeDelta(days=1))
-        portfolio.transact_transaction(Transaction(timer.time, self.contract, 1, 270, commission))
-        portfolio.transact_transaction(Transaction(timer.time, self.contract, 2, 270, commission))
-        portfolio.transact_transaction(Transaction(timer.time, self.contract, 3, 270, commission))
-        portfolio.update(record=True)
-
-        #
-        timer.set_current_time(timer.time + RelativeDelta(days=1))
-        portfolio.transact_transaction(Transaction(timer.time, self.contract, 200, 270, commission))
-        portfolio.update(record=True)
-
-        trades = portfolio.trade_list()
-
-        self.assertEqual(len(trades), 10)
-        t = trades[4]
-        self.assertEqual(t.pnl, 7491.6)
-
-    def test_trades_commissions(self):
-        portfolio, dh, timer = self.get_portfolio_and_data_handler()
-        dh.set_prices(self.prices_series)
-        portfolio.update(record=True)
-        trades_commissions = []
-
-        price = 10.0
-        commission1 = 16.0
-        quantity1 = 8
-        transaction1 = Transaction(timer.time, self.contract, quantity1, price, commission1)
-        portfolio.transact_transaction(transaction1)
-        portfolio.update(record=True)
-
-        commission2 = 10.0
-        quantity2 = -2
-        transaction2 = Transaction(timer.time, self.contract, quantity2, price, commission2)
-        # A Trade should be created with following commission
-        trade_commission = commission1 * (abs(quantity2) / abs(quantity1)) + commission2
-        trades_commissions.append(trade_commission)
-        portfolio.transact_transaction(transaction2)
-        portfolio.update(record=True)
-
-        commission3 = 12.0
-        quantity3 = 4
-        transaction3 = Transaction(timer.time, self.contract, quantity3, price, commission3)
-        portfolio.transact_transaction(transaction3)
-        portfolio.update(record=True)
-
-        commission4 = 11.0
-        quantity4 = -10
-        transaction4 = Transaction(timer.time, self.contract, quantity4, price, commission4)
-        # A Trade should be created with following commission
-        trade_commission = commission1 * (1 - abs(quantity2) / abs(quantity1)) + commission3 + commission4
-        trades_commissions.append(trade_commission)
-        portfolio.transact_transaction(transaction4)
-        portfolio.update(record=True)
-
-        self.assertCountEqual(trades_commissions, [t.commission for t in portfolio.trade_list()])
-        self.assertEqual(sum(trades_commissions), commission1 + commission2 + commission3 + commission4)
-
-    def test_trades_commissions_transaction_split(self):
-        portfolio, dh, timer = self.get_portfolio_and_data_handler()
-        dh.set_prices(self.prices_series)
-        portfolio.update(record=True)
-        trades_commissions = []
-
-        price = 10.0
-        commission1 = 16.0
-        quantity1 = 8
-        transaction1 = Transaction(timer.time, self.contract, quantity1, price, commission1)
-        portfolio.transact_transaction(transaction1)
-        portfolio.update(record=True)
-
-        commission2 = 10.0
-        quantity2 = -2
-        transaction2 = Transaction(timer.time, self.contract, quantity2, price, commission2)
-        # A Trade should be created with following commission
-        trade_commission = commission1 * (abs(quantity2) / abs(quantity1)) + commission2
-        trades_commissions.append(trade_commission)
-        portfolio.transact_transaction(transaction2)
-        portfolio.update(record=True)
-
-        commission3 = 12.0
-        quantity3 = -24
-        transaction3 = Transaction(timer.time, self.contract, quantity3, price, commission3)
-        # A Trade should be created with following commission
-        trade_commission = commission1 * (1 - abs(quantity2) / abs(quantity1))
-        trade_commission += commission3 * (quantity1 + quantity2) / abs(quantity3)
-        trades_commissions.append(trade_commission)
-        # This transaction should result in a new position being open
-        portfolio.transact_transaction(transaction3)
-        portfolio.update(record=True)
-
-        commission4 = 12.0
-        quantity4 = 18
-        transaction4 = Transaction(timer.time, self.contract, quantity4, price, commission4)
-        # A Trade should be created with following commission
-        trade_commission = commission3 * quantity4 / abs(quantity3) + commission4
-        trades_commissions.append(trade_commission)
-        # This transaction should result in a new position being open
-        portfolio.transact_transaction(transaction4)
-        portfolio.update(record=True)
-
-        self.assertCountEqual(trades_commissions, [t.commission for t in portfolio.trade_list()])
-        self.assertEqual(sum(trades_commissions), commission1 + commission2 + commission3 + commission4)
-
-    # noinspection PyTypeChecker
-    def get_portfolio_and_data_handler(self):
-        data_handler = DataHandlerMock()
-        contract_mapper = ContractTickerMapperMock()
-        timer = SettableTimer()
-        timer.set_current_time(self.start_time)
-
-        portfolio = Portfolio(data_handler, self.initial_cash, timer, contract_mapper)
-        return portfolio, data_handler, timer
 
 
 if __name__ == "__main__":

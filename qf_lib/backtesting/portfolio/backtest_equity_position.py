@@ -11,22 +11,13 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-from datetime import datetime
-
-from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.portfolio.backtest_position import BacktestPosition
 from qf_lib.backtesting.portfolio.transaction import Transaction
 
 
 class BacktestEquityPosition(BacktestPosition):
-    def __init__(self, contract: Contract, start_time: datetime) -> None:
-        super().__init__(contract, start_time)
-
     def market_value(self) -> float:
-        return self._quantity * self.current_price
-
-    def total_exposure(self) -> float:
-        return self.market_value()
+        return self.quantity() * self.current_price
 
     def _cash_to_buy_or_proceeds_from_sale(self, transaction: Transaction) -> float:
         """
@@ -36,6 +27,5 @@ class BacktestEquityPosition(BacktestPosition):
         For SELL transaction: how much we received for selling shares including commission
                              (it will be a positive number)
         """
-        result = transaction.price * transaction.quantity
-        result += transaction.commission
+        result = transaction.price * transaction.quantity + transaction.commission
         return -result

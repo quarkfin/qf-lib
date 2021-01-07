@@ -23,6 +23,7 @@ from qf_lib.common.utils.dateutils.date_to_string import date_to_str
 from qf_lib.common.utils.dateutils.eom_date import eom_date
 from qf_lib.common.utils.dateutils.get_quarter import get_quarter
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
+from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 
 
 class TestDateUtils(TestCase):
@@ -69,7 +70,7 @@ class TestDateUtils(TestCase):
             [1.2, 3.0],
             [None, 1.1]
         ]
-        test_dataframe = pd.DataFrame(data, index, columns)
+        test_dataframe = QFDataFrame(data, index, columns)
         actual_common_start, actual_common_end = get_common_start_and_end(test_dataframe)
         expected_common_start = str_to_date("2015-05-01")
         expected_common_end = str_to_date("2015-08-01")

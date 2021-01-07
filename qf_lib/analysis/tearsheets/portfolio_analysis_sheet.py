@@ -12,22 +12,19 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 from datetime import datetime
-from itertools import groupby
-from typing import List, Dict, Tuple
 
 import matplotlib as plt
+import pandas as pd
 from pandas import Timedelta
 from pandas.tseries.frequencies import to_offset
-from numpy import sign
 
 from qf_lib.analysis.common.abstract_document import AbstractDocument
-from qf_lib.analysis.error_handling import ErrorHandling
-from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
+from qf_lib.common.utils.error_handling import ErrorHandling
+from qf_lib.analysis.trade_analysis.trades_generator import TradesGenerator
 from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.monitoring.backtest_result import BacktestResult
 from qf_lib.backtesting.portfolio.backtest_position import BacktestPositionSummary
 from qf_lib.common.enums.frequency import Frequency
-from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 from qf_lib.containers.series.qf_series import QFSeries
@@ -36,7 +33,6 @@ from qf_lib.documents_utils.document_exporting.element.df_table import DFTable
 from qf_lib.documents_utils.document_exporting.element.heading import HeadingElement
 from qf_lib.documents_utils.document_exporting.element.new_page import NewPageElement
 from qf_lib.documents_utils.document_exporting.element.paragraph import ParagraphElement
-from qf_lib.documents_utils.document_exporting.element.table import Table
 from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.plotting.charts.line_chart import LineChart
 from qf_lib.plotting.decorators.axes_label_decorator import AxesLabelDecorator
@@ -48,7 +44,7 @@ from qf_lib.settings import Settings
 
 
 @ErrorHandling.class_error_logging()
-class PortfolioTradingSheet(AbstractDocument):
+class PortfolioAnalysisSheet(AbstractDocument):
     """
     Creates a PDF containing a visual representation of portfolio changes over time.
 
@@ -62,13 +58,17 @@ class PortfolioTradingSheet(AbstractDocument):
         used to access all trading records
     title: str
         title of the document, will be a part of the filename. Do not use special characters.
+    generate_pnl_chart_per_ticker: bool
+        If true, adds pnl chart for each asset traded in the portfolio
     """
 
     def __init__(self, settings: Settings, pdf_exporter: PDFExporter, backtest_result: BacktestResult,
-                 title: str = "Portfolio Trading Sheet"):
+                 title: str = "Portfolio Analysis Sheet", generate_pnl_chart_per_ticker: bool = False):
         super().__init__(settings, pdf_exporter, title=title)
         self.backtest_result = backtest_result
         self.full_image_axis_position = (0.08, 0.1, 0.915, 0.80)  # (left, bottom, width, height)
+        self.trades_generator = TradesGenerator()
+        self.generate_pnl_chart_per_ticker = generate_pnl_chart_per_ticker
 
     def build_document(self):
         self._add_header()
@@ -104,7 +104,7 @@ class PortfolioTradingSheet(AbstractDocument):
         position_decorator = AxesPositionDecorator(*self.full_image_axis_position)
         chart.add_decorator(position_decorator)
 
-        positions_history = self.backtest_result.portfolio.positions_eod_history()
+        positions_history = self.backtest_result.portfolio.positions_history()
 
         # Find all not NaN values (not NaN values indicate that the position was open for this contract at that time)
         # and count their number for each row (for each of the dates)
@@ -170,7 +170,7 @@ class PortfolioTradingSheet(AbstractDocument):
         chart.add_decorator(label_decorator)
 
         # Add top asset contribution
-        positions_history = self.backtest_result.portfolio.positions_eod_history()
+        positions_history = self.backtest_result.portfolio.positions_history()
         if positions_history.empty:
             raise ValueError("No positions found in positions history")
 
@@ -194,7 +194,7 @@ class PortfolioTradingSheet(AbstractDocument):
             # For each date (row), find the top_assets largest assets and compute the mean value of their market value
             top_assets_mean_values = assets_history.stack(dropna=False).groupby(level=0).apply(
                 lambda group: group.nlargest(assets_number).mean()
-            )
+            ).resample('D').last()
             # Divide the computed mean values by the portfolio value, for each of the dates
             top_assets_percentage_value = top_assets_mean_values / self.backtest_result.portfolio.portfolio_eod_series()
 
@@ -214,37 +214,40 @@ class PortfolioTradingSheet(AbstractDocument):
         self.document.add_element(ChartElement(chart, figsize=self.full_image_size, dpi=self.dpi))
 
     def _add_number_of_transactions_chart(self, pandas_freq: str, title: str):
-        transactions = self.backtest_result.portfolio.transactions_series()
-        if transactions.empty:
+        transactions = self.backtest_result.transactions
+        transactions_series = QFSeries(data=transactions, index=(t.time for t in transactions))
+
+        if transactions_series.empty:
             raise ValueError("Transactions series is empty")
 
         # Compute the number of transactions per day
-        transactions = transactions.resample(Frequency.DAILY.to_pandas_freq()).count()
+        transactions_series = transactions_series.resample(Frequency.DAILY.to_pandas_freq()).count()
 
         # Aggregate the transactions using the given frequency
         if to_offset(pandas_freq) > to_offset('D'):
-            transactions = transactions.rolling(pandas_freq).sum()
+            transactions_series = transactions_series.rolling(pandas_freq).sum()
 
             # Cut the non complete beginning of the outputs (e.g. in case of 30 days window, cut the first 30 days)
-            start_date = transactions.index[0]
-            transactions = transactions.loc[start_date + Timedelta(pandas_freq):]
-            if transactions.empty:
+            start_date = transactions_series.index[0]
+            transactions_series = transactions_series.loc[start_date + Timedelta(pandas_freq):]
+            if transactions_series.empty:
                 # The available time period is too short to compute the statistics with the provided frequency
                 return
 
         elif to_offset(pandas_freq) < to_offset('D'):
             raise ValueError("The provided pandas frequency can not be higher than the daily frequency")
 
-        self._add_line_chart_element(transactions, title)
+        self._add_line_chart_element(transactions_series, title)
 
     def _add_volume_traded(self):
-        transactions = self.backtest_result.portfolio.transactions_series()
-        if transactions.empty:
+        transactions = self.backtest_result.transactions
+        transactions_series = QFSeries(data=transactions, index=(t.time for t in transactions))
+        if transactions_series.empty:
             raise ValueError("Transactions series is empty")
 
         # Add the chart containing the volume traded in terms of quantity
-        quantities = [abs(t.quantity) for t in transactions]
-        quantities_series = QFSeries(data=quantities, index=transactions.index)
+        quantities = [abs(t.quantity) for t in transactions_series]
+        quantities_series = QFSeries(data=quantities, index=transactions_series.index)
 
         # Aggregate the quantities for each day
         quantities_series = quantities_series.resample(Frequency.DAILY.to_pandas_freq()).sum()
@@ -253,8 +256,8 @@ class PortfolioTradingSheet(AbstractDocument):
         self._add_line_chart_element(quantities_series, "Volume traded per day [in contracts]")
 
         # Add the chart containing the exposure of the traded assets
-        total_exposures = [abs(t.quantity) * t.price * t.contract.contract_size for t in transactions]
-        total_exposures_series = QFSeries(data=total_exposures, index=transactions.index)
+        total_exposures = [abs(t.quantity) * t.price * t.contract.contract_size for t in transactions_series]
+        total_exposures_series = QFSeries(data=total_exposures, index=transactions_series.index)
         total_exposures_series = total_exposures_series.resample(Frequency.DAILY.to_pandas_freq()).sum()
 
         # Generate chart and add it to the document
@@ -267,7 +270,7 @@ class PortfolioTradingSheet(AbstractDocument):
         chart.add_decorator(position_decorator)
 
         # Get the assets history
-        assets_history = self.backtest_result.portfolio.positions_eod_history()
+        assets_history = self.backtest_result.portfolio.positions_history()
         assets_history = assets_history.applymap(
             lambda x: x.total_exposure if isinstance(x, BacktestPositionSummary) else 0)
 
@@ -292,151 +295,155 @@ class PortfolioTradingSheet(AbstractDocument):
 
         self.document.add_element(ChartElement(chart, figsize=self.full_image_size, dpi=self.dpi))
 
+    def _ticker_name(self, contract: Contract) -> str:
+        ticker = self.backtest_result.portfolio.contract_ticker_mapper.contract_to_ticker(contract, False)
+        return ticker.name if isinstance(ticker, FutureTicker) else ticker.as_string()
+
     def _add_avg_time_in_the_market_per_ticker(self):
+        """
+        Compute the total time in the market per ticker (separately for long and short positions) in minutes
+        and divide it by the total duration of the backtest in minutes.
+        """
         self.document.add_element(NewPageElement())
         self.document.add_element(HeadingElement(level=2, text="Average time in the market per asset"))
-        # Get the assets history
-        assets_history = self.backtest_result.portfolio.positions_eod_history()
-        assets_history = assets_history.applymap(
-            lambda x: x.direction if isinstance(x, BacktestPositionSummary) else 0)
 
-        table = Table(column_names=['Tickers name', 'Longs', 'Shorts', 'Out'], css_class="table stats-table left-align")
+        start_time = self.backtest_result.start_date
+        end_time = self.backtest_result.portfolio.timer.now()
+        backtest_duration = pd.Timedelta(end_time - start_time) / pd.Timedelta(minutes=1)  # backtest duration in min
 
-        future_contracts = [contract for contract in assets_history.columns if contract.security_type == 'FUT']
-        stock_contracts = [contract for contract in assets_history.columns if contract.security_type == 'STK']
+        closed_positions_time = [
+            (self._ticker_name(position.contract()), position.start_time, position.end_time, position.direction())
+            for position in self.backtest_result.portfolio.closed_positions()
+        ]
+        open_positions_time = [
+            (self._ticker_name(c), position.start_time, end_time, position.direction())
+            for c, position in self.backtest_result.portfolio.open_positions_dict.items()
+        ]
 
-        for contract in stock_contracts:
-            longs = assets_history[contract].where(assets_history[contract] > 0).count()
-            shorts = assets_history[contract].where(assets_history[contract] < 0).count()
-            outs = assets_history[contract].where(assets_history[contract] == 0).count()
+        positions = QFDataFrame(data=closed_positions_time + open_positions_time,
+                                columns=["Tickers name", "Start time", "End time", "Position direction"])
 
-            number_of_days = longs + shorts + outs
-            longs = longs / number_of_days
-            shorts = shorts / number_of_days
-            outs = outs / number_of_days
-            table.add_row([contract.symbol, "{:.2%}".format(longs), "{:.2%}".format(shorts), "{:.2%}".format(outs)])
+        def compute_duration(grouped_rows):
+            return pd.DatetimeIndex([]).union_many(
+                [pd.date_range(row["Start time"], row["End time"], freq='T', closed='left')
+                 for _, row in grouped_rows.iterrows()]).size
 
-        # Group the futures contracts by their family ID
-        future_contracts.sort(key=lambda contract: contract.symbol)
-        for future_ticker, futures_contracts_list in groupby(
-                future_contracts,
-                lambda c: self.backtest_result.portfolio.contract_ticker_mapper.contract_to_ticker(c,
-                                                                                                   strictly_to_specific_ticker=False)
-        ):
-            futures_contracts_list = list(futures_contracts_list)
+        positions = positions.groupby(by=["Tickers name", "Position direction"]).apply(compute_duration) \
+            .rename("Duration (minutes)").reset_index()
+        positions["Duration"] = positions["Duration (minutes)"] / backtest_duration
+        positions = positions.pivot_table(index="Tickers name", columns="Position direction",
+                                          values="Duration").reset_index()
+        positions = positions.rename(columns={-1: "Short", 1: "Long"})
 
-            longs = 0
-            shorts = 0
-            number_of_days = None
+        # Add default 0 column in case if only short / long positions occurred in the backtest
+        for column in ["Short", "Long"]:
+            if column not in positions.columns:
+                positions[column] = 0.0
 
-            for contract in futures_contracts_list:
-                # It is assumed that no two contracts from the same family create open positions in the same time
-                longs += assets_history[contract].where(assets_history[contract] > 0).count()
-                shorts += assets_history[contract].where(assets_history[contract] < 0).count()
+        positions["Out"] = 1.0 - positions["Long"] - positions["Short"]
+        positions[["Long", "Short", "Out"]] = positions[["Long", "Short", "Out"]].applymap(lambda x: '{:.2%}'.format(x))
+        positions = positions.fillna(0.0)
 
-                if number_of_days is None:
-                    number_of_days = assets_history[contract].count()
-
-            outs = number_of_days - longs - shorts
-
-            longs = longs / number_of_days
-            shorts = shorts / number_of_days
-            outs = outs / number_of_days
-
-            table.add_row([future_ticker.name, "{:.2%}".format(longs), "{:.2%}".format(shorts), "{:.2%}".format(outs)])
-
+        table = DFTable(positions, css_classes=['table', 'left-align'])
+        table.add_columns_classes(["Tickers name"], 'wide-column')
         self.document.add_element(table)
 
     def _add_performance_statistics(self):
         """
-        For each ticker adds a plot with overall performance, PnL of shorts and PnL longs.
-        Additionally, it generates a table containing final PnL values for each of the ticker.
+        For each ticker computes its overall performance (PnL of short positions, PnL of long positions, total PnL).
+        It generates a table containing final PnL values for each of the ticker nad optionally plots the performance
+        throughout the backtest.
         """
-        self.document.add_element(NewPageElement())
+        closed_positions = self.backtest_result.portfolio.closed_positions()
+        closed_positions_pnl = QFDataFrame.from_records(
+            data=[(self._ticker_name(p.contract()), p.end_time, p.direction(), p.total_pnl) for p in closed_positions],
+            columns=["Tickers name", "Time", "Direction", "Realised PnL"]
+        )
+        closed_positions_pnl = closed_positions_pnl.sort_values(by="Time")
 
-        # Initialize data used further to generate the PnL table
-        performance_data = []
-        title_to_exposures = {
-            "Long positions": ([Exposure.LONG], {"color": "#add8e6"}),
-            "Short positions": ([Exposure.SHORT], {"color": "#fa8072"}),
-            "Overall performance": ([Exposure.LONG, Exposure.SHORT], {"color": "#000000"})
-        }
+        # Get all open positions history
+        open_positions_history = self.backtest_result.portfolio.positions_history()
+        open_positions_history = open_positions_history.reset_index().melt(
+            id_vars='index', value_vars=open_positions_history.columns, var_name='Contract',
+            value_name='Position summary')
+        open_positions_pnl = QFDataFrame(data={
+            "Tickers name": open_positions_history["Contract"].apply(lambda contract: self._ticker_name(contract)),
+            "Time": open_positions_history["index"],
+            "Direction": open_positions_history["Position summary"].apply(
+                lambda p: p.direction if isinstance(p, BacktestPositionSummary) else 0),
+            "Total PnL of open position": open_positions_history["Position summary"].apply(
+                lambda p: p.total_pnl if isinstance(p, BacktestPositionSummary) else 0)
+        })
 
-        # Get all tickers used across the backtest
-        positions_history = self.backtest_result.portfolio.positions_eod_history()
-        all_contracts = list(positions_history.columns)
-        all_contracts.sort(key=lambda contract: contract.symbol)
+        all_positions_pnl = pd.concat([closed_positions_pnl, open_positions_pnl], sort=False)
 
-        # Generate plot for each ticker
-        for ticker, contracts_list in groupby(
-                all_contracts,
-                lambda c: self.backtest_result.portfolio.contract_ticker_mapper.contract_to_ticker(c, strictly_to_specific_ticker=False)
-        ):
-            contracts_list = list(contracts_list)
-            performance_details_dict = self._add_performance_plot_for_ticker(ticker, positions_history[contracts_list],
-                                                                             contracts_list, title_to_exposures)
-            performance_data.append(performance_details_dict)
-
-        # Generate the PnL table
-        performance_df = QFDataFrame(performance_data)
-        # Sort by overall performance
-        performance_df = performance_df.sort_values(by="Overall performance", ascending=False)
-        performance_df = performance_df.fillna(0)
-        for column_name in title_to_exposures.keys():
-            performance_df[column_name] = performance_df[column_name].apply(lambda pnl: "{:,.2f}".format(pnl))
-        # Set the Ticker as first column
-        columns = ["Ticker"] + performance_df.columns.drop("Ticker").tolist()
-        performance_df = performance_df[columns]
+        performance_dicts_series = all_positions_pnl.groupby(by=["Tickers name"]).apply(
+            self._performance_series_for_ticker)
+        performance_df = QFDataFrame(performance_dicts_series.tolist(), index=performance_dicts_series.index)
 
         self.document.add_element(NewPageElement())
-        self.document.add_element(HeadingElement(level=2, text="Performance of each asset during the whole backtest"))
-        table = DFTable(data=performance_df, css_classes=['table', 'left-align'])
-        table.add_columns_classes(["Ticker"], 'wide-column')
+        self.document.add_element(HeadingElement(level=2, text="Performance of each asset"))
+        final_performance = performance_df. \
+            applymap(lambda pnl_series: pnl_series.iloc[-1] if not pnl_series.empty else 0.0). \
+            sort_values(by="Overall performance", ascending=False). \
+            applymap(lambda p: '{:,.2f}'.format(p)). \
+            reset_index()
+        table = DFTable(final_performance, css_classes=['table', 'left-align'])
+        table.add_columns_classes(["Tickers name"], 'wide-column')
         self.document.add_element(table)
 
-    def _add_performance_plot_for_ticker(self, ticker: Ticker, df: QFDataFrame, contracts_list: List[Contract],
-                                         title_to_exposures: Dict[str, Tuple[List[Exposure], Dict]]):
-        ticker_name = ticker.name if isinstance(ticker, FutureTicker) else ticker.ticker
-        performance_results = {"Ticker": ticker_name}
-        for title in title_to_exposures.keys():
-            performance_results[title] = None
+        # Add performance plots
+        if self.generate_pnl_chart_per_ticker:
+            self.document.add_element(NewPageElement())
+            self.document.add_element(
+                HeadingElement(level=2, text="Performance of each asset during the whole backtest"))
+            for ticker_name, performance in performance_df.iterrows():
+                self._plot_ticker_performance(ticker_name, performance)
 
+    def _performance_series_for_ticker(self, df: QFDataFrame):
+        df = df.sort_values(by="Time")
+        time_index = pd.DatetimeIndex(df[df["Total PnL of open position"].notnull()]["Time"].drop_duplicates())
+
+        plot_lines = [
+            ("Long positions", [1]),
+            ("Short positions", [-1]),
+            ("Overall performance", [0, 1, -1])
+        ]
+
+        return_data = {}
+        for title, directions in plot_lines:
+            open_positions_pnl = df[["Total PnL of open position", "Time", "Direction"]].dropna()
+            open_positions_pnl.loc[~open_positions_pnl["Direction"].isin(directions), 'Total PnL of open position'] = 0
+            open_positions_pnl = open_positions_pnl.groupby("Time").agg({'Total PnL of open position': 'sum'})
+
+            closed_positions_pnl = df[["Realised PnL", "Time", "Direction"]]
+            closed_positions_pnl.loc[~closed_positions_pnl["Direction"].isin(directions), 'Realised PnL'] = 0
+            closed_positions_pnl = closed_positions_pnl.groupby("Time").agg({'Realised PnL': 'sum'})
+            closed_positions_pnl["Realised PnL"] = closed_positions_pnl["Realised PnL"].cumsum()
+
+            pnl_series = QFSeries(
+                data=closed_positions_pnl["Realised PnL"] + open_positions_pnl['Total PnL of open position'],
+                index=time_index).fillna(method='ffill').fillna(0.0)
+            return_data[title] = pnl_series
+
+        return return_data
+
+    def _plot_ticker_performance(self, ticker_name: str, performance):
         self.document.add_element(HeadingElement(level=2, text="PnL of {}".format(ticker_name)))
+
         chart = LineChart()
         legend = LegendDecorator(key="legend_decorator")
+        line_colors = iter(("#add8e6", "#000000", "#fa8072"))
 
-        for description, (exposures, plot_settings) in title_to_exposures.items():
-            exposure_values = [exposure.value for exposure in exposures]
-            # Take all the trades in the direction of the exposure value
-            trades_for_ticker_in_exposure_direction = [trade for trade in self.backtest_result.portfolio.trade_list() if
-                                                       trade.contract in contracts_list and
-                                                       sign(trade.quantity) in exposure_values]
-
-            # Compute the unrealized pnl of each contract
-            directional_df = df.applymap(lambda x: x.unrealised_pnl if (isinstance(x, BacktestPositionSummary)
-                                                                        and x.direction in exposure_values) else None)
-
-            # check if any transaction in this direction were made
-            trades_in_the_direction = not directional_df.dropna(how="all").empty
-
-            if trades_in_the_direction:
-                # Create a series of trades PnL
-                trades_series = QFSeries(data=None, index=directional_df.index)
-                for trade in trades_for_ticker_in_exposure_direction:
-                    trades_series.loc[trade.end_time.date()] = trade.pnl
-                trades_series = trades_series.fillna(0).cumsum()
-                unrealised_pnl_series = directional_df.fillna(0).apply(func=sum, axis=1)
-                total_pnl_series = unrealised_pnl_series + trades_series
-
-                data_series = DataElementDecorator(total_pnl_series, **plot_settings)
-                legend.add_entry(data_series, description)
+        for title, pnl_series in performance.iteritems():
+            # Plot series only in case if it consist anything else then 0
+            if (pnl_series != 0).any():
+                data_series = DataElementDecorator(pnl_series, **{"color": next(line_colors)})
+                legend.add_entry(data_series, title)
                 chart.add_decorator(data_series)
-
-                performance_results[description] = total_pnl_series.iloc[-1]
 
         chart.add_decorator(legend)
         self.document.add_element(ChartElement(chart, figsize=self.full_image_size, dpi=self.dpi))
-        return performance_results
 
     def save(self, report_dir: str = ""):
         # Set the style for the report

@@ -9,11 +9,9 @@ enums
 	:toctree: _autosummary
 	:template: short_class.rst
 	
-	aggregations.Aggregation
 	expiration_date_field.ExpirationDateField
 	frequency.Frequency
 	price_field.PriceField
-	trade_field.TradeField
 
 exceptions
 ============
@@ -49,7 +47,6 @@ tickers
 	
 	Ticker
 	BloombergTicker
-	InternalDBTicker
 	HaverTicker
 	QuandlTicker
 	CcyTicker
@@ -156,8 +153,6 @@ Functions
 	returns.sqn.sqn
 	returns.sqn.sqn_for100trades
 	returns.sqn.avg_nr_of_trades_per1y
-	returns.sqn.trade_based_cagr
-	returns.sqn.trade_based_max_drawdown
 	returns.tail_events.tail_events
 	technical_analysis.utils.ta_series
 	volatility.get_volatility.get_volatility

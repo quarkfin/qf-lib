@@ -15,7 +15,7 @@ from datetime import datetime
 
 import matplotlib as plt
 
-from qf_lib.analysis.error_handling import ErrorHandling
+from qf_lib.common.utils.error_handling import ErrorHandling
 from qf_lib.analysis.tearsheets.abstract_tearsheet import AbstractTearsheet
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.documents_utils.document_exporting.element.chart import ChartElement
@@ -62,7 +62,10 @@ class StrategyMonitoringDocument(AbstractTearsheet):
         self._add_cone_chart()
         self.document.add_element(ParagraphElement("\n\n"))
 
-        self._add_rolling_chart(self.strategy_series)
+        self._add_rolling_return_chart(series_list)
+        self.document.add_element(ParagraphElement("\n\n"))
+
+        self._add_rolling_vol_chart(series_list)
 
     def set_in_sample_statistics(self, is_mean_return, is_sigma):
         self.is_mean_return = is_mean_return

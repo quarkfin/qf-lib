@@ -144,3 +144,6 @@ class DataProvider(object, metaclass=ABCMeta):
             the specific future contracts.
         """
         pass
+
+    def __str__(self):
+        return self.__class__.__name__

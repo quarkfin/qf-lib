@@ -15,7 +15,6 @@
 from typing import Union, Sequence
 
 import numpy as np
-import pandas as pd
 from cvxopt import matrix
 from cvxopt.coneprog import qp
 import warnings
@@ -48,7 +47,7 @@ class MaxDiversificationPortfolio(Portfolio):
 
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
-    def get_weights(self) -> pd.Series:
+    def get_weights(self) -> QFSeries:
         assets_number = self.cov_matrix.shape[1]
         st_devs = self.std_of_assets.values
         st_devs = st_devs.reshape((1, -1))  # make it a horizontal vector
@@ -70,11 +69,11 @@ class MaxDiversificationPortfolio(Portfolio):
         result = qp(P, q, G, h, A, b, options=self.optimizer_options)
         dummy_weights = np.array(result['x']).squeeze()
         scaled_weights = dummy_weights / dummy_weights.sum()
-        weights_series = pd.Series(data=scaled_weights, index=self.cov_matrix.columns.values)
+        weights_series = QFSeries(data=scaled_weights, index=self.cov_matrix.columns.values)
 
         return weights_series
 
-    def calculate_diversification_ratio(self, weights: pd.Series) -> float:
+    def calculate_diversification_ratio(self, weights: QFSeries) -> float:
         """
         Calculates a Diversification Ratio for the portfolio taking the returns of assets (set for the portfolio)
         and the weights provided in the parameter. For two or more assets diversification ratio will be greater or equal

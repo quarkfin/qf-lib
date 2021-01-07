@@ -15,8 +15,7 @@
 import unittest
 from datetime import datetime
 from unittest import TestCase
-
-from mockito import mock, when, verify, ANY
+from unittest.mock import Mock
 
 from qf_lib.backtesting.events.time_event.periodic_event.periodic_event import PeriodicEvent
 from qf_lib.backtesting.events.time_event.single_time_event.single_time_event import SingleTimeEvent
@@ -65,8 +64,7 @@ class TestScheduler(TestCase):
         self.scheduler = Scheduler(self.timer)
 
     def test_get_next_time_event(self):
-        listener = self._get_listeners_mock()
-
+        listener = Mock()
         self.scheduler.subscribe(self._CustomTimeEvent, listener)
         self.timer.set_current_time(str_to_date("2018-01-01"))
 
@@ -74,7 +72,7 @@ class TestScheduler(TestCase):
         self.assertEqual(str_to_date("2018-01-03"), time)
 
     def test_get_multiple_next_time_events(self):
-        listener = self._get_listeners_mock()
+        listener = Mock()
 
         self.timer.set_current_time(str_to_date("2018-01-01"))
         self.scheduler.subscribe(self._AnotherCustomTimeEvent, listener)
@@ -91,7 +89,7 @@ class TestScheduler(TestCase):
         self.assertCountEqual(time_events_list, expected_time_events)
 
     def test_get_next_time_event_is_not_changing_state_of_scheduler(self):
-        listener = self._get_listeners_mock()
+        listener = Mock()
 
         self.scheduler.subscribe(self._CustomTimeEvent, listener)
         self.timer.set_current_time(str_to_date("2018-01-01"))
@@ -104,8 +102,8 @@ class TestScheduler(TestCase):
     def test_correct_time_event_is_returned(self):
         self.timer.set_current_time(str_to_date("2018-01-01"))
 
-        listener = self._get_listeners_mock()
-        another_listener = self._get_listeners_mock()
+        listener = Mock()
+        another_listener = Mock()
 
         self.scheduler.subscribe(self._CustomTimeEvent, listener)
         self.scheduler.subscribe(self._AnotherCustomTimeEvent, another_listener)
@@ -126,13 +124,8 @@ class TestScheduler(TestCase):
         custom_event = self._CustomTimeEvent()
         another_custom_event = self._AnotherCustomTimeEvent()
 
-        # create listener's mock
-        listener = mock(strict=True)
-        when(listener).on_custom_time_event(custom_event)
-
-        # create another listener's mock
-        another_listener = mock(strict=True)
-        when(another_listener).on_another_custom_time_event(another_custom_event)
+        listener = Mock()
+        another_listener = Mock()
 
         # subscribe listeners to corresponding time events
         self.scheduler.subscribe(self._CustomTimeEvent, listener)
@@ -140,18 +133,16 @@ class TestScheduler(TestCase):
 
         # test behaviour
         self.scheduler.notify_all(custom_event)
-        verify(listener).on_custom_time_event(custom_event)
+
+        listener.on_custom_time_event.assert_called_once()
 
         self.scheduler.notify_all(another_custom_event)
-        verify(another_listener).on_another_custom_time_event(another_custom_event)
+        another_listener.on_another_custom_time_event.assert_called_once()
 
     def test_get_next_time_event_single_time_events(self):
         self.timer.set_current_time(str_to_date("2018-01-02 10:00:00.000000", DateFormat.FULL_ISO))
 
-        # Create single time event listener
-        listener = mock(strict=True)
-        when(listener).on_single_time_event({})
-
+        listener = Mock()
         self.scheduler.subscribe(SingleTimeEvent, listener)
 
         trigger_time = str_to_date("2018-01-02 13:00:00.000000", DateFormat.FULL_ISO)
@@ -163,9 +154,7 @@ class TestScheduler(TestCase):
     def test_get_next_time_event_periodic_events(self):
         self.timer.set_current_time(str_to_date("2018-01-01 10:00:00.000000", DateFormat.FULL_ISO))
 
-        # Create periodic events listener
-        listener = mock(strict=True)
-        when(listener).on_new_bar(ANY(PeriodicEvent))
+        listener = Mock()
 
         self.scheduler.subscribe(self.PeriodicEvent15Minutes, listener)
         self.scheduler.subscribe(self.PeriodicEvent30Minutes, listener)
@@ -185,13 +174,8 @@ class TestScheduler(TestCase):
     def test_get_next_time_event_periodic_and_single_time_events(self):
         self.timer.set_current_time(str_to_date("2018-01-01 10:00:00.000000", DateFormat.FULL_ISO))
 
-        # Create periodic events listener
-        listener_periodic = mock(strict=True)
-        when(listener_periodic).on_new_bar(ANY(PeriodicEvent))
-
-        # Create single time event listener
-        listener_single = mock(strict=True)
-        when(listener_single).on_single_time_event({})
+        listener_periodic = Mock()
+        listener_single = Mock()
 
         self.scheduler.subscribe(self.PeriodicEvent15Minutes, listener_periodic)
         self.scheduler.subscribe(SingleTimeEvent, listener_single)
@@ -206,13 +190,6 @@ class TestScheduler(TestCase):
 
         time_events_list_types = [type(event) for event in time_events_list]
         self.assertCountEqual(time_events_list_types, [self.PeriodicEvent15Minutes, SingleTimeEvent])
-
-    @staticmethod
-    def _get_listeners_mock():
-        listener = mock(strict=True)
-        when(listener).on_custom_time_event(ANY(TimeEvent))
-
-        return listener
 
 
 if __name__ == '__main__':

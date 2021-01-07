@@ -51,15 +51,15 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
     days_before_exp_date: int
         Number of days before the expiration day of each of the contract, when the “current” specific contract
         should be substituted with the next consecutive one.
-    point_value: float
+    point_value: int
         Used to define the size of the contract.
     """
-    def __init__(self, name: str, family_id: str, N: int, days_before_exp_date: int, point_value: float = 1.0):
+    def __init__(self, name: str, family_id: str, N: int, days_before_exp_date: int, point_value: int = 1):
         super().__init__(family_id)
         self.name = name
         self.family_id = family_id
         self.point_value = point_value
-        self._N = N
+        self.N = N
         self._days_before_exp_date = days_before_exp_date
 
         self._exp_dates = None  # type: QFSeries
@@ -119,6 +119,10 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
             The current specific ticker.
         """
 
+        # If the timer or data provider were not set
+        if not self._ticker_initialized:
+            raise ValueError("Set up the timer and data provider by calling initialize_data_provider() "
+                             "before using the future ticker {}".format(self.name))
         try:
             def _get_current_specific_ticker() -> Ticker:
                 """
@@ -129,21 +133,17 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
                 """
                 # Shift the index and data according to the start time and end time values
                 _exp_dates = self.get_expiration_dates()
+                _exp_dates = _exp_dates.sort_index()
                 date_index = _exp_dates.index - pd.Timedelta(days=self._days_before_exp_date - 1)
                 date_index_loc = date_index.get_loc(self._timer.now(), method="pad")
-                return _exp_dates.iloc[date_index_loc:].iloc[self._N]
-
-            # If the timer or data provider were not set
-            if not self._ticker_initialized:
-                raise ValueError("Set up the timer and data provider by calling initialize_data_provider() "
-                                 "before using the future ticker {}".format(self.name))
+                return _exp_dates.iloc[date_index_loc:].iloc[self.N]
 
             if self._last_cached_date != self._timer.now().date():
                 self._ticker = _get_current_specific_ticker()
                 self._last_cached_date = self._timer.now().date()
             return self._ticker
 
-        except LookupError:
+        except (LookupError, ValueError):
             # Function "get_loc(self._timer.now(), method="pad")" may raise KeyError in case if e.g. the current time
             # precedes the first date in the shifted_index.
             # Function "iloc" may rise IndexError if the requested indexer is out-of-bonds (e.g. a high value of self.N)
@@ -170,7 +170,7 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
         return self._exp_dates
 
     def get_N(self):
-        return self._N
+        return self.N
 
     def get_days_before_exp_date(self):
         return self._days_before_exp_date
@@ -190,17 +190,23 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
         pass
 
     def __eq__(self, other):
+        if other is self:
+            return True
+
+        if not isinstance(other, FutureTicker):
+            return False
+
         return self is other or (
-            type(self) == type(other)
-            and self.name == other.name
-            and self.family_id == other.family_id
-            and self.point_value == other.point_value
-            and self._N == other.get_N()
-            and self._days_before_exp_date == other.get_days_before_exp_date()
+                type(self) == type(other)
+                and self.name == other.name
+                and self.family_id == other.family_id
+                and self.point_value == other.point_value
+                and self.N == other.get_N()
+                and self._days_before_exp_date == other.get_days_before_exp_date()
         )
 
     def __hash__(self):
-        return hash((self.name, self.family_id, type(self), self.point_value, self._N, self._days_before_exp_date))
+        return hash((self.name, self.family_id, type(self), self.point_value, self.N, self._days_before_exp_date))
 
     def __lt__(self, other):
         if not isinstance(other, FutureTicker):
@@ -212,8 +218,19 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
         class_name = self.__class__.__name__
         other_class_name = other.__class__.__name__
 
-        return (class_name, self.name, self.family_id, self._N, self._days_before_exp_date) < \
+        return (class_name, self.name, self.family_id, self.N, self._days_before_exp_date) < \
                (other_class_name, other.name, other.family_id, other.get_N(), other.get_days_before_exp_date())
+
+    def __getstate__(self):
+        """
+        In order to avoid issues while pickling Future Tickers set its data provider and timer to None and require
+        reinitialization afterwards.
+        """
+        self.logger = None
+        self._data_provider = None
+        self._timer = None
+        self._ticker_initialized = False
+        return self.__dict__
 
     @abc.abstractmethod
     def belongs_to_family(self, ticker: Ticker) -> bool:

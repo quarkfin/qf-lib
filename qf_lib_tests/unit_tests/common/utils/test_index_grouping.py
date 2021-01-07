@@ -20,12 +20,13 @@ import pandas as pd
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.returns.index_grouping import get_grouping_for_frequency
+from qf_lib.containers.series.qf_series import QFSeries
 
 
 class TestIndexGrouping(TestCase):
     def setUp(self):
         self.index = pd.bdate_range(start='2014-12-15', end='2016-01-07')
-        self.series = pd.Series(index=self.index, data=self.index)
+        self.series = QFSeries(index=self.index, data=self.index)
 
     def test_daily_grouping(self):
         daily_grouping = get_grouping_for_frequency(Frequency.DAILY)

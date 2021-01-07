@@ -18,10 +18,11 @@ from os.path import exists
 from typing import Union
 
 import numpy as np
-import pandas as pd
 from openpyxl import load_workbook
 
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
+from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
+from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.documents_utils.excel.helpers import get_bounding_box
 
 
@@ -62,7 +63,7 @@ class ExcelImporter(object):
     def import_container(
             self, file_path: str, starting_cell: str, ending_cell: str, container_type: type = None,
             sheet_name: str = None, include_index: bool = True, include_column_names: bool = False) \
-            -> Union[pd.Series, pd.DataFrame]:
+            -> Union[QFSeries, QFDataFrame]:
         """
         Imports a container of given type (e.g. Series/DataFrame) from the Excel file of a given name.
 
@@ -137,25 +138,25 @@ class ExcelImporter(object):
 
         container_type = None
         if nr_of_non_index_columns > 1:
-            container_type = pd.DataFrame
+            container_type = QFDataFrame
         elif nr_of_non_index_columns == 1:
-            container_type = pd.Series
+            container_type = QFSeries
 
         return container_type
 
     def _is_correct_containers_type(self, container_type, nr_of_non_index_columns):
         if nr_of_non_index_columns > 1:
-            correct_container_type = issubclass(container_type, pd.DataFrame)
+            correct_container_type = issubclass(container_type, QFDataFrame)
         else:
-            correct_container_type = issubclass(container_type, pd.Series)
+            correct_container_type = issubclass(container_type, QFSeries)
 
         return correct_container_type
 
     def _load_container(self, work_sheet, container_type, bounding_box, include_index, include_column_names):
         container = None
-        if issubclass(container_type, pd.Series):
+        if issubclass(container_type, QFSeries):
             container = self._load_series(work_sheet, container_type, bounding_box, include_index, include_column_names)
-        elif issubclass(container_type, pd.DataFrame):
+        elif issubclass(container_type, QFDataFrame):
             container = self._load_dataframe(
                 work_sheet, container_type, bounding_box, include_index, include_column_names)
 

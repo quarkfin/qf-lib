@@ -16,8 +16,6 @@ from datetime import datetime, timedelta
 from math import floor
 from typing import Sequence
 
-from pandas import DataFrame
-
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
@@ -75,7 +73,7 @@ class MarketStressIndicator(object):
         return stress_indicator_tms
 
     def _rolling_stress_indicator(self, data_frame_window: QFDataFrame):
-        zscore_df = DataFrame()
+        zscore_df = QFDataFrame()
         for name, series in data_frame_window.items():
             zscore_df[name] = (series - series.mean()) / series.std()
 

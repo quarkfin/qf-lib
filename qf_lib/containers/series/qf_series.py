@@ -27,8 +27,8 @@ class QFSeries(pd.Series, TimeIndexedContainer):
     Base class for all time-indexed series used in the quant-fin project.
     """
 
-    def __init__(self, data: object = None, index: object = None, dtype: object = None, name: object = None, copy: object = False,
-                 fastpath: object = False):
+    def __init__(self, data: object = None, index: object = None, dtype: object = None, name: object = None,
+                 copy: object = False, fastpath: object = False):
         super().__init__(data, index, dtype, name, copy, fastpath)
 
     @property

@@ -23,15 +23,9 @@ from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.futures.future_tickers.bloomberg_future_ticker import BloombergFutureTicker
-from qf_lib.data_providers.bloomberg import BloombergDataProvider
-from qf_lib_tests.unit_tests.config.test_settings import get_test_settings
-
-settings = get_test_settings()
-bbg_provider = BloombergDataProvider(settings)
-bbg_provider.connect()
+from qf_lib_tests.integration_tests.connect_to_data_provider import get_data_provider
 
 
-@unittest.skipIf(not bbg_provider.connected, "No Bloomberg connection")
 class TestBloombergFutures(unittest.TestCase):
 
     @classmethod
@@ -46,13 +40,17 @@ class TestBloombergFutures(unittest.TestCase):
         cls.ticker_1 = BloombergFutureTicker("Euroswiss", "ES{} Index", 1, 3, 100, "HMUZ")
         cls.ticker_2 = BloombergFutureTicker("Corn", "C {} Comdty", 1, 3, 100, "HKNUZ")
 
-        cls.ticker_1.initialize_data_provider(cls.timer, bbg_provider)
-        cls.ticker_2.initialize_data_provider(cls.timer, bbg_provider)
-
         MarketCloseEvent.set_trigger_time({"hour": 20, "minute": 00, "second": 0, "microsecond": 0})
 
     def setUp(self):
-        self.data_handler = DailyDataHandler(bbg_provider, self.timer)
+        try:
+            self.data_provider = get_data_provider()
+        except Exception as e:
+            raise self.skipTest(e)
+
+        self.ticker_1.initialize_data_provider(self.timer, self.data_provider)
+        self.ticker_2.initialize_data_provider(self.timer, self.data_provider)
+        self.data_handler = DailyDataHandler(self.data_provider, self.timer)
 
         self.timer.set_current_time(str_to_date("2017-12-20 00:00:00.000000", DateFormat.FULL_ISO))
 
@@ -65,7 +63,7 @@ class TestBloombergFutures(unittest.TestCase):
         }
 
         future_ticker = BloombergFutureTicker("Euroswiss", "ES{} Index", 1, 1, 100, "HMUZ")
-        future_ticker.initialize_data_provider(self.timer, bbg_provider)
+        future_ticker.initialize_data_provider(self.timer, self.data_provider)
 
         # Check dates before 2016-12-16
         self.timer.set_current_time(str_to_date('2016-11-11'))
@@ -92,7 +90,7 @@ class TestBloombergFutures(unittest.TestCase):
         }
 
         future_ticker = BloombergFutureTicker("Euroswiss", "ES{} Index", 1, 6, 100, "HMUZ")
-        future_ticker.initialize_data_provider(self.timer, bbg_provider)
+        future_ticker.initialize_data_provider(self.timer, self.data_provider)
 
         # Check dates before 2016-12-16
         self.timer.set_current_time(str_to_date('2016-11-11'))
@@ -119,7 +117,7 @@ class TestBloombergFutures(unittest.TestCase):
         }
 
         future_ticker = BloombergFutureTicker("Corn", "C {} Comdty", 2, 1, 100, "HKNUZ")
-        future_ticker.initialize_data_provider(self.timer, bbg_provider)
+        future_ticker.initialize_data_provider(self.timer, self.data_provider)
 
         self.timer.set_current_time(str_to_date('2016-06-03'))
         self.assertEqual(future_ticker.get_current_specific_ticker(),
@@ -145,7 +143,7 @@ class TestBloombergFutures(unittest.TestCase):
         }
 
         future_ticker = BloombergFutureTicker("Corn", "C {} Comdty", 2, 6, 100, "HKNUZ")
-        future_ticker.initialize_data_provider(self.timer, bbg_provider)
+        future_ticker.initialize_data_provider(self.timer, self.data_provider)
 
         self.timer.set_current_time(str_to_date('2016-06-03'))
         self.assertEqual(future_ticker.get_current_specific_ticker(),
@@ -162,7 +160,7 @@ class TestBloombergFutures(unittest.TestCase):
     # ========================================= Test get_expiration_dates ==============================================
 
     def test_get_expiration_dates(self):
-        tickers_dict = bbg_provider.get_futures_chain_tickers(self.ticker_1, ExpirationDateField.all_dates())
+        tickers_dict = self.data_provider.get_futures_chain_tickers(self.ticker_1, ExpirationDateField.all_dates())
         exp_dates = tickers_dict[self.ticker_1]
 
         self.assertEqual(type(exp_dates), QFDataFrame)

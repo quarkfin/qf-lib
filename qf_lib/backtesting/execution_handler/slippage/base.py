@@ -56,7 +56,7 @@ class Slippage(object, metaclass=ABCMeta):
 
         self._logger = qf_logger.getChild(self.__class__.__name__)
 
-    def apply_slippage(self, date: datetime, orders: Sequence[Order], no_slippage_fill_prices: Sequence[float]) -> \
+    def process_orders(self, date: datetime, orders: Sequence[Order], no_slippage_fill_prices: Sequence[float]) -> \
             Tuple[Sequence[float], Sequence[int]]:
         """
         Calculates fill prices and quantities for Orders. For Orders that can't be executed (missing security price,
@@ -92,10 +92,6 @@ class Slippage(object, metaclass=ABCMeta):
         fill_prices = self._get_fill_prices(date, orders, no_slippage_fill_prices, fill_volumes)
         return fill_prices, fill_volumes
 
-    def set_data_provider(self, data_provider: DataProvider):
-        """Sets the data provider."""
-        self._data_provider = data_provider
-
     @abstractmethod
     def _get_fill_prices(self, date: datetime, orders: Sequence[Order], no_slippage_fill_prices: Sequence[float],
                          fill_volumes: Sequence[int]) -> Sequence[float]:
@@ -112,7 +108,7 @@ class Slippage(object, metaclass=ABCMeta):
         volume_df = self._data_provider.get_price(tickers, PriceField.Volume, start_date, end_date, Frequency.DAILY)
         volume_df = volume_df.fillna(0.0)
         try:
-            volumes = volume_df.loc[date.date(), tickers].values
+            volumes = volume_df.loc[start_date, tickers].values
         except KeyError:
             volumes = np.repeat(0, len(tickers))
 

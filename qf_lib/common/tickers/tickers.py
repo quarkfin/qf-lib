@@ -38,6 +38,9 @@ class Ticker(metaclass=ABCMeta):
     def __str__(self):
         return "{}:{}".format(self.__class__.__name__, self.ticker)
 
+    def __repr__(self):
+        return "{}:{}".format(self.__class__.__name__, self.ticker)
+
     def as_string(self) -> str:
         """
         Returns a string representation of a ticker

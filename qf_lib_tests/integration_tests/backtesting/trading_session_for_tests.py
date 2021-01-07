@@ -11,22 +11,25 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
+from unittest.mock import Mock
+
 from qf_lib.backtesting.data_handler.daily_data_handler import DailyDataHandler
 from qf_lib.backtesting.data_handler.intraday_data_handler import IntradayDataHandler
 from qf_lib.backtesting.events.time_event.regular_time_event.after_market_close_event import AfterMarketCloseEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.before_market_open_event import BeforeMarketOpenEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
+from qf_lib.backtesting.monitoring.backtest_monitor import BacktestMonitor
 from qf_lib.backtesting.monitoring.backtest_result import BacktestResult
 from qf_lib.backtesting.broker.backtest_broker import BacktestBroker
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.bloomberg_mapper import \
-    DummyBloombergContractTickerMapper
+from qf_lib.backtesting.contract.contract_to_ticker_conversion.simulated_bloomberg_mapper import \
+    SimulatedBloombergContractTickerMapper
 from qf_lib.backtesting.events.notifiers import Notifiers
 from qf_lib.backtesting.events.time_flow_controller import BacktestTimeFlowController
 from qf_lib.backtesting.execution_handler.commission_models.fixed_commission_model import FixedCommissionModel
 from qf_lib.backtesting.execution_handler.simulated_execution_handler import SimulatedExecutionHandler
 from qf_lib.backtesting.execution_handler.slippage.price_based_slippage import PriceBasedSlippage
-from qf_lib.backtesting.monitoring.dummy_monitor import DummyMonitor
+from qf_lib.backtesting.monitoring.signals_register import SignalsRegister
 from qf_lib.backtesting.order.order_factory import OrderFactory
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.backtesting.position_sizer.simple_position_sizer import SimplePositionSizer
@@ -38,7 +41,7 @@ from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.data_providers.data_provider import DataProvider
 
 
-class TestingTradingSession(TradingSession):
+class TradingSessionForTests(TradingSession):
     """
     Encapsulates the settings and components for carrying out a backtest session. Pulls for data every day.
     """
@@ -63,7 +66,7 @@ class TestingTradingSession(TradingSession):
                 "Start date: {:s}".format(date_to_str(start_date)),
                 "End date: {:s}".format(date_to_str(end_date)),
                 "Initial cash: {:.2f}".format(initial_cash),
-                "Frequency of the simulated executio handler: {}".format(frequency)
+                "Frequency of the simulated execution handler: {}".format(frequency)
             ])
         )
 
@@ -74,16 +77,13 @@ class TestingTradingSession(TradingSession):
         else:
             data_handler = IntradayDataHandler(data_provider, timer)
 
-        event_manager = self._create_event_manager(timer, notifiers)
-        contract_ticker_mapper = DummyBloombergContractTickerMapper()
-        self.contract_ticker_mapper = contract_ticker_mapper
-
+        contract_ticker_mapper = SimulatedBloombergContractTickerMapper()
         portfolio = Portfolio(data_handler, initial_cash, timer, contract_ticker_mapper)
-
+        signals_register = SignalsRegister()
         backtest_result = BacktestResult(portfolio=portfolio, backtest_name="Testing the Backtester",
-                                         start_date=start_date, end_date=end_date)
+                                         start_date=start_date, end_date=end_date, signals_register=signals_register)
 
-        monitor = DummyMonitor()
+        monitor = Mock(spec=BacktestMonitor)
         commission_model = FixedCommissionModel(0.0)
         slippage_model = PriceBasedSlippage(0.0, data_provider, contract_ticker_mapper)
 
@@ -94,10 +94,12 @@ class TestingTradingSession(TradingSession):
         broker = BacktestBroker(portfolio, execution_handler)
         order_factory = OrderFactory(broker, data_handler, contract_ticker_mapper)
 
+        event_manager = self._create_event_manager(timer, notifiers)
         time_flow_controller = BacktestTimeFlowController(
             notifiers.scheduler, event_manager, timer, notifiers.empty_queue_event_notifier, end_date
         )
-        position_sizer = SimplePositionSizer(broker, data_handler, order_factory, contract_ticker_mapper)
+        position_sizer = SimplePositionSizer(broker, data_handler, order_factory, contract_ticker_mapper,
+                                             signals_register)
 
         self.logger.info(
             "\n".join([
@@ -120,6 +122,7 @@ class TestingTradingSession(TradingSession):
         self.start_date = start_date
         self.end_date = end_date
         self.event_manager = event_manager
+        self.contract_ticker_mapper = contract_ticker_mapper
         self.data_handler = data_handler
         self.portfolio = portfolio
         self.execution_handler = execution_handler

@@ -19,21 +19,26 @@ from unittest import TestCase
 import numpy as np
 import pandas as pd
 from pandas.tseries.offsets import BDay
-from pandas.util.testing import assert_frame_equal, assert_series_equal
 
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
-from qf_lib.backtesting.alpha_model.alpha_model_factory import AlphaModelFactory
-from qf_lib.backtesting.fast_alpha_model_tester.fast_alpha_models_tester import FastAlphaModelTester
+from qf_lib.backtesting.contract.contract_to_ticker_conversion.quandl_mapper import DummyQuandlContractTickerMapper
+from qf_lib.backtesting.data_handler.data_handler import DataHandler
+from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
+from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
+from qf_lib.backtesting.fast_alpha_model_tester.fast_alpha_models_tester import FastAlphaModelTester, \
+    FastAlphaModelTesterConfig
+from qf_lib.backtesting.fast_alpha_model_tester.fast_data_handler import FastDataHandler
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
-from qf_lib.common.enums.trade_field import TradeField
 from qf_lib.common.tickers.tickers import QuandlTicker, Ticker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
-from qf_lib.common.utils.dateutils.timer import SettableTimer, Timer
+from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.containers.qf_data_array import QFDataArray
+from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
 from qf_lib.data_providers.preset_data_provider import PresetDataProvider
+from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_series_equal
 
 
 class TestFastAlphaModelsTester(TestCase):
@@ -49,6 +54,9 @@ class TestFastAlphaModelsTester(TestCase):
 
     frequency = Frequency.DAILY
 
+    MarketOpenEvent.set_trigger_time({"hour": 13, "minute": 30, "second": 0, "microsecond": 0})
+    MarketCloseEvent.set_trigger_time({"hour": 20, "minute": 0, "second": 0, "microsecond": 0})
+
     def setUp(self):
         all_fields = PriceField.ohlcv()
 
@@ -56,7 +64,7 @@ class TestFastAlphaModelsTester(TestCase):
         self._price_provider_mock = PresetDataProvider(self._mocked_prices_arr,
                                                        self.data_start_date, self.data_end_date, self.frequency)
         self.timer = SettableTimer()
-        self._alpha_model_factory = DummyAlphaModelFactory(self.timer)  # type: AlphaModelFactory
+        self.contract_ticker_mapper = DummyQuandlContractTickerMapper()
 
         self.alpha_model_type = DummyAlphaModel
 
@@ -81,41 +89,45 @@ class TestFastAlphaModelsTester(TestCase):
     def test_alpha_models_tester(self):
         first_param_set = (10, Exposure.LONG)
         second_param_set = (5, Exposure.SHORT)
-        parameter_lists = (first_param_set, second_param_set)
+        data_handler = FastDataHandler(self._price_provider_mock, self.timer)
 
-        tester = FastAlphaModelTester(self.alpha_model_type, parameter_lists, self.tickers,
-                                      self.test_start_date, self.test_end_date, self._price_provider_mock,
-                                      self.timer, self._alpha_model_factory)
+        params = [FastAlphaModelTesterConfig(self.alpha_model_type,
+                                             {"period_length": 10, "first_suggested_exposure": Exposure.LONG,
+                                              "risk_estimation_factor": None},
+                                             ("period_length", "first_suggested_exposure")),
+                  FastAlphaModelTesterConfig(self.alpha_model_type,
+                                             {"period_length": 5, "first_suggested_exposure": Exposure.SHORT,
+                                              "risk_estimation_factor": None},
+                                             ("period_length", "first_suggested_exposure"))]
+
+        tester = FastAlphaModelTester(params, self.tickers, self.contract_ticker_mapper,
+                                      self.test_start_date, self.test_end_date, data_handler, self.timer)
 
         backtest_summary = tester.test_alpha_models()
         self.assertEqual(self.tickers, backtest_summary.tickers)
         self.assertEqual(DummyAlphaModel, backtest_summary.alpha_model_type)
 
         backtest_summary_elements = backtest_summary.elements_list
-        self.assertEqual(2, len(backtest_summary_elements))
+        self.assertEqual(2 * (len(self.tickers) + 1), len(backtest_summary_elements))
 
         # check first backtest summary element - trades
-        first_elem = backtest_summary_elements[0]
+        first_elem = backtest_summary_elements[2]
         self.assertEqual(first_param_set, first_elem.model_parameters)
 
-        trade_columns = pd.Index([TradeField.Ticker, TradeField.StartDate, TradeField.EndDate, TradeField.Open,
-                                  TradeField.MaxGain, TradeField.MaxLoss, TradeField.Close, TradeField.Return,
-                                  TradeField.Exposure])
+        expected_trades_data = [
+            [self.apple_ticker, str_to_date("2015-01-02"), str_to_date("2015-01-16"), (260.0 / 160.0 - 1), 1.0],
+            [self.ibm_ticker, str_to_date("2015-01-02"), str_to_date("2015-01-16"), (265.0 / 165.0 - 1), 1.0]
+        ]
 
-        expected_trades = pd.DataFrame(columns=trade_columns, data=[
-            [
-                self.apple_ticker, str_to_date("2015-01-02"), str_to_date("2015-01-16"),
-                160.0, 141.0, -48.0, 260.0, 260.0 / 160.0 - 1, 1.0
-            ],
-            [
-                self.ibm_ticker, str_to_date("2015-01-02"), str_to_date("2015-01-16"),
-                165.0, 141.0, -48.0, 265.0, 265.0 / 165.0 - 1, 1.0
-            ]
-        ])
-        assert_frame_equal(expected_trades, first_elem.trades_df)
+        generated_trades_data = [
+            [self.contract_ticker_mapper.contract_to_ticker(t.contract), t.start_time, t.end_time, t.pnl, t.direction]
+            for t in first_elem.trades
+        ]
+
+        self.assertCountEqual(generated_trades_data, expected_trades_data)
 
         # check first backtest summary element - returns
-        all_dates_index = pd.bdate_range(start=self.test_start_date + BDay(2), end=self.test_end_date, name='dates')
+        all_dates_index = pd.bdate_range(start=self.test_start_date + BDay(2), end=self.test_end_date)
         expected_returns = SimpleReturnsSeries(index=all_dates_index, data=[
             0.0615530, 0.0579832, 0.0548048, 0.0519568, 0.0493902,
             0.0470653, 0.0449495, 0.0430157, 0.0412415, 0.0396078,
@@ -125,43 +137,26 @@ class TestFastAlphaModelsTester(TestCase):
         assert_series_equal(expected_returns, first_elem.returns_tms)
 
         # check second backtest summary element
-        second_elem = backtest_summary_elements[1]
+        second_elem = backtest_summary_elements[5]
         self.assertEqual(second_param_set, second_elem.model_parameters)
 
-        trade_columns = pd.Index([TradeField.Ticker, TradeField.StartDate, TradeField.EndDate, TradeField.Open,
-                                  TradeField.MaxGain, TradeField.MaxLoss, TradeField.Close, TradeField.Return,
-                                  TradeField.Exposure])
-
-        expected_trades = pd.DataFrame(columns=trade_columns, data=[
-            [
-                self.apple_ticker, str_to_date("2015-01-02"), str_to_date("2015-01-09"),
-                160.0, 48.0, -91.0, 210.0, 1 - 210.0 / 160.0, -1.0
-            ],
-            [
-                self.apple_ticker, str_to_date("2015-01-16"), str_to_date("2015-01-23"),
-                260.0, 91.0, -48.0, 310.0, 310.0 / 260.0 - 1, 1.0
-            ],
-            [
-                self.apple_ticker, str_to_date("2015-01-23"), str_to_date("2015-01-30"),
-                310.0, 48.0, -91.0, 360.0, 1 - 360.0 / 310.0, -1.0
-            ],
-            [
-                self.ibm_ticker, str_to_date("2015-01-02"), str_to_date("2015-01-09"),
-                165.0, 48.0, -91.0, 215.0, 1 - 215.0 / 165.0, -1.0
-            ],
-            [
-                self.ibm_ticker, str_to_date("2015-01-16"), str_to_date("2015-01-23"),
-                265.0, 91.0, -48.0, 315.0, 315.0 / 265.0 - 1, 1.0
-            ],
-            [
-                self.ibm_ticker, str_to_date("2015-01-23"), str_to_date("2015-01-30"),
-                315.0, 48.0, -91.0, 365.0, 1 - 365.0 / 315.0, -1.0
-            ]
-        ])
-        assert_frame_equal(expected_trades, second_elem.trades_df)
+        expected_trades_data = [
+            [self.apple_ticker, str_to_date("2015-01-02"), str_to_date("2015-01-09"), (1 - 210.0 / 160.0), -1.0],
+            [self.apple_ticker, str_to_date("2015-01-16"), str_to_date("2015-01-23"), (310.0 / 260.0 - 1), 1.0],
+            [self.apple_ticker, str_to_date("2015-01-23"), str_to_date("2015-01-30"), (1 - 360.0 / 310.0), -1.0],
+            [self.ibm_ticker, str_to_date("2015-01-02"), str_to_date("2015-01-09"), (1 - 215.0 / 165.0), -1.0],
+            [self.ibm_ticker, str_to_date("2015-01-16"), str_to_date("2015-01-23"), (315.0 / 265.0 - 1), 1.0],
+            [self.ibm_ticker, str_to_date("2015-01-23"), str_to_date("2015-01-30"), (1 - 365.0 / 315.0), -1.0]
+        ]
+        generated_trades_data = [
+            [self.contract_ticker_mapper.contract_to_ticker(t.contract), t.start_time, t.end_time, t.pnl,
+             t.direction]
+            for t in second_elem.trades
+        ]
+        self.assertCountEqual(expected_trades_data, generated_trades_data)
 
         # check second backtest summary element - returns
-        all_dates_index = pd.bdate_range(start=self.test_start_date + BDay(2), end=self.test_end_date, name='dates')
+        all_dates_index = pd.bdate_range(start=self.test_start_date + BDay(2), end=self.test_end_date)
         expected_returns = SimpleReturnsSeries(index=all_dates_index, data=[
             -0.0615530, - 0.0579832, - 0.0548048, - 0.0519568, - 0.0493902,
             0.0000000, 0.0000000, 0.0000000, 0.0000000, 0.0000000,
@@ -172,12 +167,13 @@ class TestFastAlphaModelsTester(TestCase):
 
 
 class DummyAlphaModel(AlphaModel):
-    def __init__(self, period_length: int, first_suggested_exposure: Exposure, timer: Timer):
-        super().__init__(0.0, None)
+    def __init__(self, period_length: int, first_suggested_exposure: Exposure,
+                 risk_estimation_factor: float, data_handler: DataHandler = None):
+        super().__init__(risk_estimation_factor, data_handler)
 
         assert first_suggested_exposure != Exposure.OUT
 
-        self.timer = timer
+        self.timer = data_handler.timer
 
         last_suggested_exposure = Exposure.LONG if first_suggested_exposure == Exposure.SHORT else Exposure.SHORT
 
@@ -192,21 +188,11 @@ class DummyAlphaModel(AlphaModel):
 
         num_of_dates = len(dates_index)
         exposures_list = list(islice(signals_cycle, 0, num_of_dates))
-        self._exposures = pd.Series(index=dates_index, data=exposures_list)
+        self._exposures = QFSeries(index=dates_index, data=exposures_list)
 
     def calculate_exposure(self, ticker: Ticker, current_exposure: Exposure) -> Exposure:
         exposure = self._exposures[self.timer.now()]
         return exposure
-
-
-class DummyAlphaModelFactory(object):
-    def __init__(self, timer: Timer):
-        self.timer = timer
-
-    def make_model(self, model_type, *params):
-        assert model_type == DummyAlphaModel
-        period_length, first_suggested_exposure = params
-        return DummyAlphaModel(period_length, first_suggested_exposure, self.timer)
 
 
 if __name__ == '__main__':

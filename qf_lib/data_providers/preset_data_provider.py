@@ -70,7 +70,7 @@ class PresetDataProvider(DataProvider):
         self._ticker_types = {type(ticker) for ticker in data.tickers.values}
 
     @property
-    def data_bundle(self):
+    def data_bundle(self) -> QFDataArray:
         return self._data_bundle
 
     @property
@@ -90,7 +90,7 @@ class PresetDataProvider(DataProvider):
         return self._future_tickers_cached_set
 
     @property
-    def cached_fields(self) -> FrozenSet[Ticker]:
+    def cached_fields(self) -> FrozenSet[Union[str, PriceField]]:
         return self._fields_cached_set
 
     @property
@@ -101,7 +101,6 @@ class PresetDataProvider(DataProvider):
     def end_date(self) -> datetime:
         return self._end_date
 
-    @property
     def supported_ticker_types(self) -> Set[Type[Ticker]]:
         return self._ticker_types
 
@@ -195,6 +194,9 @@ class PresetDataProvider(DataProvider):
 
         # Verify whether the passed frequency parameter is correct and can be used with the preset data
         assert frequency == self._frequency, "Currently, for the get history does not support data sampling"
+
+        if end_date is None:
+            end_date = datetime.now()
 
         if frequency > Frequency.DAILY:
             # In case of high frequency - the data array should not include the end_date. The data range is

@@ -13,8 +13,11 @@
 #     limitations under the License.
 
 from datetime import datetime
+from typing import List
 
+from qf_lib.backtesting.monitoring.signals_register import SignalsRegister
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
+from qf_lib.backtesting.portfolio.transaction import Transaction
 
 
 class BacktestResult(object):
@@ -23,9 +26,11 @@ class BacktestResult(object):
     for example it contains a portfolio with its timeseries and trades. It can also gather additional information
     """
 
-    def __init__(self, portfolio: Portfolio, backtest_name: str = None,
+    def __init__(self, portfolio: Portfolio, signals_register: SignalsRegister, backtest_name: str = None,
                  start_date: datetime = None, end_date: datetime = None):
         self.portfolio = portfolio
+        self.signals_register = signals_register
         self.backtest_name = backtest_name
         self.start_date = start_date
         self.end_date = end_date
+        self.transactions = []  # type: List[Transaction]

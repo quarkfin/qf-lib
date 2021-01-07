@@ -15,8 +15,6 @@
 from datetime import datetime, timedelta
 from typing import Union, Sequence
 
-import pandas as pd
-
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
@@ -31,6 +29,7 @@ from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.cast_series import cast_series
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
+from qf_lib.data_providers.helpers import cast_data_array_to_proper_type
 
 
 class IntradayDataHandler(DataHandler):
@@ -124,7 +123,7 @@ class IntradayDataHandler(DataHandler):
         return self.data_provider.get_history(tickers, fields, start_date, end_date_without_look_ahead, frequency)
 
     def get_last_available_price(self, tickers: Union[Ticker, Sequence[Ticker]],
-                                 frequency: Frequency = None) -> Union[float, pd.Series]:
+                                 frequency: Frequency = None) -> Union[float, QFSeries]:
         """
         Gets the latest available price for given assets, even if the full bar is not yet available.
 
@@ -144,7 +143,7 @@ class IntradayDataHandler(DataHandler):
 
         Returns
         -------
-        float, pd.Series
+        float, QFSeries
             last_prices series where:
             - last_prices.name contains a date of current prices,
             - last_prices.index contains tickers
@@ -159,7 +158,7 @@ class IntradayDataHandler(DataHandler):
 
         # if an empty tickers list was supplied then return an empty result
         if not tickers:
-            return pd.Series()
+            return QFSeries()
 
         current_datetime = self.timer.now()
 
@@ -238,14 +237,14 @@ class IntradayDataHandler(DataHandler):
             prices_series = prices_data_array.asof(time_range_start)
             prices_series.name = "Last available asset prices"
 
-        prices_series = cast_series(prices_series, pd.Series)
+        prices_series = cast_series(prices_series, QFSeries)
         if was_single_ticker_provided:
             return prices_series[0]
         else:
             return prices_series
 
     def get_current_price(self, tickers: Union[Ticker, Sequence[Ticker]],
-                          frequency: Frequency = None) -> Union[float, pd.Series]:
+                          frequency: Frequency = None) -> Union[float, QFSeries]:
         """
         Works just like get_last_available_price() but it can return NaNs if data is not available at the current
         moment (e.g. it returns NaN on a non-trading day).
@@ -267,7 +266,7 @@ class IntradayDataHandler(DataHandler):
 
         Returns
         -------
-        float, pd.Series
+        float, QFSeries
             current_prices series where:
             - current_prices.name contains a date of current prices,
             - current_prices.index contains tickers
@@ -281,7 +280,7 @@ class IntradayDataHandler(DataHandler):
         tickers, was_single_ticker_provided = convert_to_list(tickers, Ticker)
         # if an empty tickers list was supplied then return an empty result
         if not tickers:
-            return pd.Series()
+            return QFSeries()
 
         current_datetime = self.timer.now()
 
@@ -305,22 +304,22 @@ class IntradayDataHandler(DataHandler):
             # frequency.time_delta()
             prices_series = prices_data_array.loc[time_range_start]
         except KeyError:
-            prices_series = pd.Series(index=tickers)
+            prices_series = QFSeries(index=tickers)
 
         prices_series.name = "Current asset prices"
 
-        prices_series = cast_series(prices_series, pd.Series)
+        prices_series = cast_series(prices_series, QFSeries)
         if was_single_ticker_provided:
             return prices_series[0]
         else:
             return prices_series
 
     def get_current_bar(self, tickers: Union[Ticker, Sequence[Ticker]], frequency: Frequency = None) \
-            -> Union[pd.Series, pd.DataFrame]:
+            -> Union[QFSeries, QFDataFrame]:
         """
         Gets the current bar(s) for given Ticker(s). If the bar is not available yet, None is returned.
 
-        If the request for single Ticker was made, then the result is a pandas.Series indexed with PriceFields (OHLCV).
+        If the request for single Ticker was made, then the result is a QFSeries indexed with PriceFields (OHLCV).
         If the request for multiple Tickers was made, then the result has Tickers as an index and PriceFields
         as columns.
 
@@ -340,12 +339,12 @@ class IntradayDataHandler(DataHandler):
 
         Returns
         -------
-        pandas.Series, pandas.DataFrame
+        QFSeries, QFDataFrame
             current bar
 
         """
         if not tickers:
-            return pd.Series()
+            return QFSeries()
 
         frequency = frequency or self.fixed_data_provider_frequency or Frequency.MIN_1
 
@@ -357,9 +356,9 @@ class IntradayDataHandler(DataHandler):
         prices_data_array = self.get_price(tickers=tickers, fields=PriceField.ohlcv(), start_date=start_date,
                                            end_date=current_datetime, frequency=frequency)
         try:
-            last_available_bars = prices_data_array.loc[start_date].to_pandas()
+            last_available_bars = cast_data_array_to_proper_type(prices_data_array.loc[start_date])
         except KeyError:
-            return pd.DataFrame(index=tickers, columns=PriceField.ohlcv())
+            return QFDataFrame(index=tickers, columns=PriceField.ohlcv())
 
         if was_single_ticker_provided:
             last_available_bars = last_available_bars.iloc[0, :]

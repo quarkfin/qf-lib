@@ -12,6 +12,7 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
+import logging
 import os
 
 from demo_scripts.demo_configuration.demo_ioc import container
@@ -20,9 +21,10 @@ from qf_lib.analysis.tearsheets.tearsheet_without_benchmark import TearsheetWith
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import QuandlTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
-from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
+from qf_lib.common.utils.logging.logging_config import setup_logging
 from qf_lib.common.utils.miscellaneous.get_cached_value import cached_value
 from qf_lib.data_providers.quandl.quandl_data_provider import QuandlDataProvider
+from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.settings import Settings
 
 
@@ -44,31 +46,36 @@ def get_data():
 
 
 def main():
+    setup_logging(logging.INFO)
     this_dir_path = os.path.dirname(os.path.abspath(__file__))
     strategy, benchmark, live_date = cached_value(get_data, os.path.join(this_dir_path, 'tearsheet5.cache'))
 
     settings = container.resolve(Settings)  # type: Settings
     pdf_exporter = container.resolve(PDFExporter)  # type: PDFExporter
 
+    title = "With Benchmark, With Live Date"
     tearsheet = TearsheetWithBenchmark(
-        settings, pdf_exporter, strategy, benchmark, live_date=live_date, title="With Benchmark, With Live Date")
+        settings, pdf_exporter, strategy, benchmark, live_date=live_date, title=title)
     tearsheet.build_document()
-    tearsheet.save()
+    tearsheet.save(file_name=title)
 
+    title = "With Benchmark, Without Live Date"
     tearsheet = TearsheetWithBenchmark(
-        settings, pdf_exporter, strategy, benchmark, live_date=None, title="With Benchmark, Without Live Date")
+        settings, pdf_exporter, strategy, benchmark, live_date=None, title=title)
     tearsheet.build_document()
-    tearsheet.save()
+    tearsheet.save(file_name=title)
 
+    title = "Without Benchmark, With Live Date"
     tearsheet = TearsheetWithoutBenchmark(
-        settings, pdf_exporter, strategy, live_date=live_date, title="Without Benchmark, With Live Date")
+        settings, pdf_exporter, strategy, live_date=live_date, title=title)
     tearsheet.build_document()
-    tearsheet.save()
+    tearsheet.save(file_name=title)
 
+    title = "Without Benchmark, Without Live Date"
     tearsheet = TearsheetWithoutBenchmark(
-        settings, pdf_exporter, strategy, live_date=None, title="Without Benchmark, Without Live Date")
+        settings, pdf_exporter, strategy, live_date=None, title=title)
     tearsheet.build_document()
-    tearsheet.save()
+    tearsheet.save(file_name=title)
 
     print("Finished")
 

@@ -11,24 +11,59 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
+import hashlib
+from typing import Union
 
-from typing import Sequence, Any
+from pandas.core.util.hashing import hash_pandas_object
+
+from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
+from qf_lib.containers.qf_data_array import QFDataArray
+from qf_lib.containers.series.qf_series import QFSeries
 
 
-def rolling_window_slices(index: Sequence[Any], size: Any, step: int = 1) -> Sequence[slice]:
-    slices = []
-    last_idx_value = index[-1]
+def compute_container_hash(data_container: Union[QFSeries, QFDataFrame, QFDataArray]) -> str:
+    """
+    For the given data container returns the hexadecimal digest of the data.
 
-    start_indices = [idx for i, idx in enumerate(index) if i % step == 0]
+    Parameters
+    ----------
+    data_container: QFSeries, QFDataFrame, QFDataArray
+        container, which digest should be computed
 
-    for idx in start_indices:
-        start_idx = idx
-        end_idx = start_idx + size
+    Returns
+    -------
+    str
+        hexadecimal digest of data in the passed data container
+    """
+    if isinstance(data_container, QFSeries):
+        hashed_container = hash_pandas_object(data_container)
 
-        if end_idx < last_idx_value:
-            slices.append(slice(start_idx, end_idx))
+    elif isinstance(data_container, QFDataFrame):
+        hashed_container = hash_pandas_object(data_container)
+
+    elif isinstance(data_container, QFDataArray):
+        hash_data_frame = QFDataFrame([hash_pandas_object(data_container.loc[:, :, field].to_pandas())
+                                       for field in data_container.fields])
+        hashed_container = hash_pandas_object(hash_data_frame)
+    else:
+        raise ValueError("Unsupported type of data container")
+
+    return hashlib.sha1(hashed_container.values).hexdigest()
+
+
+def get_containers_for_common_dates(container1, container2):
+    common_dates = container1.index.intersection(container2.index)
+
+    def crop_results(container):
+        if isinstance(container, QFSeries):
+            result = container.loc[common_dates]
+        elif isinstance(container, QFDataFrame):
+            result = container.loc[common_dates, :]
         else:
-            slices.append(slice(start_idx, last_idx_value))
-            break
+            raise ValueError("container has to be a QFSeries or a QFDataFrame")
+        return result
 
-    return slices
+    container1_result = crop_results(container1)
+    container2_result = crop_results(container2)
+
+    return container1_result, container2_result

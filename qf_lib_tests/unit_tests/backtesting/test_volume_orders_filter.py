@@ -16,8 +16,8 @@ from typing import Optional
 
 import pandas as pd
 
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.bloomberg_mapper import \
-    DummyBloombergContractTickerMapper
+from qf_lib.backtesting.contract.contract_to_ticker_conversion.simulated_bloomberg_mapper import \
+    SimulatedBloombergContractTickerMapper
 from qf_lib.backtesting.data_handler.daily_data_handler import DailyDataHandler
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
@@ -42,7 +42,7 @@ class TestVolumeOrdersFilter(unittest.TestCase):
         """ Setup a preset data provider and a scenario, in which the sized orders will exceed the volume limits. """
         MarketCloseEvent.set_trigger_time({"hour": 20, "minute": 0, "second": 0, "microsecond": 0})
         cls.ticker = BloombergTicker("Example Index")
-        cls.contract_ticker_mapper = DummyBloombergContractTickerMapper()
+        cls.contract_ticker_mapper = SimulatedBloombergContractTickerMapper()
 
     def test_volume_orders_filter__resize_orders(self):
         """Tests VolumeOrdersVerifier with orders exceeding the limit."""

@@ -27,7 +27,6 @@ def _get_ioc_container():
 
     from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
     from qf_lib.common.risk_parity_boxes.risk_parity_boxes import RiskParityBoxesFactory
-    from qf_lib.common.rolling_contracts.rolling_contracts_series_producer import RollingContractsSeriesProducer
     from qf_lib.common.utils.dateutils.timer import RealTimer
     from qf_lib.common.utils.dateutils.timer import Timer
     from qf_lib.documents_utils.document_exporting.html_exporter import HTMLExporter
@@ -55,7 +54,6 @@ def _get_ioc_container():
     builder.register_class(GeneralPriceProvider, component_scope=SingleInstance)
 
     # MISCELLANEOUS COMPONENTS
-    builder.register_class(RollingContractsSeriesProducer, component_scope=SingleInstance)
     builder.register_class(BacktestTradingSessionBuilder, component_scope=SingleInstance)
     builder.register_class(RiskParityBoxesFactory, component_scope=SingleInstance)
 

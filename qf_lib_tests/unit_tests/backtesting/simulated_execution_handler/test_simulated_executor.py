@@ -15,8 +15,8 @@ import unittest
 from itertools import count
 from unittest.mock import MagicMock, patch
 
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.bloomberg_mapper import \
-    DummyBloombergContractTickerMapper
+from qf_lib.backtesting.contract.contract_to_ticker_conversion.simulated_bloomberg_mapper import \
+    SimulatedBloombergContractTickerMapper
 from qf_lib.backtesting.execution_handler.commission_models.commission_model import CommissionModel
 from qf_lib.backtesting.execution_handler.market_orders_executor import MarketOrdersExecutor
 from qf_lib.backtesting.execution_handler.simulated_executor import SimulatedExecutor
@@ -34,7 +34,7 @@ class TestSimulatedExecutor(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.contract_ticker_mapper = DummyBloombergContractTickerMapper()
+        cls.contract_ticker_mapper = SimulatedBloombergContractTickerMapper()
         cls.example_ticker = BloombergTicker("Example Index")
         cls.example_ticker_2 = BloombergTicker("Example2 Index")
         cls.orders = [
@@ -138,7 +138,7 @@ class TestSimulatedExecutor(unittest.TestCase):
             return fill_prices, fill_volumes
 
         slippage_model = MagicMock()
-        slippage_model.apply_slippage.side_effect = mock_apply_slippage
+        slippage_model.process_orders.side_effect = mock_apply_slippage
 
         def mock_calculate_commission(order, fill_price):
             return 0.0

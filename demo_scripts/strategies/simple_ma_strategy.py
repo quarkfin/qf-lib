@@ -11,22 +11,22 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-
-from qf_lib.common.utils.dateutils.string_to_date import str_to_date
-from qf_lib.backtesting.trading_session.backtest_trading_session import BacktestTradingSession
-from qf_lib.backtesting.events.time_event.regular_time_event.before_market_open_event import BeforeMarketOpenEvent
-from qf_lib.common.tickers.tickers import BloombergTicker, Ticker
-from qf_lib.backtesting.order.execution_style import MarketOrder
-from qf_lib.common.enums.price_field import PriceField
-from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
-from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
-from demo_scripts.demo_configuration.demo_ioc import container
 import matplotlib.pyplot as plt
-
-from qf_lib.backtesting.order.time_in_force import TimeInForce
-from qf_lib.common.enums.frequency import Frequency
-
 plt.ion()  # required for dynamic chart, good to keep this at the beginning of imports
+
+from demo_scripts.common.utils.dummy_ticker import DummyTicker
+from demo_scripts.common.utils.dummy_ticker_mapper import DummyTickerMapper
+from demo_scripts.demo_configuration.demo_data_provider import daily_data_provider
+from demo_scripts.demo_configuration.demo_ioc import container
+from qf_lib.backtesting.events.time_event.regular_time_event.before_market_open_event import BeforeMarketOpenEvent
+from qf_lib.backtesting.order.execution_style import MarketOrder
+from qf_lib.backtesting.order.time_in_force import TimeInForce
+from qf_lib.backtesting.trading_session.backtest_trading_session import BacktestTradingSession
+from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
+from qf_lib.common.enums.frequency import Frequency
+from qf_lib.common.enums.price_field import PriceField
+from qf_lib.common.tickers.tickers import Ticker
+from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 
 
 class SimpleMAStrategy(object):
@@ -78,15 +78,20 @@ class SimpleMAStrategy(object):
 
 
 def main():
+    # settings
+    backtest_name = 'Simple MA Strategy Demo'
     start_date = str_to_date("2010-01-01")
-    end_date = str_to_date("2010-03-01")
-    ticker = BloombergTicker("MSFT US Equity")
+    end_date = str_to_date("2015-03-01")
+    ticker = DummyTicker("AAA")
 
+    # configuration
     session_builder = container.resolve(BacktestTradingSessionBuilder)  # type: BacktestTradingSessionBuilder
     session_builder.set_frequency(Frequency.DAILY)
-    session_builder.set_backtest_name('Simple_MA')
+    session_builder.set_backtest_name(backtest_name)
+    session_builder.set_data_provider(daily_data_provider)
+    session_builder.set_contract_ticker_mapper(DummyTickerMapper())
+
     ts = session_builder.build(start_date, end_date)
-    ts.use_data_preloading(ticker, RelativeDelta(days=40))
 
     SimpleMAStrategy(ts, ticker)
     ts.start_trading()
