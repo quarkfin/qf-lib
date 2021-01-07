@@ -14,9 +14,9 @@
 
 import numpy as np
 from arch.univariate.volatility import VolatilityProcess
-from pandas import DataFrame
 
 from qf_lib.common.utils.volatility.volatility_forecast import VolatilityForecast
+from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 
 
 class RobustCovariance(object):
@@ -26,14 +26,14 @@ class RobustCovariance(object):
 
     Parameters
     ----------
-    simple_returns: DataFrame
-        dataframe of simple returns of the assets
+    simple_returns: QFDataFrame
+        QFDataFrame of simple returns of the assets
     """
 
-    def __init__(self, simple_returns: DataFrame):
+    def __init__(self, simple_returns: QFDataFrame):
         self.returns = simple_returns
 
-    def calculate_covariance(self, vol_process: VolatilityProcess, horizon: int, method: str = 'analytic') -> DataFrame:
+    def calculate_covariance(self, vol_process: VolatilityProcess, horizon: int, method: str = 'analytic') -> QFDataFrame:
         """
         Calculates the covariance matrix using foretasted volatility for each asset and
         rank correlation between the assets. Covariance matrix contains NOT annualised values.
@@ -52,7 +52,7 @@ class RobustCovariance(object):
 
         Returns
         ----------
-        DataFrame
+        QFDataFrame
             cov_matrix of the assets.
         """
         vol_forecast_array = self._calculate_expected_volatilities(vol_process, horizon, method)

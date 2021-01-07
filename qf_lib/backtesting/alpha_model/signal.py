@@ -45,11 +45,23 @@ class Signal(object):
     def __init__(self, ticker: Ticker, suggested_exposure: Exposure, fraction_at_risk: float, confidence: float = 1.0,
                  expected_move: float = None, alpha_model=None):
         self.ticker = ticker
+        self.symbol = ticker.ticker
         self.suggested_exposure = suggested_exposure
         self.confidence = confidence
         self.expected_move = expected_move
         self.fraction_at_risk = fraction_at_risk
         self.alpha_model = alpha_model
+
+    def __eq__(self, other):
+        if other is self:
+            return True
+
+        if not isinstance(other, Signal):
+            return False
+
+        return (self.ticker, self.suggested_exposure, self.confidence, self.expected_move, self.fraction_at_risk,
+                self.alpha_model) == (other.ticker, other.suggested_exposure, other.confidence, other.expected_move,
+                                      other.fraction_at_risk, other.alpha_model)
 
     def __str__(self):
         return "Signal \n" \

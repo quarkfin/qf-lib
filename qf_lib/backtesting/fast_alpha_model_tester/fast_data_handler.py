@@ -47,3 +47,17 @@ class FastDataHandler(DataHandler):
     def get_price(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
                   start_date: datetime, end_date: datetime = None, frequency: Frequency = Frequency.DAILY) -> Union[PricesSeries, PricesDataFrame, QFDataArray]:
         return self.data_provider.get_price(tickers, fields, start_date, end_date, frequency)
+
+    def _check_frequency(self, frequency):
+        pass
+
+    def _get_end_date_without_look_ahead(self, end_date=None):
+        pass
+
+    def get_history(
+            self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[str, Sequence[str]], start_date: datetime,
+            end_date: datetime = None, frequency: Frequency = None, **kwargs):
+        raise NotImplementedError("FastDataHandler does not currently support get_history() function")
+
+    def get_last_available_price(self, tickers: Union[Ticker, Sequence[Ticker]], frequency: Frequency = None):
+        raise NotImplementedError("FastDataHandler does not currently support get_last_available_price() function")

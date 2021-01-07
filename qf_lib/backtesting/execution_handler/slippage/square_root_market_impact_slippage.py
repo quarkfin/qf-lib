@@ -26,6 +26,7 @@ from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.utils.volatility.get_volatility import get_volatility
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.data_providers.data_provider import DataProvider
+from qf_lib.data_providers.helpers import cast_data_array_to_proper_type
 
 
 class SquareRootMarketImpactSlippage(Slippage):
@@ -83,8 +84,8 @@ class SquareRootMarketImpactSlippage(Slippage):
         data_array = self._data_provider.get_price(tickers, [PriceField.Close, PriceField.Volume],
                                                    start_date, end_date, Frequency.DAILY)
 
-        close_prices = data_array.loc[:, tickers, PriceField.Close].to_pandas()
-        volumes = data_array.loc[:, tickers, PriceField.Volume].to_pandas()
+        close_prices = cast_data_array_to_proper_type(data_array.loc[:, tickers, PriceField.Close])
+        volumes = cast_data_array_to_proper_type(data_array.loc[:, tickers, PriceField.Volume])
         close_prices_volatility = close_prices.apply(self._compute_volatility).values
 
         average_volumes = volumes.apply(self._compute_average_volume).values

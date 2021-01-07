@@ -24,14 +24,14 @@ def trend_strength(prices_df: PricesDataFrame, use_next_open_instead_of_close=Fa
     if use_next_open_instead_of_close:
         prices_df = _replace_close_by_next_open(prices_df)
 
-    open = prices_df[PriceField.Open]
-    close = prices_df[PriceField.Close]
-    high = prices_df[PriceField.High]
-    low = prices_df[PriceField.Low]
+    open_prices = prices_df[PriceField.Open]
+    close_prices = prices_df[PriceField.Close]
+    high_prices = prices_df[PriceField.High]
+    low_prices = prices_df[PriceField.Low]
 
-    numerator = close / open - 1
+    numerator = close_prices / open_prices - 1
     numerator = numerator.abs()
-    denominator = high / low - 1
+    denominator = high_prices / low_prices - 1
 
     result = numerator.mean() / denominator.mean()
     return result
@@ -46,18 +46,18 @@ def down_trend_strength(prices_df: PricesDataFrame, use_next_open_instead_of_clo
     if use_next_open_instead_of_close:
         prices_df = _replace_close_by_next_open(prices_df)
 
-    open = prices_df[PriceField.Open]
-    close = prices_df[PriceField.Close]
-    high = prices_df[PriceField.High]
+    open_prices = prices_df[PriceField.Open]
+    close_prices = prices_df[PriceField.Close]
+    high_prices = prices_df[PriceField.High]
 
-    is_down_day = close < open
+    is_down_day = close_prices < open_prices
 
-    open = open.loc[is_down_day]
-    close = close.loc[is_down_day]
-    high = high.loc[is_down_day]
+    open_prices = open_prices.loc[is_down_day]
+    close_prices = close_prices.loc[is_down_day]
+    high_prices = high_prices.loc[is_down_day]
 
-    numerator = open / close - 1
-    denominator = high / open - 1
+    numerator = open_prices / close_prices - 1
+    denominator = high_prices / open_prices - 1
 
     if len(numerator) > 3:
         result = numerator.mean() / denominator.mean()
@@ -74,18 +74,18 @@ def up_trend_strength(prices_df: PricesDataFrame, use_next_open_instead_of_close
     if use_next_open_instead_of_close:
         prices_df = _replace_close_by_next_open(prices_df)
 
-    open = prices_df[PriceField.Open]
-    close = prices_df[PriceField.Close]
-    low = prices_df[PriceField.Low]
+    open_prices = prices_df[PriceField.Open]
+    close_prices = prices_df[PriceField.Close]
+    low_prices = prices_df[PriceField.Low]
 
-    is_up_day = close > open
+    is_up_day = close_prices > open_prices
 
-    open = open.loc[is_up_day]
-    close = close.loc[is_up_day]
-    low = low.loc[is_up_day]
+    open_prices = open_prices.loc[is_up_day]
+    close_prices = close_prices.loc[is_up_day]
+    low_prices = low_prices.loc[is_up_day]
 
-    numerator = open / close - 1  # will always be negative
-    denominator = low / open - 1  # will always be negative
+    numerator = open_prices / close_prices - 1  # will always be negative
+    denominator = low_prices / open_prices - 1  # will always be negative
 
     if len(numerator) > 3:
         result = numerator.mean() / denominator.mean()
@@ -95,7 +95,7 @@ def up_trend_strength(prices_df: PricesDataFrame, use_next_open_instead_of_close
 
 def _replace_close_by_next_open(prices_df: PricesDataFrame):
     result = prices_df.drop(columns=[PriceField.Close])
-    open = prices_df[PriceField.Open]
-    result[PriceField.Close] = open.shift(-1)  # shift to put open of next day instead of close
+    open_prices = prices_df[PriceField.Open]
+    result[PriceField.Close] = open_prices.shift(-1)  # shift to put open of next day instead of close
     result = result.drop(result.index[-1])  # remove the last row that will have a NaN
     return result

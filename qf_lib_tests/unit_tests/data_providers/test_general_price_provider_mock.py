@@ -13,9 +13,9 @@
 #     limitations under the License.
 
 import unittest
+from unittest.mock import Mock
 
 import pandas as pd
-from mockito import mock, when
 
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
@@ -23,7 +23,11 @@ from qf_lib.common.tickers.tickers import QuandlTicker, BloombergTicker, HaverTi
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.qf_data_array import QFDataArray
+from qf_lib.data_providers.bloomberg import BloombergDataProvider
+from qf_lib.data_providers.cryptocurrency.cryptocurrency_data_provider import CryptoCurrencyDataProvider
 from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
+from qf_lib.data_providers.haver import HaverDataProvider
+from qf_lib.data_providers.quandl.quandl_data_provider import QuandlDataProvider
 
 
 class TestGeneralPriceProviderMock(unittest.TestCase):
@@ -71,43 +75,25 @@ class TestGeneralPriceProviderMock(unittest.TestCase):
             [[None], [106.06], [121.01], [323.1553]]
         ]
 
-        bloomberg = mock(strict=True)
-        when(bloomberg) \
-            .get_price(self.BBG_TICKERS, self.PRICE_FIELDS, self.START_DATE, self.END_DATE, self.FREQUENCY) \
-            .thenReturn(
-                QFDataArray.create(dates=datetime_index, tickers=self.BBG_TICKERS, fields=self.PRICE_FIELDS, data=data)
-        )
-        when(bloomberg).supported_ticker_types().thenReturn({BloombergTicker})
+        bloomberg = Mock(spec=BloombergDataProvider)
+        bloomberg.get_price.return_value = QFDataArray.create(dates=datetime_index, tickers=self.BBG_TICKERS,
+                                                              fields=self.PRICE_FIELDS, data=data)
+        bloomberg.supported_ticker_types.return_value = {BloombergTicker}
 
-        quandl = mock(strict=True)
-        when(quandl) \
-            .get_price(self.QUANDL_TICKERS, self.PRICE_FIELDS, self.START_DATE, self.END_DATE, self.FREQUENCY) \
-            .thenReturn(
-                QFDataArray.create(
-                    dates=datetime_index, tickers=self.QUANDL_TICKERS, fields=self.PRICE_FIELDS, data=data
-                )
-        )
-        when(quandl).supported_ticker_types().thenReturn({QuandlTicker})
+        quandl = Mock(spec=QuandlDataProvider)
+        quandl.get_price.return_value = QFDataArray.create(dates=datetime_index, tickers=self.QUANDL_TICKERS,
+                                                           fields=self.PRICE_FIELDS, data=data)
+        quandl.supported_ticker_types.return_value = {QuandlTicker}
 
-        haver = mock(strict=True)
-        when(haver) \
-            .get_price(self.HAVER_TICKERS, self.PRICE_FIELDS, self.START_DATE, self.END_DATE, self.FREQUENCY) \
-            .thenReturn(
-                QFDataArray.create(
-                    dates=datetime_index, tickers=self.HAVER_TICKERS, fields=self.PRICE_FIELDS, data=data
-                )
-        )
-        when(haver).supported_ticker_types().thenReturn({HaverTicker})
+        haver = Mock(spec=HaverDataProvider)
+        haver.get_price.return_value = QFDataArray.create(dates=datetime_index, tickers=self.HAVER_TICKERS,
+                                                          fields=self.PRICE_FIELDS, data=data)
+        haver.supported_ticker_types.return_value = {HaverTicker}
 
-        ccy = mock(strict=True)
-        when(ccy) \
-            .get_price(self.CCY_TICKERS, self.PRICE_FIELDS, self.START_DATE, self.END_DATE, self.FREQUENCY) \
-            .thenReturn(
-                QFDataArray.create(
-                    dates=datetime_index, tickers=self.CCY_TICKERS, fields=self.PRICE_FIELDS, data=data
-                )
-        )
-        when(ccy).supported_ticker_types().thenReturn({CcyTicker})
+        ccy = Mock(spec=CryptoCurrencyDataProvider)
+        ccy.get_price.return_value = QFDataArray.create(dates=datetime_index, tickers=self.CCY_TICKERS,
+                                                        fields=self.PRICE_FIELDS, data=data)
+        ccy.supported_ticker_types.return_value = {CcyTicker}
 
         self.price_provider = GeneralPriceProvider(bloomberg, quandl, haver, ccy)
 

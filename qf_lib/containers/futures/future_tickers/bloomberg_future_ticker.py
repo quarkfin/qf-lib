@@ -42,7 +42,7 @@ class BloombergFutureTicker(FutureTicker, BloombergTicker):
     days_before_exp_date: int
         Number of days before the expiration day of each of the contract, when the “current” specific contract
         should be substituted with the next consecutive one.
-    point_value: float
+    point_value: int
         Used to define the size of the contract.
     designated_contracts: str
         It is a string, which represents all month codes, that are being downloaded and stored
@@ -51,7 +51,7 @@ class BloombergFutureTicker(FutureTicker, BloombergTicker):
         March, June, September and December, even if contracts for any other months exist and are returned by the
         BloombergDataProvider get_futures_chain_tickers function.
     """
-    def __init__(self, name: str, family_id: str, N: int, days_before_exp_date: int, point_value: float = 1.0,
+    def __init__(self, name: str, family_id: str, N: int, days_before_exp_date: int, point_value: int = 1,
                  designated_contracts: str = "FGHJKMNQUVXZ"):
         self.designated_contracts = designated_contracts
         if not len(designated_contracts) > 0:
@@ -60,7 +60,7 @@ class BloombergFutureTicker(FutureTicker, BloombergTicker):
         super().__init__(name, family_id, N, days_before_exp_date, point_value)
 
         # Used for the purpose of random specific ticker computation
-        random_year_codes = ['09', '9', '99', '19']
+        random_year_codes = ['19', '09', '9', '99']
         self._random_contract_codes = cycle([month + year for month in reversed(list(designated_contracts))
                                              for year in random_year_codes])
 

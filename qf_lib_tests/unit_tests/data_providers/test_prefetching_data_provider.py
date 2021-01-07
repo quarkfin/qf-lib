@@ -14,10 +14,10 @@
 
 import unittest
 from datetime import datetime
+from unittest.mock import Mock
 
 import pandas as pd
 import numpy as np
-from mockito import mock, when, ANY
 
 import qf_lib_tests.helpers.testing_tools.containers_comparison as tt
 from qf_lib.common.enums.frequency import Frequency
@@ -53,19 +53,14 @@ class TestPrefetchingDataProvider(unittest.TestCase):
         )
 
     def mock_data_provider(self) -> DataProvider:
-        data_provider = mock(strict=True)  # type: DataProvider
-
-        result = QFDataArray.create(
+        data_provider = Mock(spec=DataProvider)
+        data_provider.get_price.return_value = QFDataArray.create(
             data=np.full((len(self.cached_dates_idx), len(self.cached_tickers), len(self.cached_fields)), 0),
             dates=self.cached_dates_idx,
             tickers=self.cached_tickers,
             fields=self.cached_fields
         )
-        when(data_provider).get_price(self.cached_tickers, self.cached_fields, self.start_date, self.end_date,
-                                      self.frequency).thenReturn(result)
-
-        when(data_provider).get_futures_chain_tickers(ANY, ANY).thenReturn(dict())
-
+        data_provider.get_futures_chain_tickers.return_value = dict()
         return data_provider
 
     def test_get_price_with_single_ticker(self):

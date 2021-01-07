@@ -13,9 +13,10 @@
 #     limitations under the License.
 
 import numpy as np
-import pandas as pd
 
+from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.dataframe.simple_returns_dataframe import SimpleReturnsDataFrame
+from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
 
 
@@ -23,8 +24,8 @@ class RiskContributionAnalysis(object):
     """ Calculates risk contribution metrics. """
 
     @classmethod
-    def get_risk_contribution(cls, factors_rets: SimpleReturnsDataFrame, weigths_of_assets: pd.Series,
-                              portfolio_rets: SimpleReturnsSeries) -> pd.Series:
+    def get_risk_contribution(cls, factors_rets: SimpleReturnsDataFrame, weigths_of_assets: QFSeries,
+                              portfolio_rets: SimpleReturnsSeries) -> QFSeries:
         """
         Calculates risk contribution of different factors to the portfolio. Risk is defined as volatility.
         Uses x-sigma-rho formula (MSCI Bara paper).
@@ -54,7 +55,7 @@ class RiskContributionAnalysis(object):
 
     @classmethod
     def get_risk_contribution_optimised(
-            cls, assets_rets: SimpleReturnsDataFrame, weights_of_assets: pd.Series) -> pd.Series:
+            cls, assets_rets: SimpleReturnsDataFrame, weights_of_assets: QFSeries) -> QFSeries:
         """
         Calculates risk contribution of each asset of the portfolio.
 
@@ -77,7 +78,7 @@ class RiskContributionAnalysis(object):
 
     @classmethod
     def get_distance_to_equal_risk_contrib(
-            cls, assets_returns_covariance: pd.DataFrame, weights_of_assets: pd.Series) -> float:
+            cls, assets_returns_covariance: QFDataFrame, weights_of_assets: QFSeries) -> float:
         """
         By minimising this function it is possible to calculate Equal Risk Contribution Portfolio. It has better
         numerical properties than simple approach  ( riskContribution - mean(riskContribution) )
@@ -107,7 +108,7 @@ class RiskContributionAnalysis(object):
         return np.sqrt(distance)
 
     @classmethod
-    def is_equal_risk_contribution(cls, returns_covariance: pd.DataFrame, weights_of_assets: pd.Series) -> bool:
+    def is_equal_risk_contribution(cls, returns_covariance: QFDataFrame, weights_of_assets: QFSeries) -> bool:
         """
         Tells whether each asset has an equal risk contribution to the portfolio.
 
@@ -134,7 +135,7 @@ class RiskContributionAnalysis(object):
 
     @classmethod
     def _get_normalized_risk_contribution(
-            cls, assets_returns_covariance: pd.DataFrame, weights_of_factors: pd.Series) -> pd.Series:
+            cls, assets_returns_covariance: QFDataFrame, weights_of_factors: QFSeries) -> QFSeries:
         raw_risk_contribution = weights_of_factors * (assets_returns_covariance.dot(weights_of_factors))
         normalized_risk_contrib = raw_risk_contribution / raw_risk_contribution.sum()
         return normalized_risk_contrib

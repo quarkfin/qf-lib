@@ -91,7 +91,7 @@ class SimulatedExecutor(metaclass=abc.ABCMeta):
 
         if len(to_be_executed_orders) > 0:
             current_time = self._timer.now()
-            fill_prices, fill_volumes = self._slippage_model.apply_slippage(current_time, to_be_executed_orders,
+            fill_prices, fill_volumes = self._slippage_model.process_orders(current_time, to_be_executed_orders,
                                                                             no_slippage_fill_prices_list)
 
             for order, fill_price, fill_volume in zip(to_be_executed_orders, fill_prices, fill_volumes):

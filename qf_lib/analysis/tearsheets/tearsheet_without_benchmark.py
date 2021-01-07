@@ -14,6 +14,7 @@
 
 from datetime import datetime
 
+from qf_lib.common.utils.error_handling import ErrorHandling
 from qf_lib.analysis.tearsheets.abstract_tearsheet import AbstractTearsheet
 from qf_lib.common.enums.plotting_mode import PlottingMode
 from qf_lib.containers.series.qf_series import QFSeries
@@ -25,6 +26,7 @@ from qf_lib.plotting.helpers.create_returns_distribution import create_returns_d
 from qf_lib.settings import Settings
 
 
+@ErrorHandling.class_error_logging()
 class TearsheetWithoutBenchmark(AbstractTearsheet):
     """
     Creates a PDF report without a benchamrk.
@@ -60,7 +62,7 @@ class TearsheetWithoutBenchmark(AbstractTearsheet):
 
         self.document.add_element(ParagraphElement("\n"))
 
-        self._add_rolling_chart(self.strategy_series)
+        self._add_rolling_ret_and_vol_chart(self.strategy_series)
 
         # Next Page
         self.document.add_element(NewPageElement())

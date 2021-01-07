@@ -18,6 +18,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
+from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.plotting.charts.chart import Chart
 from qf_lib.plotting.charts.line_chart import LineChart
 from qf_lib.plotting.decorators.legend_decorator import LegendDecorator
@@ -29,7 +30,7 @@ num_of_regressors = 5
 
 def main():
     # GENERATE DATA
-    regressors_and_fund_df = pd.DataFrame(data=[
+    regressors_and_fund_df = QFDataFrame(data=[
         [1, 3, 5],
         [2, 3, 1],
         [3, 1, 2],

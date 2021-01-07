@@ -14,7 +14,6 @@
 
 from typing import Union, Sequence
 
-import pandas as pd
 from numpy import ndarray
 
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
@@ -35,9 +34,9 @@ class MaxExcessReturnPortfolio(Portfolio):
         self.variance_of_assets = variance_of_assets
         self.upper_constraint = upper_constraint
 
-    def get_weights(self) -> pd.Series:
+    def get_weights(self) -> QFSeries:
         P = self.cov_matrix.values
         q = -0.5 * self.variance_of_assets.values  # type: ndarray
         weights = QuadraticOptimizer.get_optimal_weights(P, q, upper_constraints=self.upper_constraint)
 
-        return pd.Series(data=weights, index=self.cov_matrix.columns)
+        return QFSeries(data=weights, index=self.cov_matrix.columns)

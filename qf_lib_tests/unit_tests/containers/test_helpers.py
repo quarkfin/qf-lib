@@ -17,25 +17,69 @@ from unittest import TestCase
 
 import pandas as pd
 
-from qf_lib.containers.helpers import rolling_window_slices
-from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_lists_equal
+from qf_lib.common.enums.price_field import PriceField
+from qf_lib.common.tickers.tickers import BloombergTicker
+from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
+from qf_lib.containers.helpers import compute_container_hash
+from qf_lib.containers.series.prices_series import PricesSeries
+from qf_lib.containers.series.qf_series import QFSeries
+from qf_lib.containers.series.returns_series import ReturnsSeries
+from qf_lib.data_providers.helpers import tickers_dict_to_data_array
 
 
 class TestSeries(TestCase):
     def setUp(self):
         self.index = pd.date_range(start='2017-01-01', end='2017-12-31', freq='BMS')
 
-    def test_rolling_window_slices(self):
-        actual_slices = rolling_window_slices(self.index, size=pd.DateOffset(months=6), step=1)
-        expected_slices = [
-            slice(pd.Timestamp('2017-01-02'), pd.Timestamp('2017-07-02')),
-            slice(pd.Timestamp('2017-02-01'), pd.Timestamp('2017-08-01')),
-            slice(pd.Timestamp('2017-03-01'), pd.Timestamp('2017-09-01')),
-            slice(pd.Timestamp('2017-04-03'), pd.Timestamp('2017-10-03')),
-            slice(pd.Timestamp('2017-05-01'), pd.Timestamp('2017-11-01')),
-            slice(pd.Timestamp('2017-06-01'), pd.Timestamp('2017-12-01'))
-        ]
-        assert_lists_equal(expected_slices, actual_slices)
+    def test_compute_container_hash__series(self):
+        list_of_data = list(range(200))
+        qfseries_1 = QFSeries(data=list_of_data)
+        qfseries_2 = QFSeries(data=list_of_data)
+        returns_series = ReturnsSeries(data=list_of_data)
+        prices_series = PricesSeries(data=list_of_data)
+
+        self.assertEqual(compute_container_hash(qfseries_1), compute_container_hash(qfseries_2))
+        self.assertEqual(compute_container_hash(qfseries_1), compute_container_hash(returns_series))
+        self.assertEqual(compute_container_hash(qfseries_1), compute_container_hash(prices_series))
+
+    def test_compute_container_hash__df(self):
+        """
+        The order of the columns matters and changes the hash of the data frame.
+        """
+        column_1 = [1, 2, 3]
+        column_2 = [4, 5, 6]
+
+        df_1 = QFDataFrame(data={"A": column_1, "B": column_2}, columns=["A", "B"])
+        df_2 = QFDataFrame(data={"A": column_1, "B": column_2}, columns=["B", "A"])
+
+        self.assertNotEqual(compute_container_hash(df_1), compute_container_hash(df_2))
+        self.assertEqual(compute_container_hash(df_1.sort_index(axis=1)),
+                         compute_container_hash(df_2.sort_index(axis=1)))
+
+    def test_compute_container_hash__data_array(self):
+        ticker_1 = BloombergTicker("Example 1")
+        ticker_2 = BloombergTicker("Example 2")
+
+        prices_df_1 = QFDataFrame(data={PriceField.Close: [1, 2, 3], PriceField.Open: [4, 5, 6]})
+        prices_df_2 = QFDataFrame(data={PriceField.Close: [5, 7, 8]})
+
+        data_array_1 = tickers_dict_to_data_array({
+            ticker_1: prices_df_1,
+            ticker_2: prices_df_2
+        }, [ticker_1, ticker_2], [PriceField.Open, PriceField.Close])
+
+        data_array_2 = tickers_dict_to_data_array({
+            ticker_1: prices_df_1,
+            ticker_2: prices_df_2,
+        }, [ticker_1, ticker_2], [PriceField.Open, PriceField.Close])
+
+        data_array_3 = tickers_dict_to_data_array({
+            ticker_2: prices_df_2,
+            ticker_1: prices_df_1,
+        }, [ticker_1, ticker_2], [PriceField.Open, PriceField.Close])
+
+        self.assertEqual(compute_container_hash(data_array_1), compute_container_hash(data_array_2))
+        self.assertNotEqual(compute_container_hash(data_array_1), compute_container_hash(data_array_3))
 
 
 if __name__ == '__main__':

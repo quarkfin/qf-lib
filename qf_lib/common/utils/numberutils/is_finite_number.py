@@ -13,6 +13,7 @@
 #     limitations under the License.
 
 import numbers
+from decimal import Decimal
 
 import numpy as np
 
@@ -32,4 +33,8 @@ def is_finite_number(variable) -> bool:
         True if the variable is the finite number, False otherwise
 
     """
-    return variable is not None and isinstance(variable, numbers.Number) and np.isfinite(variable)
+    if variable is not None and isinstance(variable, numbers.Number):
+        if isinstance(variable, Decimal):
+            return variable.is_finite()
+        return np.isfinite(variable)
+    return False

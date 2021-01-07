@@ -14,17 +14,20 @@
 
 import unittest
 from math import floor
+from unittest.mock import Mock
 
-import pandas as pd
-from mockito import mock, when
-
+from qf_lib.backtesting.broker.broker import Broker
 from qf_lib.backtesting.contract.contract import Contract
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.bloomberg_mapper import DummyBloombergContractTickerMapper
+from qf_lib.backtesting.contract.contract_to_ticker_conversion.simulated_bloomberg_mapper import \
+    SimulatedBloombergContractTickerMapper
+from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.order.execution_style import MarketOrder, StopOrder
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.order_factory import OrderFactory
 from qf_lib.backtesting.order.time_in_force import TimeInForce
+from qf_lib.backtesting.portfolio.position import Position
 from qf_lib.common.tickers.tickers import BloombergTicker
+from qf_lib.containers.series.qf_series import QFSeries
 
 
 class TestOrderFactory(unittest.TestCase):
@@ -35,19 +38,18 @@ class TestOrderFactory(unittest.TestCase):
         cls.current_portfolio_value = 1000.0
         cls.share_price = 10.0
 
-        position = mock(strict=True)
-        when(position).quantity().thenReturn(10)
-        when(position).contract().thenReturn(cls.contract)
+        position = Mock(spec=Position)
+        position.quantity.return_value = 10
+        position.contract.return_value = cls.contract
 
-        broker = mock(strict=True)
-        when(broker).get_portfolio_value().thenReturn(cls.current_portfolio_value)
-        when(broker).get_positions().thenReturn([position])
+        broker = Mock(spec=Broker)
+        broker.get_portfolio_value.return_value = cls.current_portfolio_value
+        broker.get_positions.return_value = [position]
 
-        data_handler = mock(strict=True)
-        when(data_handler).get_last_available_price([cls.ticker], None).thenReturn(
-            pd.Series([cls.share_price], index=[cls.ticker]))
+        data_handler = Mock(spec=DataHandler)
+        data_handler.get_last_available_price.return_value = QFSeries([cls.share_price], index=[cls.ticker])
 
-        cls.order_factory = OrderFactory(broker, data_handler, DummyBloombergContractTickerMapper())
+        cls.order_factory = OrderFactory(broker, data_handler, SimulatedBloombergContractTickerMapper())
 
     def test_order(self):
         quantity = 5

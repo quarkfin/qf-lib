@@ -12,22 +12,26 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 import random
-from collections import defaultdict
-from typing import List, Dict, Sequence, Optional
+from typing import List, Dict, Sequence, Optional, Union
 
 import numpy as np
 
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
 from qf_lib.backtesting.alpha_model.signal import Signal
-from qf_lib.backtesting.contract.contract import Contract
+from qf_lib.backtesting.broker.broker import Broker
+from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
+from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.events.time_event.regular_time_event.before_market_open_event import BeforeMarketOpenEvent
+from qf_lib.backtesting.order.order_factory import OrderFactory
 from qf_lib.backtesting.portfolio.position import Position
 from qf_lib.backtesting.trading_session.trading_session import TradingSession
 from qf_lib.common.exceptions.future_contracts_exceptions import NoValidTickerException
 from qf_lib.common.tickers.tickers import Ticker
+from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
-from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
+from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
+from qf_lib.containers.futures.futures_rolling_orders_generator import FuturesRollingOrdersGenerator
 
 
 class AlphaModelStrategy(object):
@@ -50,6 +54,14 @@ class AlphaModelStrategy(object):
 
     def __init__(self, ts: TradingSession, model_tickers_dict: Dict[AlphaModel, Sequence[Ticker]], use_stop_losses=True,
                  max_open_positions: Optional[int] = None):
+
+        all_future_tickers = [ticker for tickers_for_model in model_tickers_dict.values()
+                              for ticker in tickers_for_model if isinstance(ticker, FutureTicker)]
+
+        self._futures_rolling_orders_generator = self._get_futures_rolling_orders_generator(all_future_tickers,
+                                                                                            ts.timer, ts.data_handler,
+                                                                                            ts.broker, ts.order_factory,
+                                                                                            ts.contract_ticker_mapper)
         self._broker = ts.broker
         self._order_factory = ts.order_factory
         self._data_handler = ts.data_handler
@@ -60,13 +72,21 @@ class AlphaModelStrategy(object):
 
         self._model_tickers_dict = model_tickers_dict
         self._use_stop_losses = use_stop_losses
-        self._signals = defaultdict(list)  # signals with date and "Ticker@AlphaModel" string
-        self._signals_dates = []
         self._max_open_positions = max_open_positions
 
         ts.notifiers.scheduler.subscribe(BeforeMarketOpenEvent, listener=self)
         self.logger = qf_logger.getChild(self.__class__.__name__)
         self._log_configuration()
+
+    def _get_futures_rolling_orders_generator(self, future_tickers: Sequence[FutureTicker], timer: Timer,
+                                              data_handler: DataHandler, broker: Broker, order_factory: OrderFactory,
+                                              contract_ticker_mapper: ContractTickerMapper):
+
+        # Initialize timer and data provider in case of FutureTickers
+        for future_ticker in future_tickers:
+            future_ticker.initialize_data_provider(timer, data_handler)
+
+        return FuturesRollingOrdersGenerator(future_tickers, timer, broker, order_factory, contract_ticker_mapper)
 
     def on_before_market_open(self, _: BeforeMarketOpenEvent = None):
         if self._timer.now().weekday() not in (5, 6):  # Skip saturdays and sundays
@@ -77,33 +97,9 @@ class AlphaModelStrategy(object):
             if self._max_open_positions is not None:
                 self._adjust_number_of_open_positions(signals)
 
-            self.logger.info("on_before_market_open - Save All Original Signals")
-            self._save_signals(signals)
-
-            self.logger.info("on_before_market_open - Remove Redundant Signals")
-            self._remove_redundant_signals(signals)
-
             self.logger.info("on_before_market_open - Placing Orders")
             self._place_orders(signals)
             self.logger.info("on_before_market_open - Orders Placed")
-
-    def _remove_redundant_signals(self, signals: List[Signal]):
-        """
-        Remove all these signals, which do not need to be passed into position sizer as they obviously do not change the
-        state of the portfolio (current exposure equals Exposure.OUT and suggested exposure is also Exposure.OUT).
-        """
-        open_positions = self._broker.get_positions()
-        tickers_with_open_positions = set(
-            self._contract_to_ticker(position.contract()) for position in open_positions
-        )
-
-        signals_with_suggested_exposure_out = [signal for signal in signals if
-                                               signal.suggested_exposure == Exposure.OUT]
-        redundant_signals = [signal for signal in signals_with_suggested_exposure_out
-                             if signal.ticker not in tickers_with_open_positions]
-
-        for signal in redundant_signals:
-            signals.remove(signal)
 
     def _adjust_number_of_open_positions(self, signals: List[Signal]):
         """
@@ -118,72 +114,61 @@ class AlphaModelStrategy(object):
         While checking the number of all possible open positions we consider family of contracts
         (for example Gold) and not specific contracts (Jul 2020 Gold). Therefore even if 2 or more contracts
         corresponding to one family existed in the portfolio, they would be counted as 1 open position.
-
         """
-
-        open_positions = self._broker.get_positions()
-        open_positions_tickers = set(self._contract_to_ticker(position.contract()) for position in open_positions)
-
-        # Signals, which correspond to either already open positions in the portfolio or indicate that a new position
-        # should be open for the given contract (with Exposure = LONG or SHORT)
-        position_opening_signals = [signal for signal in signals if signal.suggested_exposure != Exposure.OUT]
-
-        # Check if the number of currently open positions in portfolio + new positions, that should be open according
-        # to the signals, does not exceed the limit
-        all_open_positions_tickers = open_positions_tickers.union(
-            [signal.ticker for signal in position_opening_signals]
+        open_positions_specific_tickers = set(
+            self._contract_ticker_mapper.contract_to_ticker(position.contract())
+            for position in self._broker.get_positions()
         )
-        if len(all_open_positions_tickers) <= self._max_open_positions:
-            return signals
 
-        self.logger.info("The number of positions to be open exceeds the maximum limit of {}. Some of the signals need "
-                         "to be changed.".format(self._max_open_positions))
+        def position_for_ticker_exists_in_portfolio(ticker: Ticker) -> bool:
+            if isinstance(ticker, FutureTicker):
+                # Check if any of specific tickers with open positions in portfolio belongs to tickers family
+                return any([ticker.belongs_to_family(t) for t in open_positions_specific_tickers])
+            else:
+                return ticker in open_positions_specific_tickers
+
+        # Signals corresponding to tickers, that already have a position open in the portfolio
+        open_positions_signals = [signal for signal in signals if
+                                  position_for_ticker_exists_in_portfolio(signal.ticker)]
 
         # Signals, which indicate openings of new positions in the portfolio
-        new_positions_signals = [signal for signal in signals if signal.ticker not in open_positions_tickers and
-                                 signal in position_opening_signals]
+        new_positions_signals = [signal for signal in signals
+                                 if not position_for_ticker_exists_in_portfolio(signal.ticker) and
+                                 signal.suggested_exposure != Exposure.OUT]
 
-        # Compute how many signals need to be changed (their exposure has to be changed to OUT in order to fulfill the
-        # requirements)
-        number_of_signals_to_change = len(new_positions_signals) - (
-                self._max_open_positions - len(open_positions_tickers))
-        assert number_of_signals_to_change >= 0
+        number_of_positions_to_be_open = len(new_positions_signals) + len(open_positions_signals)
 
-        # Select a random subset of signals, for which the exposure will be set to OUT (in order not to exceed the
-        # maximum), which would be deterministic across multiple backtests for the same period of time (certain seed)
-        random.seed(self._timer.now().timestamp())
-        new_positions_signals = sorted(new_positions_signals, key=lambda s: s.fraction_at_risk)  # type: List[Signal]
-        signals_to_change = random.sample(new_positions_signals, number_of_signals_to_change)
+        if number_of_positions_to_be_open > self._max_open_positions:
+            self.logger.info("The number of positions to be open exceeds the maximum limit of {}. Some of the signals "
+                             "need to be changed.".format(self._max_open_positions))
 
-        for signal in signals_to_change:
-            signal.suggested_exposure = Exposure.OUT
+            no_of_signals_to_change = number_of_positions_to_be_open - self._max_open_positions
+
+            # Select a random subset of signals, for which the exposure will be set to OUT (in order not to exceed the
+            # maximum), which would be deterministic across multiple backtests
+            random.seed(self._timer.now().timestamp())
+            new_positions_signals = sorted(new_positions_signals, key=lambda s: s.fraction_at_risk)
+            signals_to_change = random.sample(new_positions_signals, no_of_signals_to_change)
+
+            for signal in signals_to_change:
+                signal.suggested_exposure = Exposure.OUT
 
         return signals
-
-    def _contract_to_ticker(self, contract: Contract):
-        """ Map contract to corresponding ticker, where two contracts from one future family should be mapped into
-        the same ticker"""
-        return self._contract_ticker_mapper.contract_to_ticker(contract, strictly_to_specific_ticker=False)
 
     def _calculate_signals(self):
         current_positions = self._broker.get_positions()
         signals = []
 
         for model, tickers in self._model_tickers_dict.items():
-            tickers = list(set(tickers))  # remove duplicates
-
-            def map_valid_tickers(ticker):
+            def get_specific_ticker(t: Ticker):
                 try:
-                    return self._contract_ticker_mapper.ticker_to_contract(ticker)
+                    return t.ticker
                 except NoValidTickerException:
                     return None
 
-            contracts = [map_valid_tickers(ticker) for ticker in tickers]
-            tickers_and_contracts = zip(tickers, contracts)
-            valid_tickers_and_contracts = [(t, c) for t, c in tickers_and_contracts if c is not None]
-
-            for ticker, contract in valid_tickers_and_contracts:
-                current_exposure = self._get_current_exposure(contract, current_positions)
+            currently_valid_tickers = [t for t in tickers if get_specific_ticker(t) is not None]
+            for ticker in list(set(currently_valid_tickers)):  # remove duplicates
+                current_exposure = self._get_current_exposure(ticker, current_positions)
                 signal = model.get_signal(ticker, current_exposure)
                 signals.append(signal)
 
@@ -193,9 +178,13 @@ class AlphaModelStrategy(object):
         self.logger.info("Converting Signals to Orders using: {}".format(self._position_sizer.__class__.__name__))
         orders = self._position_sizer.size_signals(signals, self._use_stop_losses)
 
+        close_orders = self._futures_rolling_orders_generator.generate_close_orders()
+        orders = orders + close_orders
+
         for orders_filter in self._orders_filters:
-            self.logger.info("Filtering Orders based on selected requirements: {}".format(orders_filter))
-            orders = orders_filter.adjust_orders(orders)
+            if orders:
+                self.logger.info("Filtering Orders based on selected requirements: {}".format(orders_filter))
+                orders = orders_filter.adjust_orders(orders)
 
         self.logger.info("Cancelling all open orders")
         self._broker.cancel_all_open_orders()
@@ -203,50 +192,37 @@ class AlphaModelStrategy(object):
         self.logger.info("Placing orders")
         self._broker.place_orders(orders)
 
-    def _save_signals(self, signals: List[Signal]):
-        tickers_to_models = {
-            ticker: model.__class__.__name__ for model, tickers_list in self._model_tickers_dict.items()
-            for ticker in tickers_list
-        }
-
-        tickers_to_signals = {
-            ticker: None for model_tickers in self._model_tickers_dict.values() for ticker in model_tickers
-        }
-
-        tickers_to_signals.update({
-            signal.ticker: signal for signal in signals
-        })
-
-        for ticker in tickers_to_signals.keys():
-            signal = tickers_to_signals[ticker]
-            model_name = tickers_to_models[ticker]
-
-            self.logger.info(signal)
-
-            ticker_str = ticker.as_string() + "@" + model_name
-            self._signals[ticker_str].append((self._timer.now().date(), signal))
-
-        self._signals_dates.append(self._timer.now())
-
-    def get_signals(self):
+    def _get_current_exposure(self, ticker: Union[Ticker, FutureTicker], current_positions: List[Position]) -> Exposure:
         """
-        Returns a QFDataFrame with all generated signals. The columns names are of the form TickerName@ModelName,
-        and the rows are indexed by the time of signals generation.
-
-        Returns
-        --------
-        QFDataFrame
-            QFDataFrame with all generated signals
+        Returns current exposure of the given ticker in the portfolio. Alpha model strategy assumes there should be only
+        one position per ticker in the portfolio. In case of future tickers this may not always be true - e.g. in case
+        if a certain future contract expires and the rolling occurs we may end up with two positions open, when the
+        old contract could not have been sold at the initially desired time. This situation usually does not happen
+        often nor last too long, as the strategy will try to close the remaining position as soon as possible.
+        Therefore, the current exposure of the ticker is defined as the exposure of the most recently opened position.
         """
-        return QFDataFrame(data=self._signals, index=self._signals_dates)
+        if isinstance(ticker, FutureTicker):
+            matching_positions = [position for position in current_positions if
+                                  ticker.belongs_to_family(
+                                      self._contract_ticker_mapper.contract_to_ticker(position.contract()))
+                                  ]
+            assert len(matching_positions) in [0, 1, 2], "The number of open positions for a ticker should be 0, 1 or 2"
+            all_specific_tickers = [self._contract_ticker_mapper.contract_to_ticker(position.contract())
+                                    for position in matching_positions]
+            assert len(set(all_specific_tickers)) == len(all_specific_tickers), "The number of open positions for a " \
+                                                                                "specific ticker should be 0 or 1"
+        else:
+            matching_positions = [position for position in current_positions
+                                  if position.contract() == self._contract_ticker_mapper.ticker_to_contract(ticker)]
+            assert len(matching_positions) in [0, 1], "The number of open positions for a ticker should be 0 or 1"
 
-    def _get_current_exposure(self, contract: Contract, current_positions: List[Position]) -> Exposure:
-        matching_position_quantities = [position.quantity()
-                                        for position in current_positions if position.contract() == contract]
+        if len(matching_positions) > 0:
+            newest_position = max(matching_positions, key=lambda pos: pos.start_time)
+            quantity = newest_position.quantity()
+            current_exposure = Exposure(np.sign(quantity))
+        else:
+            current_exposure = Exposure.OUT
 
-        assert len(matching_position_quantities) in [0, 1]
-        quantity = next(iter(matching_position_quantities), 0)
-        current_exposure = Exposure(np.sign(quantity))
         return current_exposure
 
     def _log_configuration(self):
@@ -255,7 +231,7 @@ class AlphaModelStrategy(object):
             self.logger.info('Model: {}'.format(str(model)))
             for ticker in tickers:
                 try:
-                    self.logger.info('\t Ticker: {}'.format(ticker.as_string()))
-                except NoValidTickerException:
-                    raise ValueError("Futures Tickers are not supported by the AlphaModelStrategy. Use the "
-                                     "FuturesAlphaModelStrategy instead.")
+                    self.logger.info('\t Ticker: {}'.format(
+                        ticker.name if isinstance(ticker, FutureTicker) else ticker.as_string()))
+                except NoValidTickerException as e:
+                    self.logger.info(e)

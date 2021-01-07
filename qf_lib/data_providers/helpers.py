@@ -127,14 +127,14 @@ def cast_dataframe_to_proper_type(result):
     return casted_result
 
 
-def tickers_dict_to_data_array(tickers_data_dict: Dict[Ticker, pd.DataFrame], requested_tickers, requested_fields) -> QFDataArray:
+def tickers_dict_to_data_array(tickers_data_dict: Dict[Ticker, QFDataFrame], requested_tickers, requested_fields) -> QFDataArray:
     """
     Converts a dictionary mapping tickers to DateFrame onto a QFDataArray.
 
     Parameters
     ----------
-    tickers_data_dict:  Dict[Ticker, pandas.DataFrame]
-        Ticker -> DataFrame[dates, fields]
+    tickers_data_dict:  Dict[Ticker, QFDataFrame]
+        Ticker -> QFDataFrame[dates, fields]
     requested_tickers
     requested_fields
 

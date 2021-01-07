@@ -29,11 +29,14 @@
 	white-space: normal;
 }
 
+.py.class dt code {
+	display: inline-flex !important;
+}
 
 /* Generated Index */
 .py.class dt {
    word-break: break-word;
-   display: inline-block;
+   display: block !important;
 }
 
 table.genindextable {

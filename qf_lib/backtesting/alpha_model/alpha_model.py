@@ -13,7 +13,6 @@
 #     limitations under the License.
 
 from abc import abstractmethod, ABCMeta
-from typing import Sequence, Dict
 
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
 from qf_lib.backtesting.alpha_model.signal import Signal
@@ -21,33 +20,6 @@ from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.miscellaneous.average_true_range import average_true_range
-
-
-class AlphaModelSettings(object):
-    """
-    Holds parameters of parametrized alpha models.
-
-    Parameters
-    ----------
-    parameters
-        parameters of the alpha model that are used in the logic. number of params depends on the model.
-        (for example: len of moving averages)
-    risk_estimation_factor
-        parameter for stop loss calculations
-    tickers_dict
-        dict of ticker_name -> ticker. Should contain all tickers used by the model to calculate signal.
-        Note: these are not the tickers of instruments that we want to trade.
-        These are tickers of instruments that give us some information about the market. For example VIX index.
-    """
-
-    def __init__(self, parameters: Sequence[float] = None, risk_estimation_factor: float = None,
-                 tickers_dict: Dict[str, Ticker] = None):
-
-        self.parameters = parameters
-        self.risk_estimation_factor = risk_estimation_factor
-        if tickers_dict is None:
-            tickers_dict = {}
-        self.tickers_dict = tickers_dict
 
 
 class AlphaModel(object, metaclass=ABCMeta):
@@ -61,15 +33,7 @@ class AlphaModel(object, metaclass=ABCMeta):
         the stop-loss should be placed.
     data_handler
         DataHandler which provides data for the ticker
-
-    Attributes
-    ----------
-    settings: AlphaModelSettings
-        Holds parameters of a parametrized model used in production
-
     """
-
-    settings: AlphaModelSettings = None
 
     def __init__(self, risk_estimation_factor: float, data_handler: DataHandler):
         self.risk_estimation_factor = risk_estimation_factor
@@ -164,3 +128,6 @@ class AlphaModel(object, metaclass=ABCMeta):
 
     def __str__(self):
         return self.__class__.__name__
+
+    def __hash__(self):
+        return hash((self.__class__.__name__, self.risk_estimation_factor,))

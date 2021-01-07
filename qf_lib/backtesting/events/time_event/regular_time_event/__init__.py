@@ -11,17 +11,3 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-
-from enum import Enum
-
-
-class OptionType(Enum):
-    Put = 0
-    Call = 1
-
-    def to_short_string(self) -> str:
-        if self == OptionType.Call:
-            return "C"
-        if self == OptionType.Put:
-            return "P"
-        return None

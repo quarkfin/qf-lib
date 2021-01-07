@@ -194,18 +194,18 @@ class QFDataFrame(pd.DataFrame, TimeIndexedContainer):
         smoothed_df = cast_dataframe(smoothed_df, self._constructor)
         return smoothed_df
 
-    def total_cumulative_return(self) -> pd.Series:
+    def total_cumulative_return(self) -> "QFSeries":
         """
         Calculates total cumulative return for each column.
 
         Returns
         -------
-        pandas.Series
+        QFSeries
             Series containing total cumulative return for each column of the original DataFrame.
         """
         series_type = self._constructor_sliced
         series = self.apply(series_type.total_cumulative_return, axis=0)
-        series = cast_series(series, pd.Series)
+        series = cast_series(series, series_type)
 
         return series
 
@@ -220,15 +220,12 @@ class QFDataFrame(pd.DataFrame, TimeIndexedContainer):
 
     def _get_iterator_for_pandas(self, result_values):
         """
-        Creates iterator suitable to be used with pandas.apply function. The first element is returned twice
-        by the iterator, because pandas apply function is always run twice on the first value to determine whether
-        it can take a fast or slow code path (see pandas.DataFrame.apply documentation).
+        Creates iterator suitable to be used with pandas.apply function.
+        As since pandas 1.1.0 apply and applymap on DataFrame evaluates first row/column only once there is no need to
+        iterate over the first element twice in the generator.
         """
         if isinstance(result_values, np.ndarray):
             result_values = result_values.tolist()
-
-        if result_values:
-            result_values = [result_values[0]] + result_values
 
         return iter(result_values)
 
@@ -337,8 +334,8 @@ class QFDataFrame(pd.DataFrame, TimeIndexedContainer):
             dates_and_values = [(date, value) for date, value in results_dict.items()]
             dates, values = zip(*dates_and_values)
             result = QFSeries(index=dates, data=values)
-            result = result.sort_index()
 
+        result = result.sort_index()
         return result
 
     def get_frequency(self) -> Mapping[str, Frequency]:

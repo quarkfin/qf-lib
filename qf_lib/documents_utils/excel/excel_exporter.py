@@ -15,15 +15,16 @@
 from datetime import datetime
 from os import makedirs, path, remove
 from os.path import exists, isfile, join, dirname
-from typing import Any, Union
+from typing import Any, Union, Optional
 
 import numpy
 from openpyxl import Workbook, load_workbook
 from openpyxl.worksheet import Worksheet
-from pandas import Series, DataFrame
 
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.numberutils.is_finite_number import is_finite_number
+from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
+from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.documents_utils.excel.helpers import row_and_column
 from qf_lib.documents_utils.excel.write_mode import WriteMode
 from qf_lib.settings import Settings
@@ -36,11 +37,11 @@ class ExcelExporter(object):
         self.settings = settings
 
     def export_container(
-            self, container: Union[Series, DataFrame], file_path: str,
+            self, container: Union[QFSeries, QFDataFrame], file_path: str,
             write_mode: WriteMode = WriteMode.CREATE_IF_DOESNT_EXIST, starting_cell: str = 'A1', sheet_name: str = None,
             include_index: bool = True, include_column_names: bool = False, remove_old_file=False) -> Union[bytes, str]:
         """
-        Exports the container (Series, DataFrame) to the excel file.
+        Exports the container (QFSeries, QFDataFrame) to the excel file.
         Returns the absolute file path of the exported file.
 
         Parameters
@@ -151,10 +152,10 @@ class ExcelExporter(object):
         in the worksheet. If the :exported_value isn't a series nor dataframe, then the :include_index
         and :include_column_names parameters should be False.
         """
-        if isinstance(exported_value, Series):
+        if isinstance(exported_value, QFSeries):
             self._write_series_to_worksheet(exported_value, work_sheet, starting_row, starting_column,
                                             include_index, exported_value.name if include_column_names else None)
-        elif isinstance(exported_value, DataFrame):
+        elif isinstance(exported_value, QFDataFrame):
             self._write_dataframe_to_worksheet(exported_value, work_sheet, starting_row, starting_column,
                                                include_index, include_column_names)
         else:
@@ -170,7 +171,7 @@ class ExcelExporter(object):
         return work_sheet
 
     def _write_series_to_worksheet(self, series, work_sheet, starting_row: int, starting_column: int,
-                                   include_index: bool, column_name: str):
+                                   include_index: bool, column_name: Optional[str]):
         column = starting_column
         if include_index:
             self._export_index(series, starting_column, starting_row, work_sheet, column_name is not None)
@@ -211,7 +212,7 @@ class ExcelExporter(object):
     def _to_supported_type(self, value):
         if isinstance(value, (numpy.int64, numpy.int32)):
             return int(value)
-        elif is_finite_number(value) or isinstance(value, datetime):
+        elif isinstance(value, str) or is_finite_number(value) or isinstance(value, datetime):
             return value
         elif isinstance(value, Ticker):
             return value.as_string()

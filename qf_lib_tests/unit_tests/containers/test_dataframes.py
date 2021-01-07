@@ -21,6 +21,7 @@ from qf_lib.containers.dataframe.log_returns_dataframe import LogReturnsDataFram
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.dataframe.simple_returns_dataframe import SimpleReturnsDataFrame
+from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_dataframes_equal, assert_series_equal
 
@@ -164,8 +165,57 @@ class TestDataFrames(TestCase):
 
     def test_total_cumulative_return(self):
         actual_result = self.test_prices_df.total_cumulative_return()
-        expected_result = pd.Series(index=self.test_prices_df.columns, data=[4.0, 4.0, 4.0, 4.0, 4.0])
+        expected_result = PricesSeries(index=self.test_prices_df.columns, data=[4.0, 4.0, 4.0, 4.0, 4.0])
         assert_series_equal(expected_result, actual_result)
+
+    def test_stats_functions(self):
+        qf_df = QFDataFrame(data=self.prices_values, index=self.dates, columns=self.column_names)
+        expected_max = QFSeries([5, 5, 5, 5, 5], index=['a', 'b', 'c', 'd', 'e'])
+
+        self.assertEqual(type(qf_df.max()), QFSeries)
+        assert_series_equal(qf_df.max(), expected_max)
+
+    def test_squeeze(self):
+        qf_df = QFDataFrame(data=self.prices_values, index=self.dates, columns=self.column_names)
+        self.assertEqual(type(qf_df[['a']]), QFDataFrame)
+        self.assertEqual(type(qf_df[['a']].squeeze()), QFSeries)
+
+        self.assertEqual(type(qf_df[['a', 'b']].squeeze()), QFDataFrame)
+
+        self.assertEqual(type(qf_df.iloc[[0]]), QFDataFrame)
+        self.assertEqual(type(qf_df.iloc[[0]].squeeze()), QFSeries)
+
+    def test_concat(self):
+        full_df = QFDataFrame(data=self.prices_values, index=self.dates, columns=self.column_names)
+
+        # Concatenate along index (axis = 0)
+        number_of_rows = len(full_df)
+        half_df = full_df.iloc[:number_of_rows//2]
+        second_half_df = full_df.iloc[number_of_rows//2:]
+        concatenated_df = pd.concat([half_df, second_half_df])
+
+        self.assertEqual(type(concatenated_df), QFDataFrame)
+        assert_dataframes_equal(concatenated_df, full_df)
+
+        # Concatenate along columns (axis = 1)
+        number_of_columns = full_df.num_of_columns
+        half_df = full_df.loc[:, full_df.columns[:number_of_columns//2]]
+        second_half_df = full_df.loc[:, full_df.columns[number_of_columns//2:]]
+        concatenated_df = pd.concat([half_df, second_half_df], axis=1)
+
+        self.assertEqual(type(concatenated_df), QFDataFrame)
+        assert_dataframes_equal(concatenated_df, full_df)
+
+    def test_concat_series(self):
+        index = [1, 2, 3]
+        series_1 = QFSeries(data=["A", "B", "C"], index=index)
+        series_2 = QFSeries(data=["D", "E", "F"], index=index)
+
+        df = pd.concat([series_1, series_2], axis=1)
+        self.assertEqual(type(df), QFDataFrame)
+
+        series = pd.concat([series_1, series_2], axis=0)
+        self.assertEqual(type(series), QFSeries)
 
 
 if __name__ == '__main__':

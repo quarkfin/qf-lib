@@ -12,16 +12,22 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-from typing import Dict, Type, List
-
-from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
-from qf_lib.common.tickers.tickers import Ticker
+import datetime
 
 
-def get_all_tickers_used(model_type_tickers_dict: Dict[Type[AlphaModel], List[Ticker]]):
-    all_tickers = []
-    for model_type, traded_tickers_list in model_type_tickers_dict.items():
-        non_traded_tickers = list(model_type.settings.tickers_dict.values())
-        all_tickers = all_tickers + traded_tickers_list + non_traded_tickers
-    result_list = list(set(all_tickers))  # remove potential duplicates
-    return result_list
+def date_to_datetime(date: datetime.date) -> datetime.datetime:
+    """
+    Converts date into datetime object.
+
+    Parameters
+    ----------
+    date
+        date which should be converted into datetimne
+
+    Returns
+    -------
+    datetime
+        object representing datetime
+    """
+
+    return datetime.datetime(date.year, date.month, date.day)

@@ -16,8 +16,7 @@ import unittest
 from os.path import join, dirname
 from unittest import TestCase
 
-import pandas as pd
-
+from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.documents_utils.excel.excel_importer import ExcelImporter
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
@@ -30,12 +29,12 @@ class TestPortfolio(TestCase):
     @classmethod
     def setUpClass(cls):
         cls.assets_df = assets_df
-        cls.weights_full_invest = pd.Series(
+        cls.weights_full_invest = QFSeries(
             data=[0.0798, 0.0472, 0.086, 0.0581, 0.0875, 0.0219, 0.0616, 0.0263, 0.0612, 0.0633,
                   0.0062, 0.0232, 0.0204, 0.0609, 0.0769, 0.0314, 0.0711, 0.0615, 0.0006, 0.0549],
             index=assets_df.columns.copy())
 
-        cls.weights_not_full_invest = pd.Series(
+        cls.weights_not_full_invest = QFSeries(
             data=[0.059850, 0.035400, 0.064500, 0.043575, 0.065625, 0.016425, 0.046200, 0.019725,
                   0.045900, 0.047475, 0.004650, 0.017400, 0.015300, 0.045675, 0.057675, 0.023550,
                   0.053325, 0.046125, 0.000450, 0.041175],

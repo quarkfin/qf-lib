@@ -21,6 +21,7 @@ import pandas as pd
 from qf_lib.common.timeseries_analysis.risk_contribution_analysis import RiskContributionAnalysis
 from qf_lib.containers.dataframe.cast_dataframe import cast_dataframe
 from qf_lib.containers.dataframe.simple_returns_dataframe import SimpleReturnsDataFrame
+from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
 from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_series_equal
 
@@ -37,41 +38,41 @@ class TestRiskContributionAnalysis(TestCase):
         self.factors_df = SimpleReturnsDataFrame(data=returns_array, index=dates, columns=['a', 'b'])
 
     def test_get_risk_contribution(self):
-        weights = pd.Series([0.5, 0.5], index=self.factors_df.columns)
+        weights = QFSeries([0.5, 0.5], index=self.factors_df.columns)
         actual_result = RiskContributionAnalysis.get_risk_contribution(factors_rets=self.factors_df,
                                                                        weigths_of_assets=weights,
                                                                        portfolio_rets=self.portfolio_tms)
-        expected_result = pd.Series([0.32739478440485410, 0.672605215595146], index=self.factors_df.columns)
+        expected_result = QFSeries([0.32739478440485410, 0.672605215595146], index=self.factors_df.columns)
         assert_series_equal(expected_result, actual_result)
 
-        weights = pd.Series([0.25, 0.75], index=self.factors_df.columns)
+        weights = QFSeries([0.25, 0.75], index=self.factors_df.columns)
         actual_result = RiskContributionAnalysis.get_risk_contribution(factors_rets=self.factors_df,
                                                                        weigths_of_assets=weights,
                                                                        portfolio_rets=self.portfolio_tms)
-        expected_result = pd.Series([0.139601453264340, 0.860398546735660], index=self.factors_df.columns)
+        expected_result = QFSeries([0.139601453264340, 0.860398546735660], index=self.factors_df.columns)
         assert_series_equal(expected_result, actual_result)
 
     def test_get_risk_contribution_optimised(self):
-        weights = pd.Series([0.5, 0.5], index=self.factors_df.columns)
+        weights = QFSeries([0.5, 0.5], index=self.factors_df.columns)
         actual_result = RiskContributionAnalysis.get_risk_contribution_optimised(assets_rets=self.factors_df,
                                                                                  weights_of_assets=weights)
-        expected_result = pd.Series([0.328845104104390, 0.671154895895610], index=self.factors_df.columns)
+        expected_result = QFSeries([0.328845104104390, 0.671154895895610], index=self.factors_df.columns)
         assert_series_equal(expected_result, actual_result)
 
-        weights = pd.Series([0.25, 0.75], index=self.factors_df.columns)
+        weights = QFSeries([0.25, 0.75], index=self.factors_df.columns)
         actual_result = RiskContributionAnalysis.get_risk_contribution_optimised(assets_rets=self.factors_df,
                                                                                  weights_of_assets=weights)
-        expected_result = pd.Series([0.139939367445589, 0.860060632554411], index=self.factors_df.columns)
+        expected_result = QFSeries([0.139939367445589, 0.860060632554411], index=self.factors_df.columns)
         assert_series_equal(expected_result, actual_result)
 
     def test_get_distance_to_equal_risk_contrib(self):
         factors_covariance = self.factors_df.cov()
-        weights = pd.Series([0.5, 0.5], index=self.factors_df.columns)
+        weights = QFSeries([0.5, 0.5], index=self.factors_df.columns)
         actual_result = RiskContributionAnalysis.get_distance_to_equal_risk_contrib(factors_covariance, weights)
         expected_result = 0.342309791791
         self.assertAlmostEqual(actual_result, expected_result, places=10)
 
-        weights = pd.Series([0.25, 0.75], index=self.factors_df.columns)
+        weights = QFSeries([0.25, 0.75], index=self.factors_df.columns)
         actual_result = RiskContributionAnalysis.get_distance_to_equal_risk_contrib(factors_covariance, weights)
         expected_result = 0.72012126510882146
         self.assertAlmostEqual(actual_result, expected_result, places=10)
@@ -83,11 +84,11 @@ class TestRiskContributionAnalysis(TestCase):
         factors_df.columns = ['a', 'b']
         factors_covariance = factors_df.cov()
 
-        weights = pd.Series([0.25, 0.75], index=self.factors_df.columns)
+        weights = QFSeries([0.25, 0.75], index=self.factors_df.columns)
         actual_result = RiskContributionAnalysis.is_equal_risk_contribution(factors_covariance, weights)
         self.assertFalse(actual_result)
 
-        weights = pd.Series([0.5, 0.5], index=self.factors_df.columns)
+        weights = QFSeries([0.5, 0.5], index=self.factors_df.columns)
         actual_result = RiskContributionAnalysis.is_equal_risk_contribution(factors_covariance, weights)
         self.assertTrue(actual_result)
 

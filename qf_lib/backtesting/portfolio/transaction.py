@@ -35,7 +35,6 @@ class Transaction(object):
         price at which the trade was filled
     commission: float
         brokerage commission for carrying out the trade. It is always a positive number
-
     """
 
     def __init__(self, time: datetime, contract: Contract, quantity: int, price: float, commission: float):

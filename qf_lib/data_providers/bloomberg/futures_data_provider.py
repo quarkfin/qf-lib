@@ -11,7 +11,7 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-
+import re
 from datetime import datetime
 from typing import Sequence, Dict, List
 
@@ -19,7 +19,6 @@ from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.containers.futures.future_tickers.bloomberg_future_ticker import BloombergFutureTicker
 from qf_lib.data_providers.bloomberg.bloomberg_names import REF_DATA_SERVICE_URI, SECURITY, FIELD_DATA, FUT_CHAIN
-from qf_lib.data_providers.bloomberg.exceptions import BloombergError
 from qf_lib.data_providers.bloomberg.helpers import set_tickers, set_fields, get_response_events, \
     check_event_for_errors, extract_security_data, convert_to_bloomberg_date, \
     FIELD_EXCEPTIONS, SECURITY_ERROR
@@ -68,7 +67,10 @@ class FuturesDataProvider(object):
 
             # Return dictionary mapping the tickers to lists of futures chains tickers (contains only these tickers,
             # for which correct random tickers were provided)
-            future_ticker_str_to_chain_tickers_list = self._receive_futures_response()
+            future_ticker_str_to_chain_tickers_list = {
+                key: value for key, value in
+                self._receive_futures_response(random_ticker_string_to_future_ticker).items() if value
+            }
 
             # Update the main dictionary which maps future tickers string into their future chains
             all_future_tickers_str_to_chain_tickers_list.update(future_ticker_str_to_chain_tickers_list)
@@ -110,9 +112,8 @@ class FuturesDataProvider(object):
         if lacking_tickers:
             lacking_tickers_str = [t.name for t in lacking_tickers]
             error_message = "The requested futures chains for the BloombergFutureTickers {} could not have been " \
-                            "downlaoded".format(lacking_tickers_str)
+                            "downloaded successfully".format(lacking_tickers_str)
             self.logger.error(error_message)
-            raise BloombergError(error_message)
 
         return future_ticker_str_to_chain_tickers_list
 
@@ -140,7 +141,7 @@ class FuturesDataProvider(object):
             for field, value in zip(override_fields, parameters):
                 override.setElement(field, value)
 
-    def _receive_futures_response(self):
+    def _receive_futures_response(self, random_ticker_string_to_future_ticker: Dict[str, BloombergFutureTicker]):
         response_events = get_response_events(self._session)
         ticker_to_futures_chain = {}
 
@@ -163,14 +164,18 @@ class FuturesDataProvider(object):
 
                 if data_is_correct(security_data):
                     security_name = security_data.getElementAsString(SECURITY)
-                    future_chain_array = security_data.getElement(FIELD_DATA).getElement(FUT_CHAIN)
+                    family_id_template = random_ticker_string_to_future_ticker[security_name].family_id
+                    # Family id are in the following form: CT{} Comdty -> {} should be replaced with a correct month
+                    # code
+                    regex_template = family_id_template.replace("{}", "[A-Z][0-9]{1,2}")
 
+                    future_chain_array = security_data.getElement(FIELD_DATA).getElement(FUT_CHAIN)
                     ticker_to_futures_chain[security_name] = []
 
                     for j in range(future_chain_array.numValues()):
                         future_ticker = future_chain_array.getValueAsElement(j)
                         ticker_value = future_ticker.getElementAsString("Security Description")
-
-                        ticker_to_futures_chain[security_name].append(ticker_value)
+                        if re.match(regex_template, ticker_value):
+                            ticker_to_futures_chain[security_name].append(ticker_value)
 
         return ticker_to_futures_chain

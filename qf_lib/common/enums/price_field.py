@@ -42,3 +42,9 @@ class PriceField(Enum):
             list of all price field values
         """
         return [PriceField.Open, PriceField.High, PriceField.Low, PriceField.Close, PriceField.Volume]
+
+    def __lt__(self, other):
+        if not isinstance(other, PriceField):
+            raise TypeError("Cannot compare this object with a PriceField")
+
+        return self.value < other.value

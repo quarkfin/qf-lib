@@ -20,7 +20,7 @@ from typing import Union, Sequence, Dict, List
 from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
-from qf_lib.common.tickers.tickers import BloombergTicker, tickers_as_strings
+from qf_lib.common.tickers.tickers import BloombergTicker, tickers_as_strings, Ticker
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
@@ -336,6 +336,9 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
         ticker_data = self.get_tabular_data(universe_ticker, field)
         tickers = [BloombergTicker(fields['Member Ticker and Exchange Code'] + " Equity") for fields in ticker_data]
         return tickers
+
+    def get_unique_tickers(self, universe_ticker: Ticker) -> List[Ticker]:
+        raise ValueError("BloombergDataProvider does not provide historical tickers_universe data")
 
     def get_tabular_data(self, ticker: BloombergTicker, field: str) -> List:
         """

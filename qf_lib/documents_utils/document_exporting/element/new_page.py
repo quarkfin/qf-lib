@@ -29,6 +29,6 @@ class NewPageElement(Element):
         Generates the HTML that represents the jump to the new page.
         """
         env = templates.environment
-        # the html templates are located in /src/common/templates
+        # the html templates are located in qf_lib/documents_utils/document_exporting/templates
         template = env.get_template("new_page.html")
         return template.render()

@@ -13,9 +13,9 @@
 #     limitations under the License.
 import blpapi
 import numpy as np
-import pandas as pd
 
 from qf_lib.common.tickers.tickers import BloombergTicker
+from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.data_providers.bloomberg.bloomberg_names import REF_DATA_SERVICE_URI, SECURITY, FIELD_DATA
 from qf_lib.data_providers.bloomberg.helpers import set_tickers, set_fields, get_response_events, \
     check_event_for_errors, extract_security_data, check_security_data_for_errors
@@ -41,7 +41,7 @@ class ReferenceDataProvider(object):
     def _receive_reference_response(self, tickers, fields):
         response_events = get_response_events(self._session)
 
-        tickers_fields_container = pd.DataFrame(index=tickers, columns=fields)
+        tickers_fields_container = QFDataFrame(index=tickers, columns=fields)
 
         for ev in response_events:
             check_event_for_errors(ev)

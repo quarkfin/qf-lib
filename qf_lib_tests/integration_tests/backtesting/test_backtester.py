@@ -22,13 +22,12 @@ from qf_lib.backtesting.events.time_event.regular_time_event.before_market_open_
 from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_series_equal
-from qf_lib_tests.unit_tests.config.test_settings import get_test_settings
+from qf_lib_tests.integration_tests.connect_to_data_provider import get_data_provider
 
-from qf_lib_tests.integration_tests.backtesting.trading_session_for_tests import TestingTradingSession
+from qf_lib_tests.integration_tests.backtesting.trading_session_for_tests import TradingSessionForTests
 from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.order.execution_style import MarketOrder
 from qf_lib.common.enums.price_field import PriceField
-from qf_lib.data_providers.bloomberg import BloombergDataProvider
 
 from qf_lib.backtesting.events.time_event.scheduler import Scheduler
 from qf_lib.backtesting.order.order_factory import OrderFactory
@@ -39,7 +38,7 @@ from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
 matplotlib.use("Agg")
 
 
-class BuyAndHoldStrategy(object):
+class BuyAndHoldStrategy:
     """
     A testing strategy that simply purchases (longs) an asset as soon as it starts and then holds until the completion
     of a backtest.
@@ -66,17 +65,17 @@ class BuyAndHoldStrategy(object):
             self.invested = True
 
 
-settings = get_test_settings()
-bbg_provider = BloombergDataProvider(settings)
-bbg_provider.connect()
-
-
-@unittest.skipIf(not bbg_provider.connected, "No Bloomberg connection")
 class TestBacktester(TestCase):
+    def setUp(self):
+        try:
+            self.data_provider = get_data_provider()
+        except Exception as e:
+            raise self.skipTest(e)
+
     def test_backtester_with_buy_and_hold_strategy(self):
         start_date = str_to_date("2010-01-01")
         end_date = str_to_date("2010-02-01")
-        data_provider = GeneralPriceProvider(bbg_provider, None, None, None)
+        data_provider = GeneralPriceProvider(self.data_provider, None, None, None)
 
         msft_prices = data_provider.get_price(
             BuyAndHoldStrategy.MICROSOFT_TICKER, fields=[PriceField.Open, PriceField.Close],
@@ -85,7 +84,7 @@ class TestBacktester(TestCase):
 
         first_trade_date = str_to_date("2010-01-04")
         initial_cash = msft_prices.loc[first_trade_date, PriceField.Open]
-        ts = TestingTradingSession(data_provider, start_date, end_date, initial_cash, frequency=Frequency.DAILY)
+        ts = TradingSessionForTests(data_provider, start_date, end_date, initial_cash, frequency=Frequency.DAILY)
 
         BuyAndHoldStrategy(ts.broker, ts.order_factory, ts.notifiers.scheduler)
 

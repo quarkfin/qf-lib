@@ -28,6 +28,7 @@ from qf_lib.common.utils.factorization.data_models.data_model import DataModel
 from qf_lib.common.utils.factorization.factors_identification.elastic_net_factors_identifier import \
     ElasticNetFactorsIdentifier
 from qf_lib.containers.series.prices_series import PricesSeries
+from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
 from qf_lib.plotting.charts.bar_chart import BarChart
 from qf_lib.plotting.charts.chart import Chart
@@ -204,7 +205,7 @@ class DataPresenter(object):
             title = 'Relative coefficients of regressors'
 
         index_translator = self._get_index_translator(coeff_names)
-        coefficients = pd.Series(index=pd.Index(coeff_names), data=coeff_values)
+        coefficients = QFSeries(index=pd.Index(coeff_names), data=coeff_values)
 
         bar_chart = BarChart(orientation=Orientation.Horizontal, index_translator=index_translator,
                              thickness=self._bars_width, align='center')
@@ -254,7 +255,7 @@ class DataPresenter(object):
 
         tickers = self.model.input_data.regressors_df.columns.values
         names = [self._get_security_name(ticker) for ticker in tickers]
-        risk_contributions = pd.Series(data=self.model.risk_contribution.values, index=pd.Index(names))
+        risk_contributions = QFSeries(data=self.model.risk_contribution.values, index=pd.Index(names))
 
         index_translator = self._get_index_translator(labels=names)
         bar_chart = BarChart(orientation=Orientation.Horizontal, index_translator=index_translator,

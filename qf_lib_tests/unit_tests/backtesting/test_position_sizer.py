@@ -13,16 +13,20 @@
 #     limitations under the License.
 
 import unittest
-from typing import Mapping, Sequence
+from typing import Sequence
+from unittest.mock import Mock
 
 import numpy as np
-from mockito import mock, when
 
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
 from qf_lib.backtesting.alpha_model.signal import Signal
+from qf_lib.backtesting.broker.broker import Broker
 from qf_lib.backtesting.contract.contract import Contract
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.bloomberg_mapper import DummyBloombergContractTickerMapper
-from qf_lib.backtesting.order.execution_style import MarketOrder, StopOrder, ExecutionStyle
+from qf_lib.backtesting.contract.contract_to_ticker_conversion.simulated_bloomberg_mapper import \
+    SimulatedBloombergContractTickerMapper
+from qf_lib.backtesting.data_handler.data_handler import DataHandler
+from qf_lib.backtesting.monitoring.signals_register import SignalsRegister
+from qf_lib.backtesting.order.execution_style import MarketOrder, StopOrder
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.order_factory import OrderFactory
 from qf_lib.backtesting.order.time_in_force import TimeInForce
@@ -30,9 +34,12 @@ from qf_lib.backtesting.portfolio.broker_positon import BrokerPosition
 from qf_lib.backtesting.position_sizer.initial_risk_position_sizer import InitialRiskPositionSizer
 from qf_lib.backtesting.position_sizer.simple_position_sizer import SimplePositionSizer
 from qf_lib.common.tickers.tickers import BloombergTicker
+from qf_lib.common.utils.dateutils.string_to_date import str_to_date
+from qf_lib.common.utils.dateutils.timer import Timer
 
 
 class TestPositionSizer(unittest.TestCase):
+
     @classmethod
     def setUpClass(cls):
         cls.ticker = BloombergTicker('AAPL US Equity')
@@ -44,19 +51,43 @@ class TestPositionSizer(unittest.TestCase):
         cls.max_target_percentage = 1.5
         position = BrokerPosition(cls.contract, cls.initial_position, 25)
 
-        broker = mock(strict=True)
-        when(broker).get_positions().thenReturn([position])
+        timer = Mock(spec=Timer)
+        timer.now.return_value = str_to_date("2017-01-01")
 
-        data_handler = mock(strict=True)
-        when(data_handler).get_last_available_price(cls.ticker).thenReturn(110)
+        broker = Mock(spec=Broker)
+        broker.get_positions.return_value = [position]
 
-        order_factory = _OrderFactoryMock(cls.initial_position, cls.initial_allocation)  # type: OrderFactory
-        contract_ticker_mapper = DummyBloombergContractTickerMapper()
+        data_handler = Mock(spec=DataHandler, timer=timer)
+        data_handler.get_last_available_price.return_value = cls.last_price
 
-        cls.simple_position_sizer = SimplePositionSizer(broker, data_handler, order_factory, contract_ticker_mapper)
+        order_factory = cls._mock_order_factory(cls.initial_position, cls.initial_allocation)
+        contract_ticker_mapper = SimulatedBloombergContractTickerMapper()
+
+        cls.simple_position_sizer = SimplePositionSizer(broker, data_handler, order_factory, contract_ticker_mapper,
+                                                        SignalsRegister())
         cls.initial_risk_position_sizer = InitialRiskPositionSizer(broker, data_handler, order_factory,
-                                                                   contract_ticker_mapper, cls.initial_risk,
+                                                                   contract_ticker_mapper,
+                                                                   SignalsRegister(),
+                                                                   cls.initial_risk,
                                                                    cls.max_target_percentage)
+
+    @classmethod
+    def _mock_order_factory(cls, initial_position, initial_allocation):
+
+        def target_percent_orders(target_percentages, execution_style, time_in_force, tolerance_percentage=0.0):
+            return [Order(contract, np.floor(initial_position * (target_percentage / initial_allocation - 1)),
+                          execution_style, time_in_force) for contract, target_percentage in target_percentages.items()]
+
+        def orders(quantities, execution_style, time_in_force) -> Sequence[Order]:
+            return [Order(contract, quantity, execution_style, time_in_force)
+                    for contract, quantity in quantities.items()]
+
+        order_factory = Mock(spec=OrderFactory)
+
+        order_factory.orders.side_effect = orders
+        order_factory.target_percent_orders.side_effect = target_percent_orders
+
+        return order_factory
 
     def test_simple_position_sizer(self):
         fraction_at_risk = 0.02
@@ -115,27 +146,6 @@ class TestPositionSizer(unittest.TestCase):
 
         self.assertEqual(len(orders), 1)  # market order only
         self.assertEqual(orders[0], Order(self.contract, -200, MarketOrder(), TimeInForce.OPG))
-
-
-class _OrderFactoryMock(object):
-
-    def __init__(self, initial_position: int, initial_allocation: float):
-        self.initial_position = initial_position
-        self.initial_allocation = initial_allocation
-
-    def target_percent_orders(self, target_percentages: Mapping[Contract, float], execution_style,
-                              time_in_force=TimeInForce.DAY, tolerance_percent=0.0) -> Sequence[Order]:
-        contract, target_percentage = next(iter(target_percentages.items()))
-        order_quantity = int(np.floor(self.initial_position * (target_percentage / self.initial_allocation - 1)))
-        return [Order(contract, order_quantity, execution_style, time_in_force)]
-
-    def orders(self, quantities: Mapping[Contract, int], execution_style: ExecutionStyle,
-               time_in_force: TimeInForce = TimeInForce.DAY) -> Sequence[Order]:
-        order_list = []
-        for contract, quantity in quantities.items():
-            if quantity != 0:
-                order_list.append(Order(contract, quantity, execution_style, time_in_force))
-        return order_list
 
 
 if __name__ == "__main__":

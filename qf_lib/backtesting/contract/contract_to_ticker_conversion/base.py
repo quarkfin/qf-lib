@@ -13,14 +13,16 @@
 #     limitations under the License.
 
 from abc import ABCMeta, abstractmethod
+from typing import Union
 
 from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.common.tickers.tickers import Ticker
+from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 
 
 class ContractTickerMapper(metaclass=ABCMeta):
     @abstractmethod
-    def contract_to_ticker(self, contract: Contract, strictly_to_specific_ticker=True) -> Ticker:
+    def contract_to_ticker(self, contract: Contract, strictly_to_specific_ticker=True) -> Union[Ticker, FutureTicker]:
         """Maps Contract object onto corresponding Ticker.
 
         Parameters
@@ -52,3 +54,6 @@ class ContractTickerMapper(metaclass=ABCMeta):
             corresponding contract
         """
         pass
+
+    def __str__(self):
+        return self.__class__.__name__

@@ -21,6 +21,7 @@ import pandas as pd
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
+from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_dataframes_equal
 
@@ -66,7 +67,7 @@ class TestQFDataArrayAsOf(TestCase):
     def test_asof_nans_when_no_data_available(self):
 
         actual_result = self.qf_data_array.asof(str_to_date('2018-02-02'))
-        expected_result = pd.DataFrame(
+        expected_result = QFDataFrame(
             index=self.qf_data_array.tickers.to_index(),
             columns=self.qf_data_array.fields.to_index()
         )
@@ -74,7 +75,7 @@ class TestQFDataArrayAsOf(TestCase):
 
     def test_asof_multiple_dates(self):
         actual_result = self.qf_data_array.asof([str_to_date('2018-02-05'), str_to_date('2018-02-04')])
-        expected_result = pd.DataFrame(
+        expected_result = QFDataFrame(
             index=self.qf_data_array.tickers.to_index(),
             columns=self.qf_data_array.fields.to_index(),
             data=[
@@ -86,7 +87,7 @@ class TestQFDataArrayAsOf(TestCase):
 
     def test_asof_multiple_dates_gaps_at_the_end(self):
         actual_result = self.qf_data_array.asof(str_to_date('2018-02-06'))
-        expected_result = pd.DataFrame(
+        expected_result = QFDataFrame(
             index=self.qf_data_array.tickers.to_index(),
             columns=self.qf_data_array.fields.to_index(),
             data=[

@@ -11,23 +11,3 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-
-from datetime import datetime
-
-from qf_lib.backtesting.monitoring.abstract_monitor import AbstractMonitor
-from qf_lib.backtesting.portfolio.transaction import Transaction
-
-
-class DummyMonitor(AbstractMonitor):
-
-    def end_of_trading_update(self, timestamp: datetime = None):
-        pass
-
-    def end_of_day_update(self, timestamp: datetime):
-        pass
-
-    def real_time_update(self, timestamp: datetime):
-        pass
-
-    def record_transaction(self, transaction: Transaction):
-        pass

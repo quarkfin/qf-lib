@@ -15,8 +15,6 @@ from abc import abstractmethod
 from datetime import datetime
 from typing import Union, Sequence, Type, Optional, Dict
 
-import pandas as pd
-
 from qf_lib.backtesting.events.time_event.regular_time_event.regular_time_event import RegularTimeEvent
 from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
@@ -165,7 +163,7 @@ class DataHandler(DataProvider):
 
     @abstractmethod
     def get_last_available_price(self, tickers: Union[Ticker, Sequence[Ticker]],
-                                 frequency: Frequency = None) -> Union[float, pd.Series]:
+                                 frequency: Frequency = None) -> Union[float, QFSeries]:
         """
         Gets the latest available price for given assets.
 
@@ -187,7 +185,7 @@ class DataHandler(DataProvider):
         pass
 
     def get_current_price(self, tickers: Union[Ticker, Sequence[Ticker]],
-                          frequency: Frequency = None) -> Union[float, pd.Series]:
+                          frequency: Frequency = None) -> Union[float, QFSeries]:
         """
         Works just like get_last_available_price() but it can return NaNs if data is not available at the current
         moment.
@@ -210,7 +208,7 @@ class DataHandler(DataProvider):
         pass
 
     def get_current_bar(self, tickers: Union[Ticker, Sequence[Ticker]], frequency: Frequency = None) \
-            -> Union[pd.Series, pd.DataFrame]:
+            -> Union[QFSeries, QFDataFrame]:
         """
         Gets the current bar(s) for given Ticker(s). If the bar is not available yet, None is returned.
 

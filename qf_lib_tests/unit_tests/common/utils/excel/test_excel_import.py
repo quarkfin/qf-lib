@@ -16,8 +16,9 @@ import unittest
 
 import numpy as np
 from os.path import dirname, join
-from pandas import DataFrame, DatetimeIndex, concat
+from pandas import DatetimeIndex, concat, date_range
 
+from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.documents_utils.excel.excel_importer import ExcelImporter
 from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_series_equal, assert_dataframes_equal
 from qf_lib_tests.helpers.testing_tools.test_case import TestCaseWithFileOutput
@@ -32,7 +33,7 @@ class TestExcelImport(TestCaseWithFileOutput):
     _templates_dir = join(dirname(__file__), 'dummies')
 
     def setUp(self):
-        dates = DatetimeIndex(start='2014-01-01', freq='d', periods=10)
+        dates = DatetimeIndex(date_range(start='2014-01-01', freq='d', periods=10))
         returns = np.arange(0, 1, 0.1)
         self.test_series = QFSeries(index=dates, data=returns)
 
@@ -62,7 +63,7 @@ class TestExcelImport(TestCaseWithFileOutput):
     def test_import_dataframe(self):
         template_file_path = self.template_file_path(SINGLE_SHEET_ONE_DATA_FRAME)
 
-        imported_dataframe = self.xl_importer.import_container(file_path=template_file_path, container_type=DataFrame,
+        imported_dataframe = self.xl_importer.import_container(file_path=template_file_path, container_type=QFDataFrame,
                                                                starting_cell='A1', ending_cell='C10')
 
         assert_dataframes_equal(self.test_data_frame, imported_dataframe)
@@ -70,8 +71,8 @@ class TestExcelImport(TestCaseWithFileOutput):
     def test_import_custom_dataframe(self):
         template_file_path = self.template_file_path(SINGLE_SHEET_CUSTOM_INDEX_DATA_FRAME)
 
-        df = DataFrame({"Test": [1, 2, 3, 4, 5], "Test2": [10, 20, 30, 40, 50]}, ["A", "B", "C", "D", "E"])
-        imported_dataframe = self.xl_importer.import_container(file_path=template_file_path, container_type=DataFrame,
+        df = QFDataFrame({"Test": [1, 2, 3, 4, 5], "Test2": [10, 20, 30, 40, 50]}, ["A", "B", "C", "D", "E"])
+        imported_dataframe = self.xl_importer.import_container(file_path=template_file_path, container_type=QFDataFrame,
                                                                starting_cell='A10', ending_cell='C15',
                                                                include_index=True, include_column_names=True)
 
@@ -82,33 +83,32 @@ class TestExcelImport(TestCaseWithFileOutput):
         template_file_path = self.template_file_path(SINGLE_SHEET_CUSTOM_INDEX_DATA_FRAME_SHIFTED)
 
         # With index and column names.
-        df = DataFrame({"Test": [1, 2, 3, 4, 5], "Test2": [10, 20, 30, 40, 50]}, ["A", "B", "C", "D", "E"])
-        imported_dataframe = self.xl_importer.import_container(file_path=template_file_path, container_type=DataFrame,
+        df = QFDataFrame({"Test": [1, 2, 3, 4, 5], "Test2": [10, 20, 30, 40, 50]}, ["A", "B", "C", "D", "E"])
+        imported_dataframe = self.xl_importer.import_container(file_path=template_file_path, container_type=QFDataFrame,
                                                                starting_cell='C10', ending_cell='E15',
                                                                include_index=True, include_column_names=True)
 
         assert_dataframes_equal(df, imported_dataframe)
 
         # With index and no column names.
-        df = DataFrame({0: [1, 2, 3, 4, 5], 1: [10, 20, 30, 40, 50]},
-                       ["A", "B", "C", "D", "E"])
-        imported_dataframe = self.xl_importer.import_container(file_path=template_file_path, container_type=DataFrame,
+        df = QFDataFrame({0: [1, 2, 3, 4, 5], 1: [10, 20, 30, 40, 50]}, ["A", "B", "C", "D", "E"])
+        imported_dataframe = self.xl_importer.import_container(file_path=template_file_path, container_type=QFDataFrame,
                                                                starting_cell='C11', ending_cell='E15',
                                                                include_index=True, include_column_names=False)
 
         assert_dataframes_equal(df, imported_dataframe)
 
         # With column names and no index.
-        df = DataFrame({"Test": [1, 2, 3, 4, 5], "Test2": [10, 20, 30, 40, 50]})
-        imported_dataframe = self.xl_importer.import_container(file_path=template_file_path, container_type=DataFrame,
+        df = QFDataFrame({"Test": [1, 2, 3, 4, 5], "Test2": [10, 20, 30, 40, 50]})
+        imported_dataframe = self.xl_importer.import_container(file_path=template_file_path, container_type=QFDataFrame,
                                                                starting_cell='D10', ending_cell='E15',
                                                                include_index=False, include_column_names=True)
 
         assert_dataframes_equal(df, imported_dataframe)
 
         # With no column names and no index.
-        df = DataFrame({0: [1, 2, 3, 4, 5], 1: [10, 20, 30, 40, 50]})
-        imported_dataframe = self.xl_importer.import_container(file_path=template_file_path, container_type=DataFrame,
+        df = QFDataFrame({0: [1, 2, 3, 4, 5], 1: [10, 20, 30, 40, 50]})
+        imported_dataframe = self.xl_importer.import_container(file_path=template_file_path, container_type=QFDataFrame,
                                                                starting_cell='D11', ending_cell='E15',
                                                                include_index=False, include_column_names=False)
 

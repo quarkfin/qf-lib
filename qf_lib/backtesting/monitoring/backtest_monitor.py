@@ -13,17 +13,22 @@
 #     limitations under the License.
 
 import csv
-import traceback
 from datetime import datetime
 from io import TextIOWrapper
 from os import path, makedirs
+from typing import Optional, Tuple
 
 import matplotlib.pyplot as plt
 
-from qf_lib.analysis.tearsheets.portfolio_trading_sheet import PortfolioTradingSheet
+from qf_lib.analysis.tearsheets.portfolio_analysis_sheet import PortfolioAnalysisSheet
+from qf_lib.common.utils.config_exporter import ConfigExporter
+from qf_lib.common.utils.error_handling import ErrorHandling
 from qf_lib.analysis.tearsheets.tearsheet_with_benchmark import TearsheetWithBenchmark
 from qf_lib.analysis.tearsheets.tearsheet_without_benchmark import TearsheetWithoutBenchmark
 from qf_lib.analysis.timeseries_analysis.timeseries_analysis import TimeseriesAnalysis
+from qf_lib.analysis.trade_analysis.trade_analysis_sheet import TradeAnalysisSheet
+from qf_lib.analysis.trade_analysis.trades_generator import TradesGenerator
+from qf_lib.backtesting.alpha_model.signal import Signal
 from qf_lib.backtesting.monitoring.abstract_monitor import AbstractMonitor
 from qf_lib.backtesting.monitoring.backtest_result import BacktestResult
 from qf_lib.backtesting.portfolio.transaction import Transaction
@@ -36,6 +41,32 @@ from qf_lib.settings import Settings
 from qf_lib.starting_dir import get_starting_dir_abs_path
 
 
+class BacktestMonitorSettings:
+    def __init__(self, issue_tearsheet=True, issue_portfolio_analysis_sheet=True, issue_trade_analysis_sheet=True,
+                 issue_transaction_log=True, issue_signal_log=True, issue_config_log=True,
+                 issue_daily_portfolio_values_file=True, print_stats_to_console=True,
+                 generate_pnl_chart_per_ticker_in_portfolio_analysis=True,
+                 display_live_backtest_progress=True, live_backtest_chart_refresh_frequency=20):
+        self.issue_tearsheet = issue_tearsheet
+        self.issue_portfolio_analysis_sheet = issue_portfolio_analysis_sheet
+        self.issue_trade_analysis_sheet = issue_trade_analysis_sheet
+        self.issue_transaction_log = issue_transaction_log
+        self.issue_signal_log = issue_signal_log
+        self.issue_config_log = issue_config_log
+        self.issue_daily_portfolio_value_file = issue_daily_portfolio_values_file
+        self.print_stats_to_console = print_stats_to_console
+        self.generate_pnl_chart_per_ticker_in_portfolio_analysis = generate_pnl_chart_per_ticker_in_portfolio_analysis
+        self.display_live_backtest_progress = display_live_backtest_progress
+        self.live_backtest_chart_refresh_frequency = int(live_backtest_chart_refresh_frequency)
+
+    @staticmethod
+    def no_stats() -> "BacktestMonitorSettings":
+        """"
+        Creates Settings that will generate no monitor output
+        """
+        return BacktestMonitorSettings(False, False, False, False, False, False, False, False, False, False)
+
+
 class BacktestMonitor(AbstractMonitor):
     """
     This Monitor will be used to monitor backtest run from the script.
@@ -43,77 +74,160 @@ class BacktestMonitor(AbstractMonitor):
     It is not suitable for the Web application
     """
 
-    def __init__(self, backtest_result: BacktestResult, settings: Settings,
-                 pdf_exporter: PDFExporter, excel_exporter: ExcelExporter):
+    def __init__(self, backtest_result: BacktestResult, settings: Settings, pdf_exporter: PDFExporter,
+                 excel_exporter: ExcelExporter, monitor_settings=None, benchmark_tms: QFSeries = None):
 
         self.backtest_result = backtest_result
         self.logger = qf_logger.getChild(self.__class__.__name__)
         self._settings = settings
         self._pdf_exporter = pdf_exporter
         self._excel_exporter = excel_exporter
+        self._signals_register = backtest_result.signals_register
 
-        self.benchmark_tms = None  # optionally set up a benchmark that will be used in Tearsheet
+        # set full display details if no setting is provided
+        self._monitor_settings = BacktestMonitorSettings() if monitor_settings is None else monitor_settings
+        self.benchmark_tms = benchmark_tms
 
-        # Set up an empty chart that can be updated
-        self._figure, self._ax = plt.subplots()
-        self._figure.set_size_inches(12, 5)
-        self._line, = self._ax.plot([], [])
+        sub_dir_name = datetime.now().strftime("%Y_%m_%d-%H%M {}".format(backtest_result.backtest_name))
+        self._report_dir = path.join("backtesting", sub_dir_name)
 
-        self._ax.set_autoscaley_on(True)
+        self._init_live_progress_chart(backtest_result)
+        self._csv_file, self._csv_writer = self._init_transactions_log_csv_file()
 
-        end_date = backtest_result.end_date
-        if end_date is None:
-            end_date = datetime.now()
-
-        self._ax.set_xlim(backtest_result.start_date, end_date)
-        self._ax.grid()
-        self._ax.set_title("Progress of the backtest - {}".format(backtest_result.backtest_name))
-        self._figure.autofmt_xdate(rotation=20)
-        self._dir_name_template = datetime.now().strftime("%Y_%m_%d-%H%M {}".format(backtest_result.backtest_name))
-        self._report_dir = path.join("backtesting", self._dir_name_template)
-
-        self._csv_file = self._init_csv_file()
-        self._csv_writer = csv.writer(self._csv_file)
-
-    def set_benchmark(self, benchmark: QFSeries):
-        self.benchmark_tms = benchmark
+        self._eod_update_ctr = 0
 
     def end_of_trading_update(self, _: datetime = None):
         """
         Saves the results of the backtest
         """
-
         portfolio_tms = self.backtest_result.portfolio.portfolio_eod_series()
         portfolio_tms.name = self.backtest_result.backtest_name
 
-        self._export_pdf_with_charts(portfolio_tms)
-        self._export_portfolio_analysis(self.backtest_result)
-        self._export_tms_to_excel(portfolio_tms)
+        self._issue_tearsheet(portfolio_tms)
+        self._issue_portfolio_analysis_sheet(self.backtest_result)
+        self._issue_trade_analysis_sheet()
+        self._issue_daily_portfolio_value_file(portfolio_tms)
+        self._issue_signal_log()
+        self._issue_config_log()
         self._print_stats_to_console(portfolio_tms)
 
-        self._close_csv_file()
+        self._close_files()
 
-    def _export_tms_to_excel(self, portfolio_tms):
-        try:
+    def end_of_day_update(self, _: datetime = None):
+        """
+        Update real time line chart with current backtest progress every fixed number of days
+        """
+        self._eod_update_ctr += 1
+        if self._eod_update_ctr % self._monitor_settings.live_backtest_chart_refresh_frequency == 0:
+            self._live_chart_update()
+
+    def real_time_update(self, _: datetime = None):
+        """
+        This method will not be used by the historical backtest
+        """
+        pass
+
+    def record_transaction(self, transaction: Transaction):
+        """
+        Save the transaction in backtest result (and in the file if set to do so)
+        """
+        self.backtest_result.transactions.append(transaction)
+        self._save_transaction_to_file(transaction)
+
+    @ErrorHandling.error_logging
+    def _init_live_progress_chart(self, backtest_result: BacktestResult):
+        if self._monitor_settings.display_live_backtest_progress:
+            # Set up an empty chart that can be updated
+            self._figure, self._ax = plt.subplots()
+            self._figure.set_size_inches(12, 5)
+            self._line, = self._ax.plot([], [])
+
+            self._ax.set_autoscaley_on(True)
+
+            end_date = backtest_result.end_date if backtest_result.end_date is not None else datetime.now()
+            self._ax.set_xlim(backtest_result.start_date, end_date)
+            self._ax.grid()
+            self._ax.set_title("Progress of the backtest - {}".format(backtest_result.backtest_name))
+            self._figure.autofmt_xdate(rotation=20)
+
+    @ErrorHandling.error_logging
+    def _init_transactions_log_csv_file(self) -> Tuple[Optional[TextIOWrapper], Optional[csv.writer]]:
+        """
+        Creates a new csv file for every backtest run, writes the header and returns the file handler and writer object
+        """
+        if self._monitor_settings.issue_transaction_log:
+            output_dir = path.join(get_starting_dir_abs_path(), self._settings.output_directory, self._report_dir)
+            if not path.exists(output_dir):
+                makedirs(output_dir)
+
+            csv_filename = "%Y_%m_%d-%H%M Transactions.csv"
+            csv_filename = datetime.now().strftime(csv_filename)
+            file_path = path.expanduser(path.join(output_dir, csv_filename))
+
+            # Write new file header
+            fieldnames = ["Timestamp", "Contract symbol", "Security type", "Exchange", "Contract size", "Quantity",
+                          "Price", "Commission"]
+
+            file_handler = open(file_path, 'a', newline='')
+            writer = csv.DictWriter(file_handler, fieldnames=fieldnames)
+            writer.writeheader()
+            csv_writer = csv.writer(file_handler)
+            return file_handler, csv_writer
+        return None, None
+
+    @ErrorHandling.error_logging
+    def _close_files(self):
+        if self._csv_file is not None:
+            self._csv_file.close()
+
+    @ErrorHandling.error_logging
+    def _save_transaction_to_file(self, transaction: Transaction):
+        """
+        Append all details about the Transaction to the CSV trade log.
+        """
+        if self._monitor_settings.issue_transaction_log and self._csv_writer is not None:
+            self._csv_writer.writerow([
+                transaction.time,
+                transaction.contract.symbol,
+                transaction.contract.security_type,
+                transaction.contract.exchange,
+                transaction.contract.contract_size,
+                transaction.quantity,
+                transaction.price,
+                transaction.commission
+            ])
+
+    @ErrorHandling.error_logging
+    def _issue_daily_portfolio_value_file(self, portfolio_tms):
+        if self._monitor_settings.issue_daily_portfolio_value_file:
             xlsx_filename = "%Y_%m_%d-%H%M Timeseries.xlsx"
             xlsx_filename = datetime.now().strftime(xlsx_filename)
-            relative_file_path = path.join(self._report_dir, xlsx_filename)
-            self._excel_exporter.export_container(
-                portfolio_tms, relative_file_path, starting_cell='A1', include_column_names=True)
-        except Exception:
-            self.logger.error("Error while exporting to Excel: " + str(traceback.format_exc()))
+            file_path = path.join(self._report_dir, xlsx_filename)
+            # export portfolio tms
+            self._excel_exporter.export_container(portfolio_tms, file_path,
+                                                  starting_cell='A1', include_column_names=True)
+            # export leverage tms
+            leverage_tms = self.backtest_result.portfolio.leverage_series()
+            self._excel_exporter.export_container(leverage_tms, file_path, sheet_name="Leverage",
+                                                  starting_cell='A1', include_column_names=True)
+            # export benchmark tms if provided
+            if self.benchmark_tms is not None:
+                self._excel_exporter.export_container(self.benchmark_tms, file_path,
+                                                      starting_cell='C1', include_column_names=True)
 
-    def _export_portfolio_analysis(self, backtest_result: BacktestResult):
-        try:
-            portfolio_trading_sheet = PortfolioTradingSheet(self._settings, self._pdf_exporter, backtest_result,
-                                                            title=backtest_result.backtest_name)
+    @ErrorHandling.error_logging
+    def _issue_portfolio_analysis_sheet(self, backtest_result: BacktestResult):
+        if self._monitor_settings.issue_portfolio_analysis_sheet:
+            pnl_charts_flag = self._monitor_settings.generate_pnl_chart_per_ticker_in_portfolio_analysis
+            portfolio_trading_sheet = PortfolioAnalysisSheet(self._settings, self._pdf_exporter, backtest_result,
+                                                             title=backtest_result.backtest_name,
+                                                             generate_pnl_chart_per_ticker=pnl_charts_flag)
             portfolio_trading_sheet.build_document()
             portfolio_trading_sheet.save(self._report_dir)
-        except Exception:
-            self.logger.error("Error while exporting to PDF: " + str(traceback.format_exc()))
 
-    def _export_pdf_with_charts(self, portfolio_tms):
-        try:
+    @ErrorHandling.error_logging
+    def _issue_tearsheet(self, portfolio_tms):
+        if self._monitor_settings.issue_tearsheet:
             if self.benchmark_tms is None:
                 tearsheet = TearsheetWithoutBenchmark(
                     self._settings, self._pdf_exporter, portfolio_tms, title=portfolio_tms.name)
@@ -123,82 +237,100 @@ class BacktestMonitor(AbstractMonitor):
 
             tearsheet.build_document()
             tearsheet.save(self._report_dir)
-        except Exception:
-            self.logger.error("Error while exporting to PDF: " + str(traceback.format_exc()))
 
+    @ErrorHandling.error_logging
     def _print_stats_to_console(self, portfolio_tms):
-        try:
+        if self._monitor_settings.print_stats_to_console:
             ta = TimeseriesAnalysis(portfolio_tms, frequency=Frequency.DAILY)
             print(TimeseriesAnalysis.values_in_table(ta))
-        except Exception:
-            self.logger.error("Error while calculating TimeseriesAnalysis: " + str(traceback.format_exc()))
 
-    def _close_csv_file(self):
-        if self._csv_file is not None:  # close the csv file
-            self._csv_file.close()
-
-    def end_of_day_update(self, timestamp: datetime = None):
+    @ErrorHandling.error_logging
+    def _issue_trade_analysis_sheet(self):
         """
-        Update line chart with current timeseries
+        Create TradeAnalysisSheet and write all the Trades into an Excel file.
+        Issues a report with R multiply if initial risk is specified, otherwise returns of trades are expressed in %
         """
-        portfolio_tms = self.backtest_result.portfolio.portfolio_eod_series()
-        self._ax.grid()
+        if self._monitor_settings.issue_trade_analysis_sheet:
+            trades_generator = TradesGenerator()
+            portfolio_eod_series = self.backtest_result.portfolio.portfolio_eod_series()
+            closed_positions = self.backtest_result.portfolio.closed_positions()
+            trades_list = trades_generator.create_trades_from_backtest_positions(closed_positions, portfolio_eod_series)
 
-        # Set the data on x and y
-        self._line.set_xdata(portfolio_tms.index)
-        self._line.set_ydata(portfolio_tms.values)
+            if len(trades_list) > 0:
+                contract_ticker_mapper = self.backtest_result.portfolio.contract_ticker_mapper
+                nr_of_assets_traded = len(
+                    set(contract_ticker_mapper.contract_to_ticker(t.contract, False) for t in trades_list)
+                )
 
-        # Need both of these in order to rescale
-        self._ax.relim()
-        self._ax.autoscale_view()
+                start_date = self.backtest_result.start_date if self.backtest_result.start_date is not None \
+                    else portfolio_eod_series.index[0]
 
-        # We need to draw and flush
-        self._figure.canvas.draw()
-        self._figure.canvas.flush_events()
+                end_date = self.backtest_result.end_date if self.backtest_result.end_date is not None \
+                    else datetime.now()
 
-        self._ax.grid()  # we need two grid() calls in order to keep the grid on the chart
+                trades_analysis_sheet = TradeAnalysisSheet(self._settings, self._pdf_exporter,
+                                                           nr_of_assets_traded=nr_of_assets_traded,
+                                                           trades=trades_list,
+                                                           start_date=start_date,
+                                                           end_date=end_date,
+                                                           initial_risk=self._signals_register.get_initial_risk(),
+                                                           title="Trades analysis sheet")
+                trades_analysis_sheet.build_document()
+                trades_analysis_sheet.save(self._report_dir)
+            else:
+                self.logger.info("No trades generated throughout the backtest - "
+                                 "Trade analysis sheet will not be generated.")
 
-    def real_time_update(self, timestamp: datetime = None):
-        """
-        This method will not be used by the historical backtest
-        """
-        pass
+    @ErrorHandling.error_logging
+    def _issue_signal_log(self):
+        if self._monitor_settings.issue_signal_log:
+            signals_df = self._signals_register.get_signals()
+            xlsx_filename = "%Y_%m_%d-%H%M Signals.xlsx"
+            xlsx_filename = datetime.now().strftime(xlsx_filename)
+            file_path = path.join(self._report_dir, xlsx_filename)
 
-    def record_transaction(self, transaction: Transaction):
-        """
-        Print the trade to the CSV file and on the console
-        """
-        self._save_trade_to_file(transaction)
+            # Export the signals only if the data frame is not empty
+            if not signals_df.empty:
+                sheet_names_to_functions = {
+                    "Tickers": lambda s: s.symbol if isinstance(s, Signal) else s,
+                    "Suggested exposure": lambda s: s.suggested_exposure.value if isinstance(s, Signal) else s,
+                    "Confidence": lambda s: s.confidence if isinstance(s, Signal) else s,
+                    "Expected move": lambda s: s.expected_move if isinstance(s, Signal) else s,
+                    "Fraction at risk": lambda s: s.fraction_at_risk if isinstance(s, Signal) else s
+                }
 
-    def _init_csv_file(self) -> TextIOWrapper:
-        """
-        Creates a new csv file for every backtest run, writes the header and returns the path to the file.
-        """
-        output_dir = path.join(get_starting_dir_abs_path(), self._settings.output_directory, self._report_dir)
-        if not path.exists(output_dir):
-            makedirs(output_dir)
+                for sheet_name, fun in sheet_names_to_functions.items():
+                    df = signals_df.applymap(fun)
+                    self._excel_exporter.export_container(df, file_path, sheet_name=sheet_name,
+                                                          starting_cell='A1', include_column_names=True)
 
-        csv_filename = "%Y_%m_%d-%H%M Trades.csv"
-        csv_filename = datetime.now().strftime(csv_filename)
-        file_path = path.expanduser(path.join(output_dir, csv_filename))
+    @ErrorHandling.error_logging
+    def _live_chart_update(self):
+        if self._monitor_settings.display_live_backtest_progress:
+            portfolio_tms = self.backtest_result.portfolio.portfolio_eod_series()
+            self._ax.grid()
 
-        # Write new file header
-        fieldnames = ["Timestamp", "Contract", "Quantity", "Price", "Commission"]
+            # Set the data on x and y
+            self._line.set_xdata(portfolio_tms.index)
+            self._line.set_ydata(portfolio_tms.values)
 
-        file_handler = open(file_path, 'a', newline='')
-        writer = csv.DictWriter(file_handler, fieldnames=fieldnames)
-        writer.writeheader()
+            # Need both of these in order to rescale
+            self._ax.relim()
+            self._ax.autoscale_view()
 
-        return file_handler
+            # We need to draw and flush
+            self._figure.canvas.draw()
+            self._figure.canvas.flush_events()
 
-    def _save_trade_to_file(self, transaction: Transaction):
-        """
-        Append all details about the Transaction to the CSV trade log.
-        """
-        self._csv_writer.writerow([
-            transaction.time,
-            transaction.contract.symbol,
-            transaction.quantity,
-            transaction.price,
-            transaction.commission
-        ])
+            self._ax.grid()  # we need two grid() calls in order to keep the grid on the chart
+
+    @ErrorHandling.error_logging
+    def _issue_config_log(self):
+        if self._monitor_settings.issue_config_log:
+            filename = "%Y_%m_%d-%H%M Config.yml"
+            filename = datetime.now().strftime(filename)
+            output_dir = path.join(get_starting_dir_abs_path(), self._settings.output_directory, self._report_dir)
+            file_path = path.join(output_dir, filename)
+
+            with open(file_path, "w") as file:
+                ConfigExporter.print_config(file)

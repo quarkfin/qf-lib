@@ -15,8 +15,8 @@
 from typing import Any, Tuple
 
 import matplotlib as mpl
-import pandas as pd
 
+from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.plotting.charts.chart import Chart
 
 
@@ -26,8 +26,8 @@ class HeatMapChart(Chart):
 
     Parameters
     ----------
-    data: pandas.DataFrame
-        DataFrame containing data that should be plotted using heat map
+    data: QFDataFrame
+        QFDataFrame containing data that should be plotted using heat map
     color_map
         color map to use for coloring the heat map
     min_value: float
@@ -39,7 +39,7 @@ class HeatMapChart(Chart):
     end_x: Any
         see: Chart__init__#end_x
     """
-    def __init__(self, data: pd.DataFrame, color_map=None, min_value: float = None, max_value: float = None,
+    def __init__(self, data: QFDataFrame, color_map=None, min_value: float = None, max_value: float = None,
                  start_x: Any = None, end_x: Any = None):
         super().__init__(start_x, end_x)
         self.data = data[::-1]  # for proper plotting the matrix needs to be reversed

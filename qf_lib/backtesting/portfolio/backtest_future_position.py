@@ -11,46 +11,24 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-from datetime import datetime
 
-from numpy import sign
-
-from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.portfolio.backtest_position import BacktestPosition
 from qf_lib.backtesting.portfolio.transaction import Transaction
 
 
 class BacktestFuturePosition(BacktestPosition):
-    def __init__(self, contract: Contract, start_time: datetime) -> None:
-        super().__init__(contract, start_time)
-
     def market_value(self) -> float:
         """Market value is equal to the P&L of the position"""
-        if self.current_price == 0:
-            return 0.0
-
-        multiplier = self._quantity * self._contract.contract_size
-        price_pnl = self.current_price - self.avg_price_per_unit()
-        return price_pnl * multiplier
-
-    def total_exposure(self) -> float:
-        return self._quantity * self._contract.contract_size * self.current_price
+        return self.unrealised_pnl
 
     def _cash_to_buy_or_proceeds_from_sale(self, transaction: Transaction) -> float:
         """
-        To buy a future contract we only pay a commission.
-        There is some cash secured as a margin but it is not leaving out portfolio
+        To buy a future contract we only pay a commission. There is some cash secured as a margin but it is not leaving
+        out portfolio.
+
+        Therefore, if the transaction is the first transaction or made in the direction of the position we only need to
+        pay for commission. In case of a transaction in the opposite direction to the position, we need to cover also
+        the profit and loss of the trade.
         """
-        if (self.direction == 0) or (sign(transaction.quantity) == self.direction):
-            # if first trade or trade in the direction of the position we only need to pay for commission
-            return -transaction.commission
-        else:
-            # closing part of the position -> we need to cover the p&l of the position
-            price_pnl = (transaction.price - self.avg_price_per_unit())
-            multiplier = transaction.quantity * self._contract.contract_size
-
-            # invert sign of multiplier because the sign of transaction.quantity
-            # is opposite to the actual position.direction
-            multiplier = -multiplier
-
-            return price_pnl * multiplier - transaction.commission
+        transaction_pnl = self._compute_profit_and_loss_fraction(transaction.price, transaction.quantity)
+        return transaction_pnl - transaction.commission

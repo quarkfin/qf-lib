@@ -19,15 +19,17 @@ from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.containers.futures.future_tickers.bloomberg_future_ticker import BloombergFutureTicker
 
 
-class DummyBloombergContractTickerMapper(ContractTickerMapper):
+class SimulatedBloombergContractTickerMapper(ContractTickerMapper):
     """
-    Dummy BloombergTicker-Contract mapper.
+    BloombergTicker-Contract mapper to be used for backtesting purposes.
+    Uses Simulated Exchange
     """
 
     def __init__(self):
         self._contract_to_future_ticker = {}
 
-    def contract_to_ticker(self, contract: Contract, strictly_to_specific_ticker: bool = True) -> BloombergTicker:
+    def contract_to_ticker(self, contract: Contract, strictly_to_specific_ticker: bool = True) \
+            -> Union[BloombergTicker, BloombergFutureTicker]:
         """Maps Contract objects into BloombergTickers.
 
         Parameters

@@ -15,8 +15,7 @@
 from datetime import datetime
 from typing import Tuple
 
-import pandas as pd
-
+from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.time_indexed_container import TimeIndexedContainer
 
 
@@ -41,7 +40,7 @@ def get_common_start_and_end(*containers: TimeIndexedContainer) -> Tuple[datetim
     start_dates = []
     end_dates = []
     for container in containers:
-        if isinstance(container, pd.DataFrame):
+        if isinstance(container, QFDataFrame):
             start_date = container.apply(lambda col: col.first_valid_index()).max()
             start_dates.append(start_date)
 

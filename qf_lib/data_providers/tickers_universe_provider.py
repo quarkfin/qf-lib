@@ -36,3 +36,20 @@ class TickersUniverseProvider(object, metaclass=ABCMeta):
             date for which current universe members' tickers will be returned
         """
         pass
+
+    @abstractmethod
+    def get_unique_tickers(self, universe_ticker: Ticker) -> List[Ticker]:
+        """
+        Returns the unique list of Tickers belonging to a specified universe regardless of the date.
+
+        Parameters
+        ----------
+        universe_ticker
+            ticker that describes a specific universe, which members will be returned
+
+        Returns
+        -------
+        List[Ticker]
+            list of Tickers belonging to the universe
+        """
+        pass

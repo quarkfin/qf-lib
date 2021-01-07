@@ -17,6 +17,7 @@ from qf_lib.backtesting.alpha_model.signal import Signal
 from qf_lib.backtesting.broker.broker import Broker
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
+from qf_lib.backtesting.monitoring.signals_register import SignalsRegister
 from qf_lib.backtesting.order.execution_style import MarketOrder
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.order_factory import OrderFactory
@@ -50,9 +51,9 @@ class InitialRiskPositionSizer(PositionSizer):
     """
 
     def __init__(self, broker: Broker, data_handler: DataHandler, order_factory: OrderFactory,
-                 contract_ticker_mapper: ContractTickerMapper, initial_risk: float, max_target_percentage: float = None,
-                 tolerance_percentage: float = 0.0):
-        super().__init__(broker, data_handler, order_factory, contract_ticker_mapper)
+                 contract_ticker_mapper: ContractTickerMapper, signals_register: SignalsRegister, initial_risk: float,
+                 max_target_percentage: float = None, tolerance_percentage: float = 0.0):
+        super().__init__(broker, data_handler, order_factory, contract_ticker_mapper, signals_register)
 
         assert is_finite_number(initial_risk), "Initial risk has to be a finite number"
         assert initial_risk >= 0, "Initial risk has to be positive"
@@ -61,7 +62,12 @@ class InitialRiskPositionSizer(PositionSizer):
         self.max_target_percentage = max_target_percentage
         self.tolerance_percentage = tolerance_percentage
 
+        self._signals_register.set_initial_risk(initial_risk)
         self.logger.info("Initial Risk: {}".format(initial_risk))
+
+    @property
+    def initial_risk(self):
+        return self._initial_risk
 
     def _generate_market_orders(self, signals: List[Signal]) -> List[Optional[Order]]:
         target_percentages = {

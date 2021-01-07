@@ -15,7 +15,7 @@
 from os.path import dirname, join
 
 import numpy as np
-from pandas import DatetimeIndex, concat
+from pandas import DatetimeIndex, concat, date_range
 
 from qf_lib.documents_utils.excel.excel_exporter import ExcelExporter
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
@@ -39,7 +39,7 @@ class TestExcelExport(TestCaseWithFileOutput):
     comparator = ExcelFilesComparator()
 
     def setUp(self):
-        dates = DatetimeIndex(start='2014-01-01', freq='d', periods=10)
+        dates = DatetimeIndex(date_range(start='2014-01-01', freq='d', periods=10))
         returns = np.arange(0, 1, 0.1)
         self.test_series = QFSeries(index=dates, data=returns)
 

@@ -17,8 +17,8 @@ from os.path import join
 from typing import List
 
 from qf_lib.analysis.timeseries_analysis.timeseries_analysis import TimeseriesAnalysis
-from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.plotting_mode import PlottingMode
+from qf_lib.common.utils.miscellaneous.constants import BUSINESS_DAYS_PER_YEAR
 from qf_lib.common.utils.volatility.get_volatility import get_volatility
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
@@ -102,7 +102,7 @@ class AbstractDocument(metaclass=ABCMeta):
 
     def __get_perf_chart(self, series_list, is_large_chart):
         strategy = series_list[0].to_prices(1)  # the main strategy should be the first series
-        log_scale = True if strategy[-1] > 5 else False  # use log scale for returns above 500 %
+        log_scale = True if strategy[-1] > 10 else False  # use log scale for returns above 1 000 %
 
         if is_large_chart:
             chart = LineChart(start_x=strategy.index[0], end_x=strategy.index[-1], log_scale=log_scale)
@@ -139,9 +139,11 @@ class AbstractDocument(metaclass=ABCMeta):
         chart.add_decorator(title_decorator)
         return chart
 
-    def _get_rolling_chart(self, timeseries):
-        days_rolling = int(252 / 2)  # 6M rolling
-        step = round(days_rolling / 5)
+    def _get_rolling_ret_and_vol_chart(self, timeseries):
+        freq = timeseries.get_frequency()
+
+        rolling_window_len = int(freq.value / 2)  # 6M rolling
+        step = round(freq.value / 6)  # 2M shift
 
         tms = timeseries.to_prices(1)
         chart = LineChart(start_x=tms.index[0], end_x=tms.index[-1])
@@ -154,28 +156,55 @@ class AbstractDocument(metaclass=ABCMeta):
             return PricesSeries(window).total_cumulative_return()
 
         def volatility(window):
-            return get_volatility(PricesSeries(window), Frequency.DAILY)
+            return get_volatility(PricesSeries(window), freq)
 
         functions = [tot_return, volatility]
         names = ['Rolling Return', 'Rolling Volatility']
         for func, name in zip(functions, names):
-            rolling = tms.rolling_window(days_rolling, func, step=step)
+            rolling = tms.rolling_window(rolling_window_len, func, step=step)
             rolling_element = DataElementDecorator(rolling)
             chart.add_decorator(rolling_element)
             legend.add_entry(rolling_element, name)
 
         chart.add_decorator(legend)
-
         chart.add_decorator(AxesFormatterDecorator(y_major=PercentageFormatter(".0f")))
 
-        left, bottom, width, height = self.full_image_axis_position
-        position_decorator = AxesPositionDecorator(left, bottom, width, height)
+        position_decorator = AxesPositionDecorator(*self.full_image_axis_position)
         chart.add_decorator(position_decorator)
-        title_str = "{} - Rolling Stats [{} days]".format(timeseries.name, days_rolling)
+        title_str = "Rolling Stats [{} samples]".format(rolling_window_len)
 
         title_decorator = TitleDecorator(title_str, key="title")
         chart.add_decorator(title_decorator)
+        return chart
 
+    def _get_rolling_chart(self, timeseries_list, rolling_function, function_name):
+        days_rolling = int(BUSINESS_DAYS_PER_YEAR / 2)  # 6M rolling
+        step = round(days_rolling / 5)
+
+        legend = LegendDecorator()
+        chart = None
+
+        for i, tms in enumerate(timeseries_list):
+            if i == 0:
+                chart = LineChart(start_x=tms.index[0], end_x=tms.index[-1])
+                line_decorator = HorizontalLineDecorator(0, key="h_line", linewidth=1)
+                chart.add_decorator(line_decorator)
+
+            tms = tms.to_prices(1)
+            rolling = tms.rolling_window(days_rolling, rolling_function, step=step)
+            rolling_element = DataElementDecorator(rolling)
+            chart.add_decorator(rolling_element)
+            legend.add_entry(rolling_element, tms.name)
+
+        chart.add_decorator(legend)
+        chart.add_decorator(AxesFormatterDecorator(y_major=PercentageFormatter(".0f")))
+
+        position_decorator = AxesPositionDecorator(*self.full_image_axis_position)
+        chart.add_decorator(position_decorator)
+        title_str = "{} - Rolling Stats [{} days]".format(function_name, days_rolling)
+
+        title_decorator = TitleDecorator(title_str, key="title")
+        chart.add_decorator(title_decorator)
         return chart
 
     def _add_statistics_table(self, ta_list: List[TimeseriesAnalysis]):

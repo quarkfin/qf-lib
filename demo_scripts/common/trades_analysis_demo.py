@@ -15,11 +15,13 @@
 import os
 
 import numpy as np
-from pandas import DataFrame
 
 from demo_scripts.demo_configuration.demo_ioc import container
 from qf_lib.analysis.trade_analysis.trade_analysis_sheet import TradeAnalysisSheet
-from qf_lib.common.enums.trade_field import TradeField
+from qf_lib.backtesting.contract.contract import Contract
+from qf_lib.backtesting.contract.contract_to_ticker_conversion.simulated_bloomberg_mapper import \
+    SimulatedBloombergContractTickerMapper
+from qf_lib.backtesting.portfolio.trade import Trade
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.common.utils.miscellaneous.get_cached_value import cached_value
@@ -30,23 +32,34 @@ def get_data():
     start_date = str_to_date('2017-01-01')
     end_date = str_to_date('2017-12-31')
 
-    trades_df = DataFrame(np.random.normal(0.01, 0.2, 200), columns=[TradeField.Return])
-    trades_df.loc[0, TradeField.StartDate] = start_date
-    trades_df.loc[199, TradeField.EndDate] = end_date
-    return trades_df, 1, start_date, end_date
+    number_of_trades = 200
+    contract = Contract("Example Comdty", "STK", "SIM EXCHANGE")
+    percentage_risk = 0.05
+    risk = 10000000 * percentage_risk
+    trades = [
+        Trade(start_date, end_date, contract, pnl, 0, 1, risk) for pnl in np.random.normal(0.01, 0.2, number_of_trades)
+    ]
+    return trades, 1, start_date, end_date
 
 
 def main():
     this_dir_path = os.path.dirname(os.path.abspath(__file__))
-    trades_df, nr_of_assets_traded, start_date, end_date = cached_value(
+    trades, nr_of_assets_traded, start_date, end_date = cached_value(
         get_data, os.path.join(this_dir_path, 'trade_analysis.cache'))
 
     settings = container.resolve(Settings)  # type: Settings
     pdf_exporter = container.resolve(PDFExporter)  # type: PDFExporter
+    contract_ticker_mapper = SimulatedBloombergContractTickerMapper()
+
+    initial_risk = 0.05
+
+    nr_of_assets_traded = len(
+        set(contract_ticker_mapper.contract_to_ticker(t.contract, False) for t in trades)
+    )
 
     trade_analysis_sheet = TradeAnalysisSheet(
-        settings, pdf_exporter, trades_df, start_date, end_date,
-        nr_of_assets_traded=nr_of_assets_traded, title="Sample trade analysis")
+        settings, pdf_exporter, nr_of_assets_traded, trades, start_date, end_date, initial_risk,
+        title="Sample trade analysis")
     trade_analysis_sheet.build_document()
     trade_analysis_sheet.save()
 

@@ -13,13 +13,15 @@
 #     limitations under the License.
 
 from datetime import datetime
-from unittest import TestCase
+from typing import Tuple
 
 from demo_scripts.demo_configuration.demo_ioc import container
-from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel, AlphaModelSettings
-from qf_lib.backtesting.alpha_model.alpha_model_factory import AlphaModelFactory
+
+from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
+from qf_lib.backtesting.alpha_model.alpha_model_strategy import AlphaModelStrategy
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
+from qf_lib.backtesting.monitoring.backtest_monitor import BacktestMonitorSettings
 from qf_lib.backtesting.position_sizer.initial_risk_position_sizer import InitialRiskPositionSizer
 from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
 from qf_lib.common.enums.frequency import Frequency
@@ -30,15 +32,10 @@ from qf_lib.common.utils.miscellaneous.average_true_range import average_true_ra
 from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 from qf_lib.containers.futures.future_tickers.bloomberg_future_ticker import BloombergFutureTicker
 from qf_lib.containers.futures.futures_chain import FuturesChain
-from qf_lib.backtesting.alpha_model.futures_alpha_model_strategy import FuturesAlphaModelStrategy
+from qf_lib.data_providers.data_provider import DataProvider
 
 
 class SimpleFuturesModel(AlphaModel):
-    settings = AlphaModelSettings(
-        parameters=(50, 100),
-        risk_estimation_factor=3
-    )
-
     def __init__(self, fast_time_period: int, slow_time_period: int,
                  risk_estimation_factor: float, data_handler: DataHandler):
         super().__init__(risk_estimation_factor, data_handler)
@@ -111,14 +108,14 @@ class SimpleFuturesModel(AlphaModel):
                 # A long position is closed when it has moved three ATR units down from its highest closing price
                 # since the position was opened.
                 close_prices = close_tms.loc[self.time_of_opening_position:].dropna()
-                if current_price < max(close_prices) * (1 - 3 * self.average_true_range):
+                if current_price < max(close_prices) * (1 - self.risk_estimation_factor * self.average_true_range):
                     return Exposure.OUT
 
             elif current_exposure == Exposure.SHORT:
                 # A short position is closed when it has moved three ATR units up from its lowest closing price
                 # since the position was opened.
                 close_prices = close_tms.loc[self.time_of_opening_position:].dropna()
-                if current_price > min(close_prices) * (1 + 3 * self.average_true_range):
+                if current_price > min(close_prices) * (1 + self.risk_estimation_factor * self.average_true_range):
                     return Exposure.OUT
 
         except (KeyError, ValueError):
@@ -131,44 +128,39 @@ class SimpleFuturesModel(AlphaModel):
         fraction_at_risk = self.average_true_range * self.risk_estimation_factor
         return fraction_at_risk
 
+    def __hash__(self):
+        return hash((self.__class__.__name__, self.fast_time_period, self.slow_time_period, self.risk_estimation_factor))
 
-def main():
-    start_date = str_to_date('2003-05-30')
-    end_date = str_to_date('2009-01-01')
+
+def run_strategy(data_provider: DataProvider) -> Tuple[float, str]:
+    """ Returns the strategy end result and checksum of the preloaded data. """
 
     model_tickers = [BloombergFutureTicker("Corn", "C {} Comdty", 1, 10, 1)]
+    start_date = str_to_date('2003-05-30')
+    end_date = str_to_date('2009-01-01')
     initial_risk = 0.006
 
     # ----- build trading session ----- #
     session_builder = container.resolve(BacktestTradingSessionBuilder)  # type: BacktestTradingSessionBuilder
     session_builder.set_backtest_name('Simple Futures Strategy')
-    session_builder.set_position_sizer(InitialRiskPositionSizer, initial_risk)
+    session_builder.set_position_sizer(InitialRiskPositionSizer, initial_risk=initial_risk)
     session_builder.set_frequency(Frequency.DAILY)
-
+    session_builder.set_data_provider(data_provider)
+    session_builder.set_monitor_settings(BacktestMonitorSettings.no_stats())
     ts = session_builder.build(start_date, end_date)
 
     # ----- build models ----- #
-    model_type = SimpleFuturesModel
-    model_factory = AlphaModelFactory(ts.data_handler)
-    model = model_factory.make_parametrized_model(model_type)
+    model = SimpleFuturesModel(fast_time_period=50, slow_time_period=100, risk_estimation_factor=3,
+                               data_handler=ts.data_handler)
     model_tickers_dict = {model: model_tickers}
 
     # ----- start trading ----- #
-    ts.use_data_preloading(model_tickers)
+    AlphaModelStrategy(ts, model_tickers_dict, use_stop_losses=False)
 
-    FuturesAlphaModelStrategy(ts, model_tickers_dict, use_stop_losses=False)
+    ts.use_data_preloading(model_tickers)
+    print(ts.get_preloaded_data_checksum())
     ts.start_trading()
 
+    data_checksum = ts.get_preloaded_data_checksum()
     actual_end_value = ts.portfolio.portfolio_eod_series()[-1]
-    expected_value = 10317477.750000006
-
-    print("Expected End Value = {}".format(expected_value))
-    print("Actual End Value   = {}".format(actual_end_value))
-    print("DIFF               = {}".format(expected_value - actual_end_value))
-
-    test = TestCase()
-    test.assertAlmostEqual(expected_value, actual_end_value, places=2)
-
-
-if __name__ == "__main__":
-    main()
+    return actual_end_value, data_checksum

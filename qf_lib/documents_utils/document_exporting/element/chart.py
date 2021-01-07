@@ -100,7 +100,8 @@ class ChartElement(Element):
             self.logger.error(ex)
             result = "<h2 class='chart-render-failure'>Failed to render chart</h1>"
         # Close the chart's figure as we are no longer going to be using it.
-        self._chart.close()
+        if self._chart is not None:
+            self._chart.close()
         # Add the optional comment.
         result += self._create_html_comment()
 

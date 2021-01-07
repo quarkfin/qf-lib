@@ -18,6 +18,7 @@ from qf_lib.backtesting.alpha_model.signal import Signal
 from qf_lib.backtesting.broker.broker import Broker
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
+from qf_lib.backtesting.monitoring.signals_register import SignalsRegister
 from qf_lib.backtesting.order.execution_style import MarketOrder
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.order_factory import OrderFactory
@@ -57,10 +58,11 @@ class InitialRiskWithVolumePositionSizer(InitialRiskPositionSizer):
     """
 
     def __init__(self, broker: Broker, data_handler: DataHandler, order_factory: OrderFactory,
-                 contract_ticker_mapper: ContractTickerMapper, initial_risk: float, max_target_percentage: float = None,
-                 tolerance_percentage: float = 0.0, max_volume_percentage: float = 1.0):
+                 contract_ticker_mapper: ContractTickerMapper, signals_register: SignalsRegister, initial_risk: float,
+                 max_target_percentage: float = None, tolerance_percentage: float = 0.0,
+                 max_volume_percentage: float = 1.0):
 
-        super().__init__(broker, data_handler, order_factory, contract_ticker_mapper, initial_risk,
+        super().__init__(broker, data_handler, order_factory, contract_ticker_mapper, signals_register, initial_risk,
                          max_target_percentage, tolerance_percentage)
 
         self._cached_futures_chains_dict: Dict[FutureTicker, FuturesChain] = dict()

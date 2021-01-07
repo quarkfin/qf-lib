@@ -11,98 +11,76 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-
+from collections import defaultdict
+from datetime import datetime
 from math import sqrt
-from typing import List, Sequence
+from typing import Sequence
 
 from qf_lib.backtesting.fast_alpha_model_tester.backtest_summary import BacktestSummary
-from qf_lib.common.enums.trade_field import TradeField
+from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.tickers.tickers import Ticker
-from qf_lib.common.utils.dateutils.date_to_string import date_to_str
-from qf_lib.common.utils.returns.sqn import sqn_for100trades, avg_nr_of_trades_per1y, trade_based_cagr, \
-    trade_based_max_drawdown
-from qf_lib.documents_utils.document_exporting.document import Document
-from qf_lib.documents_utils.document_exporting.element.heading import HeadingElement
-from qf_lib.documents_utils.document_exporting.element.new_page import NewPageElement
-from qf_lib.documents_utils.document_exporting.element.paragraph import ParagraphElement
+from qf_lib.common.utils.returns.cagr import cagr
+from qf_lib.common.utils.returns.sqn import avg_nr_of_trades_per1y, sqn
+from qf_lib.containers.series.qf_series import QFSeries
 
 
-def add_backtest_description(document: Document, backtest_result: BacktestSummary, param_names: List[str]):
-    """
-    Adds verbal description of the backtest to the document. The description will be placed on a single page.
-    """
-
-    document.add_element(ParagraphElement("\n"))
-    document.add_element(HeadingElement(1, "Model: {}".format(backtest_result.backtest_name)))
-    document.add_element(ParagraphElement("\n"))
-
-    document.add_element(HeadingElement(2, "Tickers tested in this study: "))
-    ticker_str = "\n".join([ticker.as_string() for ticker in backtest_result.tickers])
-    document.add_element(ParagraphElement(ticker_str))
-    document.add_element(ParagraphElement("\n"))
-
-    document.add_element(HeadingElement(2, "Dates of the backtest"))
-    document.add_element(ParagraphElement("Backtest start date: {}"
-                                          .format(date_to_str(backtest_result.start_date))))
-    document.add_element(ParagraphElement("Backtest end date: {}"
-                                          .format(date_to_str(backtest_result.end_date))))
-
-    document.add_element(ParagraphElement("\n"))
-
-    document.add_element(HeadingElement(2, "Parameters Tested"))
-    for param_index, param_list in enumerate(backtest_result.parameters_tested):
-        param_list_str = ", ".join(map(str, param_list))
-        document.add_element(ParagraphElement("{} = [{}]".format(param_names[param_index], param_list_str)))
-
-    document.add_element(NewPageElement())
-
-
-class BacktestSummaryEvaluator(object):
+class BacktestSummaryEvaluator:
     def __init__(self, backtest_summary: BacktestSummary):
         self.backtest_summary = backtest_summary
 
-        self.params_backtest_summary_elem_dict = {}
+        self.params_backtest_summary_elem_dict = defaultdict(list)
         for elem in backtest_summary.elements_list:
-            self.params_backtest_summary_elem_dict[elem.model_parameters] = elem
+            self.params_backtest_summary_elem_dict[elem.model_parameters].append(elem)
 
-    def evaluate_params_for_tickers(self, parameters: tuple, tickers: Sequence[Ticker]):
-        trades_of_tickers = self._select_trades_of_tickers(parameters, tickers)
-        return self._evaluate_single_trades_df(parameters, tickers, trades_of_tickers)
+    def evaluate_params_for_tickers(self, parameters: tuple, tickers: Sequence[Ticker], start_time: datetime,
+                                    end_date: datetime):
 
-    def _evaluate_single_trades_df(self, parameters, tickers_to_be_used, trades_of_tickers):
+        # Get the backtest element for the given list of tickers
+        backtest_elements_for_tickers = [el for el in self.params_backtest_summary_elem_dict[parameters]
+                                         if set(el.tickers) == set(tickers)]
+        assert len(backtest_elements_for_tickers) == 1
+        backtest_elem = backtest_elements_for_tickers[0]
+        returns_tms = backtest_elem.returns_tms.dropna(how="all")
+        trades = backtest_elem.trades
+
+        # Create the TradesEvaluationResult object
         ticker_evaluation = TradesEvaluationResult()
-        ticker_evaluation.ticker = tickers_to_be_used
+        ticker_evaluation.ticker = tickers
         ticker_evaluation.parameters = parameters
-        ticker_evaluation.sqn_per100trades = sqn_for100trades(trades_of_tickers)
-        avg_nr_of_trades = avg_nr_of_trades_per1y(trades_of_tickers, self.backtest_summary.start_date,
-                                                  self.backtest_summary.end_date)
-        ticker_evaluation.avg_nr_of_trades_1Y = avg_nr_of_trades
-        ticker_evaluation.annualised_return = trade_based_cagr(trades_of_tickers,
-                                                               self.backtest_summary.start_date,
-                                                               self.backtest_summary.end_date)
-        ticker_evaluation.drawdown = trade_based_max_drawdown(trades_of_tickers)
+        ticker_evaluation.end_date = end_date
+        # Compute the start date as the maximum value between the given start_time and the first date of returns tms in
+        # case of 1 ticker backtest
+        if len(tickers) == 1:
+            start_date = max(start_time, returns_tms.index[0]) if not returns_tms.empty else end_date
+        else:
+            start_date = start_time
+        ticker_evaluation.start_date = start_date
 
-        if avg_nr_of_trades > 5:  # for clarity of the chart remove values that do not show enough trading
-            ticker_evaluation.sqn_per_avg_nr_trades = ticker_evaluation.sqn_per100trades / 10 * sqrt(avg_nr_of_trades)
+        if start_date >= end_date:
+            # Do not compute further fields - return the default None values
+            return ticker_evaluation
+
+        avg_nr_of_trades = avg_nr_of_trades_per1y(QFSeries([t for t in trades if t.start_time >= start_date
+                                                            and t.end_time <= end_date]), start_date, end_date)
+        ticker_evaluation.avg_nr_of_trades_1Y = avg_nr_of_trades
+        ticker_evaluation.sqn_per_avg_nr_trades = sqn(QFSeries([t.pnl for t in trades if t.start_time >= start_date
+                                                                and t.end_time <= end_date])) * sqrt(avg_nr_of_trades)
+
+        returns_tms = returns_tms.loc[start_date:end_date]
+        if not returns_tms.empty:
+            ticker_evaluation.annualised_return = cagr(returns_tms, Frequency.DAILY)
 
         return ticker_evaluation
 
-    def _select_trades_of_tickers(self, parameters: tuple, tickers: Sequence[Ticker]):
-        backtest_elem = self.params_backtest_summary_elem_dict[parameters]
-        all_trades = backtest_elem.trades_df
 
-        # select trades of provided tickers only
-        trades_of_tickers = all_trades.loc[all_trades[TradeField.Ticker].isin(tickers)]
-        return trades_of_tickers
-
-
-class TradesEvaluationResult(object):
+class TradesEvaluationResult:
     def __init__(self):
         self.ticker = None
         self.parameters = None
 
         self.sqn_per_avg_nr_trades = None
-        self.sqn_per100trades = None
         self.avg_nr_of_trades_1Y = None
         self.annualised_return = None
-        self.drawdown = None
+
+        self.start_date = None
+        self.end_date = None

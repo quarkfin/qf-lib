@@ -22,6 +22,7 @@ import xarray as xr
 
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
+from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.dimension_names import FIELDS, TICKERS, DATES
 
 
@@ -121,7 +122,7 @@ class QFDataArray(xr.DataArray):
 
         return result
 
-    def asof(self, dates: Union[datetime, Sequence[datetime]]) -> "pd.DataFrame":
+    def asof(self, dates: Union[datetime, Sequence[datetime]]) -> QFDataFrame:
         tickers = self.tickers.values
         fields = self.fields.values
 
@@ -134,11 +135,11 @@ class QFDataArray(xr.DataArray):
 
         for i, (ticker, date) in enumerate(zip(tickers, dates)):
             ticker_data = self.loc[:, ticker, :]
-            ticker_df = ticker_data.to_pandas()  # type: pd.DataFrame
+            ticker_df = QFDataFrame(ticker_data.to_pandas())  # type: QFDataFrame
             data_asof = ticker_df.asof(date)
             asof_values[i, :] = data_asof
 
-        result = pd.DataFrame(data=asof_values, index=self.tickers.to_index(), columns=self.fields.to_index())
+        result = QFDataFrame(data=asof_values, index=self.tickers.to_index(), columns=self.fields.to_index())
         return result
 
     def _check_if_dimensions_are_correct(self, coords, dims):

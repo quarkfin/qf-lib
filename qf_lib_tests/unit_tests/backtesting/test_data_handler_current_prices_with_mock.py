@@ -13,12 +13,11 @@
 #     limitations under the License.
 
 import unittest
-from datetime import datetime
 from unittest import TestCase
+from unittest.mock import Mock
 
 import pandas as pd
-from mockito import mock, when, ANY
-from pandas import Series, date_range
+from pandas import date_range
 
 from qf_lib.backtesting.data_handler.daily_data_handler import DailyDataHandler
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
@@ -29,13 +28,16 @@ from qf_lib.common.tickers.tickers import QuandlTicker
 from qf_lib.common.utils.dateutils.date_format import DateFormat
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.dateutils.timer import SettableTimer
+from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.qf_data_array import QFDataArray
+from qf_lib.containers.series.qf_series import QFSeries
+from qf_lib.data_providers.data_provider import DataProvider
 from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_series_equal, assert_dataframes_equal
 
 
 class Test_DataHandler_CurrentPrices(TestCase):
     def setUp(self):
-        self.timer, self.tickers, _, self.data_handler = _get_test_case_set_up()
+        self.timer, self.tickers, self.data_handler = _get_test_case_set_up()
         MarketOpenEvent.set_trigger_time({"hour": 13, "minute": 30, "second": 0, "microsecond": 0})
         MarketCloseEvent.set_trigger_time({"hour": 20, "minute": 0, "second": 0, "microsecond": 0})
 
@@ -72,14 +74,14 @@ class Test_DataHandler_CurrentPrices(TestCase):
     def _assert_current_prices_are_correct(self, curr_time_str, expected_values):
         current_time = str_to_date(curr_time_str, DateFormat.FULL_ISO)
         self.timer.set_current_time(current_time)
-        expected_series = Series(data=expected_values, index=self.tickers)
+        expected_series = QFSeries(data=expected_values, index=self.tickers)
         actual_series = self.data_handler.get_current_price(self.tickers)
         assert_series_equal(expected_series, actual_series, check_names=False)
 
 
 class Test_DataHandler_LastAvailablePrices(TestCase):
     def setUp(self):
-        self.timer, self.tickers, _, self.data_handler = _get_test_case_set_up()
+        self.timer, self.tickers, self.data_handler = _get_test_case_set_up()
         MarketOpenEvent.set_trigger_time({"hour": 13, "minute": 30, "second": 0, "microsecond": 0})
         MarketCloseEvent.set_trigger_time({"hour": 20, "minute": 0, "second": 0, "microsecond": 0})
 
@@ -101,16 +103,16 @@ class Test_DataHandler_LastAvailablePrices(TestCase):
     def _assert_last_prices_are_correct(self, curr_time_str, expected_values):
         current_time = str_to_date(curr_time_str, DateFormat.FULL_ISO)
         self.timer.set_current_time(current_time)
-        expected_series = Series(data=expected_values, index=self.tickers)
+        expected_series = QFSeries(data=expected_values, index=self.tickers)
         actual_series = self.data_handler.get_last_available_price(self.tickers)
         assert_series_equal(expected_series, actual_series, check_names=False)
 
 
 class Test_DataHandler_BarForToday(TestCase):
     def setUp(self):
-        self.timer, self.tickers, self.price_fields, self.data_handler = _get_test_case_set_up()
+        self.timer, self.tickers, self.data_handler = _get_test_case_set_up()
         self.tickers_index = pd.Index(self.tickers, name='tickers')
-        self.fields_index = pd.Index(self.price_fields, name='fields')
+        self.fields_index = pd.Index(PriceField.ohlcv(), name='fields')
         MarketOpenEvent.set_trigger_time({"hour": 13, "minute": 30, "second": 0, "microsecond": 0})
         MarketCloseEvent.set_trigger_time({"hour": 20, "minute": 0, "second": 0, "microsecond": 0})
 
@@ -148,7 +150,7 @@ class Test_DataHandler_BarForToday(TestCase):
     def _assert_bars_for_today_is_correct(self, curr_time_str, expected_values):
         current_time = str_to_date(curr_time_str, DateFormat.FULL_ISO)
         self.timer.set_current_time(current_time)
-        expected_dataframe = pd.DataFrame(data=expected_values, index=self.tickers_index, columns=self.fields_index)
+        expected_dataframe = QFDataFrame(data=expected_values, index=self.tickers_index, columns=self.fields_index)
         actual_dataframe = self.data_handler.get_current_bar(self.tickers)
         assert_dataframes_equal(expected_dataframe, actual_dataframe, check_names=False)
 
@@ -156,23 +158,18 @@ class Test_DataHandler_BarForToday(TestCase):
 # UTILITY FUNCTIONS; used for setting up TestCases
 def _get_test_case_set_up():
     timer = SettableTimer()
-
     tickers = [QuandlTicker("MSFT", "WIKI"), QuandlTicker("AAPL", "WIKI")]
-    price_fields = PriceField.ohlcv()
-    price_data_provider_mock = _create_price_provider_mock(
-        tickers, price_fields=price_fields
-    )
-
+    price_data_provider_mock = _create_price_provider_mock(tickers)
     data_handler = DailyDataHandler(price_data_provider_mock, timer)
 
-    return timer, tickers, price_fields, data_handler
+    return timer, tickers, data_handler
 
 
-def _create_price_provider_mock(tickers, price_fields):
+def _create_price_provider_mock(tickers):
     mock_data_array = QFDataArray.create(
         dates=date_range(start='2009-12-28', end='2009-12-30', freq='D'),
         tickers=tickers,
-        fields=price_fields,
+        fields=PriceField.ohlcv(),
         data=[
             # 2009-12-28
             [
@@ -195,11 +192,9 @@ def _create_price_provider_mock(tickers, price_fields):
         ]
     )
 
-    price_data_provider_mock = mock({"frequency": Frequency.DAILY}, strict=True)
-    when(price_data_provider_mock).get_price(tickers, [PriceField.Open, PriceField.Close], ANY(datetime), ANY(datetime),
-                                             Frequency.DAILY).thenReturn(mock_data_array.loc[:, :, [PriceField.Open, PriceField.Close]])
-
-    when(price_data_provider_mock).get_price(tickers, price_fields, ANY(datetime), ANY(datetime), Frequency.DAILY).thenReturn(mock_data_array)
+    price_data_provider_mock = Mock(spec=DataProvider, frequency=Frequency.DAILY)
+    price_data_provider_mock.get_price.side_effect = lambda t, fields, start_time, end_time, frequency: \
+        mock_data_array.loc[:, t, fields]
 
     return price_data_provider_mock
 

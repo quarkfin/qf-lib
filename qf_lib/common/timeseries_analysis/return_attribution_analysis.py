@@ -14,8 +14,6 @@
 
 from typing import Tuple
 
-import pandas as pd
-
 from qf_lib.common.utils.returns.cagr import cagr
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.cast_series import cast_series
@@ -29,7 +27,7 @@ class ReturnAttributionAnalysis(object):
 
     @classmethod
     def get_factor_return_attribution(cls, fund_tms: QFSeries, fit_tms: QFSeries, regressors_df: QFDataFrame,
-                                      coefficients: pd.Series, alpha: float) -> Tuple[pd.Series, float]:
+                                      coefficients: QFSeries, alpha: float) -> Tuple[QFSeries, float]:
         """
         Returns performance attribution for each factor in given regressors and also calculates the unexplained return.
         """
@@ -50,7 +48,7 @@ class ReturnAttributionAnalysis(object):
         total_profit = factors_profits.sum() + alpha_profit
 
         regressors_return_attribution = factors_profits * annualised_fit_return / total_profit
-        regressors_return_attribution = cast_series(regressors_return_attribution, pd.Series)
+        regressors_return_attribution = cast_series(regressors_return_attribution, QFSeries)
 
         unexplained_return = annualised_fund_return - regressors_return_attribution.sum()
 

@@ -11,11 +11,11 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-
-from unittest import TestCase
+from typing import Tuple
 
 import matplotlib.pyplot as plt
 
+from qf_lib.backtesting.monitoring.backtest_monitor import BacktestMonitorSettings
 from qf_lib.common.enums.frequency import Frequency
 
 from qf_lib.backtesting.execution_handler.commission_models.ib_commission_model import IBCommissionModel
@@ -28,11 +28,12 @@ from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.backtesting.events.time_event.regular_time_event.before_market_open_event import BeforeMarketOpenEvent
 from qf_lib.backtesting.trading_session.backtest_trading_session import BacktestTradingSession
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
+from qf_lib.data_providers.data_provider import DataProvider
 
 plt.ion()  # required for dynamic chart, good to keep this at the beginning of imports
 
 
-class SpxWithStopLoss(object):
+class SpxWithStopLoss:
     ticker = BloombergTicker("SPX Index")
     percentage = 0.005
 
@@ -55,7 +56,7 @@ class SpxWithStopLoss(object):
         contract = self.contract_ticker_mapper.ticker_to_contract(self.ticker)
 
         orders = self.order_factory.target_percent_orders({contract: 1.0}, MarketOrder(),
-                                                          time_in_force=TimeInForce.OPG, tolerance_percent=0.02)
+                                                          time_in_force=TimeInForce.OPG, tolerance_percentage=0.02)
 
         stop_price = last_price * (1 - self.percentage)
         execution_style = StopOrder(stop_price=stop_price)
@@ -67,7 +68,9 @@ class SpxWithStopLoss(object):
         self.broker.place_orders(stop_order)
 
 
-def main():
+def run_strategy(data_provider: DataProvider) -> Tuple[float, str]:
+    """ Returns the strategy end result and checksum of the preloaded data. """
+
     start_date = str_to_date("2017-01-01")
     end_date = str_to_date("2018-01-01")
 
@@ -75,23 +78,16 @@ def main():
     session_builder.set_backtest_name('SPY w. stop ' + str(SpxWithStopLoss.percentage))
     session_builder.set_initial_cash(1000000)
     session_builder.set_frequency(Frequency.DAILY)
-    session_builder.set_commission_model(IBCommissionModel())
+    session_builder.set_commission_model(IBCommissionModel)
+    session_builder.set_data_provider(data_provider)
+    session_builder.set_monitor_settings(BacktestMonitorSettings.no_stats())
+
     ts = session_builder.build(start_date, end_date)
     ts.use_data_preloading(SpxWithStopLoss.ticker, RelativeDelta(days=40))
 
     SpxWithStopLoss(ts)
     ts.start_trading()
 
+    data_checksum = ts.get_preloaded_data_checksum()
     actual_end_value = ts.portfolio.portfolio_eod_series()[-1]
-    expected_value = 1137843
-
-    print("Expected End Value = {}".format(expected_value))
-    print("Actual End Value   = {}".format(actual_end_value))
-    print("DIFF               = {}".format(expected_value - actual_end_value))
-
-    test = TestCase()
-    test.assertAlmostEqual(expected_value, actual_end_value, delta=10)
-
-
-if __name__ == "__main__":
-    main()
+    return actual_end_value, data_checksum

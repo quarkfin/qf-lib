@@ -82,7 +82,7 @@ class CryptoCurrencyDataProvider(AbstractPriceDataProvider):
 
     def _get_single_ticker(
             self, ticker: CcyTicker, fields: Sequence[str], start_date: datetime, end_date: datetime, session: Session) \
-            -> Optional[pd.DataFrame]:
+            -> Optional[QFDataFrame]:
         """
         Contacts the API and gets the price data for a single ticker
         """
@@ -145,7 +145,7 @@ class CryptoCurrencyDataProvider(AbstractPriceDataProvider):
             dates.append(rows_date)
             data.append(numeric_values)
 
-        return pd.DataFrame(data, index=dates, columns=field_names)
+        return QFDataFrame(data, index=dates, columns=field_names)
 
     def _parse_data_row(self, row, relevant_fields_indices, idx_of_date_column):
         td_elems = row.findAll('td')
