@@ -17,7 +17,7 @@ beautifulsoup4==4.6.3
 xarray==0.11.0
 cvxopt==1.2.2
 requests==2.21.0
-Pillow==5.4.1         # Substitute for PIL library
+Pillow==7.1.0         # Substitute for PIL library
 patsy==0.5.1          # necessary for statsmodels to work properly
 # TA-Lib==0.4.17      # Install manually
 dic==1.5.2b1          # container
