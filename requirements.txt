@@ -19,7 +19,10 @@ cvxopt==1.2.2
 requests==2.21.0
 Pillow==5.4.1         # Substitute for PIL library
 patsy==0.5.1          # necessary for statsmodels to work properly
-TA-Lib==0.4.17
+# TA-Lib==0.4.17      # Install manually
 dic==1.5.2b1          # container
 joblib==0.17.0
 tqdm==4.51.0
+Sphinx>=3.1.1
+autodocsumm>=0.1.13
+sphinx_rtd_theme
