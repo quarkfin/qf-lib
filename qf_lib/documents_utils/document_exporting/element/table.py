@@ -116,7 +116,7 @@ class Table(Element):
             if isinstance(column, self.ColumnCell):
                 column_cells.append(column)
             else:
-                column_cells.append(self.ColumnCell(column, "{}"))
+                column_cells.append(self.ColumnCell(column, "{}", css_class="right-align"))
         self._column_cells = column_cells
 
     def get_column_names(self) -> List[ColumnCell]:

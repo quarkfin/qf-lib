@@ -9,6 +9,7 @@ table.table {
   margin-bottom: 15px;
   background-color: rgb(245, 245, 245);
   width: 100%;
+  max-width: 100%;
   border-collapse: collapse;
   box-sizing: border-box;
 }
@@ -23,9 +24,19 @@ table.table.slim-table {
 table.table th {
   border-top: 2px solid #727272;
   border-bottom: 1px solid #a3a3a3;
+  padding: 3px 5px;
   background-color: transparent;
   color: black;
   text-align: center;
+}
+
+/* Sets the styling for all data cells in all tables */
+table.table td {
+  color:  #1d1d1d;
+  padding: 7px 5px;
+  line-height: 0.5em;
+  border: none;
+  text-align: right;
 }
 
 /* Adds the border to the bottom of tables */
@@ -33,24 +44,36 @@ table.table tbody tr:last-of-type {
   border-bottom: 2px solid #727272;
 }
 
-/* Sets the styling for all data cells in all tables */
-table.table td {
-  color: #1d1d1d;
-  padding: 5px 15px;
-  line-height: 0.5em;
-  border: none;
-  text-align: right;
+
+/* Sets the styling for the first column in all tables */
+table.table td:nth-of-type(1), table.table th:nth-of-type(1) {
+  font-weight: bold;
+  width: 15%;
+  text-align: left !important;
 }
-table.table.left-align td{
+
+/* Add the right alignment to all cells of the header, except of the first column. */
+table.table.right-align th {
+    text-align: right;
+    padding: 5px 15px;
+}
+
+table.table.right-align td {
+    text-align: right;
+}
+
+/* In case if the table is set to be left-aligned, all cells should be aligned to the left */
+table.table.left-align td, table.table.left-align th {
     text-align: left;
 }
 
-table.table.center-align td{
+table.table.center-align td {
     text-align: center;
 }
 
-table.table.pad_cells td{
-    padding: 5px 35px;
+
+table.table.pad_cells td {
+    padding: 5px 15px;
 }
 
 table.table.wide-first-column td:nth-of-type(1) {
@@ -61,32 +84,19 @@ table.table td.wider-second-column {
     width: 15%;
 }
 
-table.table th.pad-headers{
+table.table th.pad-headers {
     white-space: initial;
 }
 
-table.table.shrink-font td{
+table.table.shrink-font td, table.table.shrink-font th {
     font-size: 0.8em;
-}
-/* Sets the styling for the first column in all tables */
-table.table td:nth-of-type(1) {
-  font-weight: bold;
-  width: 15%;
-  text-align: left !important;
+    line-height: 0.9em;
+    padding: 3px 5px;
 }
 
-table.table td.sorted-by-column{
+table.table td.sorted-by-column {
     font-weight: bold;
     background-color: #e8e8e8;
-}
-
-table.table td.red-row {
-    color: red;
-}
-
-table.table.left-align th {
-    text-align: left;
-    padding: 5px 15px;
 }
 
 table.table td.wide-column {
@@ -96,4 +106,30 @@ table.table td.wide-column {
 table.table td.highlight {
     font-weight: 900;
     text-decoration: underline;
+}
+
+/* Right aligns all the headers in the stats table */
+table.stats-table th, table.stats-table td {
+  text-align: right;
+}
+
+
+/* Left aligns the first header in the stats table and sets the width of the first column in the stats table */
+table.stats-table th:nth-of-type(1), table.stats-table td:nth-of-type(1) {
+  padding-left: 15px;
+  width: 35% !important;
+}
+
+table.stats-table th:last-of-type, table.stats-table td:last-of-type {
+  padding-right: 15px;
+}
+
+/* Adds the right border on the headers in the rolling table */
+table.rolling-table th:nth-of-type(3n + 1) {
+  border-right: 1px solid #727272;
+}
+
+/* Adds the right border on the data in the rolling table */
+table.rolling-table td:nth-of-type(3n + 1) {
+  border-right: 1px solid #727272;
 }

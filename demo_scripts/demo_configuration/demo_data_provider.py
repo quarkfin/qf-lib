@@ -11,6 +11,7 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
+import pathlib
 from os.path import join
 
 from pandas import read_csv
@@ -20,7 +21,6 @@ from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.data_providers.preset_data_provider import PresetDataProvider
-from qf_lib.starting_dir import get_starting_dir_abs_path
 
 
 def _acquire_data(input_file: str):
@@ -57,7 +57,7 @@ def _get_demo_data_provider(frequency: Frequency):
         Frequency.DAILY: "daily_data.csv"
     }
 
-    input_file = join(get_starting_dir_abs_path(), "input", frequency_to_data_file[frequency])
+    input_file = join(pathlib.Path(__file__).parent.absolute(), "input", frequency_to_data_file[frequency])
     data, start_date, end_date = _acquire_data(input_file)
     return PresetDataProvider(data, start_date, end_date, frequency)
 

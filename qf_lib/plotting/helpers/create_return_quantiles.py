@@ -69,7 +69,6 @@ def create_return_quantiles(returns: QFSeries, live_start_date: datetime = None,
     else:  # case where there is only one set of data
         chart, tick_decorator = _get_simple_quantile_chart(simple_returns)
 
-    # fixed_format_decorator = AxesFormatterDecorator(x_major=fixed_formatter)
     chart.add_decorator(tick_decorator)
 
     # Set title.

@@ -60,6 +60,7 @@ class VolumeOrdersFilter(OrdersFilter):
         """
         tickers = [self._contract_ticker_mapper.contract_to_ticker(order.contract) for order in orders]
         start_time = self._data_handler.timer.now() - RelativeDelta(days=5)
+        start_time = start_time + RelativeDelta(hour=0, minute=0, second=0)
         volume_df = self._data_handler.get_price(tickers, PriceField.Volume, start_time)
 
         # The stop orders will be adjusted only along with corresponding market orders

@@ -13,18 +13,20 @@
 #     limitations under the License.
 import unittest
 from typing import List
-from unittest.mock import patch, call, MagicMock, Mock
+from unittest.mock import patch, MagicMock, Mock
 
 from qf_lib.backtesting.alpha_model.alpha_model_strategy import AlphaModelStrategy
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
-from qf_lib.backtesting.alpha_model.signal import Signal
+from qf_lib.backtesting.signals.signal import Signal
 from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.simulated_bloomberg_mapper import \
     SimulatedBloombergContractTickerMapper
 from qf_lib.backtesting.portfolio.backtest_position import BacktestPosition
 from qf_lib.backtesting.portfolio.position_factory import BacktestPositionFactory
 from qf_lib.common.tickers.tickers import BloombergTicker
+from qf_lib.common.utils.dateutils.date_format import DateFormat
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
+from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.containers.futures.future_tickers.bloomberg_future_ticker import BloombergFutureTicker
 from qf_lib.containers.futures.futures_rolling_orders_generator import FuturesRollingOrdersGenerator
 
@@ -42,6 +44,7 @@ class TestAlphaModelStrategy(unittest.TestCase):
         # Mock trading session
         self.ts = MagicMock()
         self.ts.contract_ticker_mapper = SimulatedBloombergContractTickerMapper()
+        self.ts.timer = SettableTimer(str_to_date("2000-01-04 08:00:00.0", DateFormat.FULL_ISO))
 
         self.positions_in_portfolio = []  # type: List[Contract]
         """Contracts for which a position in the portfolio currently exists. This list is used to return backtest
@@ -54,12 +57,12 @@ class TestAlphaModelStrategy(unittest.TestCase):
         Test the result of _get_current_exposure function for a non-future ticker by inspecting the parameters passed to
         alpha models get_signal function.
         """
-        expected_current_exposure_values = []
+
         alpha_model_strategy = AlphaModelStrategy(self.ts, {self.alpha_model: [self.ticker]},
                                                   use_stop_losses=False)
         # In case of empty portfolio get_signal function should have current exposure set to OUT
         alpha_model_strategy.on_before_market_open()
-        expected_current_exposure_values.append(Exposure.OUT)
+        self.alpha_model.get_signal.assert_called_with(self.ticker, Exposure.OUT)
 
         # Open long position in the portfolio
         self.positions_in_portfolio = [Mock(spec=BacktestPosition, **{
@@ -68,7 +71,7 @@ class TestAlphaModelStrategy(unittest.TestCase):
             'start_time': str_to_date("2000-01-01")
         })]
         alpha_model_strategy.on_before_market_open()
-        expected_current_exposure_values.append(Exposure.LONG)
+        self.alpha_model.get_signal.assert_called_with(self.ticker, Exposure.LONG)
 
         # Open short position in the portfolio
         self.positions_in_portfolio = [Mock(spec=BacktestPosition, **{
@@ -77,12 +80,7 @@ class TestAlphaModelStrategy(unittest.TestCase):
             'start_time': str_to_date("2000-01-01")
         })]
         alpha_model_strategy.on_before_market_open()
-        expected_current_exposure_values.append(Exposure.SHORT)
-
-        self.alpha_model.get_signal.assert_has_calls(
-            calls=[call(self.ticker, exposure) for exposure in expected_current_exposure_values],
-            any_order=False
-        )
+        self.alpha_model.get_signal.assert_called_with(self.ticker, Exposure.SHORT)
 
         # Verify if in case of two positions for the same contract an exception will be raised by the strategy
         self.positions_in_portfolio = [BacktestPositionFactory.create_position(c) for c in (
@@ -102,6 +100,7 @@ class TestAlphaModelStrategy(unittest.TestCase):
         # In case of empty portfolio get_signal function should have current exposure set to OUT
         futures_alpha_model_strategy.on_before_market_open()
         expected_current_exposure_values.append(Exposure.OUT)
+        self.alpha_model.get_signal.assert_called_with(self.future_ticker, Exposure.OUT)
 
         self.positions_in_portfolio = [Mock(spec=BacktestPosition, **{
             'contract.return_value': Contract("ExampleZ00 Comdty", "FUT", "SIM_EXCHANGE"),
@@ -109,12 +108,7 @@ class TestAlphaModelStrategy(unittest.TestCase):
             'start_time': str_to_date("2000-01-01")
         })]
         futures_alpha_model_strategy.on_before_market_open()
-        expected_current_exposure_values.append(Exposure.LONG)
-
-        self.alpha_model.get_signal.assert_has_calls(
-            calls=[call(self.future_ticker, exposure) for exposure in expected_current_exposure_values],
-            any_order=False
-        )
+        self.alpha_model.get_signal.assert_called_with(self.future_ticker, Exposure.LONG)
 
         self.positions_in_portfolio = [BacktestPositionFactory.create_position(c) for c in (
             Contract("ExampleZ00 Comdty", "STK", "SIM_EXCHANGE"), Contract("ExampleZ00 Comdty", "STK", "SIM_EXCHANGE"))]

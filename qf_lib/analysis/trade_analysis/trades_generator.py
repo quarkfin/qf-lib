@@ -97,9 +97,9 @@ class TradesGenerator:
         # Assign position start values - a position was opened when the position size was equal to the quantity of
         # the transaction (the quantity of the contract in the portfolio before transaction was = 0)
         new_positions_beginning = transactions_df["position size"] - transactions_df["quantity"] == 0
-        transactions_df["position start"] = None
-        transactions_df["position start"].loc[new_positions_beginning] = transactions_df.loc[new_positions_beginning].index
-        transactions_df["position start"] = transactions_df.groupby(by="contract")["position start"].apply(
+        transactions_df.loc[:, "position start"] = None
+        transactions_df.loc[new_positions_beginning, "position start"] = transactions_df.loc[new_positions_beginning].index
+        transactions_df.loc[:, "position start"] = transactions_df.groupby(by="contract")["position start"].apply(
             lambda tms: tms.fillna(method="ffill"))
 
         trades_series = transactions_df.groupby(by=["position start"])["transaction"].apply(

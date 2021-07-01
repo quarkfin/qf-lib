@@ -158,7 +158,8 @@ class PresetDataProvider(DataProvider):
 
         # Map the specific tickers onto the tickers given by the tickers_mapping array
         if isinstance(normalized_result, QFDataArray):
-            normalized_result.tickers.values = [tickers_mapping[t] for t in normalized_result.tickers.values]
+            normalized_result = normalized_result.assign_coords(
+                tickers=[tickers_mapping[t] for t in normalized_result.tickers.values])
         elif isinstance(normalized_result, PricesDataFrame):
             normalized_result = normalized_result.rename(columns=tickers_mapping)
         elif isinstance(normalized_result, PricesSeries):
@@ -234,8 +235,7 @@ class PresetDataProvider(DataProvider):
         elif isinstance(normalized_result, PricesSeries):
             # Name of the PricesSeries can only contain strings
             ticker = tickers[0]
-            ticker_name = ticker.name if isinstance(ticker, FutureTicker) else ticker.ticker
-            normalized_result = normalized_result.rename(ticker_name)
+            normalized_result = normalized_result.rename(ticker.name)
 
         return normalized_result
 

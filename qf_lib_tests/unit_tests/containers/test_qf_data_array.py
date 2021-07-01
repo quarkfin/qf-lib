@@ -17,11 +17,14 @@ from unittest import TestCase
 
 import numpy as np
 import pandas as pd
+from pandas import date_range
+from xarray.testing import assert_equal
 
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
+from qf_lib.containers.dimension_names import DATES, TICKERS
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_dataframes_equal
 
@@ -65,7 +68,6 @@ class TestQFDataArrayAsOf(TestCase):
         return sample_data_array
 
     def test_asof_nans_when_no_data_available(self):
-
         actual_result = self.qf_data_array.asof(str_to_date('2018-02-02'))
         expected_result = QFDataFrame(
             index=self.qf_data_array.tickers.to_index(),
@@ -100,6 +102,74 @@ class TestQFDataArrayAsOf(TestCase):
     def test_number_of_ticers_equal_to_number_of_dates(self):
         with self.assertRaises(ValueError):
             self.qf_data_array.asof([str_to_date('2018-02-05')])
+
+    def test_data_arrays_concat_on_dates(self):
+        ticker_1 = BloombergTicker("Example 1")
+        ticker_2 = BloombergTicker("Example 2")
+        fields = [PriceField.Open, PriceField.Close]
+        index = date_range(start=str_to_date("2017-01-01"), periods=5, freq="D")
+
+        index_1 = index[:3]
+        data_1 = [[[4., 1.], [np.nan, 5.]],
+                  [[5., 2.], [np.nan, 7.]],
+                  [[6., 3.], [np.nan, 8.]]]
+
+        data_array_1 = QFDataArray.create(index_1, [ticker_1, ticker_2], fields, data_1)
+        self.assertEqual(np.dtype("float64"), data_array_1.dtype)
+
+        index_2 = index[3:]
+        data_2 = [[[7., 1.], [np.nan, 10.]],
+                  [[8., 2.], [np.nan, 14.]]]
+
+        data_array_2 = QFDataArray.create(index_2, [ticker_1, ticker_2], fields, data_2)
+        self.assertEqual(np.dtype("float64"), data_array_2.dtype)
+
+        data = [[[4., 1.], [np.nan, 5.]],
+                [[5., 2.], [np.nan, 7.]],
+                [[6., 3.], [np.nan, 8.]],
+                [[7., 1.], [np.nan, 10.]],
+                [[8., 2.], [np.nan, 14.]]]
+        expected_data_array = QFDataArray.create(index, [ticker_1, ticker_2], fields, data)
+        self.assertEqual(np.dtype("float64"), expected_data_array.dtype)
+
+        concatenated_data_array = QFDataArray.concat([data_array_1, data_array_2], dim=DATES)
+        self.assertEqual(np.dtype("float64"), concatenated_data_array.dtype)
+
+        assert_equal(expected_data_array, concatenated_data_array)
+
+    def test_data_arrays_concat_on_tickers(self):
+        ticker_1 = BloombergTicker("Example 1")
+        ticker_2 = BloombergTicker("Example 2")
+        fields = [PriceField.Open, PriceField.Close]
+        index = date_range(start=str_to_date("2017-01-01"), periods=5, freq="D")
+
+        index_1 = index[:3]
+        data_1 = [[[4., 1.]],
+                  [[5., 2.]],
+                  [[6., 3.]]]
+
+        data_array_1 = QFDataArray.create(index_1, [ticker_1], fields, data_1)
+        self.assertEqual(np.dtype("float64"), data_array_1.dtype)
+
+        index_2 = index[3:]
+        data_2 = [[[np.nan, 10.]],
+                  [[np.nan, 14.]]]
+
+        data_array_2 = QFDataArray.create(index_2, [ticker_2], fields, data_2)
+        self.assertEqual(np.dtype("float64"), data_array_2.dtype)
+
+        data = [[[4., 1.], [np.nan, np.nan]],
+                [[5., 2.], [np.nan, np.nan]],
+                [[6., 3.], [np.nan, np.nan]],
+                [[np.nan, np.nan], [np.nan, 10.]],
+                [[np.nan, np.nan], [np.nan, 14.]]]
+        expected_data_array = QFDataArray.create(index, [ticker_1, ticker_2], fields, data)
+        self.assertEqual(np.dtype("float64"), expected_data_array.dtype)
+
+        concatenated_data_array = QFDataArray.concat([data_array_1, data_array_2], dim=TICKERS)
+        self.assertEqual(np.dtype("float64"), concatenated_data_array.dtype)
+
+        assert_equal(expected_data_array, concatenated_data_array)
 
 
 if __name__ == '__main__':

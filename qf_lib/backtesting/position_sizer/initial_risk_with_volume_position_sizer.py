@@ -14,11 +14,11 @@
 from typing import List, Optional, Dict
 import numpy as np
 
-from qf_lib.backtesting.alpha_model.signal import Signal
+from qf_lib.backtesting.signals.signal import Signal
 from qf_lib.backtesting.broker.broker import Broker
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
-from qf_lib.backtesting.monitoring.signals_register import SignalsRegister
+from qf_lib.backtesting.signals.signals_register import SignalsRegister
 from qf_lib.backtesting.order.execution_style import MarketOrder
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.order_factory import OrderFactory
@@ -36,6 +36,8 @@ from qf_lib.containers.series.prices_series import PricesSeries
 
 class InitialRiskWithVolumePositionSizer(InitialRiskPositionSizer):
     """
+    Variant of initial risk position sizer, which additionally controls the target size based on the mean daily volume.
+
     Parameters
     ----------
     broker: Broker
@@ -109,7 +111,8 @@ class InitialRiskWithVolumePositionSizer(InitialRiskPositionSizer):
 
         mean_volume = volume_series.mean()
 
-        current_price = self._data_handler.get_last_available_price(ticker, frequency)
+        specific_ticker = ticker.get_current_specific_ticker() if isinstance(ticker, FutureTicker) else ticker
+        current_price = self._data_handler.get_last_available_price(specific_ticker, frequency)
         contract_size = ticker.point_value if isinstance(ticker, FutureTicker) else 1
         divisor = current_price * contract_size
         quantity = target_value // divisor

@@ -26,8 +26,7 @@ charts
 	regression_chart.RegressionChart
 	returns_heatmap_chart.ReturnsHeatmapChart
 	surface_chart_3d.SurfaceChart3D
-	underwater_chart.UnderwaterChart
-	
+
 decorators
 ===========
 .. currentmodule:: qf_lib.plotting.decorators

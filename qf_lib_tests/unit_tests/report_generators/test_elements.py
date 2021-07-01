@@ -14,11 +14,8 @@
 
 import unittest
 
-try:
-    from qf_lib.documents_utils.document_exporting.element import HeaderElement
-    from qf_lib.documents_utils.document_exporting.document import Document
-except ImportError:
-    raise unittest.SkipTest("Could not import PDF Builder. Assuming that weasyprint is missing.")
+from qf_lib.documents_utils.document_exporting.document import Document
+from qf_lib.documents_utils.document_exporting.element.header import HeaderElement
 
 
 class TestElements(unittest.TestCase):

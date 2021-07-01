@@ -54,7 +54,7 @@ def main():
     # ----- preload price data ----- #
     ts.use_data_preloading(model_tickers)
     # Verify the checksum of preloaded data with the precomputed value
-    ts.verify_preloaded_data("e73eed1f125ff6afa2cdc95957a703a999f41d34")
+    ts.verify_preloaded_data("778bbaac65cb0a5a848167999b88cf29a1cd8467")
 
     # ----- start trading ----- #
     AlphaModelStrategy(ts, model_tickers_dict, use_stop_losses=True)

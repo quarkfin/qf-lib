@@ -12,11 +12,6 @@ table.grid tr {
   width: 100%;
 }
 
-/* Force charts to occupy minimum amount of space */
-table.grid td {
-  width: 1px;
-}
-
 .grid td {
   vertical-align: top;
 }

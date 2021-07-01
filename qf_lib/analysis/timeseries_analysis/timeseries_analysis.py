@@ -318,8 +318,8 @@ class TimeseriesAnalysis(TimeseriesAnalysisDTO):
         result_list.append(('avg_neg_ret', 'Avg Negative Return', num_to_str(self.avg_negative_return * 100), '%'))
 
         result_list.append(('skewness', 'Skewness', num_to_str(self.skewness), ''))
-        result_list.append(('kurtosis', 'Kurtosis', num_to_str(self.kurtosis), ''))
-        result_list.append(('kelly', 'Kelly Value', num_to_str(self.kelly), ''))
+        # result_list.append(('kurtosis', 'Kurtosis', num_to_str(self.kurtosis), ''))
+        # result_list.append(('kelly', 'Kelly Value', num_to_str(self.kelly), ''))
 
         freq_str = str(self.frequency)
         result_list.append(('#observ', 'No. of {} samples'.format(freq_str), len(self.returns_tms), ''))

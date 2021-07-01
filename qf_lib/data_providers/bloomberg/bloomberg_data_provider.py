@@ -44,7 +44,8 @@ try:
     is_blpapi_installed = True
 except ImportError:
     is_blpapi_installed = False
-    warnings.warn("No Bloomberg API installed.")
+    warnings.warn("No Bloomberg API installed. If you would like to use BloombergDataProvider first install the blpapi"
+                  " library")
 
 
 class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
@@ -302,7 +303,7 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
             except KeyError:
                 return ticker
 
-        data_array.tickers.values = [_map_ticker(t) for t in data_array.tickers.values]
+        data_array = data_array.assign_coords(tickers=[_map_ticker(t) for t in data_array.tickers.values])
 
         normalized_result = normalize_data_array(
             data_array, tickers, fields, got_single_date, got_single_ticker, got_single_field)

@@ -12,6 +12,7 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
+from collections import defaultdict
 from itertools import count, groupby
 from typing import List, Sequence, Dict
 
@@ -129,7 +130,8 @@ class SimulatedExecutionHandler(ExecutionHandler):
         Appends Orders to a list of Orders waiting to be carried out.
         """
         order_id_list = []
-        scheduled_event_data = {}  # type: Dict[SimulatedExecutor, List[Order]]
+        orders = sorted(orders, key=lambda x: x.execution_style.__class__.__name__)
+        scheduled_event_data = defaultdict(list)  # type: Dict[SimulatedExecutor, List[Order]]
 
         for order_style_type, orders_list in groupby(orders, lambda x: type(x.execution_style)):
             orders_list = list(orders_list)
@@ -140,17 +142,17 @@ class SimulatedExecutionHandler(ExecutionHandler):
                     orders_sublist = list(orders_sublist)
                     if tif == TimeInForce.OPG:
                         partial_order_id_sublist = self._market_on_open_orders_executor.assign_order_ids(orders_sublist)
-                        scheduled_event_data[self._market_on_open_orders_executor] = orders_sublist
+                        scheduled_event_data[self._market_on_open_orders_executor].extend(orders_sublist)
                     else:
                         partial_order_id_sublist = self._market_orders_executor.assign_order_ids(orders_sublist)
-                        scheduled_event_data[self._market_orders_executor] = orders_sublist
+                        scheduled_event_data[self._market_orders_executor].extend(orders_sublist)
                     partial_order_id_list += partial_order_id_sublist
             elif order_style_type == StopOrder:
                 partial_order_id_list = self._stop_orders_executor.assign_order_ids(orders_list)
-                scheduled_event_data[self._stop_orders_executor] = orders_list
+                scheduled_event_data[self._stop_orders_executor].extend(orders_list)
             elif order_style_type == MarketOnCloseOrder:
                 partial_order_id_list = self._market_on_close_orders_executor.assign_order_ids(orders_list)
-                scheduled_event_data[self._market_on_close_orders_executor] = orders_list
+                scheduled_event_data[self._market_on_close_orders_executor].extend(orders_list)
             else:
                 raise ValueError("Unsupported ExecutionStyle: {}".format(order_style_type))
 

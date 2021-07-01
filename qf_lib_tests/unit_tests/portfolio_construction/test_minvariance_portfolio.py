@@ -18,16 +18,9 @@ from unittest import TestCase
 import numpy as np
 
 from qf_lib_tests.unit_tests.portfolio_construction.utils import assets_df
-
-try:
-    import cvxopt
-    cvxopt_missing = False
-    from qf_lib.portfolio_construction.portfolio_models.min_variance_portfolio import MinVariancePortfolio
-except ImportError:
-    cvxopt_missing = True
+from qf_lib.portfolio_construction.portfolio_models.min_variance_portfolio import MinVariancePortfolio
 
 
-@unittest.skipIf(cvxopt_missing, "Couldn't import cvxopt library")
 class TestMinVariancePortfolio(TestCase):
     @classmethod
     def setUpClass(cls):

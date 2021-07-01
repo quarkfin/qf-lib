@@ -18,7 +18,7 @@ import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 from numpy.linalg import inv, cond
-from statsmodels.sandbox.stats.diagnostic import acorr_ljungbox, het_breuschpagan
+from statsmodels.stats.diagnostic import het_breuschpagan, acorr_ljungbox
 from statsmodels.stats.outliers_influence import OLSInfluence
 from statsmodels.stats.stattools import durbin_watson
 
@@ -272,7 +272,8 @@ class DataModel(object):
         lags = range(1, self.AUTOCORR_MAX_LAG + 1)
 
         # p_value is a probability of no autocorrelation present (separate value for each lag)
-        _, p_value = acorr_ljungbox(residuals, lags=lags)
+        return_df = acorr_ljungbox(residuals, lags=lags, return_df=True)  # type: pd.DataFrame
+        p_value = return_df["lb_pvalue"]
 
         self.autocorrelation = p_value <= self.AUTOCORR_SIGNIFICANCE_LEVEL
 

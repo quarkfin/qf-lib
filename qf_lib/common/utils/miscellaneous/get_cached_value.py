@@ -36,7 +36,7 @@ def cached_value(func: Callable[[], Any], path) -> Any:
         try:
             result = func()
             with open(path, 'wb') as file:
-                pickle.dump(result, file)
+                pickle.dump(result, file, protocol=3)
 
         except CachedValueException:
             logger = qf_logger.getChild(__name__)

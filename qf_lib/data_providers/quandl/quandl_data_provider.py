@@ -11,13 +11,12 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-
+import warnings
 from datetime import datetime
 from itertools import groupby
 from typing import Union, Sequence, Dict
 
 import pandas as pd
-import quandl
 from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 
 from qf_lib.common.enums.frequency import Frequency
@@ -36,6 +35,13 @@ from qf_lib.data_providers.helpers import tickers_dict_to_data_array, \
 from qf_lib.data_providers.data_provider import DataProvider
 from qf_lib.settings import Settings
 
+try:
+    import quandl
+    is_quandl_installed = True
+except ImportError:
+    is_quandl_installed = False
+    warnings.warn("No quandl installed. If you would like to use QuandlDataProvider first install the quandl library.")
+
 
 class QuandlDataProvider(DataProvider):
     """
@@ -45,9 +51,14 @@ class QuandlDataProvider(DataProvider):
     """
 
     def __init__(self, settings: Settings):
-        self.key = settings.quandl_key
-        quandl.ApiConfig.api_key = self.key
         self.logger = qf_logger.getChild(self.__class__.__name__)
+
+        try:
+            self.key = settings.quandl_key
+            quandl.ApiConfig.api_key = self.key
+        except AttributeError:
+            self.logger.warning("No quandl_key parameter found in Settings. If you want to use QuandlDataProvider, add "
+                                "quandl_key in the settings json file.")
 
     def get_price(self, tickers: Union[QuandlTicker, Sequence[QuandlTicker]],
                   fields: Union[PriceField, Sequence[PriceField]], start_date: datetime, end_date: datetime = None,

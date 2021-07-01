@@ -29,10 +29,10 @@ from qf_lib.backtesting.events.time_flow_controller import BacktestTimeFlowContr
 from qf_lib.backtesting.execution_handler.commission_models.fixed_commission_model import FixedCommissionModel
 from qf_lib.backtesting.execution_handler.simulated_execution_handler import SimulatedExecutionHandler
 from qf_lib.backtesting.execution_handler.slippage.price_based_slippage import PriceBasedSlippage
-from qf_lib.backtesting.monitoring.signals_register import SignalsRegister
 from qf_lib.backtesting.order.order_factory import OrderFactory
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.backtesting.position_sizer.simple_position_sizer import SimplePositionSizer
+from qf_lib.backtesting.signals.backtest_signals_register import BacktestSignalsRegister
 from qf_lib.backtesting.trading_session.trading_session import TradingSession
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.utils.dateutils.date_to_string import date_to_str
@@ -79,7 +79,7 @@ class TradingSessionForTests(TradingSession):
 
         contract_ticker_mapper = SimulatedBloombergContractTickerMapper()
         portfolio = Portfolio(data_handler, initial_cash, timer, contract_ticker_mapper)
-        signals_register = SignalsRegister()
+        signals_register = BacktestSignalsRegister()
         backtest_result = BacktestResult(portfolio=portfolio, backtest_name="Testing the Backtester",
                                          start_date=start_date, end_date=end_date, signals_register=signals_register)
 

@@ -13,11 +13,11 @@
 #     limitations under the License.
 from typing import Optional, List
 
-from qf_lib.backtesting.alpha_model.signal import Signal
+from qf_lib.backtesting.signals.signal import Signal
 from qf_lib.backtesting.broker.broker import Broker
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
-from qf_lib.backtesting.monitoring.signals_register import SignalsRegister
+from qf_lib.backtesting.signals.signals_register import SignalsRegister
 from qf_lib.backtesting.order.execution_style import MarketOrder
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.order_factory import OrderFactory
@@ -62,9 +62,6 @@ class InitialRiskPositionSizer(PositionSizer):
         self.max_target_percentage = max_target_percentage
         self.tolerance_percentage = tolerance_percentage
 
-        self._signals_register.set_initial_risk(initial_risk)
-        self.logger.info("Initial Risk: {}".format(initial_risk))
-
     @property
     def initial_risk(self):
         return self._initial_risk
@@ -96,7 +93,10 @@ class InitialRiskPositionSizer(PositionSizer):
         return initial_target_percentage
 
     def _compute_target_percentage(self, signal):
-        assert is_finite_number(signal.fraction_at_risk), "fraction_at_risk has to be a finite number"
+        if not is_finite_number(signal.fraction_at_risk) or signal.fraction_at_risk == 0.0:
+            self.logger.warn("Invalid Fraction at Risk = {} for {}. Setting target percentage = 0.0".format(
+                signal.fraction_at_risk, signal.ticker))
+            return 0.0
         target_percentage = self._initial_risk / signal.fraction_at_risk
         self.logger.info("Target Percentage for {}: {}".format(signal.ticker, target_percentage))
 

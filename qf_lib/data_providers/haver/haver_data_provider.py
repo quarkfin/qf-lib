@@ -32,11 +32,10 @@ from qf_lib.settings import Settings
 
 try:
     import Haver
-
     is_haver_installed = True
 except ImportError:
     is_haver_installed = False
-    warnings.warn("No Haver installed.")
+    warnings.warn("No Haver installed. If you would like to use HaverDataProvider first install the Haver library.")
 
 
 class HaverDataProvider(AbstractPriceDataProvider):

@@ -15,7 +15,7 @@
 from unittest import TestCase
 
 import pandas as pd
-
+import numpy as np
 from qf_lib.common.utils.data_cleaner import DataCleaner
 from qf_lib.containers.dataframe.simple_returns_dataframe import SimpleReturnsDataFrame
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
@@ -30,10 +30,10 @@ class TestDataCleaner(TestCase):
 
     @classmethod
     def _create_test_dataframe(cls):
-        values = [[pd.np.nan, 0.0, 0.0, 0.0, 0.0],
-                  [1.0, pd.np.nan, 1.0, 1.0, 1.0],
-                  [2.0, pd.np.nan, pd.np.nan, 2.0, 2.0],
-                  [3.0, 3.0, 3.0, pd.np.nan, 3.0],
+        values = [[np.nan, 0.0, 0.0, 0.0, 0.0],
+                  [1.0, np.nan, 1.0, 1.0, 1.0],
+                  [2.0, np.nan, np.nan, 2.0, 2.0],
+                  [3.0, 3.0, 3.0, np.nan, 3.0],
                   [4.0, 4.0, 4.0, 4.0, 4.0],
                   [5.0, 5.0, 5.0, 5.0, 5.0]]
 
@@ -67,7 +67,7 @@ class TestDataCleaner(TestCase):
         assert_dataframes_equal(expected_dataframe, actual_dataframe)
 
     def test_proxy_using_regression(self):
-        expected_values = [[pd.np.nan, 0.0, 0.0, 0.0],
+        expected_values = [[np.nan, 0.0, 0.0, 0.0],
                            [1.0, 1.0, 1.0, 1.0],
                            [2.0, 2.0, 2.0, 2.0],
                            [3.0, 3.0, 3.0, 3.0],

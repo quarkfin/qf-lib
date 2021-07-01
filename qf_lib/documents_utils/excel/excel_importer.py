@@ -13,6 +13,7 @@
 #     limitations under the License.
 
 import datetime
+import io
 from itertools import islice
 from os.path import exists
 from typing import Union
@@ -58,6 +59,7 @@ class ExcelImporter(object):
         work_book = self._get_work_book(file_path)
         work_sheet = self._get_work_sheet(work_book, sheet_name)
         result = work_sheet[cell_address]
+        work_book.close()
         return result.value
 
     def import_container(
@@ -116,11 +118,14 @@ class ExcelImporter(object):
         execution_time = end_time - start_time
         self.logger.info("Ended importing data from {} after {}".format(file_path, execution_time))
 
+        work_book.close()
         return container.squeeze()
 
     def _get_work_book(self, file_path):
         assert exists(file_path)
-        work_book = load_workbook(file_path, read_only=True)
+        with open(file_path, "rb") as f:
+            in_memory_file = io.BytesIO(f.read())
+        work_book = load_workbook(in_memory_file, read_only=True)
         return work_book
 
     def _get_work_sheet(self, work_book, sheet_name):

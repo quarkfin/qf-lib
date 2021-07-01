@@ -21,7 +21,9 @@ from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.documents_utils.document_exporting.element.grid import GridElement
 from qf_lib.documents_utils.document_exporting.element.new_page import NewPageElement
 from qf_lib.documents_utils.document_exporting.element.paragraph import ParagraphElement
+from qf_lib.plotting.charts.returns_heatmap_chart import ReturnsHeatmapChart
 from qf_lib.plotting.helpers.create_qq_chart import create_qq_chart
+from qf_lib.plotting.helpers.create_returns_bar_chart import create_returns_bar_chart
 from qf_lib.plotting.helpers.create_returns_distribution import create_returns_distribution
 from qf_lib.settings import Settings
 
@@ -57,7 +59,7 @@ class TearsheetWithoutBenchmark(AbstractTearsheet):
         self._add_perf_chart(series_list)
         self.document.add_element(ParagraphElement("\n"))
 
-        self._add_returns_statistics_charts()
+        self._add_returns_statistics_charts(self.strategy_series)
         self._add_ret_distribution_and_qq()
 
         self.document.add_element(ParagraphElement("\n"))
@@ -66,6 +68,7 @@ class TearsheetWithoutBenchmark(AbstractTearsheet):
 
         # Next Page
         self.document.add_element(NewPageElement())
+        self._add_header()
         self.document.add_element(ParagraphElement("\n"))
 
         self._add_cone_and_quantiles()
@@ -84,4 +87,15 @@ class TearsheetWithoutBenchmark(AbstractTearsheet):
         chart = create_qq_chart(self.strategy_series)
         grid.add_chart(chart)
 
+        self.document.add_element(grid)
+
+    def _add_returns_statistics_charts(self, series):
+        grid = self._get_new_grid()
+        # Monthly returns heatmap
+        heatmap_chart = ReturnsHeatmapChart(series, title="Monthly Returns - {}".format(series.name))
+        grid.add_chart(heatmap_chart)
+
+        # Annual returns bar chart
+        annual_ret_chart = create_returns_bar_chart(series, title="Annual Returns - {}".format(series.name))
+        grid.add_chart(annual_ret_chart)
         self.document.add_element(grid)

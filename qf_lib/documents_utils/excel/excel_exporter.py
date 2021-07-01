@@ -19,7 +19,7 @@ from typing import Any, Union, Optional
 
 import numpy
 from openpyxl import Workbook, load_workbook
-from openpyxl.worksheet import Worksheet
+from openpyxl.worksheet.worksheet import Worksheet
 
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.numberutils.is_finite_number import is_finite_number

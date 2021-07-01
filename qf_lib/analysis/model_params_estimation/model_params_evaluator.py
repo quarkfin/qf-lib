@@ -28,7 +28,6 @@ from qf_lib.common.utils.dateutils.date_to_string import date_to_str
 from qf_lib.common.utils.error_handling import ErrorHandling
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
-from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 from qf_lib.documents_utils.document_exporting.document import Document
 from qf_lib.documents_utils.document_exporting.element.chart import ChartElement
 from qf_lib.documents_utils.document_exporting.element.custom import CustomElement
@@ -111,8 +110,7 @@ class ModelParamsEvaluationDocument:
         self.document.add_element(ParagraphElement("\n"))
 
         self.document.add_element(HeadingElement(2, "Tickers tested in this study: "))
-        ticker_str = "\n".join([ticker.name if isinstance(ticker, FutureTicker) else ticker.as_string()
-                                for ticker in self.backtest_summary.tickers])
+        ticker_str = "\n".join([ticker.name for ticker in self.backtest_summary.tickers])
         self.document.add_element(ParagraphElement(ticker_str))
         self.document.add_element(ParagraphElement("\n"))
 
@@ -178,7 +176,7 @@ class ModelParamsEvaluationDocument:
                 title_to_legend["Annualised return"].add_entry(annualised_return, title)
 
         tickers_used = "Many tickers" if len(tickers) > 1 else (
-            tickers[0].name if isinstance(tickers[0], FutureTicker) else tickers[0].as_string()
+            tickers[0].name
         )
 
         for description, line_chart in title_to_plot.items():
@@ -232,7 +230,7 @@ class ModelParamsEvaluationDocument:
                     self._create_single_heat_map(title, annualised_return, 0.0, 0.3))
 
         tickers_used = "Many tickers" if len(tickers) > 1 else (
-            tickers[0].name if isinstance(tickers[0], FutureTicker) else tickers[0].as_string()
+            tickers[0].name
         )
 
         for description, grid in title_to_grid.items():

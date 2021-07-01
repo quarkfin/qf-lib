@@ -18,16 +18,9 @@ from unittest import TestCase
 import numpy as np
 
 from qf_lib_tests.unit_tests.portfolio_construction.utils import assets_df
-
-try:
-    import cvxopt
-    cvxopt_missing = False
-    from qf_lib.portfolio_construction.portfolio_models.max_excess_return_portfolio import MaxExcessReturnPortfolio
-except ImportError:
-    cvxopt_missing = True
+from qf_lib.portfolio_construction.portfolio_models.max_excess_return_portfolio import MaxExcessReturnPortfolio
 
 
-@unittest.skipIf(cvxopt_missing, "Couldn't import cvxopt library")
 class TestMaxExcessReturnPortfolio(TestCase):
     @classmethod
     def setUpClass(cls):

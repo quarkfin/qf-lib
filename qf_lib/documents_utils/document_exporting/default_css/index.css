@@ -1,8 +1,9 @@
 div.index ul {
-  list-style: none;
-  margin: 0;
+  list-style-type: none;
+  margin-left: 0px;
+  padding: 2px 0px;
 }
 
 div.index ul.present {
-  list-style: square;
+  list-style-type: square;
 }

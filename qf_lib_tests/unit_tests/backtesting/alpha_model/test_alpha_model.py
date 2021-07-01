@@ -16,7 +16,7 @@ from unittest.mock import patch, MagicMock
 
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
-from qf_lib.backtesting.alpha_model.signal import Signal
+from qf_lib.backtesting.signals.signal import Signal
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.miscellaneous.average_true_range import average_true_range

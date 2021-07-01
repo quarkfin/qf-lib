@@ -41,7 +41,7 @@ class HistogramChart(Chart):
     def __init__(self, series: Sequence, best_fit: bool = False, bins: Union[int, str] = 20, start_x: Any = None,
                  end_x: Any = None, **plot_settings):
         super().__init__(start_x=start_x, end_x=end_x)
-        self._series = series
+        self.series = series
         self.plot_settings = plot_settings
         self._num_of_bins = bins
         self._best_fit = best_fit
@@ -49,15 +49,15 @@ class HistogramChart(Chart):
     def plot(self, figsize: Tuple[float, float] = None):
         self._setup_axes_if_necessary(figsize)
         # Plot the horizontal bar chart.
-        n, bins, patches = self.axes.hist(self._series, bins=self._num_of_bins, ec='white', **self.plot_settings)
+        n, bins, patches = self.axes.hist(self.series, bins=self._num_of_bins, ec='white', **self.plot_settings)
 
         if self._best_fit:
             # Calculate the best fit for the data.
-            mu, sigma = norm.fit(self._series)
+            mu, sigma = norm.fit(self.series)
             # Draw best fit line.
             y = norm.pdf(bins, mu, sigma)
             # Multiply by count of data and bin width to get unnormalised best fit line.
-            unnormalised_y = y * len(self._series) * abs(bins[0] - bins[1])
+            unnormalised_y = y * len(self.series) * abs(bins[0] - bins[1])
             self.axes.plot(bins, unnormalised_y, "r--")
 
         # Draw vertical line at x=0.

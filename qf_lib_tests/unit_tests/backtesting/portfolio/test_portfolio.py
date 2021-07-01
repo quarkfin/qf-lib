@@ -13,11 +13,11 @@
 #     limitations under the License.
 
 import unittest
+from typing import Sequence, Union
 from unittest.mock import Mock
 
 from numpy.core.umath import sign
 
-from demo_scripts.common.utils.dummy_ticker import DummyTicker
 from qf_lib.analysis.trade_analysis.trades_generator import TradesGenerator
 from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
@@ -30,6 +30,23 @@ from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_series_equal
+from qf_lib.common.tickers.tickers import Ticker
+
+
+class DummyTicker(Ticker):
+    def __init__(self, ticker: str):
+        super().__init__(ticker)
+
+    @classmethod
+    def from_string(cls, ticker_str: Union[str, Sequence[str]]) \
+            -> Union["DummyTicker", Sequence["DummyTicker"]]:
+        """
+        Example: DummyTicker.from_string('AAA')
+        """
+        if isinstance(ticker_str, str):
+            return DummyTicker(ticker_str)
+        else:
+            return [DummyTicker(t) for t in ticker_str]
 
 
 class TestPortfolio(unittest.TestCase):

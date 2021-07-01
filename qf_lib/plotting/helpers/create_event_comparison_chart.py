@@ -89,7 +89,7 @@ def create_event_comparison_chart(
                     raise ValueError("Incorrect rebase_method. Use 'divide', 'subtract' or 'norebase' ")
 
                 new_index = np.array(range(0, series_sample.count())) - samples_before
-                reindexed_series = QFSeries(data=series_sample.data, index=new_index)
+                reindexed_series = QFSeries(data=series_sample.values, index=new_index)
 
                 data_element = DataElementDecorator(reindexed_series)
                 line_chart.add_decorator(data_element)

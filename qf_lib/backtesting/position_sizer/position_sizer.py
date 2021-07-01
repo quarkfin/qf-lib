@@ -17,12 +17,12 @@ from itertools import groupby
 from typing import List, Optional, Dict
 
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
-from qf_lib.backtesting.alpha_model.signal import Signal
+from qf_lib.backtesting.signals.signal import Signal
 from qf_lib.backtesting.broker.broker import Broker
 from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
-from qf_lib.backtesting.monitoring.signals_register import SignalsRegister
+from qf_lib.backtesting.signals.signals_register import SignalsRegister
 from qf_lib.backtesting.order.execution_style import StopOrder
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.order_factory import OrderFactory
@@ -35,7 +35,7 @@ from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 
 class PositionSizer(object, metaclass=ABCMeta):
     """
-    The PositionSizer abstract class converts signals to orders with size specified
+    The PositionSizer abstract class converts signals to orders with size specified.
     """
 
     def __init__(self, broker: Broker, data_handler: DataHandler, order_factory: OrderFactory,
@@ -50,6 +50,20 @@ class PositionSizer(object, metaclass=ABCMeta):
     def size_signals(self, signals: List[Signal], use_stop_losses: bool = True) -> List[Order]:
         """
         Based on the signals provided, creates a list of Orders where proper sizing has been applied
+
+        Parameters
+        -----------
+        signals: List[Signal]
+            list of signals,  based on which the orders will be created
+        use_stop_losses: bool
+            if true, for each MarketOrder generated for a signal, additionally a StopOrder will be created
+
+        StopOrders details
+        -------------------
+        For each Market Order a Stop Order is generated if and only if the quantity in Market Order + position quantity
+        for this contract != 0. This means that StopOrders are not generated if the MarketOrder should completely close
+        the position for the contract.
+
         """
 
         self._check_for_duplicates(signals)
@@ -136,6 +150,8 @@ class PositionSizer(object, metaclass=ABCMeta):
                 self.logger.info("Stop price should be a finite number")
                 return None
 
+            stop_price = self._cap_stop_price(stop_price, signal)
+
             # put minus before the quantity as stop order has to go in the opposite direction
             stop_orders = self._order_factory.orders({contract: -stop_quantity}, StopOrder(stop_price), TimeInForce.GTC)
 
@@ -145,8 +161,57 @@ class PositionSizer(object, metaclass=ABCMeta):
             # quantity is 0 - no need to place a stop order
             return None
 
+    def _cap_stop_price(self, stop_price: float, signal: Signal):
+        """
+        Prevent the stop price from moving down in case of a long position or up in case of a short position.
+
+        Adjust the stop price only in case if there is an existing open position for specifically this contract. E.g.
+        in case if there exists an open position for the December Cotton future contract, which expired today, if
+        we are creating an order for the January Cotton contract we should not adjust the StopOrders stop price.
+        """
+        # If there exist an open position for the contract - check the previous Stop Order
+        specific_ticker = signal.ticker.get_current_specific_ticker() \
+            if isinstance(signal.ticker, FutureTicker) else signal.ticker
+
+        contract = self._contract_ticker_mapper.ticker_to_contract(specific_ticker)
+        position_quantity = self._get_existing_position_quantity(contract)
+
+        if position_quantity != 0:
+            # Get the last signal that was generated for the contract
+            signals_series = self._signals_register.get_signals_for_ticker(ticker=specific_ticker,
+                                                                           alpha_model=signal.alpha_model)
+            signals_series = signals_series[signals_series.index < self._data_handler.timer.now()]
+
+            if not signals_series.empty:
+                # Get the last signal, which was generated for the same exposure as the current exposure
+                exposure_series = signals_series.apply(lambda s: s.suggested_exposure)
+                current_exposure = Exposure.LONG if position_quantity > 0 else Exposure.SHORT
+                last_date_with_current_exposure = exposure_series.where(exposure_series == current_exposure)\
+                    .last_valid_index()
+                if last_date_with_current_exposure is None:
+                    self.logger.error("There is an open position for the contract {} but no signal was found")
+                    return stop_price
+
+                last_signal_for_the_contract = signals_series.loc[last_date_with_current_exposure]  # type: Signal
+                previous_stop_price = self._calculate_stop_price(last_signal_for_the_contract)
+
+                if last_signal_for_the_contract.suggested_exposure == Exposure.OUT or \
+                        not is_finite_number(previous_stop_price):
+                    return stop_price
+
+                if last_signal_for_the_contract.suggested_exposure == Exposure.LONG:
+                    stop_price = max([stop_price, previous_stop_price])
+                elif last_signal_for_the_contract.suggested_exposure == Exposure.SHORT:
+                    stop_price = min([stop_price, previous_stop_price])
+
+        return stop_price
+
     def _calculate_stop_price(self, signal: Signal):
-        current_price = self._data_handler.get_last_available_price(signal.ticker)
+        current_price = signal.last_available_price
+
+        if current_price is None:
+            current_price = self._data_handler.get_last_available_price(signal.ticker)
+
         price_multiplier = 1 - signal.fraction_at_risk * signal.suggested_exposure.value
         stop_price = price_multiplier * current_price
         stop_price = self._round_stop_price(stop_price)

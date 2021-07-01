@@ -15,7 +15,7 @@
 from datetime import datetime
 from typing import List
 
-from qf_lib.backtesting.monitoring.signals_register import SignalsRegister
+from qf_lib.backtesting.signals.signals_register import SignalsRegister
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.backtesting.portfolio.transaction import Transaction
 
@@ -27,10 +27,11 @@ class BacktestResult(object):
     """
 
     def __init__(self, portfolio: Portfolio, signals_register: SignalsRegister, backtest_name: str = None,
-                 start_date: datetime = None, end_date: datetime = None):
+                 start_date: datetime = None, end_date: datetime = None, initial_risk: float = None):
         self.portfolio = portfolio
         self.signals_register = signals_register
         self.backtest_name = backtest_name
         self.start_date = start_date
         self.end_date = end_date
+        self.initial_risk = initial_risk
         self.transactions = []  # type: List[Transaction]

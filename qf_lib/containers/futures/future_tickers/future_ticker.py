@@ -12,11 +12,13 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 import abc
+from datetime import datetime
 
 import pandas as pd
 
 from qf_lib.common.exceptions.future_contracts_exceptions import NoValidTickerException
 from qf_lib.common.tickers.tickers import Ticker
+from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.containers.series.qf_series import QFSeries
 
@@ -31,9 +33,9 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
 
     .. note:
         While downloading historical data (using for example get_price function) all of the prices would be provided for
-        the current specific ticker, e.g. in case of the family of Cotton future contracts, if on a certain day the specific
-        contract returned by the FutureTicker will be the December 2019 Cotton contract, all of the prices returned by
-        get_price will pertain to this specific December contract and no prices chaining will occur.
+        the current specific ticker, e.g. in case of the family of Cotton future contracts, if on a certain day the
+        specific contract returned by the FutureTicker will be the December 2019 Cotton contract, all of the prices
+        returned by get_price will pertain to this specific December contract and no prices chaining will occur.
         In order to use the get_price function along with futures contracts chaining (and eventual adjustments),
         the FuturesChain object has to be used.
 
@@ -56,7 +58,7 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
     """
     def __init__(self, name: str, family_id: str, N: int, days_before_exp_date: int, point_value: int = 1):
         super().__init__(family_id)
-        self.name = name
+        self._name = name
         self.family_id = family_id
         self.point_value = point_value
         self.N = N
@@ -69,7 +71,8 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
 
         # Date used for optimization purposes
         self._ticker = None  # type: Ticker
-        self._last_cached_date = None
+        self._last_cached_datetime = None
+        self._expiration_hour = RelativeDelta(hour=0, minute=0, second=0, microsecond=0)
 
     def initialize_data_provider(self, timer: Timer, data_provider: "DataProvider"):
         """ Initialize the future ticker with data provider and ticker.
@@ -83,7 +86,7 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
         """
         if self._ticker_initialized:
             self.logger.warning("The FutureTicker {} has been already initialized with Timer and Data Provider. "
-                                "The previous Timer and Data Provider references will be overwritten".format(self.name))
+                                "The previous Timer and Data Provider references will be overwritten".format(self._name))
 
         self._data_provider = data_provider
         self._timer = timer
@@ -104,14 +107,21 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
         """
         return self.get_current_specific_ticker().ticker
 
+    @property
+    def name(self) -> str:
+        """
+        Returns the name of the future ticker.
+        """
+        return self._name
+
     def get_current_specific_ticker(self) -> Ticker:
         """
         Method which returns the currently valid, specific Ticker.
 
-        In order to optimize the computation of ticker value, as the contracts are assumed not to expire within
-        the day (they can expire only at 0:00 a.m.), the ticker value is being cached for a certain date.
-        If the function will be called for a date, for which the ticker value was already computed once, the cached
-        value is being returned.
+        In order to optimize the computation of ticker value the ticker value is being cached.
+        The ticker is assumed to expire at a given expiration hour (which can be adjusted using the set_expiration_hour,
+        by default it points to midnight), which means that on the expiration date the old contract is returned till
+        the expiration hour and the new contract is returned since the expiration hour (inclusive).
 
         Returns
         -------
@@ -122,7 +132,7 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
         # If the timer or data provider were not set
         if not self._ticker_initialized:
             raise ValueError("Set up the timer and data provider by calling initialize_data_provider() "
-                             "before using the future ticker {}".format(self.name))
+                             "before using the future ticker {}".format(self._name))
         try:
             def _get_current_specific_ticker() -> Ticker:
                 """
@@ -135,12 +145,32 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
                 _exp_dates = self.get_expiration_dates()
                 _exp_dates = _exp_dates.sort_index()
                 date_index = _exp_dates.index - pd.Timedelta(days=self._days_before_exp_date - 1)
+                date_index = pd.DatetimeIndex([dt + self._expiration_hour for dt in date_index])
                 date_index_loc = date_index.get_loc(self._timer.now(), method="pad")
                 return _exp_dates.iloc[date_index_loc:].iloc[self.N]
 
-            if self._last_cached_date != self._timer.now().date():
+            def cached_ticker_still_valid(caching_time: datetime, current_time: datetime,
+                                          expiration_hour: RelativeDelta) -> bool:
+                """
+                Checks if the precomputed specific ticker value is still valid or should be computed once again.
+                The cached value is valid for 24h starting at the expiration_hour (e.g. if the expiration hour is
+                set to 8:00, a specific ticker is valid starting 8:00 am (inclusive) till 8.00 am the next day).
+                """
+                if caching_time is None:
+                    return False
+
+                if caching_time >= caching_time + expiration_hour:
+                    cached_time_start = caching_time + expiration_hour
+                    cached_time_end = cached_time_start + RelativeDelta(days=1)
+                else:
+                    cached_time_end = caching_time + expiration_hour
+                    cached_time_start = cached_time_end - RelativeDelta(days=1)
+
+                return cached_time_start <= current_time < cached_time_end
+
+            if not cached_ticker_still_valid(self._last_cached_datetime, self._timer.now(), self._expiration_hour):
                 self._ticker = _get_current_specific_ticker()
-                self._last_cached_date = self._timer.now().date()
+                self._last_cached_datetime = self._timer.now()
             return self._ticker
 
         except (LookupError, ValueError):
@@ -151,7 +181,7 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
             # _get_current_specific_ticker function will raise a LookupError.
 
             raise NoValidTickerException("No valid ticker for the FutureTicker {} found on {}".format(
-                self.name,
+                self._name,
                 self._timer.now()
             ))
 
@@ -175,6 +205,23 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
     def get_days_before_exp_date(self):
         return self._days_before_exp_date
 
+    def set_expiration_hour(self, hour: int = 0, minute: int = 0, second: int = 0, microsecond: int = 0):
+        """ Sets the expiration hour. Expiration hour is used to compute the current specific ticker. By default the
+        expiration hour is set to midnight, which means that within one day always the same current specific ticker is
+        returned.
+
+        In case if the expiration hour is set to 8:00 pm then if that day was the last day the contract was
+        valid, then the new contract is returned since 8:00 pm that day (inclusive).
+
+        Parameters
+        ----------
+        hour: int
+        minute: int
+        second: int
+        microsecond: int
+        """
+        self._expiration_hour = RelativeDelta(hour=hour, minute=minute, second=second, microsecond=microsecond)
+
     @abc.abstractmethod
     def _get_futures_chain_tickers(self) -> QFSeries:
         """
@@ -189,6 +236,9 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
         # The purpose of this function is to enable the initial setting of ticker value, in the __init__ function.
         pass
 
+    def __repr__(self):
+        return "{}('{}', '{}')".format(self.__class__.__name__, self._name, self.family_id)
+
     def __eq__(self, other):
         if other is self:
             return True
@@ -198,7 +248,7 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
 
         return self is other or (
                 type(self) == type(other)
-                and self.name == other.name
+                and self._name == other.name
                 and self.family_id == other.family_id
                 and self.point_value == other.point_value
                 and self.N == other.get_N()
@@ -206,7 +256,7 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
         )
 
     def __hash__(self):
-        return hash((self.name, self.family_id, type(self), self.point_value, self.N, self._days_before_exp_date))
+        return hash((self._name, self.family_id, type(self), self.point_value, self.N, self._days_before_exp_date))
 
     def __lt__(self, other):
         if not isinstance(other, FutureTicker):
@@ -218,7 +268,7 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
         class_name = self.__class__.__name__
         other_class_name = other.__class__.__name__
 
-        return (class_name, self.name, self.family_id, self.N, self._days_before_exp_date) < \
+        return (class_name, self._name, self.family_id, self.N, self._days_before_exp_date) < \
                (other_class_name, other.name, other.family_id, other.get_N(), other.get_days_before_exp_date())
 
     def __getstate__(self):

@@ -36,14 +36,23 @@ class Ticker(metaclass=ABCMeta):
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
     def __str__(self):
-        return "{}:{}".format(self.__class__.__name__, self.ticker)
+        return "{}('{}')".format(self.__class__.__name__, self.ticker)
 
     def __repr__(self):
-        return "{}:{}".format(self.__class__.__name__, self.ticker)
+        return "{}('{}')".format(self.__class__.__name__, self.ticker)
 
     def as_string(self) -> str:
         """
         Returns a string representation of a ticker
+        """
+        return self.ticker
+
+    @property
+    def name(self) -> str:
+        """
+        Returns a name of the ticker.
+        The property should be adjusted for different Ticker classes to provide a string representation of a Ticker,
+        which in some cases could be more understandable than the output of as_string() function.
         """
         return self.ticker
 

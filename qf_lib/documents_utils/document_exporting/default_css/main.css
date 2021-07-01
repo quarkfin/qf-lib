@@ -16,7 +16,7 @@ Thi sets up the layout of the PDF and adds some header and footer info */
 * {
   font-family: "Trebuchet MS", Helvetica, sans-serif;
   font-size: 12px; /* All em measurements are relative to this */
-  line-height: 12px;
+  line-height: 13px;
   padding: 0;
   margin: 0;
 }
@@ -24,12 +24,14 @@ Thi sets up the layout of the PDF and adds some header and footer info */
 /* Header text styling */
 h1 {
   page-break-before: auto !important;
-  margin-top: 0;
-  margin-bottom: 0;
+  margin-top: 7px;
+  margin-bottom: 7px;
   font-size: 1.8em;
 }
 
 h2 {
+  margin-top: 7px;
+  margin-bottom: 7px;
   font-size: 1.5em;
 }
 
@@ -55,27 +57,7 @@ p.centered-text {
     text-align: center;
 }
 
-/* Sets the width of the first column in the stats table */
-table.stats-table td:nth-of-type(1) {
-  width: 35% !important;
-}
-
-/* Right aligns all the headers in the stats table */
-table.stats-table th {
-  text-align: right;
-}
-
-/* Left aligns the first header in the stats table */
-table.stats-table th:nth-of-type(1) {
-  text-align: left;
-}
-
-/* Adds the right border on the headers in the rolling table */
-table.rolling-table th:nth-of-type(3n + 1) {
-  border-right: 1px solid #727272;
-}
-
-/* Adds the right border on the data in the rolling table */
-table.rolling-table td:nth-of-type(3n + 1) {
-  border-right: 1px solid #727272;
+div.list ul {
+  list-style-type: circle;
+  margin: 5px 10px;
 }

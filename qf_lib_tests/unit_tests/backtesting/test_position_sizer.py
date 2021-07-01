@@ -19,13 +19,13 @@ from unittest.mock import Mock
 import numpy as np
 
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
-from qf_lib.backtesting.alpha_model.signal import Signal
+from qf_lib.backtesting.signals.backtest_signals_register import BacktestSignalsRegister
+from qf_lib.backtesting.signals.signal import Signal
 from qf_lib.backtesting.broker.broker import Broker
 from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.simulated_bloomberg_mapper import \
     SimulatedBloombergContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
-from qf_lib.backtesting.monitoring.signals_register import SignalsRegister
 from qf_lib.backtesting.order.execution_style import MarketOrder, StopOrder
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.order_factory import OrderFactory
@@ -34,6 +34,7 @@ from qf_lib.backtesting.portfolio.broker_positon import BrokerPosition
 from qf_lib.backtesting.position_sizer.initial_risk_position_sizer import InitialRiskPositionSizer
 from qf_lib.backtesting.position_sizer.simple_position_sizer import SimplePositionSizer
 from qf_lib.common.tickers.tickers import BloombergTicker
+from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.dateutils.timer import Timer
 
@@ -49,31 +50,33 @@ class TestPositionSizer(unittest.TestCase):
         cls.contract = Contract(cls.ticker.ticker, 'STK', 'SIM_EXCHANGE')
         cls.initial_risk = 0.02
         cls.max_target_percentage = 1.5
-        position = BrokerPosition(cls.contract, cls.initial_position, 25)
 
-        timer = Mock(spec=Timer)
-        timer.now.return_value = str_to_date("2017-01-01")
+    def setUp(self) -> None:
+        position = BrokerPosition(self.contract, self.initial_position, 25)
 
-        broker = Mock(spec=Broker)
-        broker.get_positions.return_value = [position]
+        self.timer = Mock(spec=Timer)
+        self.timer.now.return_value = str_to_date("2017-01-01")
 
-        data_handler = Mock(spec=DataHandler, timer=timer)
-        data_handler.get_last_available_price.return_value = cls.last_price
+        self.broker = Mock(spec=Broker)
+        self.broker.get_open_orders.return_value = []
+        self.broker.get_positions.return_value = [position]
 
-        order_factory = cls._mock_order_factory(cls.initial_position, cls.initial_allocation)
+        data_handler = Mock(spec=DataHandler, timer=self.timer)
+        data_handler.get_last_available_price.side_effect = lambda _: self.last_price
+
+        order_factory = self._mock_order_factory(self.initial_position, self.initial_allocation)
         contract_ticker_mapper = SimulatedBloombergContractTickerMapper()
 
-        cls.simple_position_sizer = SimplePositionSizer(broker, data_handler, order_factory, contract_ticker_mapper,
-                                                        SignalsRegister())
-        cls.initial_risk_position_sizer = InitialRiskPositionSizer(broker, data_handler, order_factory,
-                                                                   contract_ticker_mapper,
-                                                                   SignalsRegister(),
-                                                                   cls.initial_risk,
-                                                                   cls.max_target_percentage)
+        self.simple_position_sizer = SimplePositionSizer(self.broker, data_handler, order_factory,
+                                                         contract_ticker_mapper, BacktestSignalsRegister())
+        self.initial_risk_position_sizer = InitialRiskPositionSizer(self.broker, data_handler, order_factory,
+                                                                    contract_ticker_mapper,
+                                                                    BacktestSignalsRegister(),
+                                                                    self.initial_risk,
+                                                                    self.max_target_percentage)
 
     @classmethod
     def _mock_order_factory(cls, initial_position, initial_allocation):
-
         def target_percent_orders(target_percentages, execution_style, time_in_force, tolerance_percentage=0.0):
             return [Order(contract, np.floor(initial_position * (target_percentage / initial_allocation - 1)),
                           execution_style, time_in_force) for contract, target_percentage in target_percentages.items()]
@@ -91,7 +94,7 @@ class TestPositionSizer(unittest.TestCase):
 
     def test_simple_position_sizer(self):
         fraction_at_risk = 0.02
-        signal = Signal(self.ticker, Exposure.LONG, fraction_at_risk)
+        signal = Signal(self.ticker, Exposure.LONG, fraction_at_risk, self.last_price)
         orders = self.simple_position_sizer.size_signals([signal])
 
         quantity = np.floor(self.initial_position * (1 / self.initial_allocation - 1))
@@ -106,8 +109,8 @@ class TestPositionSizer(unittest.TestCase):
         """
         Max leverage will be limited by position sizer to 1.5
         """
-        fraction_at_risk = 0.01   # will give leverage of 2, that will be capped to 1.5
-        signal = Signal(self.ticker, Exposure.LONG, fraction_at_risk)
+        fraction_at_risk = 0.01  # will give leverage of 2, that will be capped to 1.5
+        signal = Signal(self.ticker, Exposure.LONG, fraction_at_risk, self.last_price)
         orders = self.initial_risk_position_sizer.size_signals([signal])
 
         self.assertEqual(len(orders), 2)  # market order and stop order
@@ -126,7 +129,7 @@ class TestPositionSizer(unittest.TestCase):
         Max leverage will not be limited by position sizer
         """
         fraction_at_risk = 0.23
-        signal = Signal(self.ticker, Exposure.LONG, fraction_at_risk)
+        signal = Signal(self.ticker, Exposure.LONG, fraction_at_risk, self.last_price)
         orders = self.initial_risk_position_sizer.size_signals([signal])
 
         self.assertEqual(len(orders), 2)  # market order and stop order
@@ -141,11 +144,74 @@ class TestPositionSizer(unittest.TestCase):
 
     def test_out_signal(self):
         fraction_at_risk = 0.02
-        signal = Signal(self.ticker, Exposure.OUT, fraction_at_risk)
+        signal = Signal(self.ticker, Exposure.OUT, fraction_at_risk, self.last_price)
         orders = self.simple_position_sizer.size_signals([signal])
 
         self.assertEqual(len(orders), 1)  # market order only
         self.assertEqual(orders[0], Order(self.contract, -200, MarketOrder(), TimeInForce.OPG))
+
+    def test_decreasing_stop_price__with_open_positions(self):
+        """
+        Tests if the stop price of consecutive StopOrders, created for a single position, can decrease over time.
+        The PositionSizer + Broker setup should not allow this situation to happen.
+        """
+        position_sizer = self.simple_position_sizer
+        self.broker.get_open_orders.return_value = []
+
+        # Set the last available price to 100, fraction_at_risk to 0.1, stop price would be in this case
+        # equal to 100 * (1 - 0.1) = 90
+        self.timer.now.return_value = str_to_date("2017-01-01") + RelativeDelta(hours=7)
+        self.last_price = 100
+        fraction_at_risk = 0.1
+        signal = Signal(self.ticker, Exposure.LONG, fraction_at_risk, self.last_price)
+        orders = position_sizer.size_signals([signal], use_stop_losses=True)
+        stop_order_1 = [o for o in orders if isinstance(o.execution_style, StopOrder)][0]
+
+        # Simulate placing the orders - broker should return them as open orders
+        self.broker.get_open_orders.return_value = orders
+
+        # Simulate next day price change to a price above the previous stop_price - StopOrder is not triggered
+        self.last_price = 91
+
+        # Size signals once again (the next day). The new StopOrder stop price should not be lower than the
+        # previous one (90)
+        self.timer.now.return_value = str_to_date("2017-01-02") + RelativeDelta(hours=7)
+        signal = Signal(self.ticker, Exposure.LONG, fraction_at_risk, self.last_price)
+        orders = position_sizer.size_signals([signal], use_stop_losses=True)
+
+        stop_order_2 = [o for o in orders if isinstance(o.execution_style, StopOrder)][0]
+        self.assertTrue(stop_order_1.execution_style.stop_price == stop_order_2.execution_style.stop_price)
+
+    def test_decreasing_stop_price__no_open_positions(self):
+        """
+        Tests if the stop price of consecutive StopOrders, created for a single position, can decrease over time.
+        The PositionSizer + Broker setup should allow this situation to happen in case if there is no open position
+        for the given contract.
+        """
+        position_sizer = self.simple_position_sizer
+        self.broker.get_positions.return_value = []
+
+        # Set the last available price to 100, fraction_at_risk to 0.1, stop price would be in this case
+        # equal to 100 * (1 - 0.1) = 90
+        self.last_price = 100
+        fraction_at_risk = 0.1
+        signal = Signal(self.ticker, Exposure.LONG, fraction_at_risk, self.last_price)
+        orders = position_sizer.size_signals([signal], use_stop_losses=True)
+        stop_order_1 = [o for o in orders if isinstance(o.execution_style, StopOrder)][0]
+
+        # Simulate placing the orders - broker should return them as open orders
+        self.broker.get_open_orders.return_value = orders
+
+        # Simulate next day price change to a price above the previous stop_price - StopOrder is not triggered
+        self.last_price = 91
+
+        # Size signals once again (the next day). The new StopOrder stop price should not be lower than the
+        # previous one (90)
+        signal = Signal(self.ticker, Exposure.LONG, fraction_at_risk, self.last_price)
+        orders = position_sizer.size_signals([signal], use_stop_losses=True)
+
+        stop_order_2 = [o for o in orders if isinstance(o.execution_style, StopOrder)][0]
+        self.assertTrue(stop_order_1.execution_style.stop_price > stop_order_2.execution_style.stop_price)
 
 
 if __name__ == "__main__":

@@ -38,7 +38,8 @@ class BacktestSummaryEvaluator:
         # Get the backtest element for the given list of tickers
         backtest_elements_for_tickers = [el for el in self.params_backtest_summary_elem_dict[parameters]
                                          if set(el.tickers) == set(tickers)]
-        assert len(backtest_elements_for_tickers) == 1
+        assert len(backtest_elements_for_tickers) == 1, "Check if the modeled_params passed to " \
+                                                        "FastAlphaModelTesterConfig match those you want to test"
         backtest_elem = backtest_elements_for_tickers[0]
         returns_tms = backtest_elem.returns_tms.dropna(how="all")
         trades = backtest_elem.trades

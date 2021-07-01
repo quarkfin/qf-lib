@@ -37,7 +37,7 @@ class TestGeneralPriceProvider(unittest.TestCase):
     def setUpClass(cls):
         cls.frequency = Frequency.DAILY
         cls.tickers = [
-            BloombergFutureTicker("Cotton", "CTF0 Comdty", 1, 3),
+            BloombergFutureTicker("Cotton", "CT{} Comdty", 1, 3),
             BloombergFutureTicker("Corn", 'C {} Comdty', 1, 5, 50, "HMUZ")]
 
         timer.set_current_time(str_to_date('2017-12-20'))

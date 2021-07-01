@@ -20,6 +20,9 @@ from typing import Optional, Tuple
 
 import matplotlib.pyplot as plt
 
+from qf_lib.analysis.exposure_analysis.exposure_settings import ExposureSettings
+from qf_lib.analysis.exposure_analysis.exposure_generator import ExposureGenerator
+from qf_lib.analysis.exposure_analysis.exposure_sheet import ExposureSheet
 from qf_lib.analysis.tearsheets.portfolio_analysis_sheet import PortfolioAnalysisSheet
 from qf_lib.common.utils.config_exporter import ConfigExporter
 from qf_lib.common.utils.error_handling import ErrorHandling
@@ -28,7 +31,7 @@ from qf_lib.analysis.tearsheets.tearsheet_without_benchmark import TearsheetWith
 from qf_lib.analysis.timeseries_analysis.timeseries_analysis import TimeseriesAnalysis
 from qf_lib.analysis.trade_analysis.trade_analysis_sheet import TradeAnalysisSheet
 from qf_lib.analysis.trade_analysis.trades_generator import TradesGenerator
-from qf_lib.backtesting.alpha_model.signal import Signal
+from qf_lib.backtesting.signals.signal import Signal
 from qf_lib.backtesting.monitoring.abstract_monitor import AbstractMonitor
 from qf_lib.backtesting.monitoring.backtest_result import BacktestResult
 from qf_lib.backtesting.portfolio.transaction import Transaction
@@ -46,7 +49,8 @@ class BacktestMonitorSettings:
                  issue_transaction_log=True, issue_signal_log=True, issue_config_log=True,
                  issue_daily_portfolio_values_file=True, print_stats_to_console=True,
                  generate_pnl_chart_per_ticker_in_portfolio_analysis=True,
-                 display_live_backtest_progress=True, live_backtest_chart_refresh_frequency=20):
+                 display_live_backtest_progress=True, live_backtest_chart_refresh_frequency=20,
+                 exposure_settings: ExposureSettings = None):
         self.issue_tearsheet = issue_tearsheet
         self.issue_portfolio_analysis_sheet = issue_portfolio_analysis_sheet
         self.issue_trade_analysis_sheet = issue_trade_analysis_sheet
@@ -58,13 +62,14 @@ class BacktestMonitorSettings:
         self.generate_pnl_chart_per_ticker_in_portfolio_analysis = generate_pnl_chart_per_ticker_in_portfolio_analysis
         self.display_live_backtest_progress = display_live_backtest_progress
         self.live_backtest_chart_refresh_frequency = int(live_backtest_chart_refresh_frequency)
+        self.exposure_settings = exposure_settings
 
     @staticmethod
     def no_stats() -> "BacktestMonitorSettings":
         """"
         Creates Settings that will generate no monitor output
         """
-        return BacktestMonitorSettings(False, False, False, False, False, False, False, False, False, False)
+        return BacktestMonitorSettings(False, False, False, False, False, False, False, False, False, False, 20, None)
 
 
 class BacktestMonitor(AbstractMonitor):
@@ -106,6 +111,7 @@ class BacktestMonitor(AbstractMonitor):
         self._issue_tearsheet(portfolio_tms)
         self._issue_portfolio_analysis_sheet(self.backtest_result)
         self._issue_trade_analysis_sheet()
+        self._issue_factor_sector_exposure_sheet()
         self._issue_daily_portfolio_value_file(portfolio_tms)
         self._issue_signal_log()
         self._issue_config_log()
@@ -273,13 +279,42 @@ class BacktestMonitor(AbstractMonitor):
                                                            trades=trades_list,
                                                            start_date=start_date,
                                                            end_date=end_date,
-                                                           initial_risk=self._signals_register.get_initial_risk(),
+                                                           initial_risk=self.backtest_result.initial_risk,
                                                            title="Trades analysis sheet")
                 trades_analysis_sheet.build_document()
                 trades_analysis_sheet.save(self._report_dir)
             else:
                 self.logger.info("No trades generated throughout the backtest - "
                                  "Trade analysis sheet will not be generated.")
+
+    @ErrorHandling.error_logging
+    def _issue_factor_sector_exposure_sheet(self):
+        if self._monitor_settings.exposure_settings is not None:
+            exposure_generator = ExposureGenerator(self._settings, self._monitor_settings.exposure_settings.data_provider,
+                                                   self.backtest_result.portfolio.contract_ticker_mapper)
+
+            # setting ExposureGenerator parameters
+            exposure_generator.set_positions_history(self.backtest_result.portfolio.positions_history())
+            exposure_generator.set_portfolio_nav_history(self.backtest_result.portfolio.portfolio_eod_series())
+            exposure_generator.set_sector_exposure_tickers(self._monitor_settings.exposure_settings.sector_exposure_tickers)
+            exposure_generator.set_factor_exposure_tickers(self._monitor_settings.exposure_settings.factor_exposure_tickers)
+
+            # getting sector exposure
+            sector_df = exposure_generator.get_sector_exposure()
+
+            # getting factor exposure
+            factor_df = exposure_generator.get_factor_exposure()
+
+            exposure_sheet = ExposureSheet(self._settings, self._pdf_exporter, self.backtest_result.backtest_name)
+
+            # setting data for charts
+            exposure_sheet.set_sector_data(sector_df)
+            exposure_sheet.set_factor_data(factor_df)
+
+            exposure_sheet.build_document()
+            exposure_sheet.save(self._report_dir)
+        else:
+            self.logger.info("DataProvider for Exposure Sheet was not set up. ExposureSheet will not be generated.")
 
     @ErrorHandling.error_logging
     def _issue_signal_log(self):
