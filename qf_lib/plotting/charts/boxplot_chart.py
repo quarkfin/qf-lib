@@ -49,5 +49,5 @@ class BoxplotChart(Chart):
         colors = Chart.get_axes_colors()
         sns.boxplot(ax=self.axes, data=self._data, palette=colors, **plot_kwargs)
 
-        self._apply_decorators()
         self._adjust_style()
+        self._apply_decorators()

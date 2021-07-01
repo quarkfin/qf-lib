@@ -14,11 +14,12 @@
 
 from collections import OrderedDict
 from datetime import datetime
-from typing import Sequence, Union
+from typing import Sequence, Union, Dict, Hashable
 
 import numpy as np
 import pandas as pd
 import xarray as xr
+from xarray.core import dtypes
 
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
@@ -28,16 +29,20 @@ from qf_lib.containers.dimension_names import FIELDS, TICKERS, DATES
 
 class QFDataArray(xr.DataArray):
 
-    def __init__(self, data, coords=None, dims=None, name=None, attrs=None, encoding=None, fastpath=False):
+    def __init__(self, data, coords=None, dims=None, name=None, attrs=None, indexes: Dict[Hashable, pd.Index] = None,
+                 fastpath=False):
         """
         Use the class method `create()` for creating QFDataArrays.
         DO NOT CREATE QFDataArrays using __init__() method (don't create it like this: QFDataArray()).
         The __init__ method should be used only by xr.DataArray internal methods.
+
+        Important: Regardless of the xarray warning message the __slots__ should not be implemented, as they result
+        in Recursion Error.
         """
         if not fastpath:
             self._check_if_dimensions_are_correct(coords, dims)
 
-        super().__init__(data, coords, dims, name, attrs, encoding, fastpath)
+        super().__init__(data, coords, dims, name, attrs, indexes, fastpath)
 
     def __setattr__(self, name, value):
         # Makes it possible to set indices in this way: qf_data_array.fields = ["OPEN", "CLOSE"].
@@ -107,8 +112,8 @@ class QFDataArray(xr.DataArray):
         return qf_data_array
 
     @classmethod
-    def concat(cls, objs, dim=None, data_vars='all', coords='different', compat='equals', positions=None,
-               indexers=None, mode=None, concat_over=None) -> "QFDataArray":
+    def concat(cls, objs, dim, data_vars='all', coords='different', compat='equals', positions=None,
+               fill_value=dtypes.NA, join='outer', combine_attrs='override') -> "QFDataArray":
         """
         Concatenates different xr.DataArrays and then converts the result to QFDataArray.
 
@@ -117,7 +122,7 @@ class QFDataArray(xr.DataArray):
         xr.concat()
         """
         result = xr.concat(
-            objs, dim, data_vars, coords, compat, positions, indexers, mode, concat_over)  # type: xr.DataArray
+            objs, dim, data_vars, coords, compat, positions, fill_value, join, combine_attrs)  # type: xr.DataArray
         result = QFDataArray.from_xr_data_array(result)
 
         return result

@@ -12,7 +12,6 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-import datetime
 from itertools import cycle
 from typing import List, Any, Tuple
 
@@ -51,7 +50,7 @@ class BarChart(Chart):
     """
 
     def __init__(self, orientation: Orientation, stacked: bool = True, index_translator: IndexTranslator = None,
-                 thickness: float = 0.8, start_x: datetime.datetime = None, end_x: datetime.datetime = None,
+                 thickness: float = 0.8, start_x: Any = None, end_x: Any = None,
                  upper_y: float = None, lower_y: float = None, **plot_settings):
         Chart.__init__(self, start_x, end_x, upper_y, lower_y)
 
@@ -142,3 +141,8 @@ class BarChart(Chart):
                 # The left parameter specifies the x coordinate of where each bar should start (it's a list of values)
                 bars = axes.barh(index, data, left=last_positions, height=self._thickness, **plot_settings)
         return bars
+
+    def _trim_data(self, data):
+        # do not trim data using index as it does not make sense for bar chart
+        # default behaviour of this function in Chart might cause data removal.
+        return data

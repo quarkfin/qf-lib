@@ -37,76 +37,38 @@ class FuturesDataProvider(object):
         of BloombergTickers, which belong to its futures chain.
         """
 
-        # For each of the BloombergFutureTickers generate a specific random ticker, which may be further used to
+        # For each of the BloombergFutureTickers generate the active ticker, which may be further used to
         # download the list of all specific tickers belonging to the chain, e.g. for Cotton future tickers family,
-        # one needs a specific ticker belonging to this family (e.g. BloombergTicker("CTZ9 Comdty")), which is used
-        # in the request.
-        random_ticker_string_to_future_ticker = {
-            future_ticker.get_random_specific_ticker().ticker: future_ticker for future_ticker in tickers
+        # one uses the BloombergTicker("CTA Comdty") in the request.
+        active_ticker_string_to_future_ticker = {
+            future_ticker.get_active_ticker().ticker: future_ticker for future_ticker in tickers
         }
 
         # Define mapping functions from strings into BloombergFutureTickers and BloombergTickers
-        def future_ticker_from_string(specific_random_string: str) -> BloombergFutureTicker:
-            return random_ticker_string_to_future_ticker[specific_random_string]
+        def future_ticker_from_string(active_ticker_string: str) -> BloombergFutureTicker:
+            return active_ticker_string_to_future_ticker[active_ticker_string]
 
         def tickers_from_strings(tickers_strings: List[str]) -> List[BloombergTicker]:
             return [BloombergTicker.from_string(ticker) for ticker in tickers_strings]
 
-        all_future_tickers_str_to_chain_tickers_list = {}
+        # Create and send the request
+        self._create_and_send_request(list(active_ticker_string_to_future_ticker.keys()))
 
-        # Set used to keep track of all specific, random tickers that were already used to fetch the futures chains for
-        # certain future tickers.
-        fetched_tickers_set = set()
-
-        # Create a list of all specific tickers strings
-        specific_tickers_strings_to_fetch = list(random_ticker_string_to_future_ticker.keys())
-
-        while specific_tickers_strings_to_fetch:
-            # Create and send the request
-            self._create_and_send_request(specific_tickers_strings_to_fetch)
-
-            # Return dictionary mapping the tickers to lists of futures chains tickers (contains only these tickers,
-            # for which correct random tickers were provided)
-            future_ticker_str_to_chain_tickers_list = {
-                key: value for key, value in
-                self._receive_futures_response(random_ticker_string_to_future_ticker).items() if value
-            }
-
-            # Update the main dictionary which maps future tickers string into their future chains
-            all_future_tickers_str_to_chain_tickers_list.update(future_ticker_str_to_chain_tickers_list)
-            # Update the set of all fetched tickers
-            fetched_tickers_set.update(specific_tickers_strings_to_fetch)
-
-            # Compute which tickers were not fetched correctly (in order to retry downloading the futures chains)
-            invalid_random_tickers_strings = set(specific_tickers_strings_to_fetch).difference(
-                all_future_tickers_str_to_chain_tickers_list.keys()
-            )
-            # Get list of BloombergFutureTickers for which the futures chains were not fetched
-            future_tickers_not_fetched = [future_ticker_from_string(t) for t in invalid_random_tickers_strings]
-
-            # Generate new random specific tickers in order to substitute the previous specific random tickers
-            # with them and correctly download the futures chains
-            specific_tickers_strings_to_fetch_dict = {fut_ticker.get_random_specific_ticker().ticker: fut_ticker
-                                                      for fut_ticker in future_tickers_not_fetched}
-            # Update the dictionary mapping the random specific tickers to future tickers with the newly generated
-            # tickers
-            random_ticker_string_to_future_ticker.update(specific_tickers_strings_to_fetch_dict)
-
-            # Create the list of specific tickers that need to be fetched within the next loop iteration
-            specific_tickers_strings_to_fetch = list(specific_tickers_strings_to_fetch_dict.keys())
-            # Filter out these random specific tickers, that were already used at least once to download the chains
-            specific_tickers_strings_to_fetch = [ticker for ticker in specific_tickers_strings_to_fetch
-                                                 if ticker not in fetched_tickers_set]
+        # Return dictionary mapping the tickers to lists of futures chains tickers
+        future_ticker_str_to_chain_tickers_list = {
+            key: value for key, value in
+            self._receive_futures_response(active_ticker_string_to_future_ticker).items() if value
+        }
 
         # Create a dictionary, which is mapping BloombergFutureTickers to lists of BloombergTickers belonging to
         # corresponding futures chains (map all of the strings from future_ticker_to_chain_tickers_list dictionary
-        # into BoombergTickers and BloombergFutureTickers)
+        # into BloombergTickers and BloombergFutureTickers)
         future_ticker_str_to_chain_tickers_list = {
             future_ticker_from_string(future_ticker_str): tickers_from_strings(specific_tickers_strings_list)
-            for future_ticker_str, specific_tickers_strings_list in all_future_tickers_str_to_chain_tickers_list.items()
+            for future_ticker_str, specific_tickers_strings_list in future_ticker_str_to_chain_tickers_list.items()
         }
 
-        # Check if for all of the requested tickers the futures chains were returned, and if not - raise BloombergError
+        # Check if for all of the requested tickers the futures chains were returned, and if not - log an error
         lacking_tickers = set(tickers).difference(future_ticker_str_to_chain_tickers_list.keys())
 
         if lacking_tickers:
@@ -141,7 +103,7 @@ class FuturesDataProvider(object):
             for field, value in zip(override_fields, parameters):
                 override.setElement(field, value)
 
-    def _receive_futures_response(self, random_ticker_string_to_future_ticker: Dict[str, BloombergFutureTicker]):
+    def _receive_futures_response(self, active_ticker_string_to_future_ticker: Dict[str, BloombergFutureTicker]):
         response_events = get_response_events(self._session)
         ticker_to_futures_chain = {}
 
@@ -164,7 +126,7 @@ class FuturesDataProvider(object):
 
                 if data_is_correct(security_data):
                     security_name = security_data.getElementAsString(SECURITY)
-                    family_id_template = random_ticker_string_to_future_ticker[security_name].family_id
+                    family_id_template = active_ticker_string_to_future_ticker[security_name].family_id
                     # Family id are in the following form: CT{} Comdty -> {} should be replaced with a correct month
                     # code
                     regex_template = family_id_template.replace("{}", "[A-Z][0-9]{1,2}")

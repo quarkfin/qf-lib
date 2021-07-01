@@ -19,7 +19,6 @@ from qf_lib.analysis.common.abstract_document import AbstractDocument
 from qf_lib.common.utils.error_handling import ErrorHandling
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
-from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 from qf_lib.documents_utils.document_exporting.element.df_table import DFTable
 from qf_lib.documents_utils.document_exporting.element.heading import HeadingElement
 from qf_lib.documents_utils.document_exporting.element.paragraph import ParagraphElement
@@ -64,7 +63,7 @@ class CurrentPositionsSheet(AbstractDocument):
         tickers = [self._portfolio.contract_ticker_mapper.contract_to_ticker(contract,
                                                                              strictly_to_specific_ticker=False)
                    for contract in contracts]
-        tickers = [ticker.name if isinstance(ticker, FutureTicker) else ticker.ticker for ticker in tickers]
+        tickers = [ticker.name for ticker in tickers]
 
         specific_tickers = [self._portfolio.contract_ticker_mapper.contract_to_ticker(contract).ticker
                             for contract in contracts]

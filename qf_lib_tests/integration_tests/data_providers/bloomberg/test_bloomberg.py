@@ -14,6 +14,7 @@
 
 import unittest
 
+import numpy as np
 import pandas as pd
 
 from qf_lib.common.enums.frequency import Frequency
@@ -266,6 +267,19 @@ class TestBloomberg(unittest.TestCase):
 
         self.assertSequenceEqual(seq1=data_model, seq2=data.tolist())
         self.assertSequenceEqual(seq1=override_data_model, seq2=override_data.tolist())
+
+    # =========================== Test QFDataArray type ====================================================
+
+    def test_qf_dataarray_dtype_for_nan_volume(self):
+        """ The tested ticker does not have any volume data within the given period. In this case it has to be
+        checked if the dtype of QFDataArray would be correctly casted to float64 or to object. """
+        tickers = [BloombergTicker("FMIM10 Index")]
+        start_date = str_to_date("2010-01-14")
+        end_date = str_to_date("2010-01-19")
+
+        data_array = self.bbg_provider.get_price(tickers, [PriceField.Close, PriceField.Volume], start_date, end_date,
+                                                 Frequency.DAILY)
+        self.assertEqual(data_array.dtype, np.float64)
 
 
 if __name__ == '__main__':

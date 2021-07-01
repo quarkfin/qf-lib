@@ -8,7 +8,7 @@ data_providers
 	:nosignatures:
 	:toctree: _autosummary
 	:template: short_class.rst
-	
+
 	data_provider.DataProvider
 	abstract_price_data_provider.AbstractPriceDataProvider
 	bloomberg.bloomberg_data_provider.BloombergDataProvider
@@ -18,7 +18,7 @@ data_providers
 	quandl.quandl_data_provider.QuandlDataProvider
 	haver.haver_data_provider.HaverDataProvider
 	cryptocurrency.cryptocurrency_data_provider.CryptoCurrencyDataProvider
-	
+
 
 .. automodule:: qf_lib.data_providers.helpers
 	:autosummary:

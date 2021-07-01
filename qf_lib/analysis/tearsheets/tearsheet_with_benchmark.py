@@ -25,13 +25,16 @@ from qf_lib.documents_utils.document_exporting.element.new_page import NewPageEl
 from qf_lib.documents_utils.document_exporting.element.paragraph import ParagraphElement
 from qf_lib.documents_utils.document_exporting.element.table import Table
 from qf_lib.plotting.charts.regression_chart import RegressionChart
+from qf_lib.plotting.charts.returns_heatmap_chart import ReturnsHeatmapChart
+from qf_lib.plotting.helpers.create_returns_bar_chart import create_returns_bar_chart
 from qf_lib.plotting.helpers.create_returns_distribution import create_returns_distribution
+from qf_lib.plotting.helpers.create_skewness_chart import create_skewness_chart
 from qf_lib.settings import Settings
 
 
 @ErrorHandling.class_error_logging()
 class TearsheetWithBenchmark(AbstractTearsheet):
-    """Creates a PDF report, which additionally contains a benchamrk.
+    """Creates a PDF report, which additionally contains a benchmark.
 
     Can be used with or without the benchmark
 
@@ -58,53 +61,95 @@ class TearsheetWithBenchmark(AbstractTearsheet):
     def build_document(self):
         series_list = [self.strategy_series, self.benchmark_series]
 
+        # First Page
+        self._add_header()
+        self._add_perf_chart(series_list)
+        self._add_relative_performance_chart(self.strategy_series, self.benchmark_series)
+        self._add_statistics_table(series_list)
+
+        # Second Page
+        self.document.add_element(NewPageElement())
         self._add_header()
         self.document.add_element(ParagraphElement("\n"))
 
-        self._add_perf_chart(series_list)
-        self.document.add_element(ParagraphElement("\n"))
-
         self._add_returns_statistics_charts()
-        self.document.add_element(ParagraphElement("\n"))
-
         self._add_ret_distribution_and_similarity()
-        self.document.add_element(ParagraphElement("\n"))
-
         self._add_rolling_table()
 
-        # Next Page
+        # Third Page
         self.document.add_element(NewPageElement())
-        self.document.add_element(ParagraphElement("\n"))
+        self._add_header()
 
         self._add_cone_and_quantiles()
         self._add_underwater_and_skewness()
 
-        self._add_statistics_table(series_list)
-
-        # Next Page
-        self.document.add_element(NewPageElement())
-
-        self._add_header()
-
-        self.document.add_element(ParagraphElement("\n"))
-        self.document.add_element(ParagraphElement("\n"))
-
         self._add_rolling_return_chart(series_list)
-
         self.document.add_element(ParagraphElement("\n"))
-        self.document.add_element(ParagraphElement("\n"))
-
         self._add_rolling_vol_chart(series_list)
 
+    def _add_returns_statistics_charts(self):
+        grid = self._get_new_grid()
+        # Monthly returns heatmap - Strategy
+        heatmap_chart = ReturnsHeatmapChart(self.strategy_series, title="Monthly Returns - Strategy")
+        grid.add_chart(heatmap_chart)
+
+        # Annual returns bar chart - Strategy
+        annual_ret_chart_strategy = create_returns_bar_chart(self.strategy_series, title="Annual Returns - Strategy")
+        grid.add_chart(annual_ret_chart_strategy)
+
+        # Monthly returns heatmap - Benchmark
+        heatmap_chart = ReturnsHeatmapChart(self.benchmark_series, title="Monthly Returns - Benchmark")
+        grid.add_chart(heatmap_chart)
+
+        # Annual returns bar chart - Benchmark
+        annual_ret_chart_benchmark = create_returns_bar_chart(self.benchmark_series, title="Annual Returns - Benchmark")
+        grid.add_chart(annual_ret_chart_benchmark)
+        self.document.add_element(grid)
+
+        # put the same x axis range on both histograms
+        min_x = min([annual_ret_chart_strategy.get_decorator("data_element").data.min(),
+                     annual_ret_chart_benchmark.get_decorator("data_element").data.min(),
+                     0])  # start at least form 0
+        max_x = max([annual_ret_chart_strategy.get_decorator("data_element").data.max(),
+                     annual_ret_chart_benchmark.get_decorator("data_element").data.max()])
+        max_x = max_x + (max_x - min_x) / 8  # leave some space on the right to put the bar value
+
+        annual_ret_chart_strategy.set_x_range(min_x, max_x)
+        annual_ret_chart_benchmark.set_x_range(min_x, max_x)
+
     def _add_ret_distribution_and_similarity(self):
-        grid = GridElement(mode=PlottingMode.PDF,
-                           figsize=self.half_image_size, dpi=self.dpi)
-        # Distribution of Monthly Returns
-        chart = create_returns_distribution(self.strategy_series)
+        grid = GridElement(mode=PlottingMode.PDF, figsize=self.half_image_size, dpi=self.dpi)
+
+        title = "Distribution of Monthly Returns - Strategy"
+        chart_strategy = create_returns_distribution(self.strategy_series, title=title)
+        grid.add_chart(chart_strategy)
+
+        chart = RegressionChart(self.benchmark_series, self.strategy_series)
         grid.add_chart(chart)
 
-        # Regression chart
-        chart = RegressionChart(self.benchmark_series, self.strategy_series)
+        title = "Distribution of Monthly Returns - Benchmark"
+        chart_benchmark = create_returns_distribution(self.benchmark_series, title=title)
+        grid.add_chart(chart_benchmark)
+
+        chart = RegressionChart(self.strategy_series, self.benchmark_series)
+        grid.add_chart(chart)
+
+        # put the same x axis range on both histograms
+        min_x = min([chart_strategy.series.min(), chart_benchmark.series.min()])
+        max_x = max([chart_strategy.series.max(), chart_benchmark.series.max()])
+        chart_strategy.set_x_range(min_x, max_x)
+        chart_benchmark.set_x_range(min_x, max_x)
+
+        self.document.add_element(grid)
+
+    def _add_underwater_and_skewness(self):
+        grid = GridElement(mode=PlottingMode.PDF, figsize=self.half_image_size, dpi=self.dpi)
+
+        # Underwater plot
+        grid.add_chart(self._get_underwater_chart(self.strategy_series, benchmark_series=self.benchmark_series))
+
+        # Skewness chart
+        chart = create_skewness_chart(self.strategy_series, title="Skewness")
         grid.add_chart(chart)
 
         self.document.add_element(grid)
@@ -113,14 +158,14 @@ class TearsheetWithBenchmark(AbstractTearsheet):
         dtos = RollingAnalysisFactory.calculate_analysis(self.strategy_series, self.benchmark_series)
 
         column_names = [
-            Table.ColumnCell("Rolling Return Period"),
+            Table.ColumnCell("Rolling Return Period", css_class="left-align"),
             "Strategy Average",
             "Strategy Worst",
-            Table.ColumnCell("Strategy Best"),
+            Table.ColumnCell("Strategy Best", css_class="right-align"),
             "Benchmark Average",
             "Benchmark Worst",
-            Table.ColumnCell("Benchmark Best"),
-            Table.ColumnCell("% Strategy outperform Benchmark")]
+            Table.ColumnCell("Benchmark Best", css_class="right-align"),
+            Table.ColumnCell("% Strategy outperform Benchmark", css_class="right-align")]
         result = Table(column_names, grid_proportion=GridProportion.Sixteen, css_class="table rolling-table")
 
         for dto in dtos:

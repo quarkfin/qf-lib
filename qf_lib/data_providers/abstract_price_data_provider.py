@@ -64,8 +64,8 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
                 renaming_dict = {field_str: str_to_field_dict[field_str] for field_str in container.columns}
                 container.rename(columns=renaming_dict, inplace=True)
             else:
-                price_fields = [str_to_field_dict[field_str] for field_str in container.fields.values]
-                container.fields = price_fields
+                container = container.assign_coords(fields=[str_to_field_dict[field_str]
+                                                            for field_str in container.fields.values])
 
         return container
 

@@ -12,8 +12,6 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-import talib
-
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
@@ -43,8 +41,8 @@ class MovingAverageAlphaModel(AlphaModel):
         num_of_bars_needed = self.slow_time_period
         close_tms = self.data_handler.historical_price(ticker, PriceField.Close, num_of_bars_needed)
 
-        fast_ma = talib.MA(close_tms, self.fast_time_period, matype=1)  # MA type: Exponential MA
-        slow_ma = talib.MA(close_tms, self.slow_time_period, matype=1)  # MA type: Exponential MA
+        fast_ma = close_tms.ewm(span=self.fast_time_period, adjust=False).mean()  # fast exponential moving average
+        slow_ma = close_tms.ewm(span=self.slow_time_period, adjust=False).mean()  # slow exponential moving average
 
         if fast_ma[-1] > slow_ma[-1]:
             return Exposure.LONG

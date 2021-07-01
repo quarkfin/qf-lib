@@ -17,8 +17,8 @@ from unittest.mock import patch
 from pandas import date_range
 
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
-from qf_lib.backtesting.alpha_model.signal import Signal
-from qf_lib.backtesting.monitoring.signals_register import SignalsRegister
+from qf_lib.backtesting.signals.backtest_signals_register import BacktestSignalsRegister
+from qf_lib.backtesting.signals.signal import Signal
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
@@ -37,7 +37,7 @@ class TestSignalsRegister(unittest.TestCase):
         start_date = str_to_date("2000-01-01")
         end_date = start_date + RelativeDelta(days=number_of_days-1)
 
-        signals_register = SignalsRegister()
+        signals_register = BacktestSignalsRegister()
 
         for date in date_range(start_date, end_date, freq="D"):
             signals_register.save_signals([Signal(ticker, Exposure.LONG, 0.0)], date)
@@ -57,7 +57,7 @@ class TestSignalsRegister(unittest.TestCase):
         start_date = str_to_date("2000-01-01")
         end_date = start_date + RelativeDelta(days=number_of_days - 1)
 
-        signals_register = SignalsRegister()
+        signals_register = BacktestSignalsRegister()
 
         for date in date_range(start_date, end_date, freq="D"):
             signals_register.save_signals([Signal(ticker, Exposure.LONG, 0.0) for ticker in tickers], date)
@@ -77,7 +77,7 @@ class TestSignalsRegister(unittest.TestCase):
         start_date = str_to_date("2000-01-01")
         end_date = start_date + RelativeDelta(days=number_of_days - 1)
 
-        signals_register = SignalsRegister()
+        signals_register = BacktestSignalsRegister()
 
         for date in date_range(start_date, end_date, freq="D"):
             signals_register.save_signals([Signal(ticker, Exposure.LONG, 0.0)], date)
@@ -100,7 +100,7 @@ class TestSignalsRegister(unittest.TestCase):
         start_date = str_to_date("2000-01-01")
         rolling_date = start_date + RelativeDelta(days=number_of_days - 1)
 
-        signals_register = SignalsRegister()
+        signals_register = BacktestSignalsRegister()
 
         for date in date_range(start_date, rolling_date, freq="D"):
             signals_register.save_signals([Signal(fut_ticker_1, Exposure.LONG, 0.0)], date)

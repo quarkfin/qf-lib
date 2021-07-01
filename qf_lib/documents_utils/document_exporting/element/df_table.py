@@ -360,6 +360,7 @@ class ModelController(object):
             styles = super().styles()
 
             styles = self.row_style.styles() + self.column_style.styles() + styles
+            styles = styles.replace('""', '')
             styles = '""' if len(styles) == 0 else styles
 
             return styles
@@ -370,6 +371,7 @@ class ModelController(object):
             classes = super().classes()
 
             css_classes = self.row_style.classes() + self.column_style.classes() + classes
+            css_classes = css_classes.replace('""', '')
             css_classes = '""' if len(css_classes) == 0 else css_classes
 
             return css_classes

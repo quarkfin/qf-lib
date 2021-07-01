@@ -30,7 +30,7 @@ class QuadraticOptimizer(object):
         'abstol': 1e-15,
         'reltol': 1e-15,
         'feastol': 1e-15,
-        'maxiters': 200
+        'maxiters': 1000
     }
 
     @classmethod

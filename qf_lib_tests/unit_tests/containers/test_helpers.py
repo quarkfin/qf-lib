@@ -11,16 +11,18 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-
 import unittest
 from unittest import TestCase
 
 import pandas as pd
+from numpy import nan, dtype
+from xarray.testing import assert_equal
 
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.helpers import compute_container_hash
+from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.containers.series.returns_series import ReturnsSeries
@@ -80,6 +82,28 @@ class TestSeries(TestCase):
 
         self.assertEqual(compute_container_hash(data_array_1), compute_container_hash(data_array_2))
         self.assertNotEqual(compute_container_hash(data_array_1), compute_container_hash(data_array_3))
+
+    def test_tickers_dict_to_data_array(self):
+        ticker_1 = BloombergTicker("Example 1")
+        ticker_2 = BloombergTicker("Example 2")
+        fields = [PriceField.Open, PriceField.Close]
+        index = self.index[:3]
+        data = [[[4., 1.], [nan, 5.]],
+                [[5., 2.], [nan, 7.]],
+                [[6., 3.], [nan, 8.]]]
+
+        prices_df_1 = QFDataFrame(data={PriceField.Close: [1., 2., 3.], PriceField.Open: [4., 5., 6.]}, index=index)
+        prices_df_2 = QFDataFrame(data={PriceField.Close: [5., 7., 8.]}, index=index)
+
+        data_array = tickers_dict_to_data_array({
+            ticker_1: prices_df_1,
+            ticker_2: prices_df_2
+        }, [ticker_1, ticker_2], fields)
+
+        self.assertEqual(dtype("float64"), data_array.dtype)
+
+        expected_data_array = QFDataArray.create(index, [ticker_1, ticker_2], fields, data)
+        assert_equal(data_array, expected_data_array)
 
 
 if __name__ == '__main__':

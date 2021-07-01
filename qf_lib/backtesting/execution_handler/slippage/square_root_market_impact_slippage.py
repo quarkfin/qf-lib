@@ -101,7 +101,7 @@ class SquareRootMarketImpactSlippage(Slippage):
         prices_tms = PricesSeries(prices_tms)
         try:
             volatility = get_volatility(prices_tms, frequency=Frequency.DAILY, annualise=True)
-        except AssertionError:
+        except (AssertionError, AttributeError):
             volatility = float('nan')
         return volatility
 

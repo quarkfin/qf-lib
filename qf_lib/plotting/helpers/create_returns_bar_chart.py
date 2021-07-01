@@ -29,7 +29,7 @@ from qf_lib.plotting.decorators.line_decorators import VerticalLineDecorator
 from qf_lib.plotting.decorators.title_decorator import TitleDecorator
 
 
-def create_returns_bar_chart(returns: QFSeries, frequency: Frequency = Frequency.YEARLY) -> BarChart:
+def create_returns_bar_chart(returns: QFSeries, frequency: Frequency = Frequency.YEARLY, title: str = None) -> BarChart:
     """
     Constructs a new returns bar chart based on the returns specified. By default a new annual returns bar chart will
     be created.
@@ -40,6 +40,8 @@ def create_returns_bar_chart(returns: QFSeries, frequency: Frequency = Frequency
         The returns series to use in the chart.
     frequency: Frequency
         frequency of the returns after aggregation
+    title:
+        optional title for the chart
 
     Returns
     --------
@@ -51,7 +53,7 @@ def create_returns_bar_chart(returns: QFSeries, frequency: Frequency = Frequency
     data_series = QFSeries(aggregate_returns.sort_index(ascending=True))
 
     chart = BarChart(Orientation.Horizontal, align="center")
-    chart.add_decorator(DataElementDecorator(data_series))
+    chart.add_decorator(DataElementDecorator(data_series, key="data_element"))
     chart.add_decorator(BarValuesDecorator(data_series))
 
     # Format the x-axis so that its labels are shown as a percentage.
@@ -75,7 +77,9 @@ def create_returns_bar_chart(returns: QFSeries, frequency: Frequency = Frequency
     chart.add_decorator(legend)
 
     # Add a title.
-    title = TitleDecorator(str(frequency).capitalize() + " Returns", key="title_decorator")
+    if title is None:
+        title = str(frequency).capitalize() + " Returns"
+    title = TitleDecorator(title, key="title_decorator")
     chart.add_decorator(title)
     chart.add_decorator(AxesLabelDecorator("Returns", "Year"))
 

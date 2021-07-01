@@ -16,9 +16,11 @@ from abc import abstractmethod, ABCMeta
 from os.path import join
 from typing import List
 
+import pandas as pd
+
 from qf_lib.analysis.timeseries_analysis.timeseries_analysis import TimeseriesAnalysis
 from qf_lib.common.enums.plotting_mode import PlottingMode
-from qf_lib.common.utils.miscellaneous.constants import BUSINESS_DAYS_PER_YEAR
+from qf_lib.common.utils.returns.drawdown_tms import drawdown_tms
 from qf_lib.common.utils.volatility.get_volatility import get_volatility
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
@@ -28,17 +30,17 @@ from qf_lib.documents_utils.document_exporting.element.page_header import PageHe
 from qf_lib.documents_utils.document_exporting.element.table import Table
 from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.plotting.charts.line_chart import LineChart
-from qf_lib.plotting.charts.underwater_chart import UnderwaterChart
 from qf_lib.plotting.decorators.axes_formatter_decorator import AxesFormatterDecorator, PercentageFormatter
-from qf_lib.plotting.decorators.axes_label_decorator import AxesLabelDecorator
 from qf_lib.plotting.decorators.axes_position_decorator import AxesPositionDecorator
 from qf_lib.plotting.decorators.data_element_decorator import DataElementDecorator
 from qf_lib.plotting.decorators.legend_decorator import LegendDecorator
 from qf_lib.plotting.decorators.line_decorators import HorizontalLineDecorator
 from qf_lib.plotting.decorators.title_decorator import TitleDecorator
-from qf_lib.plotting.decorators.top_drawdown_decorator import TopDrawdownDecorator
+from qf_lib.plotting.decorators.underwater_decorator import UnderwaterDecorator
 from qf_lib.settings import Settings
 from qf_lib.starting_dir import get_starting_dir_abs_path
+from qf_lib.plotting.decorators.fill_between_decorator import FillBetweenDecorator
+from qf_lib.documents_utils.document_exporting.element.chart import ChartElement
 
 
 class AbstractDocument(metaclass=ABCMeta):
@@ -61,7 +63,7 @@ class AbstractDocument(metaclass=ABCMeta):
         self.full_image_size = (8, 2.4)
 
         # position is linked to the position of axis in tearsheet.mplstyle
-        self.full_image_axis_position = (0.07, 0.1, 0.915, 0.80)  # (left, bottom, width, height)
+        self.full_image_axis_position = (0.07, 0.1, 0.93, 0.80)  # (left, bottom, width, height)
         self.half_image_size = (4, 2.1)
         self.dpi = 400
 
@@ -87,20 +89,30 @@ class AbstractDocument(metaclass=ABCMeta):
 
         self.document.add_element(PageHeaderElement(logo_path, company_name, self.title))
 
-    def _get_underwater_chart(self, series: QFSeries):
-        underwater_chart = UnderwaterChart(series, rotate_x_axis=True)
-        underwater_chart.add_decorator(TopDrawdownDecorator(series, 5))
-        underwater_chart.add_decorator(AxesLabelDecorator(y_label="Drawdown"))
-        underwater_chart.add_decorator(TitleDecorator("Drawdown"))
+    def _get_underwater_chart(self, series: QFSeries, title="Drawdown", benchmark_series: QFSeries = None,
+                              rotate_x_axis: bool = False):
+        underwater_chart = LineChart(start_x=series.index[0], end_x=series.index[-1], log_scale=False,
+                                     rotate_x_axis=rotate_x_axis)
+        underwater_chart.add_decorator(UnderwaterDecorator(series))
+        underwater_chart.add_decorator(TitleDecorator(title))
+
+        if benchmark_series is not None:
+            legend = LegendDecorator()
+            benchmark_dd = PricesSeries(drawdown_tms(benchmark_series))
+            benchmark_dd *= -1
+            benchmark_dd_elem = DataElementDecorator(benchmark_dd, color="black", linewidth=0.5)
+            legend.add_entry(benchmark_dd_elem, "Benchmark DD")
+            underwater_chart.add_decorator(benchmark_dd_elem)
+            underwater_chart.add_decorator(legend)
         return underwater_chart
 
     def _get_large_perf_chart(self, series_list):
-        return self.__get_perf_chart(series_list, True)
+        return self._get_perf_chart(series_list, True)
 
     def _get_small_perf_chart(self, series_list):
-        return self.__get_perf_chart(series_list, False)
+        return self._get_perf_chart(series_list, False)
 
-    def __get_perf_chart(self, series_list, is_large_chart):
+    def _get_perf_chart(self, series_list, is_large_chart, title="Strategy Performance"):
         strategy = series_list[0].to_prices(1)  # the main strategy should be the first series
         log_scale = True if strategy[-1] > 10 else False  # use log scale for returns above 1 000 %
 
@@ -121,7 +133,7 @@ class AbstractDocument(metaclass=ABCMeta):
             legend.add_entry(series_elem, strategy_tms.name)
 
         chart.add_decorator(legend)
-        title_decorator = TitleDecorator("Strategy Performance", key="title")
+        title_decorator = TitleDecorator(title, key="title")
         chart.add_decorator(title_decorator)
 
         return chart
@@ -171,27 +183,28 @@ class AbstractDocument(metaclass=ABCMeta):
 
         position_decorator = AxesPositionDecorator(*self.full_image_axis_position)
         chart.add_decorator(position_decorator)
-        title_str = "Rolling Stats [{} samples]".format(rolling_window_len)
+        title_str = "Rolling Stats [{} {} samples]".format(rolling_window_len, freq)
 
         title_decorator = TitleDecorator(title_str, key="title")
         chart.add_decorator(title_decorator)
         return chart
 
     def _get_rolling_chart(self, timeseries_list, rolling_function, function_name):
-        days_rolling = int(BUSINESS_DAYS_PER_YEAR / 2)  # 6M rolling
-        step = round(days_rolling / 5)
+        freq = timeseries_list[0].get_frequency()
+        timeseries_list = [tms.dropna().to_prices(1) for tms in timeseries_list]
+        df = pd.concat(timeseries_list, axis=1).fillna(method='ffill')
+
+        rolling_window_len = int(freq.value / 2)  # 6M rolling
+        step = round(freq.value / 6)  # 2M shift
 
         legend = LegendDecorator()
-        chart = None
 
-        for i, tms in enumerate(timeseries_list):
-            if i == 0:
-                chart = LineChart(start_x=tms.index[0], end_x=tms.index[-1])
-                line_decorator = HorizontalLineDecorator(0, key="h_line", linewidth=1)
-                chart.add_decorator(line_decorator)
+        chart = LineChart(start_x=df.index[0], end_x=df.index[-1])
+        line_decorator = HorizontalLineDecorator(0, key="h_line", linewidth=1)
+        chart.add_decorator(line_decorator)
 
-            tms = tms.to_prices(1)
-            rolling = tms.rolling_window(days_rolling, rolling_function, step=step)
+        for _, tms in df.iteritems():
+            rolling = tms.rolling_window(rolling_window_len, rolling_function, step=step)
             rolling_element = DataElementDecorator(rolling)
             chart.add_decorator(rolling_element)
             legend.add_entry(rolling_element, tms.name)
@@ -201,7 +214,7 @@ class AbstractDocument(metaclass=ABCMeta):
 
         position_decorator = AxesPositionDecorator(*self.full_image_axis_position)
         chart.add_decorator(position_decorator)
-        title_str = "{} - Rolling Stats [{} days]".format(function_name, days_rolling)
+        title_str = "{} - Rolling Stats [{} {} samples]".format(function_name, rolling_window_len, freq)
 
         title_decorator = TitleDecorator(title_str, key="title")
         chart.add_decorator(title_decorator)
@@ -213,3 +226,31 @@ class AbstractDocument(metaclass=ABCMeta):
         for ta in ta_list:
             ta.populate_table(table)
         self.document.add_element(table)
+
+    def _add_relative_performance_chart(self, strategy_tms: QFSeries, benchmark_tms: QFSeries,
+                                        chart_title: str = "Relative Performance",
+                                        legend_subtitle: str = "Strategy - Benchmark"):
+        diff = strategy_tms.to_simple_returns().subtract(benchmark_tms.to_simple_returns(), fill_value=0)
+        diff = diff.to_prices(1) - 1
+
+        chart = LineChart(start_x=diff.index[0], end_x=diff.index[-1], log_scale=False)
+        position_decorator = AxesPositionDecorator(*self.full_image_axis_position)
+        chart.add_decorator(position_decorator)
+
+        line_decorator = HorizontalLineDecorator(0, key="h_line", linewidth=1)
+        chart.add_decorator(line_decorator)
+        legend = LegendDecorator()
+
+        series_elem = DataElementDecorator(diff)
+        chart.add_decorator(series_elem)
+        legend.add_entry(series_elem, legend_subtitle)
+
+        chart.add_decorator(legend)
+        title_decorator = TitleDecorator(chart_title, key="title")
+        chart.add_decorator(title_decorator)
+
+        chart.add_decorator(AxesFormatterDecorator(y_major=PercentageFormatter(".0f")))
+
+        fill_decorator = FillBetweenDecorator(diff)
+        chart.add_decorator(fill_decorator)
+        self.document.add_element(ChartElement(chart, figsize=self.full_image_size, dpi=self.dpi))

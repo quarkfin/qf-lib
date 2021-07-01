@@ -15,6 +15,6 @@
 
 class NoValidTickerException(Exception):
     """
-    Exception raise when a no valid specific Ticker for a certain FutureTicker exists at a given point in time.
+    Exception raised when there is no valid specific Ticker for a certain FutureTicker at a given point in time.
     """
     pass

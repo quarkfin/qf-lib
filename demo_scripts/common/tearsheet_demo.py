@@ -16,6 +16,7 @@ import logging
 import os
 
 from demo_scripts.demo_configuration.demo_ioc import container
+from qf_lib.analysis.tearsheets.tearsheet_comparative import TearsheetComparative
 from qf_lib.analysis.tearsheets.tearsheet_with_benchmark import TearsheetWithBenchmark
 from qf_lib.analysis.tearsheets.tearsheet_without_benchmark import TearsheetWithoutBenchmark
 from qf_lib.common.enums.price_field import PriceField
@@ -53,27 +54,32 @@ def main():
     settings = container.resolve(Settings)  # type: Settings
     pdf_exporter = container.resolve(PDFExporter)  # type: PDFExporter
 
-    title = "With Benchmark, With Live Date"
+    title = "Tearsheet With Benchmark, With Live Date"
     tearsheet = TearsheetWithBenchmark(
         settings, pdf_exporter, strategy, benchmark, live_date=live_date, title=title)
     tearsheet.build_document()
     tearsheet.save(file_name=title)
 
-    title = "With Benchmark, Without Live Date"
+    title = "Tearsheet With Benchmark, Without Live Date"
     tearsheet = TearsheetWithBenchmark(
         settings, pdf_exporter, strategy, benchmark, live_date=None, title=title)
     tearsheet.build_document()
     tearsheet.save(file_name=title)
 
-    title = "Without Benchmark, With Live Date"
+    title = "Tearsheet Without Benchmark, With Live Date"
     tearsheet = TearsheetWithoutBenchmark(
         settings, pdf_exporter, strategy, live_date=live_date, title=title)
     tearsheet.build_document()
     tearsheet.save(file_name=title)
 
-    title = "Without Benchmark, Without Live Date"
+    title = "Tearsheet Without Benchmark, Without Live Date"
     tearsheet = TearsheetWithoutBenchmark(
         settings, pdf_exporter, strategy, live_date=None, title=title)
+    tearsheet.build_document()
+    tearsheet.save(file_name=title)
+
+    title = "Tearsheet Comparative"
+    tearsheet = TearsheetComparative(settings, pdf_exporter, strategy, benchmark, title=title)
     tearsheet.build_document()
     tearsheet.save(file_name=title)
 

@@ -15,7 +15,6 @@ from typing import Tuple
 
 import matplotlib.pyplot as plt
 
-from demo_scripts.demo_configuration.demo_ioc import container
 from qf_lib.backtesting.monitoring.backtest_monitor import BacktestMonitorSettings
 from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
@@ -29,6 +28,9 @@ from qf_lib.backtesting.events.time_event.regular_time_event.before_market_open_
 from qf_lib.backtesting.trading_session.backtest_trading_session import BacktestTradingSession
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.data_providers.data_provider import DataProvider
+from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
+from qf_lib.documents_utils.excel.excel_exporter import ExcelExporter
+from qf_lib_tests.unit_tests.config.test_settings import get_test_settings
 
 plt.ion()  # required for dynamic chart, good to keep this at the beginning of imports
 
@@ -81,7 +83,9 @@ def run_strategy(data_provider: DataProvider) -> Tuple[float, str]:
     start_date = str_to_date("2010-01-01")
     end_date = str_to_date("2011-01-01")
 
-    session_builder = container.resolve(BacktestTradingSessionBuilder)  # type: BacktestTradingSessionBuilder
+    settings = get_test_settings()
+    session_builder = BacktestTradingSessionBuilder(data_provider, settings, PDFExporter(settings),
+                                                    ExcelExporter(settings))
     session_builder.set_backtest_name('Simple_MA')
     session_builder.set_initial_cash(1000000)
     session_builder.set_frequency(Frequency.DAILY)

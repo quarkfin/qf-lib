@@ -13,7 +13,7 @@
 #     limitations under the License.
 
 from datetime import datetime
-from numpy.ma import log
+import numpy as np
 
 from qf_lib.containers.series.qf_series import QFSeries
 
@@ -38,28 +38,23 @@ class PricesSeries(QFSeries):
     def to_log_returns(self) -> "LogReturnsSeries":
         from qf_lib.containers.series.log_returns_series import LogReturnsSeries
 
-        return_values = []
+        shifted = self.copy().shift(1)
+        rets = self / shifted
+        rets = np.log(rets)
 
-        for i in range(1, len(self)):
-            return_value = log(self[i] / self[i - 1])
-            return_values.append(return_value)
-
-        dates = self.index[1::].copy()
-
-        return LogReturnsSeries(index=dates, data=return_values).__finalize__(self)
+        dates = self.index[1:].copy()
+        returns = rets.iloc[1:]
+        return LogReturnsSeries(index=dates, data=returns).__finalize__(self)
 
     def to_simple_returns(self) -> "SimpleReturnsSeries":
         from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
 
-        return_values = []
+        shifted = self.copy().shift(1)
+        rets = self / shifted - 1  # type: PricesSeries
 
-        for i in range(1, len(self)):
-            return_value = self[i] / self[i - 1] - 1
-            return_values.append(return_value)
-
-        dates = self.index[1::].copy()
-
-        return SimpleReturnsSeries(index=dates, data=return_values).__finalize__(self)
+        dates = self.index[1:].copy()
+        returns = rets.iloc[1:]
+        return SimpleReturnsSeries(index=dates, data=returns).__finalize__(self)
 
     def to_prices(self, initial_price: float = None, suggested_initial_date: datetime = None, frequency=None) \
             -> ["PricesSeries"]:

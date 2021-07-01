@@ -12,7 +12,6 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-BUSINESS_DAYS_PER_YEAR = 252
 DAYS_PER_YEAR_AVG = 365.2425
 
 HIGHCHART_DASH_STYLES = {"dashed": "Dash", "solid": "Solid", "dashdot": "DashDot", "-": "Solid",

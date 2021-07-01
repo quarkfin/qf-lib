@@ -15,7 +15,7 @@
 from abc import abstractmethod, ABCMeta
 
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
-from qf_lib.backtesting.alpha_model.signal import Signal
+from qf_lib.backtesting.signals.signal import Signal
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
@@ -58,8 +58,9 @@ class AlphaModel(object, metaclass=ABCMeta):
         """
         suggested_exposure = self.calculate_exposure(ticker, current_exposure)
         fraction_at_risk = self.calculate_fraction_at_risk(ticker)
+        last_available_price = self.data_handler.get_last_available_price(ticker)
 
-        signal = Signal(ticker, suggested_exposure, fraction_at_risk, alpha_model=self)
+        signal = Signal(ticker, suggested_exposure, fraction_at_risk, last_available_price, alpha_model=self)
         return signal
 
     @abstractmethod

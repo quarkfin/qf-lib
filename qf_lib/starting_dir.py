@@ -35,6 +35,13 @@ def get_starting_dir_abs_path() -> str:
 
 
 def set_starting_dir_abs_path(starting_dir_abs_path: str) -> None:
+    """Sets the starting directory, which is used by a number of classes to e.g. output files to a designated directory.
+
+    Parameters
+    ----------
+    starting_dir_abs_path: str
+        Absolute path to the top directory of the project.
+    """
     global _starting_dir
     if _starting_dir is not None:
         raise ValueError("Starting directory cannot be change once it was set")

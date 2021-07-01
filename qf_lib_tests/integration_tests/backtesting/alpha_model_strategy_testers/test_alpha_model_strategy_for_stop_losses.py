@@ -14,6 +14,7 @@
 #
 
 from unittest import TestCase
+from unittest.mock import Mock
 
 import numpy as np
 import pandas as pd
@@ -41,8 +42,8 @@ class TestAlphaModelStrategy(TestCase):
     frequency = Frequency.DAILY
 
     class DummyAlphaModel(AlphaModel):
-        def __init__(self, risk_estimation_factor: float):
-            super().__init__(0.0, None)
+        def __init__(self, risk_estimation_factor: float, data_handler):
+            super().__init__(0.0, data_handler)
             self.risk_estimation_factor = risk_estimation_factor
 
         def calculate_exposure(self, ticker: Ticker, current_exposure: Exposure) -> Exposure:
@@ -60,7 +61,9 @@ class TestAlphaModelStrategy(TestCase):
                                                        self.data_end_date, self.frequency)
 
         risk_estimation_factor = 0.05
-        alpha_model = self.DummyAlphaModel(risk_estimation_factor)
+        data_handler = Mock()
+        data_handler.get_last_available_price.return_value = None
+        alpha_model = self.DummyAlphaModel(risk_estimation_factor, data_handler)
 
         ts = self._test_trading_session_init()
 

@@ -18,6 +18,7 @@ from typing import Union, Sequence
 import numpy as np
 from scipy.stats import zscore
 
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.portfolio_construction.optimizers.quadratic_optimizer import QuadraticOptimizer
@@ -53,6 +54,8 @@ class MultiFactorPortfolio(Portfolio):
         self.parameters = parameters
         self.upper_constraint = upper_constraint
 
+        self.logger = qf_logger.getChild(self.__class__.__name__)
+
     def get_weights(self) -> QFSeries:
         P = self.covariance_matrix
 
@@ -65,7 +68,14 @@ class MultiFactorPortfolio(Portfolio):
 
         # calculate and scale score of each assets
         q = self.parameters.scale * (variance_part + mean_part + max_dd_part + skewness_part)
-        weights = QuadraticOptimizer.get_optimal_weights(P.values, q, upper_constraints=self.upper_constraint)
+
+        min_upper_constrain = (1/len(q)) * 1.3  # 30% above 1/N
+        if self.upper_constraint is not None and self.upper_constraint < min_upper_constrain:
+            self.logger.warning("MQP upper allocation constraint to tight,"
+                                " changing max upper allocation to {}".format(min_upper_constrain))
+            weights = QuadraticOptimizer.get_optimal_weights(P.values, q, upper_constraints=min_upper_constrain)
+        else:
+            weights = QuadraticOptimizer.get_optimal_weights(P.values, q, upper_constraints=self.upper_constraint)
 
         return QFSeries(data=weights, index=self.covariance_matrix.columns)
 

@@ -14,6 +14,7 @@
 
 from unittest import TestCase
 
+import numpy as np
 import pandas as pd
 from numpy.ma import exp, array
 
@@ -50,22 +51,25 @@ class TestSeries(TestCase):
     def test_prices_to_simple_returns(self):
         actual_returns_tms = self.test_prices_tms.to_simple_returns()
         expected_returns_tms = self.test_simple_returns_tms
-
+        self.assertEqual(np.dtype("float64"), actual_returns_tms.dtype)
         assert_series_equal(expected_returns_tms, actual_returns_tms)
 
     def test_prices_to_log_returns(self):
         actual_log_returns_tms = self.test_prices_tms.to_log_returns()
         expected_log_returns_tms = self.test_log_returns_tms
+        self.assertEqual(np.dtype("float64"), actual_log_returns_tms.dtype)
         assert_series_equal(expected_log_returns_tms, actual_log_returns_tms)
 
     def test_simple_returns_to_prices(self):
         expected_tms = self.test_prices_tms
         actual_tms = self.test_simple_returns_tms.to_prices(initial_price=100)
+        self.assertEqual(np.dtype("float64"), actual_tms.dtype)
         assert_series_equal(expected_tms, actual_tms, absolute_tolerance=1e-5)
 
     def test_simple_returns_to_log_returns(self):
         expected_tms = self.test_log_returns_tms
         actual_tms = self.test_simple_returns_tms.to_log_returns()
+        self.assertEqual(np.dtype("float64"), actual_tms.dtype)
         assert_series_equal(expected_tms, actual_tms)
 
     def test_log_returns_to_prices(self):
@@ -75,11 +79,13 @@ class TestSeries(TestCase):
 
         returns_tms = LogReturnsSeries(data=[1, 1, -3, 3], index=expected.index[1::])
         actual = returns_tms.to_prices()
+        self.assertEqual(np.dtype("float64"), actual.dtype)
         assert_series_equal(expected, actual)
 
     def test_log_returns_to_simple_returns(self):
         expected_tms = self.test_simple_returns_tms
         actual_tms = self.test_log_returns_tms.to_simple_returns()
+        self.assertEqual(np.dtype("float64"), actual_tms.dtype)
         assert_series_equal(expected_tms, actual_tms)
 
     def test_infer_interval(self):
@@ -101,6 +107,7 @@ class TestSeries(TestCase):
 
     def test_cast_series(self):
         actual_casted_series = cast_series(self.test_simple_returns_tms, PricesSeries)
+        self.assertEqual(np.dtype("float64"), actual_casted_series.dtype)
 
         self.assertEqual(PricesSeries, type(actual_casted_series))
         self.assertEqual(list(self.test_simple_returns_tms.values), list(actual_casted_series.values))

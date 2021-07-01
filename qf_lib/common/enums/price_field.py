@@ -43,6 +43,17 @@ class PriceField(Enum):
         """
         return [PriceField.Open, PriceField.High, PriceField.Low, PriceField.Close, PriceField.Volume]
 
+    @staticmethod
+    def ohlc() -> List["PriceField"]:
+        """Return a list of all possible price field values.
+
+        Returns
+        -------
+        List[PriceField]
+            list of all price field values
+        """
+        return [PriceField.Open, PriceField.High, PriceField.Low, PriceField.Close]
+
     def __lt__(self, other):
         if not isinstance(other, PriceField):
             raise TypeError("Cannot compare this object with a PriceField")

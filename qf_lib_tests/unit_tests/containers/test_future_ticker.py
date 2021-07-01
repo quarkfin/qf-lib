@@ -14,6 +14,7 @@
 import unittest
 
 from qf_lib.common.tickers.tickers import Ticker
+from qf_lib.common.utils.dateutils.date_format import DateFormat
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
@@ -122,6 +123,59 @@ class TestSeries(unittest.TestCase):
         self.timer.set_current_time(str_to_date('2017-12-05'))
         # '2017-12-05' + 45 days = '2018-01-19' - the front contract will be equal to CustomTicker:D
         self.assertEqual(future_ticker.get_current_specific_ticker(), CustomTicker("E"))
+
+    def test_set_expiration_hour__first_caching_before_exp_hour(self):
+        """ Test set expiration hour when the first caching occurs on the expiration day, before expiration hour. """
+        future_ticker = CustomFutureTicker("Custom", "CT{} Custom", 1, 5, 500)
+        future_ticker.initialize_data_provider(self.timer, self.bbg_provider)
+        future_ticker.set_expiration_hour(hour=8, minute=10)
+
+        self.timer.set_current_time(str_to_date('2017-12-11 00:00:00.0', DateFormat.FULL_ISO))
+        self.assertEqual(future_ticker.get_current_specific_ticker(), CustomTicker("B"))
+
+        self.timer.set_current_time(str_to_date('2017-12-11 07:59:00.0', DateFormat.FULL_ISO))
+        self.assertEqual(future_ticker.get_current_specific_ticker(), CustomTicker("B"))
+
+        self.timer.set_current_time(str_to_date('2017-12-11 08:10:00.0', DateFormat.FULL_ISO))
+        self.assertEqual(future_ticker.get_current_specific_ticker(), CustomTicker("C"))
+
+        self.timer.set_current_time(str_to_date('2017-12-11 07:10:00.0', DateFormat.FULL_ISO))
+        self.assertEqual(future_ticker.get_current_specific_ticker(), CustomTicker("B"))
+
+        self.timer.set_current_time(str_to_date('2017-12-11 09:10:00.0', DateFormat.FULL_ISO))
+        self.assertEqual(future_ticker.get_current_specific_ticker(), CustomTicker("C"))
+
+    def test_set_expiration_hour__first_caching_after_exp_hour(self):
+        """ Test set expiration hour when the first caching occurs a day before the expiration day, after
+        expiration hour. """
+        future_ticker = CustomFutureTicker("Custom", "CT{} Custom", 1, 5, 500)
+        future_ticker.initialize_data_provider(self.timer, self.bbg_provider)
+        future_ticker.set_expiration_hour(hour=10, minute=10)
+
+        self.timer.set_current_time(str_to_date('2017-12-10 19:00:00.0', DateFormat.FULL_ISO))
+        self.assertEqual(future_ticker.get_current_specific_ticker(), CustomTicker("B"))
+
+        self.timer.set_current_time(str_to_date('2017-12-11 10:10:00.0', DateFormat.FULL_ISO))
+        self.assertEqual(future_ticker.get_current_specific_ticker(), CustomTicker("C"))
+
+        self.timer.set_current_time(str_to_date('2017-12-11 11:10:00.0', DateFormat.FULL_ISO))
+        self.assertEqual(future_ticker.get_current_specific_ticker(), CustomTicker("C"))
+
+    def test_set_expiration_hour__first_caching_at_exp_hour(self):
+        """ Test set expiration hour when the first caching occurs a day before the expiration day, at
+        expiration hour. """
+        future_ticker = CustomFutureTicker("Custom", "CT{} Custom", 1, 5, 500)
+        future_ticker.initialize_data_provider(self.timer, self.bbg_provider)
+        future_ticker.set_expiration_hour(hour=8, minute=10)
+
+        self.timer.set_current_time(str_to_date('2017-12-11 08:10:00.0', DateFormat.FULL_ISO))
+        self.assertEqual(future_ticker.get_current_specific_ticker(), CustomTicker("C"))
+
+        self.timer.set_current_time(str_to_date('2017-12-11 09:10:00.0', DateFormat.FULL_ISO))
+        self.assertEqual(future_ticker.get_current_specific_ticker(), CustomTicker("C"))
+
+        self.timer.set_current_time(str_to_date('2017-12-10 19:00:00.0', DateFormat.FULL_ISO))
+        self.assertEqual(future_ticker.get_current_specific_ticker(), CustomTicker("B"))
 
 
 if __name__ == '__main__':

@@ -20,7 +20,6 @@ import matplotlib as plt
 
 from qf_lib.analysis.common.abstract_document import AbstractDocument
 from qf_lib.analysis.timeseries_analysis.timeseries_analysis import TimeseriesAnalysis
-from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.plotting_mode import PlottingMode
 from qf_lib.common.utils.volatility.get_volatility import get_volatility
 from qf_lib.containers.series.prices_series import PricesSeries
@@ -29,9 +28,7 @@ from qf_lib.documents_utils.document_exporting.element.chart import ChartElement
 from qf_lib.documents_utils.document_exporting.element.grid import GridElement
 from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.plotting.charts.cone_chart import ConeChart
-from qf_lib.plotting.charts.returns_heatmap_chart import ReturnsHeatmapChart
 from qf_lib.plotting.helpers.create_return_quantiles import create_return_quantiles
-from qf_lib.plotting.helpers.create_returns_bar_chart import create_returns_bar_chart
 from qf_lib.plotting.helpers.create_skewness_chart import create_skewness_chart
 from qf_lib.settings import Settings
 
@@ -72,18 +69,6 @@ class AbstractTearsheet(AbstractDocument, metaclass=ABCMeta):
         self.document.add_element(ChartElement(self._get_large_perf_chart(series_list),
                                                figsize=self.full_image_size, dpi=self.dpi))
 
-    def _add_returns_statistics_charts(self):
-        grid = self._get_new_grid()
-
-        # Monthly returns heatmap
-        heatmap_chart = ReturnsHeatmapChart(self.strategy_series)
-        grid.add_chart(heatmap_chart)
-
-        # Annual returns bar chart
-        annual_ret_chart = create_returns_bar_chart(self.strategy_series)
-        grid.add_chart(annual_ret_chart)
-        self.document.add_element(grid)
-
     def _add_cone_and_quantiles(self):
         grid = self._get_new_grid()
         # Cone chart
@@ -123,7 +108,7 @@ class AbstractTearsheet(AbstractDocument, metaclass=ABCMeta):
 
     def _add_rolling_vol_chart(self, timeseries_list):
         def volatility(window):
-            return get_volatility(PricesSeries(window), Frequency.DAILY, annualise=True)
+            return get_volatility(PricesSeries(window), self.frequency, annualise=True)
 
         chart = self._get_rolling_chart(timeseries_list, volatility, "Volatility")
         self.document.add_element(ChartElement(chart, figsize=self.full_image_size, dpi=self.dpi))

@@ -34,10 +34,9 @@ def get_data():
 
     number_of_trades = 200
     contract = Contract("Example Comdty", "STK", "SIM EXCHANGE")
-    percentage_risk = 0.05
-    risk = 10000000 * percentage_risk
     trades = [
-        Trade(start_date, end_date, contract, pnl, 0, 1, risk) for pnl in np.random.normal(0.01, 0.2, number_of_trades)
+        Trade(start_date, end_date, contract, pnl, 0, 1, pnl / 10000)
+        for pnl in np.random.normal(0, 200, number_of_trades)
     ]
     return trades, 1, start_date, end_date
 
@@ -51,15 +50,12 @@ def main():
     pdf_exporter = container.resolve(PDFExporter)  # type: PDFExporter
     contract_ticker_mapper = SimulatedBloombergContractTickerMapper()
 
-    initial_risk = 0.05
-
     nr_of_assets_traded = len(
         set(contract_ticker_mapper.contract_to_ticker(t.contract, False) for t in trades)
     )
 
     trade_analysis_sheet = TradeAnalysisSheet(
-        settings, pdf_exporter, nr_of_assets_traded, trades, start_date, end_date, initial_risk,
-        title="Sample trade analysis")
+        settings, pdf_exporter, nr_of_assets_traded, trades, start_date, end_date, title="Sample trade analysis")
     trade_analysis_sheet.build_document()
     trade_analysis_sheet.save()
 

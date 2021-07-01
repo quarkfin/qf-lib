@@ -41,7 +41,7 @@ def main():
 
     chart = create_line_chart(
         [prices_tms_1, prices_tms_2], names, "Manufacturing PMI – Markit PMI versus Official PMI", None, [50],
-        start_x=datetime.datetime.strptime("2011", "%Y"), upper_y=5, lower_y=0, dot_decimal_points=0)
+        start_x=datetime.datetime.strptime("2011", "%Y"), dot_decimal_points=0)
     chart.plot()
     plt.show(block=True)
 

@@ -183,6 +183,13 @@ class Chart(object):
         """
         plt.close(self.figure)
 
+    def set_x_range(self, start_x=None, end_x=None):
+        self._start_x = start_x
+        self._end_x = end_x
+
+    def get_decorator(self, key: str):
+        return self._decorators.get(key, None)
+
     @classmethod
     def assert_is_qfseries(cls, data_container: Any):
         from qf_lib.containers.series.qf_series import QFSeries

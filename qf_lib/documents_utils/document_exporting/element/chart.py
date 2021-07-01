@@ -11,7 +11,7 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-
+import traceback
 import uuid
 from typing import Tuple
 
@@ -77,8 +77,10 @@ class ChartElement(Element):
             result = "data:image/png;base64," + self._chart.render_as_base64_image(
                 self.figsize, self.dpi, self.optimise)
         except Exception as ex:
+            error_message = "{}\n{}".format(ex.__class__.__name__, traceback.format_exc())
             self.logger.exception('Chart generation error:')
-            result = "error: Chart generation error: " + str(ex)
+            self.logger.exception(error_message)
+            result = error_message
         # Close the chart's figure as we are no longer going to be using it.
         self._chart.close()
         return result
@@ -90,14 +92,14 @@ class ChartElement(Element):
         """
         try:
             base64 = self._chart.render_as_base64_image(self.figsize, self.dpi, self.optimise)
-
             env = templates.environment
             template = env.get_template("chart.html")
             result = template.render(data=base64, width="100%")
 
         except Exception as ex:
-            self.logger.error('Chart generation error:')
-            self.logger.error(ex)
+            error_message = "{}\n{}".format(ex.__class__.__name__, traceback.format_exc())
+            self.logger.exception('Chart generation error:')
+            self.logger.exception(error_message)
             result = "<h2 class='chart-render-failure'>Failed to render chart</h1>"
         # Close the chart's figure as we are no longer going to be using it.
         if self._chart is not None:

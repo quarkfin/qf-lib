@@ -15,8 +15,6 @@
 from datetime import datetime
 from typing import Tuple
 
-from demo_scripts.demo_configuration.demo_ioc import container
-
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
 from qf_lib.backtesting.alpha_model.alpha_model_strategy import AlphaModelStrategy
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
@@ -33,6 +31,9 @@ from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 from qf_lib.containers.futures.future_tickers.bloomberg_future_ticker import BloombergFutureTicker
 from qf_lib.containers.futures.futures_chain import FuturesChain
 from qf_lib.data_providers.data_provider import DataProvider
+from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
+from qf_lib.documents_utils.excel.excel_exporter import ExcelExporter
+from qf_lib_tests.unit_tests.config.test_settings import get_test_settings
 
 
 class SimpleFuturesModel(AlphaModel):
@@ -141,7 +142,9 @@ def run_strategy(data_provider: DataProvider) -> Tuple[float, str]:
     initial_risk = 0.006
 
     # ----- build trading session ----- #
-    session_builder = container.resolve(BacktestTradingSessionBuilder)  # type: BacktestTradingSessionBuilder
+    settings = get_test_settings()
+    session_builder = BacktestTradingSessionBuilder(data_provider, settings, PDFExporter(settings),
+                                                    ExcelExporter(settings))
     session_builder.set_backtest_name('Simple Futures Strategy')
     session_builder.set_position_sizer(InitialRiskPositionSizer, initial_risk=initial_risk)
     session_builder.set_frequency(Frequency.DAILY)

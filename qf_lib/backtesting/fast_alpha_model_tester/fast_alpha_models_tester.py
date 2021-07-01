@@ -70,8 +70,8 @@ class FastAlphaModelTesterConfig:
         self.kwargs = kwargs
         self.model_parameters_names, _ = convert_to_list(modeled_params, str)
 
-        assert set(param for param in self.model_parameters_names if param in self.kwargs.keys()) == \
-               set(self.model_parameters_names), "The modeled_params need to be passed in the kwargs"
+        assert set(param for param in self.model_parameters_names if param in self.kwargs.keys()) == set(
+            self.model_parameters_names), "The modeled_params need to be passed in the kwargs"
 
     def generate_model(self, data_handler: DataHandler):
         return self.model_type(**self.kwargs, data_handler=data_handler)
@@ -135,8 +135,7 @@ class FastAlphaModelTester:
                 contract = self._contract_ticker_mapper.ticker_to_contract(ticker)
                 tickers_to_contracts[ticker] = contract
             except NoValidTickerException:
-                self.logger.warning("No valid ticker for {}".format(
-                    ticker.name if isinstance(ticker, FutureTicker) else ticker.as_string()))
+                self.logger.warning("No valid ticker for {}".format(ticker.name))
 
         return tickers_to_contracts
 
@@ -282,11 +281,18 @@ class FastAlphaModelTester:
         trade_exposure = None
         trade_start_price = None
 
+        # If the first exposure is nan - skip it
+        first_exposure = historical_data.iloc[0, 0]
+        if np.isnan(first_exposure):
+            historical_data = historical_data.iloc[1:]
+
         for curr_date, row in historical_data.iterrows():
             curr_exposure, curr_price = row.values
 
-            # skipping the nan exposures (the first one is sure to be nan)
-            if np.isnan(curr_exposure) or np.isnan(curr_price):
+            # skipping the nan Open prices
+            if np.isnan(curr_price):
+                self.logger.warning("Open price is None, cannot create trade on {} for {}".format(
+                    curr_date, str(ticker)))
                 continue
 
             out_of_the_market = trade_exposure is None

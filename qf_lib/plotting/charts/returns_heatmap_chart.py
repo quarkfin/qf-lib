@@ -33,9 +33,10 @@ class ReturnsHeatmapChart(Chart):
         series of daily, weekly or monthly data
     """
 
-    def __init__(self, returns: QFSeries):
+    def __init__(self, returns: QFSeries, title='Monthly Returns'):
         super().__init__()
         self._returns = returns
+        self.title = title
 
     def plot(self, figsize: Tuple[float, float] = None):
         self._setup_axes_if_necessary(figsize)
@@ -68,4 +69,4 @@ class ReturnsHeatmapChart(Chart):
 
         self.axes.set_xlabel('Month')
         self.axes.set_ylabel('Year')
-        self.axes.set_title('Monthly Returns')
+        self.axes.set_title(self.title)

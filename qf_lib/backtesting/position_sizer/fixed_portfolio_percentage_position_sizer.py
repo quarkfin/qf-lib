@@ -13,11 +13,11 @@
 #     limitations under the License.
 from typing import Optional, List
 
-from qf_lib.backtesting.alpha_model.signal import Signal
+from qf_lib.backtesting.signals.signal import Signal
 from qf_lib.backtesting.broker.broker import Broker
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
-from qf_lib.backtesting.monitoring.signals_register import SignalsRegister
+from qf_lib.backtesting.signals.signals_register import SignalsRegister
 from qf_lib.backtesting.order.execution_style import MarketOrder
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.order_factory import OrderFactory
@@ -46,8 +46,8 @@ class FixedPortfolioPercentagePositionSizer(PositionSizer):
     """
 
     def __init__(self, broker: Broker, data_handler: DataHandler, order_factory: OrderFactory,
-                 contract_ticker_mapper: ContractTickerMapper, signals_register: SignalsRegister, fixed_percentage: float,
-                 tolerance_percentage: float = 0.0):
+                 contract_ticker_mapper: ContractTickerMapper, signals_register: SignalsRegister,
+                 fixed_percentage: float, tolerance_percentage: float = 0.0):
 
         super().__init__(broker, data_handler, order_factory, contract_ticker_mapper, signals_register)
 

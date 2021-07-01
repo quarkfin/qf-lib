@@ -26,7 +26,6 @@ from qf_lib.backtesting.monitoring.backtest_result import BacktestResult
 from qf_lib.backtesting.portfolio.backtest_position import BacktestPositionSummary
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
-from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.documents_utils.document_exporting.element.chart import ChartElement
 from qf_lib.documents_utils.document_exporting.element.df_table import DFTable
@@ -297,7 +296,7 @@ class PortfolioAnalysisSheet(AbstractDocument):
 
     def _ticker_name(self, contract: Contract) -> str:
         ticker = self.backtest_result.portfolio.contract_ticker_mapper.contract_to_ticker(contract, False)
-        return ticker.name if isinstance(ticker, FutureTicker) else ticker.as_string()
+        return ticker.name
 
     def _add_avg_time_in_the_market_per_ticker(self):
         """
@@ -449,6 +448,6 @@ class PortfolioAnalysisSheet(AbstractDocument):
         # Set the style for the report
         plt.style.use(['tearsheet'])
 
-        filename = "%Y_%m_%d-%H%M Portfolio Trading Sheet.pdf"
+        filename = "%Y_%m_%d-%H%M Portfolio Analysis Sheet.pdf"
         filename = datetime.now().strftime(filename)
         return self.pdf_exporter.generate([self.document], report_dir, filename)

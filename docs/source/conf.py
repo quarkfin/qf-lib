@@ -17,7 +17,7 @@ sys.path.append(os.path.abspath('../..'))
 # -- Project information -----------------------------------------------------
 
 project = 'QF Lib'
-copyright = '2020'
+copyright = '2021'
 author = 'CERN'
 
 # The full version, including alpha/beta/rc tags

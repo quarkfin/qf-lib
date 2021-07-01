@@ -12,7 +12,8 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-from openpyxl.utils import coordinate_from_string, column_index_from_string
+from openpyxl.utils import column_index_from_string
+from openpyxl.utils.cell import coordinate_from_string
 
 
 class BoundingBox(object):

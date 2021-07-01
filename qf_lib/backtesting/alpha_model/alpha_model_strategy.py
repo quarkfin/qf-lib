@@ -18,7 +18,7 @@ import numpy as np
 
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
-from qf_lib.backtesting.alpha_model.signal import Signal
+from qf_lib.backtesting.signals.signal import Signal
 from qf_lib.backtesting.broker.broker import Broker
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
@@ -90,16 +90,21 @@ class AlphaModelStrategy(object):
 
     def on_before_market_open(self, _: BeforeMarketOpenEvent = None):
         if self._timer.now().weekday() not in (5, 6):  # Skip saturdays and sundays
-            self.logger.info("on_before_market_open - Signals Generation Started")
+            date = self._timer.now().date()
+            self.logger.info("on_before_market_open [{}] Signals Generation Started".format(date))
             signals = self._calculate_signals()
-            self.logger.info("on_before_market_open - Signals Generation Finished")
+            self.logger.info("on_before_market_open [{}] Signals Generation Finished".format(date))
+
+            self.logger.debug("Signals: ")
+            for s in signals:
+                self.logger.debug(str(s))
 
             if self._max_open_positions is not None:
                 self._adjust_number_of_open_positions(signals)
 
-            self.logger.info("on_before_market_open - Placing Orders")
+            self.logger.info("on_before_market_open [{}] Placing Orders".format(date))
             self._place_orders(signals)
-            self.logger.info("on_before_market_open - Orders Placed")
+            self.logger.info("on_before_market_open [{}] Orders Placed".format(date))
 
     def _adjust_number_of_open_positions(self, signals: List[Signal]):
         """
@@ -231,7 +236,6 @@ class AlphaModelStrategy(object):
             self.logger.info('Model: {}'.format(str(model)))
             for ticker in tickers:
                 try:
-                    self.logger.info('\t Ticker: {}'.format(
-                        ticker.name if isinstance(ticker, FutureTicker) else ticker.as_string()))
+                    self.logger.info('\t Ticker: {}'.format(ticker.name))
                 except NoValidTickerException as e:
                     self.logger.info(e)

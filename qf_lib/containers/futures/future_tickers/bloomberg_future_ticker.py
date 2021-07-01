@@ -13,7 +13,6 @@
 #     limitations under the License.
 import pandas as pd
 import re
-from itertools import cycle
 
 from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.tickers.tickers import BloombergTicker
@@ -29,11 +28,11 @@ class BloombergFutureTicker(FutureTicker, BloombergTicker):
     name: str
         Field which contains a name (or a short description) of the FutureTicker.
     family_id: str
-        Used to to verify if a specific BloombergTicker belongs to a certain futures family and to build a specific,
-        random Ticker, which can be further used by the data provider to download the chain of corresponding Tickers.
+        Used to to verify if a specific BloombergTicker belongs to a certain futures family and to the active
+        Ticker string, which can be further used by the data provider to download the chain of corresponding Tickers.
         The family ID pattern - e.g. for Cotton, an exemplary ticker string is of the following
-        form: "CTZ9 Comdty". The "Z9" part denotes the month and year codes - this is the only variable part of the ticker. Thus, in
-        order to verify if a ticker belongs to the cotton family, it should be in form of "CT{} Comdty".
+        form: "CTZ9 Comdty". The "Z9" part denotes the month and year codes - this is the only variable part of the
+        ticker. Thus, in order to verify if a ticker belongs to the cotton family, it should be in form of "CT{} Comdty".
         For all other ticker families, the family_id should be in the form of specific ticker with the month and
         year codes replaced with the "{}" placeholder.
     N: int
@@ -59,22 +58,9 @@ class BloombergFutureTicker(FutureTicker, BloombergTicker):
 
         super().__init__(name, family_id, N, days_before_exp_date, point_value)
 
-        # Used for the purpose of random specific ticker computation
-        random_year_codes = ['19', '09', '9', '99']
-        self._random_contract_codes = cycle([month + year for month in reversed(list(designated_contracts))
-                                             for year in random_year_codes])
-
-    def get_random_specific_ticker(self) -> BloombergTicker:
-        """
-        Returns sample ticker from the family id that can be used in Bloomberg to get further data (future chain members
-        for example).
-
-        Returns
-        -------
-        BloombergTicker
-        """
-        seed = next(self._random_contract_codes)
-        specific_ticker_string = self.family_id.format(seed)
+    def get_active_ticker(self) -> BloombergTicker:
+        """ Returns the active ticker. """
+        specific_ticker_string = self.family_id.format("A")
         return BloombergTicker.from_string(specific_ticker_string)
 
     def _get_futures_chain_tickers(self):

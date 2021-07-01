@@ -97,8 +97,11 @@ class FuturesChain(pd.Series):
             self._preload_data_and_generate_chain(fields, start_date, end_date, frequency)
 
         # 3 - Download the prices since the last date available in the chain
-        prices_df: PricesDataFrame = self._data_provider.get_price(self._future_ticker, fields_list, last_date_in_chain,
-                                                                   end_date)
+        if last_date_in_chain == end_date:
+            return self._chain[fields_list].loc[start_date:end_date].squeeze()
+
+        prices_df: PricesDataFrame = self._data_provider.get_price(self._future_ticker.get_current_specific_ticker(),
+                                                                   fields_list, last_date_in_chain, end_date)
 
         # If no changes to the PricesDataFrame should be applied return the existing chain
         if prices_df.empty:

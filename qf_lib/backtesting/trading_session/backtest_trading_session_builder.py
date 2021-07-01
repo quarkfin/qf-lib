@@ -35,7 +35,8 @@ from qf_lib.backtesting.execution_handler.slippage.base import Slippage
 from qf_lib.backtesting.execution_handler.slippage.price_based_slippage import PriceBasedSlippage
 from qf_lib.backtesting.monitoring.backtest_monitor import BacktestMonitorSettings, BacktestMonitor
 from qf_lib.backtesting.monitoring.backtest_result import BacktestResult
-from qf_lib.backtesting.monitoring.signals_register import SignalsRegister
+from qf_lib.backtesting.signals.backtest_signals_register import BacktestSignalsRegister
+from qf_lib.backtesting.signals.signals_register import SignalsRegister
 from qf_lib.backtesting.order.order_factory import OrderFactory
 from qf_lib.backtesting.orders_filter.orders_filter import OrdersFilter
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
@@ -74,7 +75,7 @@ class BacktestTradingSessionBuilder(object):
 
     Parameters
     ------------
-    data_provider: GeneralPriceProvider
+    data_provider: DataProvider
         data provider used to download all fields and prices used during trading
     settings: Settings
         object containing all necessary settings, used for example for connection purposes
@@ -90,6 +91,7 @@ class BacktestTradingSessionBuilder(object):
 
         self._backtest_name = "Backtest Results"
         self._initial_cash = 10000000
+        self._initial_risk = None
         self._benchmark_tms = None
         self._monitor_settings = None
 
@@ -106,6 +108,7 @@ class BacktestTradingSessionBuilder(object):
 
         self._orders_filter_types_params = []  # type: List[Tuple[Type[OrdersFilter], Dict]]
 
+        self._signals_register = None
         self._data_provider = data_provider
         self._settings = settings
         self._pdf_exporter = pdf_exporter
@@ -166,6 +169,16 @@ class BacktestTradingSessionBuilder(object):
         self._initial_cash = initial_cash
 
     @ConfigExporter.update_config
+    def set_initial_risk(self, initial_risk: float):
+        """Sets the initial risk value.
+
+        Parameters
+        -----------
+        initial_risk: float
+        """
+        self._initial_risk = initial_risk
+
+    @ConfigExporter.update_config
     def set_data_provider(self, data_provider: DataProvider):
         """Sets the data provider.
 
@@ -175,6 +188,17 @@ class BacktestTradingSessionBuilder(object):
             data provider used to download data and prices
         """
         self._data_provider = data_provider
+
+    @ConfigExporter.update_config
+    def set_signals_register(self, signals_register: SignalsRegister):
+        """Sets the signals register.
+
+        Parameters
+        -----------
+        signals_register: DataProvider
+            signals register used to record signals by the position sizer
+        """
+        self._signals_register = signals_register
 
     @ConfigExporter.update_config
     def set_monitor_settings(self, monitor_settings: BacktestMonitorSettings):
@@ -362,11 +386,12 @@ class BacktestTradingSessionBuilder(object):
         self._events_manager = self._create_event_manager(self._timer, self._notifiers)
 
         self._data_handler = self._create_data_handler(self._data_provider, self._timer)
-        signals_register = SignalsRegister()
+        signals_register = self._signals_register if self._signals_register else BacktestSignalsRegister()
 
         self._portfolio = Portfolio(self._data_handler, self._initial_cash, self._timer, self._contract_ticker_mapper)
+
         self._backtest_result = BacktestResult(self._portfolio, signals_register, self._backtest_name, start_date,
-                                               end_date)
+                                               end_date, self._initial_risk)
         self._monitor = self._monitor_setup()
 
         self._slippage_model = self._slippage_model_setup()

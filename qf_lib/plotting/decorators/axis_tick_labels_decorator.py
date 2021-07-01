@@ -52,11 +52,11 @@ class AxisTickLabelsDecorator(ChartDecorator):
         else:
             raise ValueError("Supported axis: Axis.X and Axis.Y")
 
-        if self._labels is not None:
-            axis.set_ticklabels(self._labels)
-
         if self._tick_values is not None:
             axis.set_ticks(self._tick_values)
+
+        if self._labels is not None:
+            axis.set_ticklabels(self._labels)
 
         if self._rotation is not None:
             axis.set_tick_params(rotation=self._rotation)
