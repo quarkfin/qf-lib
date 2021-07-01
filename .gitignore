@@ -21,7 +21,6 @@ output
 
 $RECYCLE.BIN/
 
-
 # Environments
 .env
 .venv
