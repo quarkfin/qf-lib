@@ -20,7 +20,7 @@ jobs:
     - name: Build and Commit
       uses: sphinx-notes/pages@master
       with:
-        documentation_path: 'docs'
+        documentation_path: 'docs/source'
     - name: Push changes
       uses: ad-m/github-push-action@master
       with:
