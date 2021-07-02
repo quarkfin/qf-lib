@@ -110,7 +110,7 @@ class ExposureGenerator:
         regression_len: int
             Length of history taken for each regression in months. It is used to determine the coefficients
 
-        Returns:
+        Returns
         -------
         QFDataFrame
             Contains computed coefficients for all available sector regressors
