@@ -67,8 +67,9 @@ class HistoricalDataProvider(object):
 
         return qf_data_array
 
-    def _get_historical_data(self, ref_data_service, tickers, fields, start_date, end_date, frequency, currency,
-                             override_name, override_value):
+    def _get_historical_data(self, ref_data_service, tickers: Sequence[str], fields: Sequence[str],
+                             start_date: datetime, end_date: datetime, frequency: Frequency, currency: str,
+                             override_name: str, override_value: Any):
         request = ref_data_service.createRequest("HistoricalDataRequest")
         self._set_time_period(request, start_date, end_date, frequency)
 
@@ -101,7 +102,7 @@ class HistoricalDataProvider(object):
             ticker = BloombergTicker.from_string(ticker_str)
             tickers_data_dict[ticker] = self._receive_intraday_response(ticker, fields)
 
-        return tickers_dict_to_data_array(tickers_data_dict, tickers, fields)
+        return tickers_dict_to_data_array(tickers_data_dict, BloombergTicker.from_string(tickers), fields)
 
     @classmethod
     def _set_currency(cls, currency, request):
@@ -167,7 +168,7 @@ class HistoricalDataProvider(object):
 
         return result
 
-    def _receive_historical_response(self, requested_tickers, requested_fields):
+    def _receive_historical_response(self, requested_tickers: Sequence[str], requested_fields: Sequence[str]):
         response_events = get_response_events(self._session)
 
         # mapping: ticker -> DataArray[dates, fields]
@@ -199,7 +200,8 @@ class HistoricalDataProvider(object):
             else:
                 tickers_data_dict[ticker] = tickers_data_dict[ticker].append(dates_fields_values)
 
-        return tickers_dict_to_data_array(tickers_data_dict, requested_tickers, requested_fields)
+        return tickers_dict_to_data_array(tickers_data_dict, BloombergTicker.from_string(requested_tickers),
+                                          requested_fields)
 
     def _receive_intraday_response(self, requested_ticker, requested_fields):
         """

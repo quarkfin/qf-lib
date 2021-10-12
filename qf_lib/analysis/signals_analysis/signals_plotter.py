@@ -24,6 +24,7 @@ from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
+from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.exceptions.future_contracts_exceptions import NoValidTickerException
 from qf_lib.common.tickers.tickers import Ticker
@@ -137,7 +138,8 @@ class SignalsPlotter(AbstractDocument):
             for date in date_range(self.start_date, self.end_date, freq="B"):
                 try:
                     self.timer.set_current_time(date)
-                    new_exposure = alpha_model.get_signal(ticker, prev_exposure).suggested_exposure
+                    new_exposure = alpha_model.get_signal(ticker, prev_exposure, date, Frequency.DAILY)\
+                        .suggested_exposure
                     exposures.append(new_exposure.value)
                     dates.append(date)
 

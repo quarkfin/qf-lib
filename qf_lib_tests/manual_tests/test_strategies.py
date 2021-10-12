@@ -39,7 +39,7 @@ class TestStrategies(unittest.TestCase):
 
     def test_simple_ma_strategy(self):
         expected_value = 898294.64
-        expected_data_checksum = "2a849bd6bb3ad0753c757844622b55a9cddce46d"
+        expected_data_checksum = "0a29492c3a276286375f08c51a9733a37e60f81e"
         actual_end_value, actual_data_checksum = simple_ma_strategy.run_strategy(self.data_provider)
 
         self.assertAlmostEqual(expected_value, actual_end_value, places=2)

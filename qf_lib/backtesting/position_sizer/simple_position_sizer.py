@@ -18,6 +18,7 @@ from qf_lib.backtesting.order.execution_style import MarketOrder
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.backtesting.position_sizer.position_sizer import PositionSizer
+from qf_lib.common.enums.frequency import Frequency
 
 
 class SimplePositionSizer(PositionSizer):
@@ -25,7 +26,9 @@ class SimplePositionSizer(PositionSizer):
     This SimplePositionSizer converts signals to orders which are the size of 100% of the current portfolio value
     """
 
-    def _generate_market_orders(self, signals: List[Signal]) -> List[Optional[Order]]:
+    def _generate_market_orders(self, signals: List[Signal], time_in_force: TimeInForce, frequency: Frequency = None) \
+            -> List[Optional[Order]]:
+
         def signal_to_contract(signal):
             # Map signal to contract
             return self._contract_ticker_mapper.ticker_to_contract(signal.ticker)
@@ -34,7 +37,7 @@ class SimplePositionSizer(PositionSizer):
             signal_to_contract(signal): signal.suggested_exposure.value for signal in signals
         }
         market_order_list = self._order_factory.target_percent_orders(
-            target_percentages, MarketOrder(), TimeInForce.OPG
+            target_percentages, MarketOrder(), time_in_force, frequency=frequency
         )
 
         return market_order_list

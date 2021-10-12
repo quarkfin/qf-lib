@@ -16,7 +16,8 @@ from demo_scripts.common.utils.dummy_ticker import DummyTicker
 from demo_scripts.common.utils.dummy_ticker_mapper import DummyTickerMapper
 from demo_scripts.demo_configuration.demo_data_provider import daily_data_provider
 from demo_scripts.demo_configuration.demo_ioc import container
-from qf_lib.backtesting.alpha_model.alpha_model_strategy import AlphaModelStrategy
+from qf_lib.backtesting.strategies.signal_generators import OnBeforeMarketOpenSignalGeneration
+from qf_lib.backtesting.strategies.alpha_model_strategy import AlphaModelStrategy
 from qf_lib.backtesting.execution_handler.commission_models.ib_commission_model import IBCommissionModel
 from qf_lib.backtesting.position_sizer.initial_risk_position_sizer import InitialRiskPositionSizer
 from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
@@ -46,7 +47,7 @@ def main():
 
     # ----- build models ----- #
     model = MovingAverageAlphaModel(fast_time_period=5, slow_time_period=20, risk_estimation_factor=1.25,
-                                    data_handler=ts.data_handler)
+                                    data_provider=ts.data_handler)
     model_tickers = [DummyTicker('AAA'), DummyTicker('BBB'), DummyTicker('CCC'),
                      DummyTicker('DDD'), DummyTicker('EEE'), DummyTicker('FFF')]
     model_tickers_dict = {model: model_tickers}
@@ -57,7 +58,11 @@ def main():
     ts.verify_preloaded_data("778bbaac65cb0a5a848167999b88cf29a1cd8467")
 
     # ----- start trading ----- #
-    AlphaModelStrategy(ts, model_tickers_dict, use_stop_losses=True)
+    strategy = AlphaModelStrategy(ts, model_tickers_dict, use_stop_losses=True)
+
+    # Set the signal generation and orders placement to be performed at the OnBeforeMarketOpen event
+    OnBeforeMarketOpenSignalGeneration(strategy)
+
     ts.start_trading()
 
 

@@ -17,20 +17,20 @@ from typing import Sequence
 
 from qf_lib.backtesting.broker.broker import Broker
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
-from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.events.event_manager import EventManager
 from qf_lib.backtesting.events.notifiers import Notifiers
 from qf_lib.backtesting.monitoring.abstract_monitor import AbstractMonitor
 from qf_lib.backtesting.order.order_factory import OrderFactory
 from qf_lib.backtesting.orders_filter.orders_filter import OrdersFilter
 from qf_lib.backtesting.position_sizer.position_sizer import PositionSizer
+from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.data_providers.data_provider import DataProvider
 from qf_lib.settings import Settings
 
 
-class TradingSession(object, metaclass=ABCMeta):
+class TradingSession(metaclass=ABCMeta):
     """
     Base class for all Trading Sessions. It configures all the elements of the trading environment.
     """
@@ -41,7 +41,6 @@ class TradingSession(object, metaclass=ABCMeta):
         self.data_provider = None           # type: DataProvider
 
         self.timer = None                   # type: Timer
-        self.data_handler = None            # type: DataHandler
         self.monitor = None                 # type: AbstractMonitor
         self.broker = None                  # type: Broker
 
@@ -52,6 +51,7 @@ class TradingSession(object, metaclass=ABCMeta):
         self.event_manager = None           # type: EventManager
 
         self.notifiers = None               # type: Notifiers
+        self.frequency = None               # type: Frequency
 
         self.logger = qf_logger.getChild(self.__class__.__name__)
 

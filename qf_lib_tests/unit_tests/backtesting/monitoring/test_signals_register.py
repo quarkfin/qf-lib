@@ -40,7 +40,7 @@ class TestSignalsRegister(unittest.TestCase):
         signals_register = BacktestSignalsRegister()
 
         for date in date_range(start_date, end_date, freq="D"):
-            signals_register.save_signals([Signal(ticker, Exposure.LONG, 0.0)], date)
+            signals_register.save_signals([Signal(ticker, Exposure.LONG, 0.0, 17, date)])
 
         signals_df = signals_register.get_signals()
 
@@ -60,7 +60,7 @@ class TestSignalsRegister(unittest.TestCase):
         signals_register = BacktestSignalsRegister()
 
         for date in date_range(start_date, end_date, freq="D"):
-            signals_register.save_signals([Signal(ticker, Exposure.LONG, 0.0) for ticker in tickers], date)
+            signals_register.save_signals([Signal(ticker, Exposure.LONG, 0.0, 17, date) for ticker in tickers])
 
         signals_df = signals_register.get_signals()
 
@@ -80,8 +80,8 @@ class TestSignalsRegister(unittest.TestCase):
         signals_register = BacktestSignalsRegister()
 
         for date in date_range(start_date, end_date, freq="D"):
-            signals_register.save_signals([Signal(ticker, Exposure.LONG, 0.0)], date)
-            signals_register.save_signals([Signal(ticker, Exposure.SHORT, 0.0)], date)
+            signals_register.save_signals([Signal(ticker, Exposure.LONG, 0.0, 17, date)])
+            signals_register.save_signals([Signal(ticker, Exposure.SHORT, 0.0, 17, date)])
 
         signals_df = signals_register.get_signals()
 
@@ -103,7 +103,7 @@ class TestSignalsRegister(unittest.TestCase):
         signals_register = BacktestSignalsRegister()
 
         for date in date_range(start_date, rolling_date, freq="D"):
-            signals_register.save_signals([Signal(fut_ticker_1, Exposure.LONG, 0.0)], date)
+            signals_register.save_signals([Signal(fut_ticker_1, Exposure.LONG, 0.0, 17, date)])
 
         signals_df = signals_register.get_signals()
 

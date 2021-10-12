@@ -16,5 +16,12 @@
     "tls": true,
     "sender": "pfreport@cern.ch"
   },
-  "haver_path": "O:\\Macro\\DLX\\DATA"
+  "haver_path": "O:\\Macro\\DLX\\DATA",
+  "hapi_credentials": {
+    "client_id": "90b3a6c4db7ca5e3eef87747e645f676",
+    "name":"ctadatafeed",
+    "scopes":["eap","beapData","reportingapi"],
+    "expiration_date": 1673194497122,
+    "created_date": 1625760897122
+  }
 }

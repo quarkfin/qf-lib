@@ -17,15 +17,15 @@ from typing import List, Optional, Tuple
 import numpy as np
 
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
-from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.order.execution_style import StopOrder
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.orders_filter.orders_filter import OrdersFilter
+from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
-from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.utils.numberutils.is_finite_number import is_finite_number
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
+from qf_lib.data_providers.data_provider import DataProvider
 
 
 class VolumeOrdersFilter(OrdersFilter):
@@ -33,15 +33,15 @@ class VolumeOrdersFilter(OrdersFilter):
 
     Parameters
     -----------
-    data_handler: DataHandler
+    data_provider: DataProvider
         used to download the volume data
     volume_percentage_limit: float
         defines the maximum percentage of the volume value, that the orders size should not exceed
     """
 
-    def __init__(self, data_handler: DataHandler, contract_ticker_mapper: ContractTickerMapper,
+    def __init__(self, data_provider: DataProvider, contract_ticker_mapper: ContractTickerMapper,
                  volume_percentage_limit: float):
-        super().__init__(data_handler, contract_ticker_mapper)
+        super().__init__(data_provider, contract_ticker_mapper)
         self._volume_percentage_limit = volume_percentage_limit
 
     def adjust_orders(self, orders: List[Order]) -> List[Order]:
@@ -59,20 +59,23 @@ class VolumeOrdersFilter(OrdersFilter):
             list of orders, that do not exceed the given volume percentage limit
         """
         tickers = [self._contract_ticker_mapper.contract_to_ticker(order.contract) for order in orders]
-        start_time = self._data_handler.timer.now() - RelativeDelta(days=5)
-        start_time = start_time + RelativeDelta(hour=0, minute=0, second=0)
-        volume_df = self._data_handler.get_price(tickers, PriceField.Volume, start_time)
+        try:
+            volume_df = self._data_provider.historical_price(tickers, PriceField.Volume, 5, frequency=Frequency.DAILY)
 
-        # The stop orders will be adjusted only along with corresponding market orders
-        stop_orders_dict = {order.contract: order for order in orders if isinstance(order.execution_style, StopOrder)}
-        adjusted_orders_tuples = [self._adjust_quantity(order, stop_orders_dict.get(order.contract, None), volume_df)
-                                  for order in orders if not isinstance(order.execution_style, StopOrder)]
+            # The stop orders will be adjusted only along with corresponding market orders
+            stop_orders_dict = {order.contract: order for order in orders if isinstance(order.execution_style, StopOrder)}
+            adjusted_orders_tuples = [self._adjust_quantity(order, stop_orders_dict.get(order.contract, None), volume_df)
+                                      for order in orders if not isinstance(order.execution_style, StopOrder)]
 
-        # Flatten the list of orders tuples
-        adjusted_orders = [order for orders_tuple in adjusted_orders_tuples
-                           for order in orders_tuple if order is not None and order.quantity != 0]
+            # Flatten the list of orders tuples
+            adjusted_orders = [order for orders_tuple in adjusted_orders_tuples
+                               for order in orders_tuple if order is not None and order.quantity != 0]
 
-        return adjusted_orders
+            return adjusted_orders
+        except ValueError as e:
+            self.logger.warning(f"VolumeOrdersFilter: orders cannot be adjusted due to the following reason: {e}",
+                                stack_info=True)
+            return orders
 
     def _adjust_quantity(self, order: Order, stop_order: Optional[Order], volume_df: QFDataFrame) -> \
             Tuple[Order, Order]:
@@ -95,17 +98,15 @@ class VolumeOrdersFilter(OrdersFilter):
                 final_quantity = volume_limit * np.sign(order.quantity)
                 adjustment_difference = final_quantity - order.quantity
 
-                self.logger.info("{} VolumeOrdersFilter: Quantity change {} "
-                                 "\n\tfinal quantity: {}".format(self._data_handler.timer.now(), order,
-                                                                 final_quantity))
+                self.logger.info("VolumeOrdersFilter: Quantity change {} "
+                                 "\n\tfinal quantity: {}".format(order, final_quantity))
                 order.quantity = final_quantity
 
                 if stop_order:
                     # Adjust the corresponding stop order
                     stop_order_final_quantity = stop_order.quantity - adjustment_difference
-                    self.logger.info("{} VolumeOrdersFilter: Quantity change {} "
-                                     "\n\tfinal quantity: {}".format(self._data_handler.timer.now(), stop_order,
-                                                                     final_quantity))
+                    self.logger.info("VolumeOrdersFilter: Quantity change {} "
+                                     "\n\tfinal quantity: {}".format(stop_order, final_quantity))
                     stop_order.quantity = stop_order_final_quantity
 
         return order, stop_order

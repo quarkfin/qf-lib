@@ -13,14 +13,16 @@
 #     limitations under the License.
 from abc import abstractmethod
 from datetime import datetime
-from typing import Union, Sequence, Type, Optional, Dict
+from typing import Union, Sequence, Optional, Dict
 
-from qf_lib.backtesting.events.time_event.regular_time_event.regular_time_event import RegularTimeEvent
+from numpy import nan
+
+from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
+from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
 from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
-from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
@@ -40,7 +42,7 @@ class DataHandler(DataProvider):
 
     DataHandler should be used by all the Backtester's components (even in the live trading setup).
 
-    The goal of a DataHandler is to provide backtester's components with financial data. It also makes sure that
+    The goal of a DataHandler is to provide backtester's components with financial data. It makes sure that
     no data from the future (relative to a "current" time of a backtester) is being accessed, that is: that there
     is no look-ahead bias.
 
@@ -56,10 +58,9 @@ class DataHandler(DataProvider):
         self.data_provider = data_provider
 
         self._check_frequency(data_provider.frequency)
-        self.fixed_data_provider_frequency = data_provider.frequency  # type: Optional[Frequency]
+        self.default_frequency = data_provider.frequency  # type: Frequency
 
         self.timer = timer
-        self.time_helper = _DataHandlerTimeHelper(timer)
 
         self.is_optimised = False
 
@@ -89,171 +90,160 @@ class DataHandler(DataProvider):
         fields, _ = convert_to_list(fields, PriceField)
 
         self._check_frequency(frequency)
-        self.fixed_data_provider_frequency = frequency
+        self.default_frequency = frequency
 
         self.data_provider = PrefetchingDataProvider(self.data_provider, tickers, fields, start_date, end_date,
                                                      frequency)
-
         self.is_optimised = True
 
-    @abstractmethod
-    def _check_frequency(self, frequency):
-        """
-        Verify if the provided frequency is compliant with the type of Data Handler used.
-        """
-        pass
+    def historical_price(self, tickers: Union[Ticker, Sequence[Ticker]],
+                         fields: Union[PriceField, Sequence[PriceField]],
+                         nr_of_bars: int, end_date: Optional[datetime] = None, frequency: Frequency = None) -> \
+            Union[PricesSeries, PricesDataFrame, QFDataArray]:
 
-    @abstractmethod
-    def historical_price(
-            self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
-            nr_of_bars: int, frequency: Frequency = None) -> Union[PricesSeries, PricesDataFrame, QFDataArray]:
-        """
-        Returns the latest available data samples corresponding to the nr_of_bars.
+        frequency = frequency or self.default_frequency
+        end_date = self._get_end_date_without_look_ahead(end_date)
+        return self.data_provider.historical_price(tickers, fields, nr_of_bars, end_date, frequency)
 
-        Parameters
-        ----------
-        tickers
-            ticker or sequence of tickers of the securities
-        fields
-            PriceField or sequence of PriceFields of the securities
-        nr_of_bars
-            number of data samples (bars) to be returned.
-            Note: while requesting more than one ticker, some tickers may have fewer than n_of_bars data points
-        frequency
-            frequency of the data
-
-        Returns
-        --------
-        PricesSeries, PricesDataFrame, QFDataArray
-        """
-        pass
-
-    @abstractmethod
     def get_price(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
                   start_date: datetime, end_date: datetime = None, frequency: Frequency = None) -> \
             Union[PricesSeries, PricesDataFrame, QFDataArray]:
         """
-        Acceses prices, using the DataProvider get_price functionality, but before makes sure that the query doesn't
-        concern data from the future.
+        Runs DataProvider.get_price(...) but before makes sure that the query doesn't concern data from
+        the future.
 
-        See Also
-        --------
-        DataProvider.get_price
+        In contrast to the DataHandler.get_history(...), it will return a valid Open price in the time between the
+        Market Open and Market Close.
+
+        Parameters
+        ----------
+        tickers: Ticker, Sequence[Ticker]
+            tickers for securities which should be retrieved
+        fields: PriceField, Sequence[PriceField]
+            fields of securities which should be retrieved
+        start_date: datetime
+            date representing the beginning of historical period from which data should be retrieved
+        end_date: datetime
+            date representing the end of historical period from which data should be retrieved;
+            if no end_date was provided, by default the current date will be used
+        frequency: Frequency
+            frequency of the data
+
+        Returns
+        -------
+        None, PricesSeries, PricesDataFrame, QFDataArray
         """
-        pass
+        frequency = frequency or self.default_frequency
+        assert frequency is not None, "Frequency cannot be equal to None"
 
-    @abstractmethod
-    def get_history(
-            self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[str, Sequence[str]], start_date: datetime,
-            end_date: datetime = None, frequency: Frequency = None, **kwargs) -> \
+        current_datetime = self.timer.now()
+        end_date = current_datetime if end_date is None else end_date
+
+        # end_date_without_look_ahead points to the latest market close in order to not return prices from the future
+        # However, when the end_date falls between the market open and market close, the open price could also be
+        # returned by the get_price function, therefore it is necessary to adjust the end_date_without_look_ahead
+        end_date_without_look_ahead = self._get_end_date_without_look_ahead(end_date)
+
+        open_prices_included = PriceField.Open == fields if isinstance(fields, PriceField) else \
+            PriceField.Open in fields
+        today_market_open = current_datetime + MarketOpenEvent.trigger_time()
+        today_market_close = current_datetime + MarketCloseEvent.trigger_time()
+        consider_additional_open_price = (frequency == Frequency.DAILY and
+                                          open_prices_included and
+                                          today_market_open <= end_date < today_market_close)
+
+        if consider_additional_open_price:
+            end_date_without_look_ahead = datetime(today_market_open.year, today_market_open.month,
+                                                   today_market_open.day)
+
+        prices_data = self.data_provider.get_price(tickers, fields, start_date, end_date_without_look_ahead, frequency)
+
+        # In case if the additional open price should be added, clean up the prices container to remove all data from
+        # the future
+        single_price_field = fields is not None and isinstance(fields, PriceField)
+        if consider_additional_open_price and not single_price_field:
+            single_ticker = tickers is not None and isinstance(tickers, Ticker)
+            single_date = start_date.date() == end_date.date()
+            prices_data = self._remove_data_from_the_future(prices_data, single_date, single_ticker,
+                                                            end_date_without_look_ahead)
+
+        return prices_data
+
+    def get_history(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[str, Sequence[str]],
+                    start_date: datetime, end_date: datetime = None, frequency: Frequency = None, **kwargs) -> \
             Union[QFSeries, QFDataFrame, QFDataArray]:
         """
         Runs DataProvider.get_history(...) but before makes sure that the query doesn't concern data from the future.
+
+        It accesses the latest fully available bar as of "today", that is: if a bar wasn't closed for today yet,
+        then all the PriceFields (e.g. OPEN) will concern data from yesterday. This behaviour is different than the
+        behaviour of get_price function of DataHandler.
+        The reason for that is, that it is impossible to infer which of the fields are available before the market
+        closes (in case of get_price, it is well known that PriceField.Open is available after market opens, but the
+        DataHandler does not have a valid mapping between PriceField.Open and the string pointing to the open price
+        field).
 
         See Also
         --------
         DataProvider.get_history
         """
-        pass
+        frequency = frequency or self.default_frequency
+
+        assert frequency is not None, "Frequency cannot be equal to None"
+        end_date_without_look_ahead = self._get_end_date_without_look_ahead(end_date)
+        return self.data_provider.get_history(tickers, fields, start_date, end_date_without_look_ahead, frequency)
 
     def get_futures_chain_tickers(self, tickers: Union[FutureTicker, Sequence[FutureTicker]],
                                   expiration_date_fields: Union[ExpirationDateField, Sequence[ExpirationDateField]]) \
             -> Dict[FutureTicker, Union[QFSeries, QFDataFrame]]:
         return self.data_provider.get_futures_chain_tickers(tickers, expiration_date_fields)
 
-    @abstractmethod
-    def get_last_available_price(self, tickers: Union[Ticker, Sequence[Ticker]],
-                                 frequency: Frequency = None) -> Union[float, QFSeries]:
-        """
-        Gets the latest available price for given assets.
+    def get_last_available_price(self, tickers: Union[Ticker, Sequence[Ticker]], frequency: Frequency = None,
+                                 end_time: Optional[datetime] = None) -> Union[float, QFSeries]:
+        frequency = frequency or self.default_frequency
 
-        Parameters
-        -----------
-        tickers: Ticker, Sequence[Ticker]
-            tickers of the securities which prices should be downloaded
-        frequency: Frequency
-            frequency of the data
-
-        Returns
-        -------
-        float, pandas.Series
-            last_prices series where:
-            - last_prices.name contains a date of current prices,
-            - last_prices.index contains tickers
-            - last_prices.data contains latest available prices for given tickers
-        """
-        pass
-
-    def get_current_price(self, tickers: Union[Ticker, Sequence[Ticker]],
-                          frequency: Frequency = None) -> Union[float, QFSeries]:
-        """
-        Works just like get_last_available_price() but it can return NaNs if data is not available at the current
-        moment.
-
-        Parameters
-        -----------
-        tickers: Ticker, Sequence[Ticker]
-            tickers of the securities which prices should be downloaded
-        frequency: Frequency
-            frequency of the data
-
-        Returns
-        -------
-        float, pandas.Series
-            current_prices series where:
-            - current_prices.name contains a date of current prices,
-            - current_prices.index contains tickers
-            - current_prices.data contains latest available prices for given tickers
-        """
-        pass
-
-    def get_current_bar(self, tickers: Union[Ticker, Sequence[Ticker]], frequency: Frequency = None) \
-            -> Union[QFSeries, QFDataFrame]:
-        """
-        Gets the current bar(s) for given Ticker(s). If the bar is not available yet, None is returned.
-
-        Parameters
-        -----------
-        tickers: Ticker, Sequence[Ticker]
-            tickers of the securities which prices should be downloaded
-        frequency: Frequency
-            frequency of the data
-
-        Returns
-        -------
-        pandas.Series, pandas.DataFrame
-            current bar
-        """
-        pass
-
-    @abstractmethod
-    def _get_end_date_without_look_ahead(self, end_date=None):
-        pass
+        return super().get_last_available_price(tickers, frequency, self.timer.now())
 
     def supported_ticker_types(self):
         return self.data_provider.supported_ticker_types()
 
+    @abstractmethod
+    def _get_end_date_without_look_ahead(self, end_date: datetime = None):
+        pass
 
-class _DataHandlerTimeHelper(object):
-    """
-    Helper class extracting from DataHandler all the logic connected with time,
-    that is logic which makes sure that no data from the future is accessed in the backtest.
-    """
+    @abstractmethod
+    def _check_frequency(self, frequency):
+        """ Verify if the provided frequency is compliant with the type of Data Handler used. """
+        pass
 
-    def __init__(self, timer: Timer):
-        self.timer = timer
+    def _remove_data_from_the_future(self, prices_container: Union[QFDataArray, QFDataFrame, QFSeries],
+                                     got_single_date: bool, got_single_ticker: bool, current_date: datetime):
+        """
+        In case if current_date points to a time after the market open and before the market close, all
+        fields for the current date, which are different from PriceField Open, should be removed from the
+        prices_container, as they consider fields from the future.
+        """
+        if got_single_ticker:
+            if got_single_date:
+                # prices_container is a QFSeries, containing PriceField objects in the index
+                open_price = prices_container.loc[PriceField.Open].copy()
+                prices_container.loc[:] = nan
+                prices_container.loc[PriceField.Open] = open_price
+            else:
+                # prices_container is a QFDataFrame, indexed by dates and with PriceFields in columns
+                open_prices = prices_container.loc[current_date, PriceField.Open].copy()
+                prices_container.loc[current_date, :] = nan
+                prices_container.loc[current_date, PriceField.Open] = open_prices
 
-    def datetime_of_latest_market_event(self, event_class: Type[RegularTimeEvent]):
-        time_of_event = event_class.trigger_time()
-
-        now = self.timer.now()
-
-        today_market_event = now + time_of_event
-        yesterday_market_event = today_market_event - RelativeDelta(days=1)
-
-        if now < today_market_event:  # event hasn't occurred today yet
-            latest_available_market_event = yesterday_market_event
-        else:  # event occurred today already
-            latest_available_market_event = today_market_event
-
-        return latest_available_market_event
+        else:
+            if got_single_date:
+                # prices_container is a QFDataFrame with tickers in index and PriceFields in columns
+                open_prices = prices_container.loc[:, PriceField.Open].copy()
+                prices_container.loc[:, :] = nan
+                prices_container.loc[:, PriceField.Open] = open_prices
+            else:
+                # prices_container is a QFDataArray
+                open_prices_values = prices_container.loc[current_date, :, PriceField.Open].copy()
+                prices_container.loc[current_date, :, :] = nan
+                prices_container.loc[current_date, :, PriceField.Open] = open_prices_values
+        return prices_container

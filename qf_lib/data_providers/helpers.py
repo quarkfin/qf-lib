@@ -12,11 +12,12 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-from typing import Union, Dict
+from typing import Union, Dict, Sequence
 
 import pandas as pd
 
 from qf_lib.common.tickers.tickers import Ticker
+from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.cast_dataframe import cast_dataframe
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
@@ -127,7 +128,8 @@ def cast_dataframe_to_proper_type(result):
     return casted_result
 
 
-def tickers_dict_to_data_array(tickers_data_dict: Dict[Ticker, QFDataFrame], requested_tickers, requested_fields) -> QFDataArray:
+def tickers_dict_to_data_array(tickers_data_dict: Dict[Ticker, QFDataFrame],
+                               requested_tickers: Union[Ticker, Sequence[Ticker]], requested_fields) -> QFDataArray:
     """
     Converts a dictionary mapping tickers to DateFrame onto a QFDataArray.
 
@@ -135,7 +137,7 @@ def tickers_dict_to_data_array(tickers_data_dict: Dict[Ticker, QFDataFrame], req
     ----------
     tickers_data_dict:  Dict[Ticker, QFDataFrame]
         Ticker -> QFDataFrame[dates, fields]
-    requested_tickers
+    requested_tickers: Sequence[Ticker]
     requested_fields
 
     Returns
@@ -143,6 +145,8 @@ def tickers_dict_to_data_array(tickers_data_dict: Dict[Ticker, QFDataFrame], req
     QFDataArray
     """
     # return empty xr.DataArray if there is no data to be converted
+    requested_tickers, _ = convert_to_list(requested_tickers, Ticker)
+
     if not tickers_data_dict:
         return QFDataArray.create(dates=[], tickers=requested_tickers, fields=requested_fields)
 
@@ -164,6 +168,9 @@ def tickers_dict_to_data_array(tickers_data_dict: Dict[Ticker, QFDataFrame], req
     if not data_arrays:
         return QFDataArray.create(dates=[], tickers=requested_tickers, fields=requested_fields)
     result = QFDataArray.concat(data_arrays, dim=tickers_index)
+
+    if len(tickers) < len(requested_tickers):
+        result = result.reindex(tickers=requested_tickers, fields=requested_fields)
 
     # the DataArray gets a name after the first ticker in the tickers_data_dict.keys() which is incorrect;
     # it should have no name

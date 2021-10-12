@@ -13,7 +13,6 @@
 #     limitations under the License.
 
 import abc
-from datetime import datetime
 from typing import List, Optional
 
 from qf_lib.backtesting.signals.signal import Signal
@@ -28,7 +27,7 @@ class SignalsRegister(metaclass=abc.ABCMeta):
     the model and to present them in a readable form.
     """
     @abc.abstractmethod
-    def save_signals(self, signals: List[Signal], date: datetime):
+    def save_signals(self, signals: List[Signal]):
         raise NotImplementedError()
 
     @abc.abstractmethod

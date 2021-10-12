@@ -13,7 +13,6 @@
 #     limitations under the License.
 
 from qf_lib.backtesting.execution_handler.commission_models.commission_model import CommissionModel
-from qf_lib.backtesting.order.order import Order
 
 
 class BpsTradeValueCommissionModel(CommissionModel):
@@ -30,7 +29,7 @@ class BpsTradeValueCommissionModel(CommissionModel):
     def __init__(self, commission: float):
         self.commission = commission
 
-    def calculate_commission(self, order: Order, fill_price: float) -> float:
-        quantity = abs(order.quantity)
-        commission = fill_price * quantity * self.commission / 10000
+    def calculate_commission(self, fill_quantity: int, fill_price: float) -> float:
+        fill_quantity = abs(fill_quantity)
+        commission = fill_price * fill_quantity * self.commission / 10000
         return commission

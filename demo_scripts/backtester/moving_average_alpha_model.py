@@ -14,9 +14,9 @@
 
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
-from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
+from qf_lib.data_providers.data_provider import DataProvider
 
 
 class MovingAverageAlphaModel(AlphaModel):
@@ -26,8 +26,8 @@ class MovingAverageAlphaModel(AlphaModel):
     if the shorter close prices moving average exceeds the longer one. Otherwise it suggests to go SHORT.
     """
     def __init__(self, fast_time_period: int, slow_time_period: int,
-                 risk_estimation_factor: float, data_handler: DataHandler):
-        super().__init__(risk_estimation_factor, data_handler)
+                 risk_estimation_factor: float, data_provider: DataProvider):
+        super().__init__(risk_estimation_factor, data_provider)
 
         self.fast_time_period = fast_time_period
         self.slow_time_period = slow_time_period
@@ -39,7 +39,7 @@ class MovingAverageAlphaModel(AlphaModel):
 
     def calculate_exposure(self, ticker: Ticker, current_exposure: Exposure) -> Exposure:
         num_of_bars_needed = self.slow_time_period
-        close_tms = self.data_handler.historical_price(ticker, PriceField.Close, num_of_bars_needed)
+        close_tms = self.data_provider.historical_price(ticker, PriceField.Close, num_of_bars_needed)
 
         fast_ma = close_tms.ewm(span=self.fast_time_period, adjust=False).mean()  # fast exponential moving average
         slow_ma = close_tms.ewm(span=self.slow_time_period, adjust=False).mean()  # slow exponential moving average

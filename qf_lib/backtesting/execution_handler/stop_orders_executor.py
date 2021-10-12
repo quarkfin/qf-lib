@@ -12,33 +12,22 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-from itertools import count
 from typing import List, Sequence
 
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
-from qf_lib.backtesting.data_handler.data_handler import DataHandler
-from qf_lib.backtesting.execution_handler.commission_models.commission_model import CommissionModel
+from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
 from qf_lib.backtesting.execution_handler.simulated_executor import SimulatedExecutor
-from qf_lib.backtesting.execution_handler.slippage.base import Slippage
-from qf_lib.backtesting.monitoring.abstract_monitor import AbstractMonitor
 from qf_lib.backtesting.order.execution_style import StopOrder
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.time_in_force import TimeInForce
-from qf_lib.backtesting.portfolio.portfolio import Portfolio
+from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
-from qf_lib.common.utils.dateutils.timer import Timer
+from qf_lib.common.tickers.tickers import Ticker
+from qf_lib.common.utils.dateutils.date_to_datetime import date_to_datetime
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
+from qf_lib.data_providers.helpers import cast_data_array_to_proper_type
 
 
 class StopOrdersExecutor(SimulatedExecutor):
-
-    def __init__(self, contracts_to_tickers_mapper: ContractTickerMapper, data_handler: DataHandler,
-                 monitor: AbstractMonitor, portfolio: Portfolio, timer: Timer, order_id_generator: count,
-                 commission_model: CommissionModel, slippage_model: Slippage):
-
-        super().__init__(contracts_to_tickers_mapper, data_handler, monitor, portfolio, timer,
-                         order_id_generator, commission_model, slippage_model)
-
     def assign_order_ids(self, orders: Sequence[Order]) -> List[int]:
         tickers = [self._contracts_to_tickers_mapper.contract_to_ticker(order.contract) for order in orders]
 
@@ -83,7 +72,7 @@ class StopOrdersExecutor(SimulatedExecutor):
 
         unique_tickers = list(set(tickers))
         # index=tickers, columns=fields
-        current_bars_df = self._data_handler.get_current_bar(unique_tickers)
+        current_bars_df = self._get_current_bars(unique_tickers)
         # type: QFDataFrame
 
         # Check at first if at this moment of time, expiry checks should be made or not (optimization reasons)
@@ -109,6 +98,50 @@ class StopOrdersExecutor(SimulatedExecutor):
                     no_slippage_fill_prices_list.append(no_slippage_fill_price)
 
         return no_slippage_fill_prices_list, to_be_executed_orders, expired_stop_orders
+
+    def _get_current_bars(self, tickers: Sequence[Ticker]) -> QFDataFrame:
+        """
+        Gets the current bars for given Tickers. If the bars are not available yet, NaNs are returned.
+        The result is a QFDataFrame with Tickers as an index and PriceFields as columns.
+
+        In case of daily trading, the current bar is returned only at the Market Close Event time, as the get_price
+        function will not return data for the current date until the market closes.
+
+        In case of intraday trading (for N minutes frequency) the current bar can be returned in the time between
+        (inclusive) N minutes after MarketOpenEvent and the MarketCloseEvent. Important: If current time ("now")
+        contains non-zero seconds or microseconds, NaNs will be returned.
+
+        """
+        if not tickers:
+            return QFDataFrame()
+
+        assert self._frequency >= Frequency.DAILY, "Lower than daily frequency is not supported by the simulated" \
+                                                   " executor"
+        current_datetime = self._timer.now()
+
+        market_close_time = current_datetime + MarketCloseEvent.trigger_time() == current_datetime
+
+        if self._frequency == Frequency.DAILY:
+            # In case of daily trading, the current bar can be returned only at the Market Close
+            if not market_close_time:
+                return QFDataFrame(index=tickers, columns=PriceField.ohlcv())
+            else:
+                current_datetime = date_to_datetime(current_datetime.date())
+                start_date = current_datetime - self._frequency.time_delta()
+                current_bar_start = current_datetime
+        else:
+            # In case of intraday trading the current full bar is always indexed by the left side of the time range
+            start_date = current_datetime - self._frequency.time_delta()
+            current_bar_start = start_date
+
+        prices_data_array = self._data_handler.get_price(tickers=tickers, fields=PriceField.ohlcv(),
+                                                         start_date=start_date, end_date=current_datetime,
+                                                         frequency=self._frequency)
+        try:
+            current_bars = cast_data_array_to_proper_type(prices_data_array.loc[current_bar_start])
+        except KeyError:
+            current_bars = QFDataFrame(index=tickers, columns=PriceField.ohlcv())
+        return current_bars
 
     def _calculate_no_slippage_fill_price(self, current_bar, order):
         """

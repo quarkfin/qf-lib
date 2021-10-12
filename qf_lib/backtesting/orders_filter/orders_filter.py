@@ -15,15 +15,15 @@ import abc
 from typing import List
 
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
-from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.order.order import Order
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
+from qf_lib.data_providers.data_provider import DataProvider
 
 
 class OrdersFilter(metaclass=abc.ABCMeta):
     """Adjusts final orders list to meet various requirements e.g. volume limitations."""
-    def __init__(self, data_handler: DataHandler, contract_ticker_mapper: ContractTickerMapper):
-        self._data_handler = data_handler
+    def __init__(self, data_provider: DataProvider, contract_ticker_mapper: ContractTickerMapper):
+        self._data_provider = data_provider
         self._contract_ticker_mapper = contract_ticker_mapper
 
         self.logger = qf_logger.getChild(self.__class__.__name__)

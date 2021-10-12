@@ -11,13 +11,14 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
+from datetime import datetime
 from typing import Optional
 
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
 from qf_lib.common.tickers.tickers import Ticker
 
 
-class Signal(object):
+class Signal:
     """
     Objects of this class are used in the portfolio construction process. They are returned by AlphaModels to
     determine the suggested trend direction as well as its strength
@@ -35,6 +36,8 @@ class Signal(object):
         price of the instrument. This value should always be positive
     last_available_price: Optional[float]
         The last price that was available at the time of generating the signal
+    creation_time: datetime
+        time when the signal was created
     confidence: float
         A float value in range [0;1] which describes the trust level for the AlphaModel in a current situation.
         By default set to 1.0 (maximum)
@@ -53,12 +56,13 @@ class Signal(object):
     """
 
     def __init__(self, ticker: Ticker, suggested_exposure: Exposure, fraction_at_risk: float,
-                 last_available_price: Optional[float] = None, confidence: float = 1.0,
+                 last_available_price: float, creation_time: datetime, confidence: float = 1.0,
                  expected_move: Optional[float] = None, symbol: Optional[str] = None, alpha_model=None):
         self.ticker = ticker
         self.symbol = symbol if symbol is not None else ticker.ticker
         self.suggested_exposure = suggested_exposure
         self.last_available_price = last_available_price
+        self.creation_time = creation_time
         self.confidence = confidence
         self.expected_move = expected_move
         self.fraction_at_risk = fraction_at_risk

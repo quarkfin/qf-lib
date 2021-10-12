@@ -13,17 +13,14 @@
 #     limitations under the License.
 
 from datetime import datetime
-from typing import Union, Sequence
+from typing import Union, Sequence, Optional
 
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.common.enums.frequency import Frequency
-from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
-from qf_lib.containers.qf_data_array import QFDataArray
-from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.data_providers.data_provider import DataProvider
 
 
@@ -33,31 +30,30 @@ class FastDataHandler(DataHandler):
     to be careful).
     """
 
-    def __init__(self, data_provider: DataProvider, timer: Timer):
+    def __init__(self, data_provider: DataProvider, timer: Timer, default_frequency: Frequency = Frequency.DAILY):
         super().__init__(data_provider, timer)
+        self._default_frequency = default_frequency
 
-    def historical_price(self, ticker, fields, num_of_bars_needed, frequency: Frequency = Frequency.DAILY):
-        end_date = self.timer.now()
+    def historical_price(self, ticker, fields, num_of_bars_needed, end_date: Optional[datetime] = None,
+                         frequency: Frequency = Frequency.DAILY):
+        end_date = self.timer.now() if end_date is None else end_date
         start_date = end_date - 2 * RelativeDelta(days=num_of_bars_needed)
         too_much_of_data = self.data_provider.get_price(ticker, fields, start_date, end_date,
                                                         frequency)  # type: PricesDataFrame
         result = too_much_of_data.tail(num_of_bars_needed)
         return result
 
-    def get_price(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
-                  start_date: datetime, end_date: datetime = None, frequency: Frequency = Frequency.DAILY) -> Union[PricesSeries, PricesDataFrame, QFDataArray]:
-        return self.data_provider.get_price(tickers, fields, start_date, end_date, frequency)
-
     def _check_frequency(self, frequency):
         pass
 
-    def _get_end_date_without_look_ahead(self, end_date=None):
-        pass
+    def _get_end_date_without_look_ahead(self, end_date: datetime = None):
+        return end_date
 
     def get_history(
             self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[str, Sequence[str]], start_date: datetime,
             end_date: datetime = None, frequency: Frequency = None, **kwargs):
         raise NotImplementedError("FastDataHandler does not currently support get_history() function")
 
-    def get_last_available_price(self, tickers: Union[Ticker, Sequence[Ticker]], frequency: Frequency = None):
+    def get_last_available_price(self, ickers: Union[Ticker, Sequence[Ticker]], frequency: Frequency = None,
+                                 end_time: Optional[datetime] = None):
         raise NotImplementedError("FastDataHandler does not currently support get_last_available_price() function")

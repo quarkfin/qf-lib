@@ -19,8 +19,9 @@ with open("README.md", "r") as fh:
 
 setup(
     name='qf-lib',
-    version='1.0',
-    author='Jacek Witkowski, Marcin Borratynski, Thomas Ruxton, Dominik Picheta, Olga Kalinowska, Karolina Cynk',
+    version='1.1',
+    author='Jacek Witkowski, Marcin Borratynski, Thomas Ruxton, Dominik Picheta, Olga Kalinowska, Karolina Cynk, '
+           'Jakub Czerski, Bartlomiej Czajewski',
     description='Quantitative Finance Library',
     long_description=long_description,
     license='Apache License 2.0',
@@ -68,7 +69,8 @@ setup(
     ],
     extras_require={
         "documentation": ["autodocsumm==0.1.13", "sphinx_rtd_theme==0.5.0", "Sphinx==3.1.1"],
-        "interactive brokers": ["ibapi"]
+        "interactive brokers": ["ibapi"],
+        "bloomberg_beap_hapi": ["PyJWT>=0.2.3,<2.0.0", "retrying==1.3.3"]
     },
     keywords='quantitative finance backtester',
     python_requires='>=3.9.0'

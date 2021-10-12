@@ -53,7 +53,6 @@ class PnLCalculator:
         contract_ticker_mapper: ContractTickerMapper
             contract ticker mapper used to map contracts from the Transaction objects onto Ticker objects
         """
-        """ Currently initial position is not supported. todo describe market open close and after event"""
         self._data_provider = data_provider
         self._contract_ticker_mapper = contract_ticker_mapper
 

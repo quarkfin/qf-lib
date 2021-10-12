@@ -12,31 +12,23 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-from itertools import count
 from typing import List, Sequence
 
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
-from qf_lib.backtesting.data_handler.data_handler import DataHandler
-from qf_lib.backtesting.execution_handler.commission_models.commission_model import CommissionModel
+from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
+from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
 from qf_lib.backtesting.execution_handler.simulated_executor import SimulatedExecutor
-from qf_lib.backtesting.execution_handler.slippage.base import Slippage
-from qf_lib.backtesting.monitoring.abstract_monitor import AbstractMonitor
 from qf_lib.backtesting.order.execution_style import MarketOrder
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.time_in_force import TimeInForce
-from qf_lib.backtesting.portfolio.portfolio import Portfolio
-from qf_lib.common.utils.dateutils.timer import Timer
+from qf_lib.common.enums.frequency import Frequency
+from qf_lib.common.enums.price_field import PriceField
+from qf_lib.common.tickers.tickers import Ticker
+from qf_lib.common.utils.dateutils.date_to_datetime import date_to_datetime
 from qf_lib.common.utils.numberutils.is_finite_number import is_finite_number
+from qf_lib.containers.series.qf_series import QFSeries
 
 
 class MarketOrdersExecutor(SimulatedExecutor):
-    def __init__(self, contracts_to_tickers_mapper: ContractTickerMapper, data_handler: DataHandler,
-                 monitor: AbstractMonitor, portfolio: Portfolio, timer: Timer, order_id_generator: count,
-                 commission_model: CommissionModel, slippage_model: Slippage):
-
-        super().__init__(contracts_to_tickers_mapper, data_handler, monitor, portfolio, timer,
-                         order_id_generator, commission_model, slippage_model)
-
     def assign_order_ids(self, orders: Sequence[Order]) -> List[int]:
         order_id_list = []
         for order in orders:
@@ -49,7 +41,7 @@ class MarketOrdersExecutor(SimulatedExecutor):
 
     def _get_orders_with_fill_prices_without_slippage(self, market_orders_list, tickers, market_open, market_close):
         unique_tickers = list(set(tickers))
-        current_prices_series = self._data_handler.get_current_price(unique_tickers)
+        current_prices_series = self._get_current_prices(unique_tickers)
 
         expired_orders = []  # type: List[int]
         to_be_executed_orders = []
@@ -75,6 +67,57 @@ class MarketOrdersExecutor(SimulatedExecutor):
                     no_slippage_prices.append(security_price)
 
         return no_slippage_prices, to_be_executed_orders, expired_orders
+
+    def _get_current_prices(self, tickers: Sequence[Ticker]):
+        """
+        Function used to obtain the current prices for the tickers in order to further calculate fill prices for orders.
+        The function uses data provider and not data handler, as it is necessary to get the current bar at each point
+        in time to compute the fill prices.
+        """
+        if not tickers:
+            return QFSeries()
+
+        assert self._frequency >= Frequency.DAILY, "Lower than daily frequency is not supported by the simulated" \
+                                                   " executor"
+
+        # Compute the time ranges, used further by the get_price function
+        current_datetime = self._timer.now()
+
+        market_close_time = current_datetime + MarketCloseEvent.trigger_time() == current_datetime
+        market_open_time = current_datetime + MarketOpenEvent.trigger_time() == current_datetime
+
+        # In case of daily frequency, current price may be returned only at the Market Open or Market Close time
+        if self._frequency == Frequency.DAILY and not (market_open_time or market_close_time):
+            return QFSeries(index=tickers)
+
+        if self._frequency == Frequency.DAILY:
+            # Remove the time part from the datetime in case of daily frequency
+            current_datetime = date_to_datetime(current_datetime.date())
+            start_time_range = current_datetime - self._frequency.time_delta()
+            end_time_range = current_datetime
+        elif market_close_time:
+            # At the market close, in order to get the current price we need to take a bar that ends at the current time
+            # and use the close price value
+            start_time_range = current_datetime - self._frequency.time_delta()
+            end_time_range = current_datetime
+            current_datetime = start_time_range
+        else:
+            # At any other time during the day, in order to get the current price we need to take the bar that starts at
+            # the current time and use the open price value
+            start_time_range = current_datetime
+            end_time_range = current_datetime + self._frequency.time_delta()
+
+        price_field = PriceField.Close if market_close_time else PriceField.Open
+        prices_df = self._data_provider.get_price(tickers, price_field, start_time_range, end_time_range,
+                                                  self._frequency)
+
+        try:
+            prices_series = prices_df.loc[current_datetime]
+        except KeyError:
+            prices_series = QFSeries(index=tickers)
+
+        prices_series.name = "Current prices series"
+        return prices_series
 
     def _check_order_validity(self, order):
         assert order.execution_style == MarketOrder(), \

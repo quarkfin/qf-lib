@@ -170,7 +170,6 @@ class PresetDataProvider(DataProvider):
         return normalized_result
 
     def _check_if_cached_data_available(self, tickers, fields, start_date, end_date):
-
         uncached_tickers = set(tickers) - self._tickers_cached_set
         if uncached_tickers:
             tickers_str = [t.as_string() for t in uncached_tickers]
@@ -181,10 +180,18 @@ class PresetDataProvider(DataProvider):
         if uncached_fields:
             raise ValueError("Fields: {} are not available in the Data Bundle".format(fields))
 
-        if start_date < self._start_date:
+        def remove_time_part(date: datetime):
+            return datetime(date.year, date.month, date.day)
+
+        start_date_not_included = start_date < self._start_date if self._frequency > Frequency.DAILY else \
+            remove_time_part(start_date) < remove_time_part(self._start_date)
+        if start_date_not_included:
             raise ValueError("Requested start date {} is before data bundle start date {}".
                              format(start_date, self._start_date))
-        if end_date > self._end_date:
+
+        end_date_not_included = end_date > self._end_date if self._frequency > Frequency.DAILY else \
+            remove_time_part(end_date) > remove_time_part(self._end_date)
+        if end_date_not_included:
             raise ValueError("Requested end date {} is after data bundle end date {}".
                              format(end_date, self._end_date))
 
@@ -229,7 +236,8 @@ class PresetDataProvider(DataProvider):
 
         # Map the specific tickers onto the tickers given by the tickers_mapping array
         if isinstance(normalized_result, QFDataArray):
-            normalized_result.tickers.values = [tickers_mapping[t] for t in normalized_result.tickers.values]
+            normalized_result = normalized_result.assign_coords(
+                tickers=[tickers_mapping[t] for t in normalized_result.tickers.values])
         elif isinstance(normalized_result, PricesDataFrame):
             normalized_result = normalized_result.rename(columns=tickers_mapping)
         elif isinstance(normalized_result, PricesSeries):

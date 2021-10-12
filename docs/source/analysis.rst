@@ -16,6 +16,7 @@ analysis
     tearsheets.strategy_monitoring_document.StrategyMonitoringDocument
     tearsheets.tearsheet_with_benchmark.TearsheetWithBenchmark
     tearsheets.tearsheet_without_benchmark.TearsheetWithoutBenchmark
+    tearsheets.tearsheet_comparative.TearsheetComparative
     timeseries_analysis.timeseries_analysis.TimeseriesAnalysis
     trade_analysis.trades_generator.TradesGenerator
     trade_analysis.trade_analysis_sheet.TradeAnalysisSheet

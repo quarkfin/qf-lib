@@ -93,7 +93,7 @@ def run_strategy(data_provider: DataProvider) -> Tuple[float, str]:
     session_builder.set_monitor_settings(BacktestMonitorSettings.no_stats())
 
     ts = session_builder.build(start_date, end_date)
-    ts.use_data_preloading(SimpleMAStrategy.ticker, RelativeDelta(days=40))
+    ts.use_data_preloading(SimpleMAStrategy.ticker, RelativeDelta(days=50))
 
     SimpleMAStrategy(ts)
     ts.start_trading()

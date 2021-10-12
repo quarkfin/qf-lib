@@ -16,6 +16,8 @@ from unittest import TestCase
 from unittest.mock import Mock, call
 
 import pandas as pd
+from numpy import nan
+from pandas import date_range
 
 from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.simulated_bloomberg_mapper import \
@@ -37,12 +39,13 @@ from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.backtesting.portfolio.transaction import Transaction
 from qf_lib.common.enums.frequency import Frequency
-from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.dateutils.timer import SettableTimer
+from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.qf_series import QFSeries
+from qf_lib.data_providers.data_provider import DataProvider
 from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_lists_equal
 
 
@@ -65,6 +68,7 @@ class TestStopLossExecutionStyle(TestCase):
         self.timer = SettableTimer(initial_time=before_close)
 
         self.data_handler = Mock(spec=DataHandler)
+        self.data_handler.data_provider = Mock(spec=DataProvider)
 
         scheduler = Mock(spec=Scheduler)
         ScheduleOrderExecutionEvent.clear()
@@ -238,7 +242,8 @@ class TestStopLossExecutionStyle(TestCase):
                                                                                           name=self.start_date)
 
     def _set_bar_for_today(self, open_price, high_price, low_price, close_price, volume):
-        self.data_handler.get_current_bar.side_effect = lambda tickers: pd.DataFrame(
-            index=pd.Index(tickers), columns=PriceField.ohlcv(),
-            data=[[open_price, high_price, low_price, close_price, volume]]
-        )
+        self.data_handler.get_price.side_effect = lambda tickers, fields, start_date, end_date, frequency: \
+            QFDataArray.create(tickers=tickers, fields=fields,
+                               dates=date_range(start_date, end_date, freq=frequency.to_pandas_freq()),
+                               data=[[[nan, nan, nan, nan, nan]],
+                                     [[open_price, high_price, low_price, close_price, volume]]])

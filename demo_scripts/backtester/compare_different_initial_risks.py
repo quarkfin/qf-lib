@@ -20,7 +20,8 @@ from demo_scripts.backtester.moving_average_alpha_model import MovingAverageAlph
 from demo_scripts.demo_configuration.demo_ioc import container
 from qf_lib.analysis.trade_analysis.trades_generator import TradesGenerator
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
-from qf_lib.backtesting.alpha_model.alpha_model_strategy import AlphaModelStrategy
+from qf_lib.backtesting.strategies.signal_generators import OnBeforeMarketOpenSignalGeneration
+from qf_lib.backtesting.strategies.alpha_model_strategy import AlphaModelStrategy
 from qf_lib.backtesting.fast_alpha_model_tester.initial_risk_stats import InitialRiskStatsFactory
 from qf_lib.backtesting.fast_alpha_model_tester.scenarios_generator import ScenariosGenerator
 from qf_lib.backtesting.monitoring.backtest_monitor import BacktestMonitorSettings
@@ -48,7 +49,8 @@ def _create_trading_session(init_risk: float):
 def get_trade_rets_values(ts: BacktestTradingSession, model: AlphaModel) -> List[float]:
     model_tickers_dict = {model: [BloombergTicker('SVXY US Equity')]}
 
-    AlphaModelStrategy(ts, model_tickers_dict, use_stop_losses=True)
+    strategy = AlphaModelStrategy(ts, model_tickers_dict, use_stop_losses=True)
+    OnBeforeMarketOpenSignalGeneration(strategy)
     ts.use_data_preloading([BloombergTicker('SVXY US Equity')])
     ts.start_trading()
 
@@ -73,8 +75,7 @@ def main():
     for init_risk in initial_risks_list:
         start_time = time()
         ts = _create_trading_session(init_risk)
-        data_handler = ts.data_handler
-        alpha_model = MovingAverageAlphaModel(5, 20, 1.25, data_handler)  # Change to a different alpha model to test it
+        alpha_model = MovingAverageAlphaModel(5, 20, 1.25, ts.data_provider)  # Change to a different alpha model to test it
         trade_rets_values = get_trade_rets_values(ts, alpha_model)
         scenarios_df = scenarios_generator.make_scenarios(
             trade_rets_values, scenarios_length=100, num_of_scenarios=10000

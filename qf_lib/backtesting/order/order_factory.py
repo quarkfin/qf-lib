@@ -18,30 +18,30 @@ from typing import Mapping, Dict, List
 from qf_lib.backtesting.broker.broker import Broker
 from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
-from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.order.execution_style import ExecutionStyle
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.miscellaneous.function_name import get_function_name
+from qf_lib.data_providers.data_provider import DataProvider
 
 
-class OrderFactory(object):
+class OrderFactory:
     """ Creates Orders.
 
     Parameters
     ----------
     broker: Broker
         broker used to access the portfolio
-    data_handler: DataHandler
-        data handler used to download prices
+    data_provider: DataProvider
+        data provider used to download prices. In case of backtesting, the DataHandler wrapper should be used.
     contract_to_ticker_mapper: ContractTickerMapper
         object mapping contracts to tickers
     """
-    def __init__(self, broker: Broker, data_handler: DataHandler, contract_to_ticker_mapper: ContractTickerMapper):
+    def __init__(self, broker: Broker, data_provider: DataProvider, contract_to_ticker_mapper: ContractTickerMapper):
         self.broker = broker
-        self.data_handler = data_handler
+        self.data_provider = data_provider
         self.contract_to_ticker_mapper = contract_to_ticker_mapper
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
@@ -297,7 +297,9 @@ class OrderFactory(object):
             contract_to_amount_of_money)
 
         tickers = list(tickers_to_contract_and_amount_of_money.keys())
-        current_prices = self.data_handler.get_last_available_price(tickers, frequency)
+        # In case of live trading the get_last_available_price will use datetime.now() as the current time to obtain
+        # last price and in case of a backtest - it will use the data handlers timer to compute the date
+        current_prices = self.data_provider.get_last_available_price(tickers, frequency)
 
         # Contract -> target number of shares
         target_quantities = dict()  # type: Dict[Contract, float]

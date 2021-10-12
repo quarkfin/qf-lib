@@ -15,7 +15,8 @@ import unittest
 from typing import List
 from unittest.mock import patch, MagicMock, Mock
 
-from qf_lib.backtesting.alpha_model.alpha_model_strategy import AlphaModelStrategy
+from qf_lib.backtesting.order.time_in_force import TimeInForce
+from qf_lib.backtesting.strategies.alpha_model_strategy import AlphaModelStrategy
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
 from qf_lib.backtesting.signals.signal import Signal
 from qf_lib.backtesting.contract.contract import Contract
@@ -23,6 +24,7 @@ from qf_lib.backtesting.contract.contract_to_ticker_conversion.simulated_bloombe
     SimulatedBloombergContractTickerMapper
 from qf_lib.backtesting.portfolio.backtest_position import BacktestPosition
 from qf_lib.backtesting.portfolio.position_factory import BacktestPositionFactory
+from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.date_format import DateFormat
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
@@ -45,6 +47,7 @@ class TestAlphaModelStrategy(unittest.TestCase):
         self.ts = MagicMock()
         self.ts.contract_ticker_mapper = SimulatedBloombergContractTickerMapper()
         self.ts.timer = SettableTimer(str_to_date("2000-01-04 08:00:00.0", DateFormat.FULL_ISO))
+        self.ts.frequency = Frequency.DAILY
 
         self.positions_in_portfolio = []  # type: List[Contract]
         """Contracts for which a position in the portfolio currently exists. This list is used to return backtest
@@ -61,8 +64,8 @@ class TestAlphaModelStrategy(unittest.TestCase):
         alpha_model_strategy = AlphaModelStrategy(self.ts, {self.alpha_model: [self.ticker]},
                                                   use_stop_losses=False)
         # In case of empty portfolio get_signal function should have current exposure set to OUT
-        alpha_model_strategy.on_before_market_open()
-        self.alpha_model.get_signal.assert_called_with(self.ticker, Exposure.OUT)
+        alpha_model_strategy.calculate_and_place_orders()
+        self.alpha_model.get_signal.assert_called_with(self.ticker, Exposure.OUT, self.ts.timer.now(), Frequency.DAILY)
 
         # Open long position in the portfolio
         self.positions_in_portfolio = [Mock(spec=BacktestPosition, **{
@@ -70,8 +73,8 @@ class TestAlphaModelStrategy(unittest.TestCase):
             'quantity.return_value': 10,
             'start_time': str_to_date("2000-01-01")
         })]
-        alpha_model_strategy.on_before_market_open()
-        self.alpha_model.get_signal.assert_called_with(self.ticker, Exposure.LONG)
+        alpha_model_strategy.calculate_and_place_orders()
+        self.alpha_model.get_signal.assert_called_with(self.ticker, Exposure.LONG, self.ts.timer.now(), Frequency.DAILY)
 
         # Open short position in the portfolio
         self.positions_in_portfolio = [Mock(spec=BacktestPosition, **{
@@ -79,13 +82,13 @@ class TestAlphaModelStrategy(unittest.TestCase):
             'quantity.return_value': -10,
             'start_time': str_to_date("2000-01-01")
         })]
-        alpha_model_strategy.on_before_market_open()
-        self.alpha_model.get_signal.assert_called_with(self.ticker, Exposure.SHORT)
+        alpha_model_strategy.calculate_and_place_orders()
+        self.alpha_model.get_signal.assert_called_with(self.ticker, Exposure.SHORT, self.ts.timer.now(), Frequency.DAILY)
 
         # Verify if in case of two positions for the same contract an exception will be raised by the strategy
         self.positions_in_portfolio = [BacktestPositionFactory.create_position(c) for c in (
             Contract("Example Ticker", "STK", "SIM_EXCHANGE"), Contract("Example Ticker", "STK", "SIM_EXCHANGE"))]
-        self.assertRaises(AssertionError, alpha_model_strategy.on_before_market_open)
+        self.assertRaises(AssertionError, alpha_model_strategy.calculate_and_place_orders)
 
     def test__get_current_exposure__future_ticker(self):
         """
@@ -98,21 +101,23 @@ class TestAlphaModelStrategy(unittest.TestCase):
         futures_alpha_model_strategy = AlphaModelStrategy(self.ts, {self.alpha_model: [self.future_ticker]},
                                                           use_stop_losses=False)
         # In case of empty portfolio get_signal function should have current exposure set to OUT
-        futures_alpha_model_strategy.on_before_market_open()
+        futures_alpha_model_strategy.calculate_and_place_orders()
         expected_current_exposure_values.append(Exposure.OUT)
-        self.alpha_model.get_signal.assert_called_with(self.future_ticker, Exposure.OUT)
+        self.alpha_model.get_signal.assert_called_with(self.future_ticker, Exposure.OUT, self.ts.timer.now(),
+                                                       Frequency.DAILY)
 
         self.positions_in_portfolio = [Mock(spec=BacktestPosition, **{
             'contract.return_value': Contract("ExampleZ00 Comdty", "FUT", "SIM_EXCHANGE"),
             'quantity.return_value': 10,
             'start_time': str_to_date("2000-01-01")
         })]
-        futures_alpha_model_strategy.on_before_market_open()
-        self.alpha_model.get_signal.assert_called_with(self.future_ticker, Exposure.LONG)
+        futures_alpha_model_strategy.calculate_and_place_orders()
+        self.alpha_model.get_signal.assert_called_with(self.future_ticker, Exposure.LONG, self.ts.timer.now(),
+                                                       Frequency.DAILY)
 
         self.positions_in_portfolio = [BacktestPositionFactory.create_position(c) for c in (
             Contract("ExampleZ00 Comdty", "STK", "SIM_EXCHANGE"), Contract("ExampleZ00 Comdty", "STK", "SIM_EXCHANGE"))]
-        self.assertRaises(AssertionError, futures_alpha_model_strategy.on_before_market_open)
+        self.assertRaises(AssertionError, futures_alpha_model_strategy.calculate_and_place_orders)
 
     @patch.object(FuturesRollingOrdersGenerator, 'generate_close_orders')
     def test__get_current_exposure__future_ticker_rolling(self, generate_close_orders):
@@ -121,7 +126,8 @@ class TestAlphaModelStrategy(unittest.TestCase):
         contract exists in portfolio and the rolling should be performed.
         """
         # Set the future ticker to point to a new specific ticker, different from the one in the position from portfolio
-        self.future_ticker.get_current_specific_ticker.return_value = BloombergTicker("ExampleN01 Comdty")
+        self.future_ticker.ticker = "ExampleN01 Comdty"
+
         futures_alpha_model_strategy = AlphaModelStrategy(self.ts, {self.alpha_model: [self.future_ticker]},
                                                           use_stop_losses=False)
         self.positions_in_portfolio = [Mock(spec=BacktestPosition, **{
@@ -129,9 +135,10 @@ class TestAlphaModelStrategy(unittest.TestCase):
             'quantity.return_value': 10,
             'start_time': str_to_date("2000-01-01")
         })]
-        futures_alpha_model_strategy.on_before_market_open()
+        futures_alpha_model_strategy.calculate_and_place_orders()
 
-        self.alpha_model.get_signal.assert_called_once_with(self.future_ticker, Exposure.LONG)
+        self.alpha_model.get_signal.assert_called_once_with(self.future_ticker, Exposure.LONG, self.ts.timer.now(),
+                                                            Frequency.DAILY)
 
         self.positions_in_portfolio = [Mock(spec=BacktestPosition, **{
             'contract.return_value': Contract("ExampleZ00 Comdty", "FUT", "SIM_EXCHANGE"),
@@ -142,7 +149,7 @@ class TestAlphaModelStrategy(unittest.TestCase):
             'quantity.return_value': 20,
             'start_time': str_to_date("2000-01-02")
         })]
-        self.assertRaises(AssertionError, futures_alpha_model_strategy.on_before_market_open)
+        self.assertRaises(AssertionError, futures_alpha_model_strategy.calculate_and_place_orders)
 
     @patch.object(FuturesRollingOrdersGenerator, 'generate_close_orders')
     def test__get_current_exposure__future_ticker_rolling_2(self, generate_close_orders):
@@ -151,7 +158,8 @@ class TestAlphaModelStrategy(unittest.TestCase):
         contract exists in portfolio and the rolling should be performed.
         """
         # Set the future ticker to point to a new specific ticker, different from the one in the position from portfolio
-        self.future_ticker.get_current_specific_ticker.return_value = BloombergTicker("ExampleN01 Comdty")
+        self.future_ticker.ticker = "ExampleN01 Comdty"
+
         futures_alpha_model_strategy = AlphaModelStrategy(self.ts, {self.alpha_model: [self.future_ticker]},
                                                           use_stop_losses=False)
 
@@ -164,8 +172,9 @@ class TestAlphaModelStrategy(unittest.TestCase):
             'quantity.return_value': 20,
             'start_time': str_to_date("2000-01-02")
         })]
-        futures_alpha_model_strategy.on_before_market_open()
-        self.alpha_model.get_signal.assert_called_once_with(self.future_ticker, Exposure.LONG)
+        futures_alpha_model_strategy.calculate_and_place_orders()
+        self.alpha_model.get_signal.assert_called_once_with(self.future_ticker, Exposure.LONG, self.ts.timer.now(),
+                                                            Frequency.DAILY)
 
     @patch.object(FuturesRollingOrdersGenerator, 'generate_close_orders')
     def test__get_current_exposure__future_ticker_rolling_3(self, generate_close_orders):
@@ -174,7 +183,7 @@ class TestAlphaModelStrategy(unittest.TestCase):
         contract exists in portfolio and the rolling should be performed.
         """
         # Set the future ticker to point to a new specific ticker, different from the one in the position from portfolio
-        self.future_ticker.get_current_specific_ticker.return_value = BloombergTicker("ExampleN01 Comdty")
+        self.future_ticker.ticker = BloombergTicker("ExampleN01 Comdty")
         futures_alpha_model_strategy = AlphaModelStrategy(self.ts, {self.alpha_model: [self.future_ticker]},
                                                           use_stop_losses=False)
 
@@ -191,7 +200,7 @@ class TestAlphaModelStrategy(unittest.TestCase):
             'quantity.return_value': 20,
             'start_time': str_to_date("2000-01-02")
         })]
-        self.assertRaises(AssertionError, futures_alpha_model_strategy.on_before_market_open)
+        self.assertRaises(AssertionError, futures_alpha_model_strategy.calculate_and_place_orders)
 
     @patch.object(FuturesRollingOrdersGenerator, 'generate_close_orders')
     def test__adjust_number_of_open_positions_1(self, generate_close_orders):
@@ -205,19 +214,20 @@ class TestAlphaModelStrategy(unittest.TestCase):
         In order to test the number of positions adjustment functionality, the get_signal method of alpha model and
         size_signals method od position sizer are mocked and the flow of signals between them is verified.
         """
-        self.future_ticker.get_current_specific_ticker.return_value = BloombergTicker("ExampleN01 Comdty")
+        self.future_ticker.ticker = BloombergTicker("ExampleN01 Comdty")
         alpha_model_strategy = AlphaModelStrategy(self.ts, {self.alpha_model: [self.ticker]},
                                                   use_stop_losses=False, max_open_positions=1)
-        self.alpha_model.get_signal.return_value = Signal(BloombergTicker("Example Ticker"), Exposure.LONG, 1)
+        self.alpha_model.get_signal.return_value = Signal(BloombergTicker("Example Ticker"), Exposure.LONG, 1, Mock(),
+                                                          Mock())
 
         self.positions_in_portfolio = [Mock(spec=BacktestPosition, **{
             'contract.return_value': Contract("ExampleZ00 Comdty", "FUT", "SIM_EXCHANGE"),
             'quantity.return_value': -10,
             'start_time': str_to_date("2000-01-01")
         })]
-        alpha_model_strategy.on_before_market_open()
+        alpha_model_strategy.calculate_and_place_orders()
         self.ts.position_sizer.size_signals.assert_called_with(
-            [Signal(BloombergTicker("Example Ticker"), Exposure.LONG, 1)], False)
+            [Signal(BloombergTicker("Example Ticker"), Exposure.LONG, 1, Mock(), Mock())], False, TimeInForce.OPG, Frequency.DAILY)
 
     @patch.object(FuturesRollingOrdersGenerator, 'generate_close_orders')
     def test__adjust_number_of_open_positions_2(self, generate_close_orders):
@@ -228,19 +238,19 @@ class TestAlphaModelStrategy(unittest.TestCase):
         - there is a signal with suggested exposure LONG for ExampleN01 Comdty
         - Expected output: ExampleN01 Comdty suggested exposure will be unchanged
         """
-        self.future_ticker.get_current_specific_ticker.return_value = BloombergTicker("ExampleN01 Comdty")
+        self.future_ticker.ticker = BloombergTicker("ExampleN01 Comdty")
         alpha_model_strategy = AlphaModelStrategy(self.ts, {self.alpha_model: [self.future_ticker]},
                                                   use_stop_losses=False, max_open_positions=1)
-        self.alpha_model.get_signal.return_value = Signal(self.future_ticker, Exposure.LONG, 1)
+        self.alpha_model.get_signal.return_value = Signal(self.future_ticker, Exposure.LONG, 1, Mock(), Mock())
 
         self.positions_in_portfolio = [Mock(spec=BacktestPosition, **{
             'contract.return_value': Contract("ExampleZ00 Comdty", "FUT", "SIM_EXCHANGE"),
             'quantity.return_value': -10,
             'start_time': str_to_date("2000-01-01")
         })]
-        alpha_model_strategy.on_before_market_open()
+        alpha_model_strategy.calculate_and_place_orders()
         self.ts.position_sizer.size_signals.assert_called_with(
-            [Signal(self.future_ticker, Exposure.LONG, 1)], False)
+            [Signal(self.future_ticker, Exposure.LONG, 1, Mock(), Mock())], False, TimeInForce.OPG, Frequency.DAILY)
 
     @patch.object(FuturesRollingOrdersGenerator, 'generate_close_orders')
     def test__adjust_number_of_open_positions_3(self, generate_close_orders):
@@ -251,21 +261,23 @@ class TestAlphaModelStrategy(unittest.TestCase):
         - there are 2 LONG signals for ExampleN01 Comdty and Example Ticker
         - Expected output: Example Ticker will be changed to OUT, signal for ExampleN01 Comdty will be unchanged
         """
-        self.future_ticker.get_current_specific_ticker.return_value = BloombergTicker("ExampleN01 Comdty")
+        self.future_ticker.ticker = BloombergTicker("ExampleN01 Comdty")
         alpha_model_strategy = AlphaModelStrategy(self.ts, {self.alpha_model: [self.future_ticker, self.ticker]},
                                                   use_stop_losses=False, max_open_positions=1)
-        self.alpha_model.get_signal.side_effect = lambda ticker, _: Signal(ticker, Exposure.LONG, 1)
+        self.alpha_model.get_signal.side_effect = lambda ticker, exposure, time, freq: Signal(ticker, Exposure.LONG, 1,
+                                                                                              Mock(), Mock())
 
         self.positions_in_portfolio = [Mock(spec=BacktestPosition, **{
             'contract.return_value': Contract("ExampleZ00 Comdty", "FUT", "SIM_EXCHANGE"),
             'quantity.return_value': -10,
             'start_time': str_to_date("2000-01-01")
         })]
-        alpha_model_strategy.on_before_market_open()
+        alpha_model_strategy.calculate_and_place_orders()
         self.ts.position_sizer.size_signals.assert_called_once()
         args, kwargs = self.ts.position_sizer.size_signals.call_args_list[0]
-        signals, _ = args
-        expected_signals = [Signal(self.future_ticker, Exposure.LONG, 1), Signal(self.ticker, Exposure.OUT, 1)]
+        signals, _, _, _ = args
+        expected_signals = [Signal(self.future_ticker, Exposure.LONG, 1, Mock(), Mock()),
+                            Signal(self.ticker, Exposure.OUT, 1, Mock(), Mock())]
         self.assertCountEqual(signals, expected_signals)
 
     def test__adjust_number_of_open_positions_4(self):
@@ -276,7 +288,7 @@ class TestAlphaModelStrategy(unittest.TestCase):
         - there is signal for ExampleZ00 Comdty with suggested exposure OUT and for Example Ticker - LONG
         - Expected output: Example Ticker will be changed to OUT
         """
-        self.future_ticker.get_current_specific_ticker.return_value = BloombergTicker("AN01 Index")
+        self.future_ticker.ticker = BloombergTicker("AN01 Index")
 
         alpha_model_strategy = AlphaModelStrategy(self.ts,
                                                   {self.alpha_model: [BloombergTicker("ExampleZ00 Comdty"),
@@ -287,19 +299,20 @@ class TestAlphaModelStrategy(unittest.TestCase):
             BloombergTicker("ExampleZ00 Comdty"): Exposure.OUT,
             BloombergTicker("Example Ticker"): Exposure.LONG,
         }
-        self.alpha_model.get_signal.side_effect = lambda ticker, _: Signal(ticker, exposures[ticker], 1)
+        self.alpha_model.get_signal.side_effect = lambda ticker, exposure, time, freq: Signal(ticker, exposures[ticker],
+                                                                                              1, Mock(), Mock())
 
         self.positions_in_portfolio = [Mock(spec=BacktestPosition, **{
             'contract.return_value': Contract("ExampleZ00 Comdty", "FUT", "SIM_EXCHANGE"),
             'quantity.return_value': -10,
             'start_time': str_to_date("2000-01-01")
         })]
-        alpha_model_strategy.on_before_market_open()
+        alpha_model_strategy.calculate_and_place_orders()
         self.ts.position_sizer.size_signals.assert_called_once()
         args, kwargs = self.ts.position_sizer.size_signals.call_args_list[0]
-        signals, _ = args
-        expected_signals = [Signal(BloombergTicker("ExampleZ00 Comdty"), Exposure.OUT, 1),
-                            Signal(BloombergTicker("Example Ticker"), Exposure.OUT, 1)]
+        signals, _, _, _ = args
+        expected_signals = [Signal(BloombergTicker("ExampleZ00 Comdty"), Exposure.OUT, 1, Mock(), Mock()),
+                            Signal(BloombergTicker("Example Ticker"), Exposure.OUT, 1, Mock(), Mock())]
         self.assertCountEqual(signals, expected_signals)
 
     def test__adjust_number_of_open_positions__multiple_models(self):
@@ -317,20 +330,22 @@ class TestAlphaModelStrategy(unittest.TestCase):
             alpha_model_2: [BloombergTicker("Example Ticker")]
         }, use_stop_losses=False, max_open_positions=1)
 
-        self.alpha_model.get_signal.return_value = Signal(BloombergTicker("ExampleZ00 Comdty"), Exposure.LONG, 1)
-        alpha_model_2.get_signal.return_value = Signal(BloombergTicker("Example Ticker"), Exposure.LONG, 1)
+        self.alpha_model.get_signal.return_value = Signal(BloombergTicker("ExampleZ00 Comdty"), Exposure.LONG, 1,
+                                                          Mock(), Mock())
+        alpha_model_2.get_signal.return_value = Signal(BloombergTicker("Example Ticker"), Exposure.LONG, 1,
+                                                       Mock(), Mock())
 
         self.positions_in_portfolio = [Mock(spec=BacktestPosition, **{
             'contract.return_value': Contract("ExampleZ00 Comdty", "FUT", "SIM_EXCHANGE"),
             'quantity.return_value': -10,
             'start_time': str_to_date("2000-01-01")
         })]
-        alpha_model_strategy.on_before_market_open()
+        alpha_model_strategy.calculate_and_place_orders()
         self.ts.position_sizer.size_signals.assert_called_once()
         args, kwargs = self.ts.position_sizer.size_signals.call_args_list[0]
-        signals, _ = args
-        expected_signals = [Signal(BloombergTicker("ExampleZ00 Comdty"), Exposure.LONG, 1),
-                            Signal(BloombergTicker("Example Ticker"), Exposure.OUT, 1)]
+        signals, _, _, _ = args
+        expected_signals = [Signal(BloombergTicker("ExampleZ00 Comdty"), Exposure.LONG, 1, Mock(), Mock()),
+                            Signal(BloombergTicker("Example Ticker"), Exposure.OUT, 1, Mock(), Mock())]
         self.assertCountEqual(signals, expected_signals)
 
     @patch.object(FuturesRollingOrdersGenerator, 'generate_close_orders')
@@ -343,7 +358,7 @@ class TestAlphaModelStrategy(unittest.TestCase):
         - there is signal with suggested exposure LONG for Example Ticker and LONG for ExampleN00 Comdty
         - Expected output: Example Ticker suggested exposure will be changed to OUT
         """
-        self.future_ticker.get_current_specific_ticker.return_value = BloombergTicker("ExampleN00 Comdty")
+        self.future_ticker.ticker = BloombergTicker("ExampleN00 Comdty")
         alpha_model_2 = MagicMock()
 
         alpha_model_strategy = AlphaModelStrategy(self.ts, {
@@ -352,20 +367,20 @@ class TestAlphaModelStrategy(unittest.TestCase):
         }, use_stop_losses=False, max_open_positions=1)
 
         self.alpha_model.get_signal.return_value = Signal(self.future_ticker,
-                                                          Exposure.LONG, 1)
-        alpha_model_2.get_signal.return_value = Signal(BloombergTicker("Example Ticker"), Exposure.LONG, 1)
+                                                          Exposure.LONG, 1, Mock(), Mock())
+        alpha_model_2.get_signal.return_value = Signal(BloombergTicker("Example Ticker"), Exposure.LONG, 1, Mock(), Mock())
 
         self.positions_in_portfolio = [Mock(spec=BacktestPosition, **{
             'contract.return_value': Contract("ExampleZ00 Comdty", "FUT", "SIM_EXCHANGE"),
             'quantity.return_value': -10,
             'start_time': str_to_date("2000-01-01")
         })]
-        alpha_model_strategy.on_before_market_open()
+        alpha_model_strategy.calculate_and_place_orders()
         self.ts.position_sizer.size_signals.assert_called_once()
         args, kwargs = self.ts.position_sizer.size_signals.call_args_list[0]
-        signals, _ = args
-        expected_signals = [Signal(self.future_ticker, Exposure.LONG, 1),
-                            Signal(BloombergTicker("Example Ticker"), Exposure.OUT, 1)]
+        signals, _, _, _ = args
+        expected_signals = [Signal(self.future_ticker, Exposure.LONG, 1, Mock(), Mock()),
+                            Signal(BloombergTicker("Example Ticker"), Exposure.OUT, 1, Mock(), Mock())]
         self.assertCountEqual(signals, expected_signals)
 
     @patch.object(FuturesRollingOrdersGenerator, 'generate_close_orders')
@@ -378,7 +393,7 @@ class TestAlphaModelStrategy(unittest.TestCase):
         - there is signal with suggested exposure LONG for Example Ticker and OUT for ExampleN00 Comdty
         - Expected output: Example Ticker suggested exposure will be changed to OUT
         """
-        self.future_ticker.get_current_specific_ticker.return_value = BloombergTicker("ExampleN00 Comdty")
+        self.future_ticker.ticker = BloombergTicker("ExampleN00 Comdty")
         alpha_model_2 = MagicMock()
 
         alpha_model_strategy = AlphaModelStrategy(self.ts, {
@@ -387,18 +402,19 @@ class TestAlphaModelStrategy(unittest.TestCase):
         }, use_stop_losses=False, max_open_positions=1)
 
         self.alpha_model.get_signal.return_value = Signal(self.future_ticker,
-                                                          Exposure.OUT, 1)
-        alpha_model_2.get_signal.return_value = Signal(BloombergTicker("Example Ticker"), Exposure.LONG, 1)
+                                                          Exposure.OUT, 1, Mock(), Mock())
+        alpha_model_2.get_signal.return_value = Signal(BloombergTicker("Example Ticker"), Exposure.LONG, 1,
+                                                       Mock(), Mock())
 
         self.positions_in_portfolio = [Mock(spec=BacktestPosition, **{
             'contract.return_value': Contract("ExampleZ00 Comdty", "FUT", "SIM_EXCHANGE"),
             'quantity.return_value': -10,
             'start_time': str_to_date("2000-01-01")
         })]
-        alpha_model_strategy.on_before_market_open()
+        alpha_model_strategy.calculate_and_place_orders()
         self.ts.position_sizer.size_signals.assert_called_once()
         args, kwargs = self.ts.position_sizer.size_signals.call_args_list[0]
-        signals, _ = args
-        expected_signals = [Signal(self.future_ticker, Exposure.OUT, 1),
-                            Signal(BloombergTicker("Example Ticker"), Exposure.OUT, 1)]
+        signals, _, _, _ = args
+        expected_signals = [Signal(self.future_ticker, Exposure.OUT, 1, Mock(), Mock()),
+                            Signal(BloombergTicker("Example Ticker"), Exposure.OUT, 1, Mock(), Mock())]
         self.assertCountEqual(signals, expected_signals)

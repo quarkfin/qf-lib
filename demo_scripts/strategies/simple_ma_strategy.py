@@ -12,13 +12,16 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 import matplotlib.pyplot as plt
+
+from qf_lib.backtesting.strategies.abstract_strategy import AbstractStrategy
+from qf_lib.backtesting.strategies.signal_generators import OnBeforeMarketOpenSignalGeneration
+
 plt.ion()  # required for dynamic chart, good to keep this at the beginning of imports
 
 from demo_scripts.common.utils.dummy_ticker import DummyTicker
 from demo_scripts.common.utils.dummy_ticker_mapper import DummyTickerMapper
 from demo_scripts.demo_configuration.demo_data_provider import daily_data_provider
 from demo_scripts.demo_configuration.demo_ioc import container
-from qf_lib.backtesting.events.time_event.regular_time_event.before_market_open_event import BeforeMarketOpenEvent
 from qf_lib.backtesting.order.execution_style import MarketOrder
 from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.backtesting.trading_session.backtest_trading_session import BacktestTradingSession
@@ -29,13 +32,14 @@ from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 
 
-class SimpleMAStrategy(object):
+class SimpleMAStrategy(AbstractStrategy):
     """
     strategy, which computes every day, before the market open time, two simple moving averages (long - 20 days,
     short - 5 days) and creates a buy order in case if the short moving average is greater or equal to the long moving
     average.
     """
     def __init__(self, ts: BacktestTradingSession, ticker: Ticker):
+        super().__init__(ts)
         self.broker = ts.broker
         self.order_factory = ts.order_factory
         self.data_handler = ts.data_handler
@@ -44,13 +48,7 @@ class SimpleMAStrategy(object):
         self.timer = ts.timer
         self.ticker = ticker
 
-        # Subscribe to the BeforeMarketOpenEvent
-        ts.notifiers.scheduler.subscribe(BeforeMarketOpenEvent, listener=self)
-
-    def on_before_market_open(self, _: BeforeMarketOpenEvent):
-        self.calculate_signals()
-
-    def calculate_signals(self):
+    def calculate_and_place_orders(self):
         # Compute the moving averages
         long_ma_len = 20
         short_ma_len = 5
@@ -93,7 +91,7 @@ def main():
 
     ts = session_builder.build(start_date, end_date)
 
-    SimpleMAStrategy(ts, ticker)
+    OnBeforeMarketOpenSignalGeneration(SimpleMAStrategy(ts, ticker))
     ts.start_trading()
 
 
