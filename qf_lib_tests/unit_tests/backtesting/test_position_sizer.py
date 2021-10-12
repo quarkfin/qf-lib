@@ -77,7 +77,8 @@ class TestPositionSizer(unittest.TestCase):
 
     @classmethod
     def _mock_order_factory(cls, initial_position, initial_allocation):
-        def target_percent_orders(target_percentages, execution_style, time_in_force, tolerance_percentage=0.0):
+        def target_percent_orders(target_percentages, execution_style, time_in_force, tolerance_percentage=0.0,
+                                  frequency=None):
             return [Order(contract, np.floor(initial_position * (target_percentage / initial_allocation - 1)),
                           execution_style, time_in_force) for contract, target_percentage in target_percentages.items()]
 
@@ -94,7 +95,7 @@ class TestPositionSizer(unittest.TestCase):
 
     def test_simple_position_sizer(self):
         fraction_at_risk = 0.02
-        signal = Signal(self.ticker, Exposure.LONG, fraction_at_risk, self.last_price)
+        signal = Signal(self.ticker, Exposure.LONG, fraction_at_risk, self.last_price, self.timer.now())
         orders = self.simple_position_sizer.size_signals([signal])
 
         quantity = np.floor(self.initial_position * (1 / self.initial_allocation - 1))
@@ -110,7 +111,7 @@ class TestPositionSizer(unittest.TestCase):
         Max leverage will be limited by position sizer to 1.5
         """
         fraction_at_risk = 0.01  # will give leverage of 2, that will be capped to 1.5
-        signal = Signal(self.ticker, Exposure.LONG, fraction_at_risk, self.last_price)
+        signal = Signal(self.ticker, Exposure.LONG, fraction_at_risk, self.last_price, self.timer.now())
         orders = self.initial_risk_position_sizer.size_signals([signal])
 
         self.assertEqual(len(orders), 2)  # market order and stop order
@@ -129,7 +130,7 @@ class TestPositionSizer(unittest.TestCase):
         Max leverage will not be limited by position sizer
         """
         fraction_at_risk = 0.23
-        signal = Signal(self.ticker, Exposure.LONG, fraction_at_risk, self.last_price)
+        signal = Signal(self.ticker, Exposure.LONG, fraction_at_risk, self.last_price, self.timer.now())
         orders = self.initial_risk_position_sizer.size_signals([signal])
 
         self.assertEqual(len(orders), 2)  # market order and stop order
@@ -144,7 +145,7 @@ class TestPositionSizer(unittest.TestCase):
 
     def test_out_signal(self):
         fraction_at_risk = 0.02
-        signal = Signal(self.ticker, Exposure.OUT, fraction_at_risk, self.last_price)
+        signal = Signal(self.ticker, Exposure.OUT, fraction_at_risk, self.last_price, self.timer.now())
         orders = self.simple_position_sizer.size_signals([signal])
 
         self.assertEqual(len(orders), 1)  # market order only
@@ -163,7 +164,7 @@ class TestPositionSizer(unittest.TestCase):
         self.timer.now.return_value = str_to_date("2017-01-01") + RelativeDelta(hours=7)
         self.last_price = 100
         fraction_at_risk = 0.1
-        signal = Signal(self.ticker, Exposure.LONG, fraction_at_risk, self.last_price)
+        signal = Signal(self.ticker, Exposure.LONG, fraction_at_risk, self.last_price, self.timer.now())
         orders = position_sizer.size_signals([signal], use_stop_losses=True)
         stop_order_1 = [o for o in orders if isinstance(o.execution_style, StopOrder)][0]
 
@@ -176,7 +177,7 @@ class TestPositionSizer(unittest.TestCase):
         # Size signals once again (the next day). The new StopOrder stop price should not be lower than the
         # previous one (90)
         self.timer.now.return_value = str_to_date("2017-01-02") + RelativeDelta(hours=7)
-        signal = Signal(self.ticker, Exposure.LONG, fraction_at_risk, self.last_price)
+        signal = Signal(self.ticker, Exposure.LONG, fraction_at_risk, self.last_price, self.timer.now())
         orders = position_sizer.size_signals([signal], use_stop_losses=True)
 
         stop_order_2 = [o for o in orders if isinstance(o.execution_style, StopOrder)][0]
@@ -195,7 +196,7 @@ class TestPositionSizer(unittest.TestCase):
         # equal to 100 * (1 - 0.1) = 90
         self.last_price = 100
         fraction_at_risk = 0.1
-        signal = Signal(self.ticker, Exposure.LONG, fraction_at_risk, self.last_price)
+        signal = Signal(self.ticker, Exposure.LONG, fraction_at_risk, self.last_price, self.timer.now())
         orders = position_sizer.size_signals([signal], use_stop_losses=True)
         stop_order_1 = [o for o in orders if isinstance(o.execution_style, StopOrder)][0]
 
@@ -207,7 +208,7 @@ class TestPositionSizer(unittest.TestCase):
 
         # Size signals once again (the next day). The new StopOrder stop price should not be lower than the
         # previous one (90)
-        signal = Signal(self.ticker, Exposure.LONG, fraction_at_risk, self.last_price)
+        signal = Signal(self.ticker, Exposure.LONG, fraction_at_risk, self.last_price, self.timer.now())
         orders = position_sizer.size_signals([signal], use_stop_losses=True)
 
         stop_order_2 = [o for o in orders if isinstance(o.execution_style, StopOrder)][0]

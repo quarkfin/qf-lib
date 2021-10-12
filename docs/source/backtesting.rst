@@ -13,7 +13,6 @@ alpha_model
 
     alpha_model.AlphaModel
     futures_model.FuturesModel
-    alpha_model_strategy.AlphaModelStrategy
 
 contract
 ==========
@@ -135,6 +134,19 @@ order
     order.Order
     time_in_force.TimeInForce
 
+orders_filter
+==================
+.. currentmodule:: qf_lib.backtesting.orders_filter
+
+.. autosummary::
+    :nosignatures:
+    :toctree: _autosummary
+    :template: short_class.rst
+
+
+    orders_filter.OrdersFilter
+    volume_orders_filter.VolumeOrdersFilter
+
 portfolio
 ===========
 .. currentmodule:: qf_lib.backtesting.portfolio
@@ -177,6 +189,18 @@ signals
     signals_register.SignalsRegister
     backtest_signals_register.BacktestSignalsRegister
 
+strategies
+=====================
+.. currentmodule:: qf_lib.backtesting.strategies
+
+.. autosummary::
+    :nosignatures:
+    :toctree: _autosummary
+    :template: short_class.rst
+
+    abstract_strategy.AbstractStrategy
+    alpha_model_strategy.AlphaModelStrategy
+    signal_generators.OnBeforeMarketOpenSignalGeneration
 
 trading_session
 =====================

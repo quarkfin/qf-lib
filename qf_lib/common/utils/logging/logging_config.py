@@ -15,8 +15,8 @@
 import logging
 import sys
 from datetime import datetime
-from os import makedirs
-from os.path import exists, join
+from pathlib import Path
+from typing import Optional
 
 from qf_lib.common.utils.helpers import get_formatted_filename
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger, ib_logger
@@ -30,36 +30,77 @@ def setup_logging(level, console_logging=True, log_dir=None, log_file_base_name=
 
 
 def _inner_setup_logging(logger, level, console_logging, log_dir, log_file_base_name):
+    logger.setLevel(level)
+    if console_logging:
+        add_console_output_handler(logger, level)
+
+    # config logging to file
+    if log_dir:
+        add_file_handler(logger, level, log_dir, log_file_base_name)
+
+
+def add_file_handler(logger: logging.Logger, logging_level, log_dir: str, log_file_base_name: Optional[str] = ""):
+    """ Adds a FileHandler to the logger instance.
+
+    Important Note: the function only saves the level on the FileHandler, not on the logger. If you set
+    your logger to the level WARNING, then adding FileHandler with logging_level = DEBUG will still include
+    only logs, which severity is >= WARNING. If you want the DEBUG logs to be tracked by the FileHandler
+    call on your logger object: logger.setLevel(logging.DEBUG).
+
+    Parameters
+    -----------
+    logger: logging.Logger
+        logger instance
+    logging_level:
+        minimum logging level, above which all logs will be tracked by the FileHandler and saved to the
+        txt file
+    log_dir: str
+        directory in which all the log files should be stored
+    log_file_base_name: str
+        base name of the file. All log files will be of the form "<current time>_<log_file_base_name>.txt"
+    """
+    abs_log_dir = Path(get_starting_dir_abs_path()) / log_dir
+    abs_log_dir.mkdir(parents=True, exist_ok=True)
+
+    log_file = get_formatted_filename(log_file_base_name, datetime.now(), "txt")
+
     formatter = logging.Formatter(
         fmt='%(asctime)s %(levelname)s [%(name)s]: %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S'
     )
-    logger.setLevel(level)
+
+    # If not already exists a FileHandler, add one
+    if not any(isinstance(handle, logging.FileHandler) for handle in logger.handlers):
+        file_logger = logging.FileHandler(abs_log_dir / log_file)
+        file_logger.setFormatter(formatter)
+        file_logger.setLevel(logging_level)
+        logger.addHandler(file_logger)
+
+
+def add_console_output_handler(logger: logging.Logger, logging_level):
+    """ Adds a StreamHandler to the logger instance, which will print all the logs to the console output.
+
+    Important Note: the function only saves the level on the FileHandler, not on the logger. If you set
+    your logger to the level WARNING, then adding this handler with logging_level = DEBUG will still include
+    only logs, which severity is >= WARNING. If you want the DEBUG logs to be tracked by the FileHandler
+    call on your logger object: logger.setLevel(logging.DEBUG).
+
+    Parameters
+    -----------
+    logger: logging.Logger
+        logger instance
+    logging_level:
+        minimum logging level, above which all logs will be printed out in the console
+    """
+    formatter = logging.Formatter(
+        fmt='%(asctime)s %(levelname)s [%(name)s]: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
 
     # If not already exists a streamhandler, add one
     if not any(isinstance(handle, logging.StreamHandler) for handle in logger.handlers):
         # config logging to console (stdout)
-        if console_logging:
-            stream_handler = logging.StreamHandler(sys.stdout)
-            stream_handler.setFormatter(formatter)
-            logger.addHandler(stream_handler)
-
-    # config logging to file
-    if log_dir is not None:
-        abs_log_dir = join(get_starting_dir_abs_path(), log_dir)
-        log_file = get_formatted_filename(log_file_base_name, datetime.now(), "txt")
-
-        if not exists(abs_log_dir):
-            makedirs(abs_log_dir)
-
-        # If not already exists a filehandler, add one
-        if not any(isinstance(handle, logging.FileHandler) for handle in logger.handlers):
-            file_handler = logging.FileHandler(join(abs_log_dir, log_file))
-            file_handler.setFormatter(formatter)
-            logger.addHandler(file_handler)
-
-
-def remove_stream_handler(logger, log_dir, log_file_base_name):
-    # Assume logger is setup
-    stream_handler = logging.StreamHandler(sys.stdout)
-    logger.addHandler(stream_handler)
+        stream_handler = logging.StreamHandler(sys.stdout)
+        stream_handler.setFormatter(formatter)
+        stream_handler.setLevel(logging_level)
+        logger.addHandler(stream_handler)

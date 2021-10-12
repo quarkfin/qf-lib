@@ -13,16 +13,19 @@
 #     limitations under the License.
 
 from abc import abstractmethod, ABCMeta
+from datetime import datetime
+from typing import Optional
 
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
 from qf_lib.backtesting.signals.signal import Signal
-from qf_lib.backtesting.data_handler.data_handler import DataHandler
+from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.miscellaneous.average_true_range import average_true_range
+from qf_lib.data_providers.data_provider import DataProvider
 
 
-class AlphaModel(object, metaclass=ABCMeta):
+class AlphaModel(metaclass=ABCMeta):
     """
     Base class for all alpha models.
 
@@ -31,15 +34,17 @@ class AlphaModel(object, metaclass=ABCMeta):
     risk_estimation_factor
         float value which estimates the risk level of the specific AlphaModel. Corresponds to the level at which
         the stop-loss should be placed.
-    data_handler
-        DataHandler which provides data for the ticker
+    data_provider: DataProvider
+        DataProvider which provides data for the ticker. For the backtesting purposes, in order to avoid looking into
+        the future, use DataHandler wrapper.
     """
 
-    def __init__(self, risk_estimation_factor: float, data_handler: DataHandler):
+    def __init__(self, risk_estimation_factor: float, data_provider: DataProvider):
         self.risk_estimation_factor = risk_estimation_factor
-        self.data_handler = data_handler
+        self.data_provider = data_provider
 
-    def get_signal(self, ticker: Ticker, current_exposure: Exposure) -> Signal:
+    def get_signal(self, ticker: Ticker, current_exposure: Exposure, current_time: Optional[datetime] = None,
+                   frequency: Frequency = Frequency.DAILY) -> Signal:
         """
         Returns the Signal calculated for a specific AlphaModel and a set of data for a specified Ticker
 
@@ -50,17 +55,25 @@ class AlphaModel(object, metaclass=ABCMeta):
         current_exposure: Exposure
             The actual exposure, based on which the AlphaModel should return its Signal. Can be different from previous
             Signal suggestions, but it should correspond with the current trading position
+        current_time: Optional[datetime]
+            current time, which is afterwards recorded inside each of the Signals. The parameter is optional and if not
+            provided, defaults to the current user time.
+        frequency: Optional[Frequency]
+            frequency of trading. Optional parameter, with the default value being equal to daily frequency. Used to
+            obtain the last available price.
 
         Returns
         -------
         Signal
             Signal being the suggestion for the next trading period
         """
+        current_time = current_time or datetime.now()
         suggested_exposure = self.calculate_exposure(ticker, current_exposure)
         fraction_at_risk = self.calculate_fraction_at_risk(ticker)
-        last_available_price = self.data_handler.get_last_available_price(ticker)
+        last_available_price = self.data_provider.get_last_available_price(ticker, frequency, current_time)
 
-        signal = Signal(ticker, suggested_exposure, fraction_at_risk, last_available_price, alpha_model=self)
+        signal = Signal(ticker, suggested_exposure, fraction_at_risk, last_available_price, current_time,
+                        alpha_model=self)
         return signal
 
     @abstractmethod
@@ -123,7 +136,7 @@ class AlphaModel(object, metaclass=ABCMeta):
         """
         num_of_bars_needed = time_period + 1
         fields = [PriceField.High, PriceField.Low, PriceField.Close]
-        prices_df = self.data_handler.historical_price(ticker, fields, num_of_bars_needed)
+        prices_df = self.data_provider.historical_price(ticker, fields, num_of_bars_needed)
         fraction_at_risk = average_true_range(prices_df, normalized=True) * self.risk_estimation_factor
         return fraction_at_risk
 

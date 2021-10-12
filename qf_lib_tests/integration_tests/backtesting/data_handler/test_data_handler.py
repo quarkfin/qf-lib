@@ -12,9 +12,11 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 import unittest
+from datetime import datetime
 from unittest import TestCase
 
 import pandas as pd
+from numpy import isnan
 
 from qf_lib.backtesting.data_handler.daily_data_handler import DailyDataHandler
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
@@ -66,7 +68,8 @@ class TestDataHandler(TestCase):
         self.assertEqual(self.end_date, prices_tms.index[-1].to_pydatetime())
 
     def test_get_price_when_end_date_is_today_after_market_close(self):
-        self.timer.set_current_time(str_to_date("2018-01-31") + MarketCloseEvent.trigger_time() + RelativeDelta(hours=1))
+        self.timer.set_current_time(
+            str_to_date("2018-01-31") + MarketCloseEvent.trigger_time() + RelativeDelta(hours=1))
         prices_tms = self.data_handler.get_price(self.spx_index_ticker, PriceField.Close,
                                                  self.start_date, self.end_date)
 
@@ -75,14 +78,50 @@ class TestDataHandler(TestCase):
 
     def test_get_price_when_end_date_is_today_before_market_close(self):
         self.timer.set_current_time(str_to_date("2018-01-31") + MarketOpenEvent.trigger_time() + RelativeDelta(hours=1))
-        prices_tms = self.data_handler.get_price(self.spx_index_ticker, PriceField.Close,
-                                                 self.start_date, self.end_date)
+        close_prices_tms = self.data_handler.get_price(self.spx_index_ticker, PriceField.Close, self.start_date,
+                                                       self.end_date)
 
-        self.assertEqual(self.start_date, prices_tms.index[0].to_pydatetime())
-        self.assertEqual(self.end_date_trimmed, prices_tms.index[-1].to_pydatetime())
+        self.assertEqual(self.start_date, close_prices_tms.index[0].to_pydatetime())
+        self.assertEqual(self.end_date_trimmed, close_prices_tms.index[-1].to_pydatetime())
+
+    def test_get_open_price_when_end_date_is_today_before_market_close__single_ticker(self):
+        self.timer.set_current_time(str_to_date("2018-01-31") + MarketOpenEvent.trigger_time() + RelativeDelta(hours=1))
+        current_date = datetime(self.timer.now().year, self.timer.now().month, self.timer.now().day)
+        open_prices_tms = self.data_handler.get_price(self.spx_index_ticker, PriceField.Open, self.start_date,
+                                                      self.timer.now())
+
+        self.assertEqual(self.start_date, open_prices_tms.index[0].to_pydatetime())
+        self.assertEqual(current_date, open_prices_tms.index[-1].to_pydatetime())
+
+        prices_df = self.data_handler.get_price(self.spx_index_ticker, [PriceField.Open, PriceField.Close],
+                                                self.start_date, self.timer.now())
+        self.assertEqual(self.start_date, prices_df.index[0].to_pydatetime())
+        self.assertEqual(current_date, prices_df.index[-1].to_pydatetime())
+
+        last_bar = prices_df.iloc[-1]
+        self.assertTrue(isnan(last_bar.loc[PriceField.Close]))
+        self.assertIsNotNone(last_bar.loc[PriceField.Open])
+
+    def test_get_open_price_when_end_date_is_today_before_market_close__multiple_tickers(self):
+        self.timer.set_current_time(str_to_date("2018-01-31") + MarketOpenEvent.trigger_time() + RelativeDelta(hours=1))
+        current_date = datetime(self.timer.now().year, self.timer.now().month, self.timer.now().day)
+
+        tickers = [self.spx_index_ticker, self.microsoft_ticker]
+        open_prices_tms = self.data_handler.get_price(tickers, PriceField.Open, self.start_date, self.timer.now())
+
+        self.assertEqual(self.start_date, open_prices_tms.index[0].to_pydatetime())
+        self.assertEqual(current_date, open_prices_tms.index[-1].to_pydatetime())
+
+        prices_data_array = self.data_handler.get_price(tickers, [PriceField.Open, PriceField.Close],
+                                                        self.start_date, self.timer.now())
+        last_bar_df = prices_data_array.loc[current_date, :, :].to_pandas()
+
+        self.assertTrue(last_bar_df[PriceField.Close].isna().all())
+        self.assertTrue(last_bar_df[PriceField.Open].notna().all())
 
     def test_get_price_when_end_date_is_tomorrow(self):
-        self.timer.set_current_time(str_to_date("2018-01-30") + MarketCloseEvent.trigger_time() + RelativeDelta(hours=1))
+        self.timer.set_current_time(
+            str_to_date("2018-01-30") + MarketCloseEvent.trigger_time() + RelativeDelta(hours=1))
         prices_tms = self.data_handler.get_price(self.spx_index_ticker, PriceField.Close, self.start_date,
                                                  self.end_date_trimmed)
 
@@ -95,6 +134,13 @@ class TestDataHandler(TestCase):
         single_price = self.data_handler.get_last_available_price(self.spx_index_ticker)
         self.assertTrue(isinstance(single_price, float))
 
+        # at market open
+        self.timer.set_current_time(str_to_date("2018-01-31") + MarketOpenEvent.trigger_time())
+        at_market_open = self.data_handler.get_last_available_price([self.spx_index_ticker])
+
+        self.assertEqual(self.spx_index_ticker, at_market_open.index[0])
+        self.assertEqual(single_price, at_market_open[0])
+
         # during the trading session
         self.timer.set_current_time(str_to_date("2018-01-31") + MarketOpenEvent.trigger_time() + RelativeDelta(hours=1))
         during_the_day_last_prices = self.data_handler.get_last_available_price([self.spx_index_ticker])
@@ -103,7 +149,8 @@ class TestDataHandler(TestCase):
         self.assertEqual(single_price, during_the_day_last_prices[0])
 
         # after the trading session
-        self.timer.set_current_time(str_to_date("2018-01-31") + MarketCloseEvent.trigger_time() + RelativeDelta(hours=1))
+        self.timer.set_current_time(
+            str_to_date("2018-01-31") + MarketCloseEvent.trigger_time() + RelativeDelta(hours=1))
         after_close_last_prices = self.data_handler.get_last_available_price([self.spx_index_ticker])
 
         self.assertEqual(self.spx_index_ticker, after_close_last_prices.index[0])
@@ -111,11 +158,11 @@ class TestDataHandler(TestCase):
 
         # before the trading session
         self.timer.set_current_time(str_to_date("2018-01-31") + MarketOpenEvent.trigger_time() - RelativeDelta(hours=1))
-        before_close_last_prices = self.data_handler.get_last_available_price([self.spx_index_ticker])
+        before_trading_session_prices = self.data_handler.get_last_available_price([self.spx_index_ticker])
 
-        self.assertEqual(self.spx_index_ticker, before_close_last_prices.index[0])
-        self.assertNotEqual(during_the_day_last_prices[0], before_close_last_prices[0])
-        self.assertNotEqual(after_close_last_prices[0], before_close_last_prices[0])
+        self.assertEqual(self.spx_index_ticker, before_trading_session_prices.index[0])
+        self.assertNotEqual(during_the_day_last_prices[0], before_trading_session_prices[0])
+        self.assertNotEqual(after_close_last_prices[0], before_trading_session_prices[0])
 
     def test_get_last_price_with_multiple_tickers_when_current_data_is_unavailable(self):
         self.timer.set_current_time(str_to_date("2018-01-01") + MarketOpenEvent.trigger_time() + RelativeDelta(hours=1))
@@ -138,7 +185,8 @@ class TestDataHandler(TestCase):
         self.assertEqual(self.end_date, prices_tms.index[-1].to_pydatetime())
 
     def test_get_history_when_end_date_is_today_after_market_close(self):
-        self.timer.set_current_time(str_to_date("2018-01-31") + MarketCloseEvent.trigger_time() + RelativeDelta(hours=1))
+        self.timer.set_current_time(
+            str_to_date("2018-01-31") + MarketCloseEvent.trigger_time() + RelativeDelta(hours=1))
         prices_tms = self.data_handler.get_history(self.spx_index_ticker, self.get_history_field,
                                                    self.start_date, self.end_date)
 
@@ -154,7 +202,8 @@ class TestDataHandler(TestCase):
         self.assertEqual(self.end_date_trimmed, prices_tms.index[-1].to_pydatetime())
 
     def test_get_history_when_end_date_is_tomorrow(self):
-        self.timer.set_current_time(str_to_date("2018-01-30") + MarketCloseEvent.trigger_time() + RelativeDelta(hours=1))
+        self.timer.set_current_time(
+            str_to_date("2018-01-30") + MarketCloseEvent.trigger_time() + RelativeDelta(hours=1))
         prices_tms = self.data_handler.get_history(self.spx_index_ticker, self.get_history_field,
                                                    self.start_date, self.end_date_trimmed)
 

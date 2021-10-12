@@ -31,11 +31,18 @@ class TabularDataProvider(object):
     def __init__(self, session):
         self._session = session
 
-    def get(self, tickers, fields) -> List:
+    def get(self, tickers, fields, override_names, override_values) -> List:
         ref_data_service = self._session.getService(REF_DATA_SERVICE_URI)
         request = ref_data_service.createRequest("ReferenceDataRequest")
         set_tickers(request, tickers)
         set_fields(request, fields)
+
+        if override_names is not None:
+            overrides = request.getElement("overrides")
+            for override_name, override_value in zip(override_names, override_values):
+                override = overrides.appendElement()
+                override.setElement("fieldId", override_name)
+                override.setElement("value", override_value)
 
         self._session.sendRequest(request)
         return self._receive_reference_response(fields)

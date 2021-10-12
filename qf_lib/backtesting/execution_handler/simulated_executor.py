@@ -24,6 +24,7 @@ from qf_lib.backtesting.monitoring.abstract_monitor import AbstractMonitor
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.backtesting.portfolio.transaction import Transaction
+from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.common.utils.numberutils.is_finite_number import is_finite_number
@@ -31,10 +32,15 @@ from qf_lib.common.utils.numberutils.is_finite_number import is_finite_number
 
 class SimulatedExecutor(metaclass=abc.ABCMeta):
     def __init__(self, contracts_to_tickers_mapper: ContractTickerMapper, data_handler: DataHandler,
-                 monitor: AbstractMonitor, portfolio: Portfolio, timer: Timer,
-                 order_id_generator: count, commission_model: CommissionModel, slippage_model: Slippage):
+                 monitor: AbstractMonitor, portfolio: Portfolio, timer: Timer, order_id_generator: count,
+                 commission_model: CommissionModel, slippage_model: Slippage, frequency: Frequency):
+
         self._contracts_to_tickers_mapper = contracts_to_tickers_mapper
         self._data_handler = data_handler
+
+        self._data_provider = data_handler.data_provider
+        self._frequency = frequency
+
         self._monitor = monitor
         self._portfolio = portfolio
         self._timer = timer
@@ -114,7 +120,7 @@ class SimulatedExecutor(metaclass=abc.ABCMeta):
         timestamp = self._timer.now()
         contract = order.contract
 
-        commission = self._commission_model.calculate_commission(order, fill_price)
+        commission = self._commission_model.calculate_commission(fill_volume, fill_price)
 
         transaction = Transaction(timestamp, contract, fill_volume, fill_price, commission)
 
@@ -125,7 +131,10 @@ class SimulatedExecutor(metaclass=abc.ABCMeta):
     def _get_orders_with_fill_prices_without_slippage(self, open_orders_list: List[Order], tickers: List[Ticker],
                                                       market_open: bool, market_close: bool) \
             -> Tuple[List[float], List[Order], List[int]]:
-        """
+        """ Function used by the execute_orders function, to compute the fill prices for the given orders.
+
+        Parameters
+        ----------
         open_orders_list
             list of open orders
         tickers

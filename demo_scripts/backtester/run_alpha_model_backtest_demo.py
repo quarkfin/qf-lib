@@ -12,11 +12,14 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 import matplotlib.pyplot as plt
+
+from qf_lib.backtesting.strategies.signal_generators import OnBeforeMarketOpenSignalGeneration
+
 plt.ion()  # required for dynamic chart, good to keep this at the beginning of imports
 
 from demo_scripts.backtester.moving_average_alpha_model import MovingAverageAlphaModel
 from demo_scripts.demo_configuration.demo_ioc import container
-from qf_lib.backtesting.alpha_model.alpha_model_strategy import AlphaModelStrategy
+from qf_lib.backtesting.strategies.alpha_model_strategy import AlphaModelStrategy
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.quandl_mapper import DummyQuandlContractTickerMapper
 from qf_lib.backtesting.execution_handler.commission_models.ib_commission_model import IBCommissionModel
 from qf_lib.backtesting.position_sizer.initial_risk_position_sizer import InitialRiskPositionSizer
@@ -43,7 +46,7 @@ def main():
 
     # ----- build models ----- #
     model = MovingAverageAlphaModel(fast_time_period=5, slow_time_period=20, risk_estimation_factor=1.25,
-                                    data_handler=ts.data_handler)
+                                    data_provider=ts.data_handler)
     model_tickers = [QuandlTicker('AAPL', 'WIKI'), QuandlTicker('AMZN', 'WIKI')]
     model_tickers_dict = {model: model_tickers}
 
@@ -51,7 +54,7 @@ def main():
     ts.use_data_preloading(model_tickers)
 
     # ----- start trading ----- #
-    AlphaModelStrategy(ts, model_tickers_dict, use_stop_losses=True)
+    OnBeforeMarketOpenSignalGeneration(AlphaModelStrategy(ts, model_tickers_dict, use_stop_losses=True))
     ts.start_trading()
 
     # ----- use results ----- #

@@ -12,7 +12,7 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, Mock
 
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
@@ -37,7 +37,7 @@ class TestAlphaModel(unittest.TestCase):
         atr = average_true_range(prices_df, normalized=True)
         risk_estimation_factor = 3
 
-        alpha_model = AlphaModel(risk_estimation_factor=risk_estimation_factor, data_handler=data_handler)
+        alpha_model = AlphaModel(risk_estimation_factor=risk_estimation_factor, data_provider=data_handler)
         fraction_at_risk = alpha_model.calculate_fraction_at_risk(self.ticker)
         self.assertEqual(risk_estimation_factor * atr, fraction_at_risk)
 
@@ -47,8 +47,8 @@ class TestAlphaModel(unittest.TestCase):
         calculate_exposure_mock.return_value = Exposure.LONG
         calculate_fraction_at_risk.return_value = 3
 
-        alpha_model = AlphaModel(risk_estimation_factor=4, data_handler=MagicMock())
+        alpha_model = AlphaModel(risk_estimation_factor=4, data_provider=MagicMock())
         signal = alpha_model.get_signal(self.ticker, Exposure.OUT)
 
-        expected_signal = Signal(self.ticker, Exposure.LONG, 3, alpha_model=alpha_model)
+        expected_signal = Signal(self.ticker, Exposure.LONG, 3, Mock(), Mock(), alpha_model=alpha_model)
         self.assertEqual(signal, expected_signal)

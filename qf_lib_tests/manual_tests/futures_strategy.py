@@ -16,7 +16,8 @@ from datetime import datetime
 from typing import Tuple
 
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
-from qf_lib.backtesting.alpha_model.alpha_model_strategy import AlphaModelStrategy
+from qf_lib.backtesting.strategies.signal_generators import OnBeforeMarketOpenSignalGeneration
+from qf_lib.backtesting.strategies.alpha_model_strategy import AlphaModelStrategy
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.monitoring.backtest_monitor import BacktestMonitorSettings
@@ -38,13 +39,13 @@ from qf_lib_tests.unit_tests.config.test_settings import get_test_settings
 
 class SimpleFuturesModel(AlphaModel):
     def __init__(self, fast_time_period: int, slow_time_period: int,
-                 risk_estimation_factor: float, data_handler: DataHandler):
-        super().__init__(risk_estimation_factor, data_handler)
+                 risk_estimation_factor: float, data_provider: DataHandler):
+        super().__init__(risk_estimation_factor, data_provider)
 
         self.fast_time_period = fast_time_period
         self.slow_time_period = slow_time_period
 
-        self.timer = self.data_handler.timer
+        self.timer = data_provider.timer
 
         self.futures_chain = None  # type: FuturesChain
         self.time_of_opening_position = None  # type: datetime
@@ -59,7 +60,7 @@ class SimpleFuturesModel(AlphaModel):
 
         if self.futures_chain is None:
             # Create Futures Chain object
-            self.futures_chain = FuturesChain(ticker, self.data_handler)
+            self.futures_chain = FuturesChain(ticker, self.data_provider)
 
         # Get the data frame containing High, Low, Close prices
         data_frame = self.futures_chain.get_price([PriceField.High, PriceField.Low, PriceField.Close], start_time,
@@ -154,11 +155,12 @@ def run_strategy(data_provider: DataProvider) -> Tuple[float, str]:
 
     # ----- build models ----- #
     model = SimpleFuturesModel(fast_time_period=50, slow_time_period=100, risk_estimation_factor=3,
-                               data_handler=ts.data_handler)
+                               data_provider=ts.data_handler)
     model_tickers_dict = {model: model_tickers}
 
     # ----- start trading ----- #
-    AlphaModelStrategy(ts, model_tickers_dict, use_stop_losses=False)
+    strategy = AlphaModelStrategy(ts, model_tickers_dict, use_stop_losses=False)
+    OnBeforeMarketOpenSignalGeneration(strategy)
 
     ts.use_data_preloading(model_tickers)
     print(ts.get_preloaded_data_checksum())

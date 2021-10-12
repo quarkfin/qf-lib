@@ -39,8 +39,8 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
                   start_date: datetime, end_date: datetime = None, frequency: Frequency = Frequency.DAILY) -> \
             Union[None, PricesSeries, PricesDataFrame, QFDataArray]:
 
-        got_single_date = False if frequency > Frequency.DAILY else (
-            bool(start_date and (start_date == end_date))
+        got_single_date = start_date is not None and (
+            (start_date.date() == end_date.date()) if frequency == Frequency.DAILY else False
         )
 
         if got_single_date:

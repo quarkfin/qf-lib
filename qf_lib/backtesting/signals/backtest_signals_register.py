@@ -26,12 +26,12 @@ class BacktestSignalsRegister(SignalsRegister):
     def __init__(self):
         self._signals_data = []  # type: List[Tuple[datetime, str, Signal]]
 
-    def save_signals(self, signals: List[Signal], date: datetime):
+    def save_signals(self, signals: List[Signal]):
         """
         Add the provided signals to the list of all cached signals.
         """
         self._signals_data.extend(
-            ((date, self._generate_ticker_name(signal), signal) for signal in signals)
+            ((signal.creation_time, self._generate_ticker_name(signal), signal) for signal in signals)
         )
 
     def get_signals(self) -> QFDataFrame:

@@ -35,10 +35,14 @@ from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.backtesting.portfolio.transaction import Transaction
+from qf_lib.common.enums.frequency import Frequency
+from qf_lib.common.utils.dateutils.date_to_datetime import date_to_datetime
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.dateutils.timer import SettableTimer
+from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
+from qf_lib.data_providers.data_provider import DataProvider
 from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_lists_equal
 
 
@@ -58,6 +62,9 @@ class TestMarketOnOpenExecutionStyle(TestCase):
         self.msft_ticker = contracts_to_tickers_mapper.contract_to_ticker(msft_contract)
 
         self.data_handler = Mock(spec=DataHandler)
+        self.data_handler.frequency = Frequency.DAILY
+        self.data_handler.data_provider = Mock(spec=DataProvider)
+
         self.scheduler = Mock(spec=Scheduler)
 
         self.commission_model = FixedCommissionModel(commission=0.0)
@@ -235,5 +242,7 @@ class TestMarketOnOpenExecutionStyle(TestCase):
                                                                                     index=pd.Index([self.msft_ticker]))
 
     def _set_current_price(self, price):
-        self.data_handler.get_current_price.side_effect = lambda t: QFSeries(data=[price],
-                                                                             index=pd.Index([self.msft_ticker]))
+        current_time = self.timer.now() if self.data_handler.frequency > Frequency.DAILY else \
+            date_to_datetime(self.timer.now().date())
+        self.data_handler.data_provider.get_price.side_effect = lambda a, b, c, d, e: \
+            QFDataFrame(data=[price], columns=pd.Index([self.msft_ticker]), index=[current_time])

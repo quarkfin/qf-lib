@@ -16,13 +16,14 @@ from typing import Optional, List
 from qf_lib.backtesting.signals.signal import Signal
 from qf_lib.backtesting.broker.broker import Broker
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
-from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.signals.signals_register import SignalsRegister
 from qf_lib.backtesting.order.execution_style import MarketOrder
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.order_factory import OrderFactory
 from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.backtesting.position_sizer.position_sizer import PositionSizer
+from qf_lib.common.enums.frequency import Frequency
+from qf_lib.data_providers.data_provider import DataProvider
 
 
 class FixedPortfolioPercentagePositionSizer(PositionSizer):
@@ -33,7 +34,7 @@ class FixedPortfolioPercentagePositionSizer(PositionSizer):
     Parameters
     ----------
     broker: Broker
-    data_handler: DataHandler
+    data_provider: DataProvider
     order_factory: OrderFactory
     contract_ticker_mapper: ContractTickerMapper
     fixed_percentage: float
@@ -45,16 +46,17 @@ class FixedPortfolioPercentagePositionSizer(PositionSizer):
         used by OrderFactory
     """
 
-    def __init__(self, broker: Broker, data_handler: DataHandler, order_factory: OrderFactory,
+    def __init__(self, broker: Broker, data_provider: DataProvider, order_factory: OrderFactory,
                  contract_ticker_mapper: ContractTickerMapper, signals_register: SignalsRegister,
                  fixed_percentage: float, tolerance_percentage: float = 0.0):
 
-        super().__init__(broker, data_handler, order_factory, contract_ticker_mapper, signals_register)
+        super().__init__(broker, data_provider, order_factory, contract_ticker_mapper, signals_register)
 
         self.fixed_percentage = fixed_percentage
         self.tolerance_percentage = tolerance_percentage
 
-    def _generate_market_orders(self, signals: List[Signal]) -> List[Optional[Order]]:
+    def _generate_market_orders(self, signals: List[Signal], time_in_force: TimeInForce, frequency: Frequency = None) \
+            -> List[Optional[Order]]:
         def signal_to_contract(signal):
             # Map signal to contract
             return self._contract_ticker_mapper.ticker_to_contract(signal.ticker)
@@ -65,6 +67,6 @@ class FixedPortfolioPercentagePositionSizer(PositionSizer):
         }
 
         market_order_list = self._order_factory.target_percent_orders(
-            target_percentages, MarketOrder(), TimeInForce.OPG, self.tolerance_percentage)
+            target_percentages, MarketOrder(), time_in_force, self.tolerance_percentage, frequency)
 
         return market_order_list

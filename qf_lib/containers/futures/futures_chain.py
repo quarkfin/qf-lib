@@ -12,13 +12,15 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 from datetime import datetime
-from typing import Union, Sequence
+from typing import Union, Sequence, Optional, Tuple
 import pandas as pd
+from numpy import nan
 
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
+from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.futures.future_contract import FutureContract
 from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 from qf_lib.containers.futures.futures_adjustment_method import FuturesAdjustmentMethod
@@ -39,6 +41,7 @@ class FuturesChain(pd.Series):
          result of get_price function.
     data_provider: DataProvider
         Reference to the data provider, necessary to download latest prices, returned by the get_price function.
+        In case of backtests, the DataHandler wrapper should be used to avoid looking into the future.
     method: FuturesAdjustmentMethod
         FuturesAdjustmentMethod corresponding to one of two available methods of chaining the futures contracts.
     """
@@ -47,7 +50,7 @@ class FuturesChain(pd.Series):
         """
         The index consists of expiry dates of the future contracts.
         """
-        super().__init__(data=None, index=None, dtype=None, name=None, copy=False, fastpath=False)
+        super().__init__(data=None, index=None, dtype=object, name=None, copy=False, fastpath=False)
 
         self._future_ticker = future_ticker  # type: FutureTicker
         self._data_provider = data_provider  # type: "DataProvider"
@@ -102,6 +105,7 @@ class FuturesChain(pd.Series):
 
         prices_df: PricesDataFrame = self._data_provider.get_price(self._future_ticker.get_current_specific_ticker(),
                                                                    fields_list, last_date_in_chain, end_date)
+        assert isinstance(prices_df, PricesDataFrame)
 
         # If no changes to the PricesDataFrame should be applied return the existing chain
         if prices_df.empty:
@@ -182,24 +186,7 @@ class FuturesChain(pd.Series):
         return self._chain[fields_list].loc[start_date:end_date].squeeze()
 
     def _generate_chain(self, fields, start_time: datetime, end_time: datetime) -> PricesDataFrame:
-        """
-        Returns a chain of futures, combined together using a certain method.
-
-        Parameters
-        ----------
-        start_time
-        end_time
-            the time ranges for the generated future chain
-        method
-            the method used to combine the the Nth contracts together into one data series, possible methods:
-            - NTH_NEAREST - the price data for a certain period of time is taken from the N-th contract, there is no
-            discontinuities correction at the contract expiry dates
-            - BACK_ADJUST - the historical price discontinuities are corrected, so that they would align smoothly on the
-            expiry date. The gaps between consecutive contracts are being adjusted, by shifting the historical data by
-            the difference between the Open price on the first day of new contract and Close price on the last day of
-            the old contract. The back adjustment considers only the Open, High, Low, Close price values.
-            The Volumes are not being adjusted.
-        """
+        """ Returns a chain of futures combined together using a certain method. """
         # Verify the parameters values
         N = self._future_ticker.get_N()
         days_before_exp_date = self._future_ticker.get_days_before_exp_date()
@@ -261,8 +248,7 @@ class FuturesChain(pd.Series):
             # Apply the back adjustment. Pass the futures chain shifting the data in the way, which will allow to
             # treat the Nth contract as the first element of the data frame
             combined_data_frame = self._back_adjust(fields, first_days_of_next_contracts,
-                                                    shifted_data,
-                                                    combined_data_frame)
+                                                    shifted_data, combined_data_frame)
 
         return combined_data_frame
 
@@ -298,32 +284,16 @@ class FuturesChain(pd.Series):
         first_day_of_next_contract_index = first_day_of_next_contract_index[index_of_first_valid_date:]
         futures_chain = futures_chain[index_of_first_valid_date:]
 
-        # For each expiry date and corresponding future contract, at first we take the close prices for all dates before
-        # the expiry date. Then we take the last row without any NaNs before the provided time value.
+        previous_contracts_close_prices = QFSeries(
+            [self._get_last_available_price(future.data, time)
+             for time, future in zip(first_day_of_next_contract_index, futures_chain)],
+            index=expiration_dates
+        )
 
-        def get_last_close_price(future, time):
-            # Returns the last Close price from the data for the given future contract, before a certain time
-            # (exclusive)
-            try:
-                return future.data[PriceField.Close].loc[future.data.index < time].asof(time)
-            except (IndexError, TypeError, KeyError):
-                return None
-
-        previous_contracts_close_prices = QFSeries([get_last_close_price(future, time) for time, future in
-                                                    zip(first_day_of_next_contract_index, futures_chain)],
-                                                   index=expiration_dates)
-
-        def get_first_open_price(future, time):
-            # Returns the first Open price from the data for the given future contract, after a certain time (inclusive)
-            try:
-                index = future.data[PriceField.Open].loc[time:].first_valid_index()
-                return future.data[PriceField.Open].loc[time:].loc[index]
-            except (IndexError, TypeError, KeyError):
-                return None
-
-        next_contracts_open_prices = QFSeries([get_first_open_price(future, time) for time, future in
-                                               zip(first_day_of_next_contract_index, futures_chain[1:])],
-                                              index=expiration_dates)
+        next_contracts_open_prices = QFSeries(
+            [self._get_first_available_price(future.data, time)
+             for time, future in zip(first_day_of_next_contract_index, futures_chain[1:])],
+            index=expiration_dates)
 
         # We compute the delta values as the difference between the Open prices of the new contracts and Close prices
         # of the old contracts
@@ -340,6 +310,46 @@ class FuturesChain(pd.Series):
 
         return data_frame
 
+    @staticmethod
+    def _get_last_available_price(data_frame: QFDataFrame, time: datetime):
+        """ Return last valid price (either Open or Close price), which was available before <time> (not inclusive). """
+        def last_valid_price_and_date(field: PriceField) -> Optional[Tuple[float, datetime, PriceField]]:
+            try:
+                df = data_frame[data_frame.index < time]
+                last_valid_date = df.loc[:, field].last_valid_index()
+                return df.loc[last_valid_date, field], last_valid_date, field
+            except (IndexError, TypeError, KeyError):
+                return None
+
+        valid_dates_and_prices = [last_valid_price_and_date(PriceField.Open),
+                                  last_valid_price_and_date(PriceField.Close)]
+        valid_dates_and_prices = [e for e in valid_dates_and_prices if e]
+
+        sorted_valid_dates_and_prices = sorted(valid_dates_and_prices, key=lambda e: (e[1], e[2] == PriceField.Close))
+        last_valid_price = sorted_valid_dates_and_prices[-1][0] if sorted_valid_dates_and_prices else nan
+
+        return last_valid_price
+
+    @staticmethod
+    def _get_first_available_price(data_frame: QFDataFrame, time: datetime):
+        """ Return first valid price (either Open or Close price), which was available after <time> (inclusive). """
+        def first_valid_price_and_date(field: PriceField) -> Optional[Tuple[float, datetime, PriceField]]:
+            try:
+                df = data_frame[data_frame.index >= time]
+                first_valid_date = df.loc[:, field].first_valid_index()
+                return df.loc[first_valid_date, field], first_valid_date, field
+            except (IndexError, TypeError, KeyError):
+                return None
+
+        valid_dates_and_prices = [first_valid_price_and_date(PriceField.Open),
+                                  first_valid_price_and_date(PriceField.Close)]
+        valid_dates_and_prices = [e for e in valid_dates_and_prices if e]
+
+        sorted_valid_dates_and_prices = sorted(valid_dates_and_prices, key=lambda e: (e[1], e[2] == PriceField.Close))
+        first_valid_price = sorted_valid_dates_and_prices[0][0] if sorted_valid_dates_and_prices else nan
+
+        return first_valid_price
+
     def _initialize_futures_chain(self, fields: Union[PriceField, Sequence[PriceField]], start_date: datetime,
                                   end_date: datetime, frequency: Frequency):
         """
@@ -348,16 +358,6 @@ class FuturesChain(pd.Series):
 
         It is the first function, that needs to be called, before generating the chain, because it is responsible for
         downloading all the necessary data, used later on by other functions.
-
-        Parameters
-        ----------
-        fields
-            price fields, which should be retrieved
-        start_date
-        end_date
-        frequency
-            represent the time range and frequency of the downloaded prices data for the future contracts
-
         """
         # Check if single field was provided
         _, got_single_field = convert_to_list(fields, PriceField)

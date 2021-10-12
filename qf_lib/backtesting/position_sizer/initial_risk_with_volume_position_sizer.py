@@ -17,7 +17,6 @@ import numpy as np
 from qf_lib.backtesting.signals.signal import Signal
 from qf_lib.backtesting.broker.broker import Broker
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
-from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.signals.signals_register import SignalsRegister
 from qf_lib.backtesting.order.execution_style import MarketOrder
 from qf_lib.backtesting.order.order import Order
@@ -32,6 +31,7 @@ from qf_lib.common.utils.numberutils.is_finite_number import is_finite_number
 from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 from qf_lib.containers.futures.futures_chain import FuturesChain
 from qf_lib.containers.series.prices_series import PricesSeries
+from qf_lib.data_providers.data_provider import DataProvider
 
 
 class InitialRiskWithVolumePositionSizer(InitialRiskPositionSizer):
@@ -41,7 +41,7 @@ class InitialRiskWithVolumePositionSizer(InitialRiskPositionSizer):
     Parameters
     ----------
     broker: Broker
-    data_handler: DataHandler
+    data_provider: DataProvider
     order_factory: OrderFactory
     contract_ticker_mapper: ContractTickerMapper
     initial_risk: float
@@ -59,24 +59,26 @@ class InitialRiskWithVolumePositionSizer(InitialRiskPositionSizer):
         exceed max_volume_percentage * mean volume within last 100 days
     """
 
-    def __init__(self, broker: Broker, data_handler: DataHandler, order_factory: OrderFactory,
+    def __init__(self, broker: Broker, data_provider: DataProvider, order_factory: OrderFactory,
                  contract_ticker_mapper: ContractTickerMapper, signals_register: SignalsRegister, initial_risk: float,
                  max_target_percentage: float = None, tolerance_percentage: float = 0.0,
                  max_volume_percentage: float = 1.0):
 
-        super().__init__(broker, data_handler, order_factory, contract_ticker_mapper, signals_register, initial_risk,
+        super().__init__(broker, data_provider, order_factory, contract_ticker_mapper, signals_register, initial_risk,
                          max_target_percentage, tolerance_percentage)
 
         self._cached_futures_chains_dict: Dict[FutureTicker, FuturesChain] = dict()
         self._max_volume_percentage = max_volume_percentage
 
-    def _generate_market_orders(self, signals: List[Signal]) -> List[Optional[Order]]:
+    def _generate_market_orders(self, signals: List[Signal], time_in_force: TimeInForce, frequency: Frequency = None) \
+            -> List[Optional[Order]]:
         target_values = {
-            self._signal_to_contract(signal): self._compute_target_value(signal) for signal in signals
+            self._signal_to_contract(signal): self._compute_target_value(signal)
+            for signal in signals
         }
 
         market_order_list = self._order_factory.target_value_orders(
-            target_values, MarketOrder(), TimeInForce.OPG, self.tolerance_percentage
+            target_values, MarketOrder(), time_in_force, self.tolerance_percentage, frequency
         )
 
         return market_order_list
@@ -92,7 +94,7 @@ class InitialRiskWithVolumePositionSizer(InitialRiskPositionSizer):
         target_percentage = self._compute_target_percentage(signal)
         target_value = portfolio_value * target_percentage
 
-        end_date = self._data_handler.timer.now()
+        end_date = signal.creation_time
         start_date = end_date - RelativeDelta(days=100)
 
         if isinstance(ticker, FutureTicker):
@@ -100,19 +102,17 @@ class InitialRiskWithVolumePositionSizer(InitialRiskPositionSizer):
             # The default adjustment method will be taken (FuturesAdjustmentMethod.NTH_NEAREST) as the volume should
             # not be adjusted
             if ticker not in self._cached_futures_chains_dict.keys():
-                self._cached_futures_chains_dict[ticker] = FuturesChain(ticker, self._data_handler)
+                self._cached_futures_chains_dict[ticker] = FuturesChain(ticker, self._data_provider)
 
             volume_series: PricesSeries = self._cached_futures_chains_dict[ticker].get_price(PriceField.Volume,
                                                                                              start_date, end_date,
                                                                                              frequency)
         else:
-            volume_series: PricesSeries = self._data_handler.get_price(ticker, PriceField.Volume, start_date, end_date,
-                                                                       frequency)
+            volume_series: PricesSeries = self._data_provider.get_price(ticker, PriceField.Volume, start_date, end_date,
+                                                                        frequency)
 
         mean_volume = volume_series.mean()
-
-        specific_ticker = ticker.get_current_specific_ticker() if isinstance(ticker, FutureTicker) else ticker
-        current_price = self._data_handler.get_last_available_price(specific_ticker, frequency)
+        current_price = signal.last_available_price
         contract_size = ticker.point_value if isinstance(ticker, FutureTicker) else 1
         divisor = current_price * contract_size
         quantity = target_value // divisor
@@ -121,10 +121,9 @@ class InitialRiskWithVolumePositionSizer(InitialRiskPositionSizer):
             target_quantity = np.floor(mean_volume * self._max_volume_percentage)
             target_value = target_quantity * divisor * np.sign(quantity)
             self.logger.info(
-                "InitialRiskWithVolumePositionSizer: {} - capping {}.\n"
+                "InitialRiskWithVolumePositionSizer: capping {}.\n"
                 "Initial quantity: {}\n"
-                "Reduced quantity: {}".format(
-                    self._data_handler.timer.now(), ticker.ticker, quantity, target_quantity))
+                "Reduced quantity: {}".format(ticker.ticker, quantity, target_quantity))
 
         assert is_finite_number(target_value), "target_value has to be a finite number"
         return target_value

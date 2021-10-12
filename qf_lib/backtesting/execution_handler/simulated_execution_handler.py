@@ -87,19 +87,19 @@ class SimulatedExecutionHandler(ExecutionHandler):
 
         self._market_orders_executor = MarketOrdersExecutor(
             contracts_to_tickers_mapper, data_handler, monitor, portfolio,
-            timer, order_id_generator, commission_model, slippage_model)
+            timer, order_id_generator, commission_model, slippage_model, frequency)
 
         self._stop_orders_executor = StopOrdersExecutor(
             contracts_to_tickers_mapper, data_handler, monitor, portfolio,
-            timer, order_id_generator, commission_model, slippage_model)
+            timer, order_id_generator, commission_model, slippage_model, frequency)
 
         self._market_on_close_orders_executor = MarketOnCloseOrdersExecutor(
             contracts_to_tickers_mapper, data_handler, monitor, portfolio,
-            timer, order_id_generator, commission_model, slippage_model)
+            timer, order_id_generator, commission_model, slippage_model, frequency)
 
         self._market_on_open_orders_executor = MarketOnOpenOrdersExecutor(
             contracts_to_tickers_mapper, data_handler, monitor, portfolio,
-            timer, order_id_generator, commission_model, slippage_model)
+            timer, order_id_generator, commission_model, slippage_model, frequency)
 
     def on_after_market_close(self, _: AfterMarketCloseEvent):
         # Update the portfolio and record its state, current assets and positions

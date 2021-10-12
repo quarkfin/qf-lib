@@ -38,6 +38,7 @@ from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 from qf_lib.containers.futures.futures_adjustment_method import FuturesAdjustmentMethod
 from qf_lib.containers.futures.futures_chain import FuturesChain
 from qf_lib.containers.series.qf_series import QFSeries
+from qf_lib.data_providers.data_provider import DataProvider
 
 
 class FuturesModel(AlphaModel, metaclass=abc.ABCMeta):
@@ -53,16 +54,17 @@ class FuturesModel(AlphaModel, metaclass=abc.ABCMeta):
     risk_estimation_factor: float
         float value which estimates the risk level of the specific AlphaModel. Corresponds to the level at which
         the stop-loss should be placed.
-    data_handler: DataHandler
-        DataHandler which provides data for the ticker
+    data_provider: DataProvider
+        DataProvider which provides data for the ticker. For backtesting purposes the Data Handler should be used.
     cache_path: Optional[str]
         path to a directory, which could be used by the model for caching purposes. If provided, the model will cache
         the outputs of get_data function.
     """
-    def __init__(self, num_of_bars_needed: int, risk_estimation_factor: float, data_handler: DataHandler,
+
+    def __init__(self, num_of_bars_needed: int, risk_estimation_factor: float, data_provider: DataProvider,
                  cache_path: Optional[str] = None):
 
-        super().__init__(risk_estimation_factor, data_handler)
+        super().__init__(risk_estimation_factor, data_provider)
 
         # Precomputed futures chains
         self.futures_data: Dict[Ticker, FuturesChain] = {}
@@ -77,15 +79,19 @@ class FuturesModel(AlphaModel, metaclass=abc.ABCMeta):
         self.num_of_bars_needed = num_of_bars_needed
         self.num_of_bars_atr = num_of_bars_needed
 
-    def get_signal(self, ticker: Ticker, current_exposure: Exposure) -> Signal:
+    def get_signal(self, ticker: Ticker, current_exposure: Exposure, current_time: Optional[datetime] = None,
+                   frequency: Frequency = Frequency.DAILY) -> Signal:
+
+        current_time = current_time or datetime.now()
         self.ticker_name_to_ticker[ticker.name] = ticker
         suggested_exposure = self.calculate_exposure(ticker, current_exposure)
         fraction_at_risk = self.calculate_fraction_at_risk(ticker)
 
         specific_ticker = ticker.get_current_specific_ticker() if isinstance(ticker, FutureTicker) else ticker
-        last_available_price = self.data_handler.get_last_available_price(specific_ticker)
+        last_available_price = self.data_provider.get_last_available_price(specific_ticker, frequency, current_time)
 
-        signal = Signal(ticker, suggested_exposure, fraction_at_risk, last_available_price, alpha_model=self)
+        signal = Signal(ticker, suggested_exposure, fraction_at_risk, last_available_price, current_time,
+                        alpha_model=self)
         return signal
 
     def get_data(self, ticker_str: str, end_date: datetime, aggregate_volume: bool = False):
@@ -113,7 +119,7 @@ class FuturesModel(AlphaModel, metaclass=abc.ABCMeta):
                                                                  Frequency.DAILY)
             except KeyError:
                 # Ticker was not preloaded or the FutureChain has expired
-                self.futures_data[ticker] = FuturesChain(ticker, self.data_handler,
+                self.futures_data[ticker] = FuturesChain(ticker, self.data_provider,
                                                          FuturesAdjustmentMethod.BACK_ADJUSTED)
 
                 data_frame = self.futures_data[ticker].get_price(PriceField.ohlcv(), start_date, end_date,
@@ -122,7 +128,7 @@ class FuturesModel(AlphaModel, metaclass=abc.ABCMeta):
                 data_frame[PriceField.Volume] = self._compute_aggregated_volume(ticker, start_date, end_date)
 
         else:
-            data_frame = self.data_handler.get_price(ticker, PriceField.ohlcv(), start_date, end_date, Frequency.DAILY)
+            data_frame = self.data_provider.get_price(ticker, PriceField.ohlcv(), start_date, end_date, Frequency.DAILY)
 
         data_frame = data_frame.dropna(how="all")
         return data_frame
@@ -130,8 +136,8 @@ class FuturesModel(AlphaModel, metaclass=abc.ABCMeta):
     def _compute_aggregated_volume(self, ticker: FutureTicker, start_date: datetime, end_date: datetime) \
             -> Optional[QFSeries]:
         # Compute the TOTAL VOLUME (aggregated across contracts)
-        futures_chain_tickers_df = self.data_handler.get_futures_chain_tickers(ticker,
-                                                                               ExpirationDateField.all_dates())[ticker]
+        futures_chain_tickers_df = self.data_provider.get_futures_chain_tickers(ticker,
+                                                                                ExpirationDateField.all_dates())[ticker]
         # Get the minimum date
         futures_chain_tickers = futures_chain_tickers_df.min(axis=1)
         futures_chain_tickers = QFSeries(data=futures_chain_tickers.index, index=futures_chain_tickers.values)
@@ -140,8 +146,8 @@ class FuturesModel(AlphaModel, metaclass=abc.ABCMeta):
 
         futures_chain_tickers = futures_chain_tickers.loc[start_date:end_date + RelativeDelta(months=6)]
         all_specific_tickers = futures_chain_tickers.values.tolist()
-        volume_df = self.data_handler.get_price(all_specific_tickers, PriceField.Volume, start_date, end_date,
-                                                Frequency.DAILY).dropna(axis=1, how="all").fillna(0)
+        volume_df = self.data_provider.get_price(all_specific_tickers, PriceField.Volume, start_date, end_date,
+                                                 Frequency.DAILY).dropna(axis=1, how="all").fillna(0)
 
         return volume_df.sum(axis=1) if not volume_df.empty else None
 
@@ -158,7 +164,8 @@ class FuturesModel(AlphaModel, metaclass=abc.ABCMeta):
 
     def _atr_fraction_at_risk(self, ticker: Ticker, time_period):
         try:
-            current_time = self.data_handler.timer.now()
+            current_time = self.data_provider.timer.now() if isinstance(self.data_provider, DataHandler) \
+                else datetime.now()
             data_frame = self.get_data(ticker.name, current_time)
             atr_value = self.compute_atr(data_frame)
             return atr_value * self.risk_estimation_factor if is_finite_number(atr_value) else None

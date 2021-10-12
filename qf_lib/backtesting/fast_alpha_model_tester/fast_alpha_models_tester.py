@@ -74,7 +74,7 @@ class FastAlphaModelTesterConfig:
             self.model_parameters_names), "The modeled_params need to be passed in the kwargs"
 
     def generate_model(self, data_handler: DataHandler):
-        return self.model_type(**self.kwargs, data_handler=data_handler)
+        return self.model_type(**self.kwargs, data_provider=data_handler)
 
     def model_parameters(self):
         return tuple(self.kwargs[param] for param in self.model_parameters_names)

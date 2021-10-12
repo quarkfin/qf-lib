@@ -25,6 +25,7 @@ from qf_lib.backtesting.order.execution_style import MarketOrder
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.backtesting.portfolio.transaction import Transaction
+from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.dateutils.timer import Timer
@@ -140,7 +141,7 @@ class TestSimulatedExecutor(unittest.TestCase):
         slippage_model = MagicMock()
         slippage_model.process_orders.side_effect = mock_apply_slippage
 
-        def mock_calculate_commission(order, fill_price):
+        def mock_calculate_commission(fill_quantity, fill_price):
             return 0.0
 
         commission_model: CommissionModel = MagicMock()
@@ -158,5 +159,5 @@ class TestSimulatedExecutor(unittest.TestCase):
         order_id_generator = count(start=1)
         simulated_executor = MarketOrdersExecutor(self.contract_ticker_mapper, MagicMock(), monitor,
                                                   MagicMock(), timer, order_id_generator, commission_model,
-                                                  slippage_model)
+                                                  slippage_model, Frequency.DAILY)
         return simulated_executor

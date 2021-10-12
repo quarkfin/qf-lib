@@ -47,6 +47,7 @@ class BacktestTradingSession(TradingSession):
                  backtest_result: BacktestResult):
         """
         Set up the backtest variables according to what has been passed in.
+        The data_provider parameter of the BacktestTradingSession points to a Data Handler object.
         """
         super().__init__()
         self.logger = qf_logger.getChild(self.__class__.__name__)
@@ -59,6 +60,8 @@ class BacktestTradingSession(TradingSession):
 
         self.event_manager = events_manager
         self.data_handler = data_handler
+        self.data_provider = data_handler  # type: DataHandler
+
         self.portfolio = portfolio
         self.position_sizer = position_sizer
         self.orders_filters = orders_filters

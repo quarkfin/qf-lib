@@ -13,7 +13,6 @@
 #     limitations under the License.
 
 from qf_lib.backtesting.execution_handler.commission_models.commission_model import CommissionModel
-from qf_lib.backtesting.order.order import Order
 
 
 class FixedCommissionModel(CommissionModel):
@@ -30,5 +29,5 @@ class FixedCommissionModel(CommissionModel):
     def __init__(self, commission: float):
         self.commission = commission
 
-    def calculate_commission(self, order: Order, fill_price: float) -> float:
+    def calculate_commission(self, fill_quantity: int, fill_price: float) -> float:
         return self.commission

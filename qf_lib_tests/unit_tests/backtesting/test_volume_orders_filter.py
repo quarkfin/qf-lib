@@ -156,7 +156,7 @@ class TestVolumeOrdersFilter(unittest.TestCase):
         self.assertCountEqual(new_orders, expected_sell_order)
 
     def _setup_data_handler(self, volume_value: Optional[float]) -> DataHandler:
-        dates = pd.date_range(str_to_date("2020-01-01"), str_to_date("2020-01-30"), freq='D')
+        dates = pd.date_range(str_to_date("2019-12-01"), str_to_date("2020-01-30"), freq='D')
         prices_data_frame = QFDataFrame(data={PriceField.Volume: [volume_value] * len(dates)},
                                         index=dates)
 

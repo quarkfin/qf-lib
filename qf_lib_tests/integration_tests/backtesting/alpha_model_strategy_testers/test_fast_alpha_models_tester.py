@@ -168,12 +168,12 @@ class TestFastAlphaModelsTester(TestCase):
 
 class DummyAlphaModel(AlphaModel):
     def __init__(self, period_length: int, first_suggested_exposure: Exposure,
-                 risk_estimation_factor: float, data_handler: DataHandler = None):
-        super().__init__(risk_estimation_factor, data_handler)
+                 risk_estimation_factor: float, data_provider: DataHandler = None):
+        super().__init__(risk_estimation_factor, data_provider)
 
         assert first_suggested_exposure != Exposure.OUT
 
-        self.timer = data_handler.timer
+        self.timer = data_provider.timer
 
         last_suggested_exposure = Exposure.LONG if first_suggested_exposure == Exposure.SHORT else Exposure.SHORT
 

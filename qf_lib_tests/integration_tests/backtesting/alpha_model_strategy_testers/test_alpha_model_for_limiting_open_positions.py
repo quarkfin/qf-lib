@@ -14,7 +14,8 @@
 from unittest import TestCase
 
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
-from qf_lib.backtesting.alpha_model.alpha_model_strategy import AlphaModelStrategy
+from qf_lib.backtesting.strategies.signal_generators import OnBeforeMarketOpenSignalGeneration
+from qf_lib.backtesting.strategies.alpha_model_strategy import AlphaModelStrategy
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
 from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
@@ -64,7 +65,7 @@ class TestAlphaModelPositionsLimit(TestCase):
         )
 
         # --- Build the model --- #
-        model = DummyAlphaModel(risk_estimation_factor=0.05, data_handler=self.ts.data_handler)
+        model = DummyAlphaModel(risk_estimation_factor=0.05, data_provider=self.ts.data_handler)
         self.model_tickers_dict = {model: self.tickers}
 
     def _mock_data_provider(self):
@@ -141,8 +142,9 @@ class TestAlphaModelPositionsLimit(TestCase):
 
     def test_limiting_open_positions_1_position(self):
         max_open_positions = 1
-        AlphaModelStrategy(self.ts, self.model_tickers_dict, use_stop_losses=False,
-                           max_open_positions=max_open_positions)
+        strategy = AlphaModelStrategy(self.ts, self.model_tickers_dict, use_stop_losses=False,
+                                      max_open_positions=max_open_positions)
+        OnBeforeMarketOpenSignalGeneration(strategy)
         self.ts.start_trading()
 
         number_of_assets = self._get_assets_number_series(self.ts.portfolio)
@@ -152,8 +154,9 @@ class TestAlphaModelPositionsLimit(TestCase):
 
     def test_limiting_open_positions_2_position(self):
         max_open_positions = 2
-        AlphaModelStrategy(self.ts, self.model_tickers_dict, use_stop_losses=False,
-                           max_open_positions=max_open_positions)
+        strategy = AlphaModelStrategy(self.ts, self.model_tickers_dict, use_stop_losses=False,
+                                      max_open_positions=max_open_positions)
+        OnBeforeMarketOpenSignalGeneration(strategy)
         self.ts.start_trading()
 
         number_of_assets = self._get_assets_number_series(self.ts.portfolio)
@@ -163,13 +166,11 @@ class TestAlphaModelPositionsLimit(TestCase):
 
 
 class DummyAlphaModel(AlphaModel):
-    def __init__(self, risk_estimation_factor: float, data_handler: DataHandler):
-        super().__init__(0.0, None)
-        self.risk_estimation_factor = risk_estimation_factor
-        self.data_handler = data_handler
+    def __init__(self, risk_estimation_factor: float, data_provider: DataHandler):
+        super().__init__(0.0, data_provider)
 
     def calculate_exposure(self, ticker: Ticker, current_exposure: Exposure) -> Exposure:
-        last_price = self.data_handler.get_last_available_price(ticker)
+        last_price = self.data_provider.get_last_available_price(ticker)
 
         if last_price >= 100.00:
             return Exposure.LONG

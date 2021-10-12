@@ -89,7 +89,7 @@ class TradingSessionForTests(TradingSession):
 
         execution_handler = SimulatedExecutionHandler(
             data_handler, timer, notifiers.scheduler, monitor, commission_model,
-            contract_ticker_mapper, portfolio, slippage_model)
+            contract_ticker_mapper, portfolio, slippage_model, frequency=frequency)
 
         broker = BacktestBroker(portfolio, execution_handler)
         order_factory = OrderFactory(broker, data_handler, contract_ticker_mapper)
@@ -124,6 +124,7 @@ class TradingSessionForTests(TradingSession):
         self.event_manager = event_manager
         self.contract_ticker_mapper = contract_ticker_mapper
         self.data_handler = data_handler
+        self.data_provider = data_handler
         self.portfolio = portfolio
         self.execution_handler = execution_handler
         self.position_sizer = position_sizer
@@ -132,3 +133,4 @@ class TradingSessionForTests(TradingSession):
         self.timer = timer
         self.order_factory = order_factory
         self.time_flow_controller = time_flow_controller
+        self.frequency = frequency

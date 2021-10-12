@@ -15,7 +15,6 @@ import numpy as np
 import pandas as pd
 from numpy.testing import assert_equal, assert_almost_equal
 
-
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
 from qf_lib.common.enums.frequency import Frequency
@@ -28,9 +27,10 @@ from qf_lib_tests.integration_tests.backtesting.alpha_model_strategy_testers.tes
 
 
 class TestAlphaModelIntradayStrategy(TestAlphaModelStrategy):
-
+    data_start_date = str_to_date("2014-12-25 00:00:00.00", DateFormat.FULL_ISO)
     data_end_date = str_to_date("2015-02-28 23:59:59.00", DateFormat.FULL_ISO)
     end_date = str_to_date("2015-02-28 13:30:00.00", DateFormat.FULL_ISO)
+
     frequency = Frequency.MIN_1
 
     def test_stop_losses(self):
@@ -83,13 +83,16 @@ class TestAlphaModelIntradayStrategy(TestAlphaModelStrategy):
         return mocked_result
 
     def _add_test_cases(self, mocked_result, tickers):
-
         # single low price breaking the stop level
-        mocked_result.loc[str_to_date('2015-02-05 19:59:00.00', DateFormat.FULL_ISO), tickers[0], PriceField.Low] -= 15.0
+        mocked_result.loc[
+            str_to_date('2015-02-05 19:59:00.00', DateFormat.FULL_ISO), tickers[0], PriceField.Low] -= 15.0
         # two consecutive low prices breaking the stop level
-        mocked_result.loc[str_to_date('2015-02-12 19:59:00.00', DateFormat.FULL_ISO), tickers[0], PriceField.Low] -= 15.0
-        mocked_result.loc[str_to_date('2015-02-13 19:59:00.00', DateFormat.FULL_ISO), tickers[0], PriceField.Low] -= 15.0
+        mocked_result.loc[
+            str_to_date('2015-02-12 19:59:00.00', DateFormat.FULL_ISO), tickers[0], PriceField.Low] -= 15.0
+        mocked_result.loc[
+            str_to_date('2015-02-13 19:59:00.00', DateFormat.FULL_ISO), tickers[0], PriceField.Low] -= 15.0
         # single open price breaking the stop level
-        mocked_result.loc[str_to_date('2015-02-23 19:59:00.00', DateFormat.FULL_ISO), tickers[0], PriceField.Low] -= 25.0
+        mocked_result.loc[
+            str_to_date('2015-02-23 19:59:00.00', DateFormat.FULL_ISO), tickers[0], PriceField.Low] -= 25.0
         mocked_result.loc[str_to_date('2015-02-23 19:59:00.00', DateFormat.FULL_ISO), tickers[0], PriceField.Open] = \
             mocked_result.loc[str_to_date('2015-02-23 19:59:00.00', DateFormat.FULL_ISO), tickers[0], PriceField.Low]

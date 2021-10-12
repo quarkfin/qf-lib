@@ -63,7 +63,6 @@ class BacktestTradingSessionBuilder(object):
 
     - backtest name is set to "Backtest Results"
     - initial cash is set to 10000000
-    - montior type is set to LightBacktestMonitor
     - SimulatedBloombergContractTickerMapper is used to map contracts to tickers
     - no commissions are introduced (FixedCommissionModel(0.0))
     - no slippage is introduced (PriceBasedSlippage(0.0))
@@ -418,6 +417,7 @@ class BacktestTradingSessionBuilder(object):
                 "\tContract - Ticker Mapper: {}".format(self._contract_ticker_mapper.__class__.__name__),
                 "\tStart Date: {}".format(start_date),
                 "\tEnd Date: {}".format(end_date),
+                "\tTrading frequency:{}".format(self._frequency),
                 "\tInitial Cash: {:.2f}".format(self._initial_cash)
             ])
         )

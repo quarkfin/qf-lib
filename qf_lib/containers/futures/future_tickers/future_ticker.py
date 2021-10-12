@@ -174,7 +174,7 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
             return self._ticker
 
         except (LookupError, ValueError):
-            # Function "get_loc(self._timer.now(), method="pad")" may raise KeyError in case if e.g. the current time
+            # Function "get_loc(self.timer.now(), method="pad")" may raise KeyError in case if e.g. the current time
             # precedes the first date in the shifted_index.
             # Function "iloc" may rise IndexError if the requested indexer is out-of-bonds (e.g. a high value of self.N)
             # Therefore, in case if the data with expiration dates is not available for the current date, the
@@ -237,6 +237,12 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
         pass
 
     def __repr__(self):
+        return self._get_str_repr()
+
+    def __str__(self):
+        return self._get_str_repr()
+
+    def _get_str_repr(self):
         return "{}('{}', '{}')".format(self.__class__.__name__, self._name, self.family_id)
 
     def __eq__(self, other):

@@ -21,33 +21,33 @@ from qf_lib.backtesting.signals.signal import Signal
 from qf_lib.backtesting.broker.broker import Broker
 from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
-from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.signals.signals_register import SignalsRegister
 from qf_lib.backtesting.order.execution_style import StopOrder
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.order_factory import OrderFactory
 from qf_lib.backtesting.order.time_in_force import TimeInForce
+from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.numberutils.is_finite_number import is_finite_number
 from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
+from qf_lib.data_providers.data_provider import DataProvider
 
 
-class PositionSizer(object, metaclass=ABCMeta):
-    """
-    The PositionSizer abstract class converts signals to orders with size specified.
-    """
+class PositionSizer(metaclass=ABCMeta):
+    """ The PositionSizer abstract class converts signals to orders with size specified. """
 
-    def __init__(self, broker: Broker, data_handler: DataHandler, order_factory: OrderFactory,
+    def __init__(self, broker: Broker, data_provider: DataProvider, order_factory: OrderFactory,
                  contract_ticker_mapper: ContractTickerMapper, signals_register: SignalsRegister):
         self._broker = broker
-        self._data_handler = data_handler
+        self._data_provider = data_provider
         self._order_factory = order_factory
         self._contract_ticker_mapper = contract_ticker_mapper
         self._signals_register = signals_register
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
-    def size_signals(self, signals: List[Signal], use_stop_losses: bool = True) -> List[Order]:
+    def size_signals(self, signals: List[Signal], use_stop_losses: bool = True,
+                     time_in_force: TimeInForce = TimeInForce.OPG, frequency: Frequency = None) -> List[Order]:
         """
         Based on the signals provided, creates a list of Orders where proper sizing has been applied
 
@@ -57,6 +57,10 @@ class PositionSizer(object, metaclass=ABCMeta):
             list of signals,  based on which the orders will be created
         use_stop_losses: bool
             if true, for each MarketOrder generated for a signal, additionally a StopOrder will be created
+        time_in_force: TimeInForce
+            time in force, which will be used to create the Orders based on the provided Signals
+        frequency: Frequency
+            frequency of trading, further used to create Orders
 
         StopOrders details
         -------------------
@@ -65,14 +69,12 @@ class PositionSizer(object, metaclass=ABCMeta):
         the position for the contract.
 
         """
-
         self._check_for_duplicates(signals)
-        self._signals_register.save_signals(signals, self._data_handler.timer.now())
 
         self.logger.info("Position Sizer - Removing redundant signals")
-        self._remove_redundant_signals(signals)
+        updated_signals = self._remove_redundant_signals(signals)
 
-        market_orders = self._generate_market_orders(signals)
+        market_orders = self._generate_market_orders(updated_signals, time_in_force, frequency)
         market_orders = [order for order in market_orders if order is not None]
 
         orders = market_orders
@@ -89,7 +91,7 @@ class PositionSizer(object, metaclass=ABCMeta):
 
             stop_orders = [
                 self._generate_stop_order(signal, contract_to_market_order)
-                for signal in signals if signal.suggested_exposure != Exposure.OUT
+                for signal in updated_signals if signal.suggested_exposure != Exposure.OUT
             ]
 
             stop_orders = [order for order in stop_orders if order is not None]
@@ -98,9 +100,14 @@ class PositionSizer(object, metaclass=ABCMeta):
             for order in stop_orders:
                 self.logger.info("Stop Order for {}, {}".format(order.contract, order))
 
+        # The signals are saved at the very end of the function, so that in case if stop orders are being computed, it
+        # is not necessary to filter out signals which happened after the <current time> in the _cap_stop_price
+        self.logger.info("Position Sizer - Saving the signals")
+        self._signals_register.save_signals(signals)
+
         return orders
 
-    def _remove_redundant_signals(self, signals: List[Signal]):
+    def _remove_redundant_signals(self, signals: List[Signal]) -> List[Signal]:
         """
         Remove all these signals, which do not need to be passed into order factory as they obviously do not change the
         state of the portfolio (current exposure equals Exposure.OUT and suggested exposure is also Exposure.OUT).
@@ -120,11 +127,12 @@ class PositionSizer(object, metaclass=ABCMeta):
                              if signal.suggested_exposure == Exposure.OUT and
                              not position_for_ticker_exists_in_portfolio(signal.ticker)]
 
-        for signal in redundant_signals:
-            signals.remove(signal)
+        new_signals = [s for s in signals if s not in redundant_signals]
+        return new_signals
 
     @abstractmethod
-    def _generate_market_orders(self, signals: List[Signal]) -> List[Optional[Order]]:
+    def _generate_market_orders(self, signals: List[Signal], time_in_force: TimeInForce, frequency: Frequency = None) \
+            -> List[Optional[Order]]:
         raise NotImplementedError("Should implement _generate_market_orders()")
 
     def _generate_stop_order(self, signal, contract_to_market_order: Dict[Contract, Order]) -> Optional[Order]:
@@ -180,8 +188,6 @@ class PositionSizer(object, metaclass=ABCMeta):
             # Get the last signal that was generated for the contract
             signals_series = self._signals_register.get_signals_for_ticker(ticker=specific_ticker,
                                                                            alpha_model=signal.alpha_model)
-            signals_series = signals_series[signals_series.index < self._data_handler.timer.now()]
-
             if not signals_series.empty:
                 # Get the last signal, which was generated for the same exposure as the current exposure
                 exposure_series = signals_series.apply(lambda s: s.suggested_exposure)
@@ -208,9 +214,10 @@ class PositionSizer(object, metaclass=ABCMeta):
 
     def _calculate_stop_price(self, signal: Signal):
         current_price = signal.last_available_price
-
-        if current_price is None:
-            current_price = self._data_handler.get_last_available_price(signal.ticker)
+        assert is_finite_number(current_price), f"Signal generated for the {signal.symbol} does not contain " \
+                                                f"last_available_price. In order to use the Position Sizer with " \
+                                                f"stop_losses it is necessary for the signals to contain the last " \
+                                                f"available price."
 
         price_multiplier = 1 - signal.fraction_at_risk * signal.suggested_exposure.value
         stop_price = price_multiplier * current_price

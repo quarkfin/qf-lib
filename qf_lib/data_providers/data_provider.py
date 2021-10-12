@@ -11,15 +11,19 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-
+import math
 from abc import ABCMeta, abstractmethod
 from datetime import datetime
-from typing import Union, Sequence, Type, Set, Dict
+from typing import Union, Sequence, Type, Set, Dict, Optional
+
+from numpy import nan
 
 from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
+from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
+from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
@@ -29,8 +33,7 @@ from qf_lib.containers.series.qf_series import QFSeries
 
 
 class DataProvider(object, metaclass=ABCMeta):
-    """An interface for data providers (for example AbstractPriceDataProvider or GeneralPriceProvider).
-    """
+    """ An interface for data providers (for example AbstractPriceDataProvider or GeneralPriceProvider). """
 
     frequency = None
 
@@ -144,6 +147,141 @@ class DataProvider(object, metaclass=ABCMeta):
             the specific future contracts.
         """
         pass
+
+    def historical_price(self, tickers: Union[Ticker, Sequence[Ticker]],
+                         fields: Union[PriceField, Sequence[PriceField]],
+                         nr_of_bars: int, end_date: Optional[datetime] = None,
+                         frequency: Frequency = None) -> Union[PricesSeries, PricesDataFrame, QFDataArray]:
+        """
+        Returns the latest available data samples, which simply correspond to the last available <nr_of_bars> number
+        of bars.
+
+        In case of intraday data and N minutes frequency, the most recent data may not represent exactly N minutes
+        (if the whole bar was not available at this time). The time ranges are always aligned to the market open time.
+        Non-zero seconds and microseconds are in the above case omitted (the output at 11:05:10 will be exactly
+        the same as at 11:05).
+
+        Parameters
+        ----------
+        tickers: Ticker, Sequence[Ticker]
+            ticker or sequence of tickers of the securities
+        fields: PriceField, Sequence[PriceField]
+            PriceField or sequence of PriceFields of the securities
+        nr_of_bars: int
+            number of data samples (bars) to be returned.
+            Note: while requesting more than one ticker, some tickers may have fewer than n_of_bars data points
+        end_date: Optional[datetime]
+            last date which should be considered in the query, the nr_of_bars that should be returned will always point
+            to the time before end_date. The parameter is optional and if not provided, the end_date will point to the
+            current user time.
+        frequency
+            frequency of the data
+
+        Returns
+        --------
+        PricesSeries, PricesDataFrame, QFDataArray
+        """
+        # frequency = frequency or self.default_frequency
+        assert frequency >= Frequency.DAILY, "Frequency lower than daily is not supported by the Data Provider"
+        assert nr_of_bars > 0, "Numbers of data samples should be a positive integer"
+        end_date = datetime.now() if end_date is None else end_date
+
+        # Add additional days to ensure that any data absence will not impact the number of bars which will be returned
+        start_date = self._compute_start_date(nr_of_bars, end_date, frequency)
+        container = self.get_price(tickers, fields, start_date, end_date, frequency)
+        missing_bars = nr_of_bars - container.shape[0]
+
+        # In case if a bigger margin is necessary to get the historical price, shift the start date and download prices
+        # once again
+        if missing_bars > 0:
+            start_date = self._compute_start_date(missing_bars, start_date, frequency)
+            container = self.get_price(tickers, fields, start_date, end_date, frequency)
+
+        num_of_dates_available = container.shape[0]
+        if num_of_dates_available < nr_of_bars:
+            if isinstance(tickers, Ticker):
+                tickers_as_strings = tickers.as_string()
+            else:
+                tickers_as_strings = ", ".join(ticker.as_string() for ticker in tickers)
+            raise ValueError("Not enough data points for \ntickers: {} \ndate: {}."
+                             "\n{} Data points requested, \n{} Data points available.".format(
+                                tickers_as_strings, end_date, nr_of_bars, num_of_dates_available))
+
+        if isinstance(container, QFDataArray):
+            return container.isel(dates=slice(-nr_of_bars, None))
+        else:
+            return container.tail(nr_of_bars)
+
+    def get_last_available_price(self, tickers: Union[Ticker, Sequence[Ticker]], frequency: Frequency,
+                                 end_time: Optional[datetime] = None) -> Union[float, QFSeries]:
+        """
+        Gets the latest available price for given assets as of end_time.
+
+        Parameters
+        -----------
+        tickers: Ticker, Sequence[Ticker]
+            tickers of the securities which prices should be downloaded
+        frequency: Frequency
+            frequency of the data
+        end_time: datetime
+            date which should be used as a base to compute the last available price. The parameter is optional and if
+            not provided, the end_date will point to the current user time.
+
+        Returns
+        -------
+        float, pandas.Series
+            last_prices series where:
+            - last_prices.name contains a date of current prices,
+            - last_prices.index contains tickers
+            - last_prices.data contains latest available prices for given tickers
+        """
+        end_time = datetime.now() if end_time is None else end_time
+        tickers, got_single_ticker = convert_to_list(tickers, Ticker)
+        if not tickers:
+            return QFSeries()
+
+        assert frequency >= Frequency.DAILY, "Frequency lower then daily is not supported by the " \
+                                             "get_last_available_price function"
+
+        start_date = self._compute_start_date(5, end_time, frequency)
+        open_prices = self.get_price(tickers, PriceField.Open, start_date, end_time, frequency)
+        close_prices = self.get_price(tickers, PriceField.Close, start_date, end_time, frequency)
+
+        latest_available_prices = []
+        for ticker in tickers:
+            last_valid_open_price_date = open_prices.loc[:, ticker].last_valid_index() or start_date
+            last_valid_close_price_date = close_prices.loc[:, ticker].last_valid_index() or start_date
+
+            try:
+                if last_valid_open_price_date > last_valid_close_price_date:
+                    price = open_prices.loc[last_valid_open_price_date, ticker]
+                else:
+                    price = close_prices.loc[last_valid_close_price_date, ticker]
+            except KeyError:
+                price = nan
+
+            latest_available_prices.append(price)
+
+        latest_available_prices_series = QFSeries(data=latest_available_prices, index=tickers)
+        return latest_available_prices_series.iloc[0] if got_single_ticker else latest_available_prices_series
+
+    def _compute_start_date(self, nr_of_bars_needed: int, end_date: datetime, frequency: Frequency):
+        if frequency <= Frequency.DAILY:
+            nr_of_days_to_go_back = math.ceil(nr_of_bars_needed * (365 / 252) + 10)
+        else:
+            days_per_year = Frequency.DAILY.occurrences_in_year
+            bars_per_year = frequency.occurrences_in_year
+            bars_per_day = int(bars_per_year / days_per_year)
+            nr_of_days_to_go_back = math.ceil(nr_of_bars_needed / bars_per_day + 1)
+
+        # In case if the end_date points to saturday, sunday or monday shift it to saturday midnight
+        if end_date.weekday() in (0, 5, 6):
+            end_date = end_date - RelativeDelta(weeks=1, weekday=5, hour=0, minute=0, microsecond=0)
+
+        # Remove the time part and leave only days in order to align the start date to match the market open time
+        # in case of intraday data, e.g. if the market opens at 13:30, the bars will also start at 13:30
+        start_date = end_date - RelativeDelta(days=nr_of_days_to_go_back, hour=0, minute=0, second=0, microsecond=0)
+        return start_date
 
     def __str__(self):
         return self.__class__.__name__

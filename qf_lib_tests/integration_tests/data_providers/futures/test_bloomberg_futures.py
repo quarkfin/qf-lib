@@ -13,7 +13,6 @@
 #     limitations under the License.
 import unittest
 
-from qf_lib.backtesting.data_handler.daily_data_handler import DailyDataHandler
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
 from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
@@ -50,7 +49,6 @@ class TestBloombergFutures(unittest.TestCase):
 
         self.ticker_1.initialize_data_provider(self.timer, self.data_provider)
         self.ticker_2.initialize_data_provider(self.timer, self.data_provider)
-        self.data_handler = DailyDataHandler(self.data_provider, self.timer)
 
         self.timer.set_current_time(str_to_date("2017-12-20 00:00:00.000000", DateFormat.FULL_ISO))
 

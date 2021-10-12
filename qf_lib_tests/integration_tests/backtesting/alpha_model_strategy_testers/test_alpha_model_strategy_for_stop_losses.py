@@ -14,7 +14,6 @@
 #
 
 from unittest import TestCase
-from unittest.mock import Mock
 
 import numpy as np
 import pandas as pd
@@ -22,7 +21,8 @@ from numpy.testing import assert_equal, assert_almost_equal
 
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
-from qf_lib.backtesting.alpha_model.alpha_model_strategy import AlphaModelStrategy
+from qf_lib.backtesting.strategies.signal_generators import OnBeforeMarketOpenSignalGeneration
+from qf_lib.backtesting.strategies.alpha_model_strategy import AlphaModelStrategy
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker, BloombergTicker
@@ -36,14 +36,14 @@ class TestAlphaModelStrategy(TestCase):
     test_start_date = str_to_date("2015-01-01")
     test_end_date = str_to_date("2015-02-28")
 
-    data_start_date = str_to_date("2014-12-25")
+    data_start_date = str_to_date("2014-12-09")
     data_end_date = str_to_date("2015-02-28")
 
     frequency = Frequency.DAILY
 
     class DummyAlphaModel(AlphaModel):
-        def __init__(self, risk_estimation_factor: float, data_handler):
-            super().__init__(0.0, data_handler)
+        def __init__(self, risk_estimation_factor: float, data_provider):
+            super().__init__(0.0, data_provider)
             self.risk_estimation_factor = risk_estimation_factor
 
         def calculate_exposure(self, ticker: Ticker, current_exposure: Exposure) -> Exposure:
@@ -61,18 +61,17 @@ class TestAlphaModelStrategy(TestCase):
                                                        self.data_end_date, self.frequency)
 
         risk_estimation_factor = 0.05
-        data_handler = Mock()
-        data_handler.get_last_available_price.return_value = None
-        alpha_model = self.DummyAlphaModel(risk_estimation_factor, data_handler)
 
         ts = self._test_trading_session_init()
+        alpha_model = self.DummyAlphaModel(risk_estimation_factor, ts.data_handler)
 
         # Mock the backtest result in order to be able to compare transactions
         self.transactions = []
         ts.monitor.record_transaction.side_effect = lambda transaction: self.transactions.append(transaction)
         self.portfolio = ts.portfolio
 
-        AlphaModelStrategy(ts, {alpha_model: tickers}, use_stop_losses=True)
+        strategy = AlphaModelStrategy(ts, {alpha_model: tickers}, use_stop_losses=True)
+        OnBeforeMarketOpenSignalGeneration(strategy)
         ts.start_trading()
 
     def test_stop_losses(self):
@@ -101,7 +100,7 @@ class TestAlphaModelStrategy(TestCase):
         num_of_tickers = len(tickers)
         num_of_fields = len(fields)
 
-        start_value = 100.0
+        start_value = 40.0
         values = np.arange(start_value, num_of_dates * num_of_tickers * num_of_fields + start_value)
         reshaped_values = np.reshape(values, (num_of_dates, num_of_tickers, num_of_fields))
 
