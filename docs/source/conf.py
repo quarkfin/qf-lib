@@ -12,6 +12,7 @@
 #
 import os
 import sys
+
 sys.path.append(os.path.abspath('../..'))
 
 # -- Project information -----------------------------------------------------
@@ -21,7 +22,7 @@ copyright = '2021'
 author = 'CERN'
 
 # The full version, including alpha/beta/rc tags
-#release = 'release...'
+# release = 'release...'
 
 
 # -- General configuration ---------------------------------------------------
@@ -31,12 +32,12 @@ author = 'CERN'
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
-	'sphinx.ext.napoleon',
+    'sphinx.ext.napoleon',
     'sphinx.ext.githubpages',
-	'sphinx_rtd_theme',
-	'sphinx.ext.autosummary',
-	'sphinx.ext.viewcode',
-	'autodocsumm'
+    'sphinx_rtd_theme',
+    'sphinx.ext.autosummary',
+    'sphinx.ext.viewcode',
+    'autodocsumm'
 ]
 numpydoc_show_class_members = False
 
@@ -47,7 +48,6 @@ templates_path = ['_templates']
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
-
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -64,11 +64,10 @@ html_static_path = ['_static']
 html_context = {
     'css_files': [
         '_static/theme_overrides.css',  # override wide tables in RTD theme
-        ],
-     }
-
+    ],
+}
 
 # -- Extension configuration -------------------------------------------------
 autosummary_generate = True
-autodoc_mock_imports = ["cvxopt", "ibapi", "blpapi"]
+autodoc_mock_imports = ["cvxopt", "ibapi", "blpapi", "PyJWT", "retrying", "beap_lib"]
 html_show_sourcelink = False
