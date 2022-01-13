@@ -50,7 +50,7 @@ setup(
         'scikit-learn==0.24.2',
         'cvxopt==1.2.6',
         'openpyxl==3.0.7',
-        'Pillow==8.2.0',
+        'Pillow==9.0.0',
         'WeasyPrint==52.5',
         'emails==0.6',
         'Jinja2==2.11.3',
