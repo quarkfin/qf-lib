@@ -14,12 +14,12 @@
 
 from abc import ABCMeta, abstractmethod
 
-from qf_lib.backtesting.contract.contract import Contract
+from qf_lib.common.tickers.tickers import Ticker
 
 
 class Position(metaclass=ABCMeta):
     @abstractmethod
-    def contract(self) -> Contract:
+    def ticker(self) -> Ticker:
         pass
 
     @abstractmethod

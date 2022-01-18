@@ -15,8 +15,6 @@ import unittest
 from itertools import count
 from unittest.mock import MagicMock, patch
 
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.simulated_bloomberg_mapper import \
-    SimulatedBloombergContractTickerMapper
 from qf_lib.backtesting.execution_handler.commission_models.commission_model import CommissionModel
 from qf_lib.backtesting.execution_handler.market_orders_executor import MarketOrdersExecutor
 from qf_lib.backtesting.execution_handler.simulated_executor import SimulatedExecutor
@@ -35,15 +33,14 @@ class TestSimulatedExecutor(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.contract_ticker_mapper = SimulatedBloombergContractTickerMapper()
         cls.example_ticker = BloombergTicker("Example Index")
         cls.example_ticker_2 = BloombergTicker("Example2 Index")
         cls.orders = [
-            Order(contract=cls.contract_ticker_mapper.ticker_to_contract(cls.example_ticker),
+            Order(ticker=cls.example_ticker,
                   quantity=1000,
                   execution_style=MarketOrder(),
                   time_in_force=TimeInForce.GTC),
-            Order(contract=cls.contract_ticker_mapper.ticker_to_contract(cls.example_ticker_2),
+            Order(ticker=cls.example_ticker_2,
                   quantity=1000,
                   execution_style=MarketOrder(),
                   time_in_force=TimeInForce.GTC),
@@ -112,10 +109,10 @@ class TestSimulatedExecutor(unittest.TestCase):
 
         # Both open orders were available
         expected_transactions = [Transaction(self.backtest_date,
-                                             self.contract_ticker_mapper.ticker_to_contract(self.example_ticker),
+                                             self.example_ticker,
                                              mocked_fill_volume, mocked_fill_price, 0.0),
                                  Transaction(self.backtest_date,
-                                             self.contract_ticker_mapper.ticker_to_contract(self.example_ticker_2),
+                                             self.example_ticker_2,
                                              mocked_fill_volume, mocked_fill_price, 0.0),
                                  ]
         self.assertCountEqual(self.recorded_transactions, expected_transactions)
@@ -157,7 +154,6 @@ class TestSimulatedExecutor(unittest.TestCase):
         timer.now.return_value = self.backtest_date
 
         order_id_generator = count(start=1)
-        simulated_executor = MarketOrdersExecutor(self.contract_ticker_mapper, MagicMock(), monitor,
-                                                  MagicMock(), timer, order_id_generator, commission_model,
-                                                  slippage_model, Frequency.DAILY)
+        simulated_executor = MarketOrdersExecutor(MagicMock(), monitor, MagicMock(), timer, order_id_generator,
+                                                  commission_model, slippage_model, Frequency.DAILY)
         return simulated_executor

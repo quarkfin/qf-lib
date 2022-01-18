@@ -20,8 +20,11 @@ from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
+from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.cast_dataframe import cast_dataframe
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
+from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
+from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.cast_series import cast_series
 from qf_lib.containers.series.prices_series import PricesSeries
@@ -104,6 +107,46 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
         -------
         Dict[ExpirationDateField, str]
              mapping between ExpirationDateField and corresponding strings
+        """
+        pass
+
+    def get_futures_chain_tickers(self, tickers: Union[FutureTicker, Sequence[FutureTicker]],
+                                  expiration_date_fields: Union[ExpirationDateField, Sequence[ExpirationDateField]]) \
+            -> Dict[FutureTicker, QFDataFrame]:
+
+        expiration_date_fields, got_single_expiration_date_field = convert_to_list(expiration_date_fields,
+                                                                                   ExpirationDateField)
+        mapping_dict = self.expiration_date_field_str_map()
+        expiration_date_fields_str = [mapping_dict[field] for field in expiration_date_fields]
+        exp_dates_dict = self._get_futures_chain_dict(tickers, expiration_date_fields_str)
+
+        for future_ticker, exp_dates in exp_dates_dict.items():
+            exp_dates = exp_dates.rename(columns=self.str_to_expiration_date_field_map())
+            for ticker in exp_dates.index:
+                ticker.security_type = future_ticker.security_type
+                ticker.point_value = future_ticker.point_value
+                ticker.set_name(future_ticker.name)
+            if got_single_expiration_date_field:
+                exp_dates = exp_dates.squeeze()
+            exp_dates_dict[future_ticker] = exp_dates
+
+        return exp_dates_dict
+
+    @abstractmethod
+    def _get_futures_chain_dict(self, tickers: Union[FutureTicker, Sequence[FutureTicker]],
+                                expiration_date_fields: Union[str, Sequence[str]]) -> Dict[FutureTicker, QFDataFrame]:
+        """
+        Returns a dictionary, which maps Tickers to QFSeries, consisting of the expiration dates of Future
+        Contracts: Dict[FutureTicker, Union[QFSeries, QFDataFrame]]].
+
+        Parameters
+        ----------
+        tickers: Ticker, Sequence[Ticker]
+            tickers for securities which should be retrieved
+        expiration_date_fields: str, Sequence[str]
+            expiration date fields of securities which should be retrieved. Specific for each data provider,
+            the mapping between strings and corresponding ExpirationDateField enum values should be implemented as
+            str_to_expiration_date_field_map function.
         """
         pass
 

@@ -19,6 +19,7 @@ from pandas import date_range
 from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
+from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
@@ -36,8 +37,9 @@ from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_data
 class TestFuturesChain(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.future_ticker = BloombergFutureTicker("Example", "EX{} Example", 1, 1)
-        tickers = [BloombergTicker("EXZ1 Example"), BloombergTicker("EXH2 Example")]
+        self.future_ticker = BloombergFutureTicker("Example", "EX{} Example", 1, 1, 10)
+        tickers = [BloombergTicker("EXZ1 Example", SecurityType.FUTURE, 10),
+                   BloombergTicker("EXH2 Example", SecurityType.FUTURE, 10)]
         self.exp_dates = {
             self.future_ticker: QFDataFrame(index=tickers, columns=[ExpirationDateField.LastTradeableDate],
                                             data=[str_to_date("2021-12-20"), str_to_date("2022-03-20")])

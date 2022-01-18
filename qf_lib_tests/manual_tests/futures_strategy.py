@@ -163,7 +163,6 @@ def run_strategy(data_provider: DataProvider) -> Tuple[float, str]:
     OnBeforeMarketOpenSignalGeneration(strategy)
 
     ts.use_data_preloading(model_tickers)
-    print(ts.get_preloaded_data_checksum())
     ts.start_trading()
 
     data_checksum = ts.get_preloaded_data_checksum()

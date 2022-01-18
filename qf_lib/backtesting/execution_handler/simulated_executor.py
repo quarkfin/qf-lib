@@ -16,7 +16,6 @@ import abc
 from itertools import count
 from typing import List, Sequence, Optional, Dict, Tuple
 
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.execution_handler.commission_models.commission_model import CommissionModel
 from qf_lib.backtesting.execution_handler.slippage.base import Slippage
@@ -31,13 +30,11 @@ from qf_lib.common.utils.numberutils.is_finite_number import is_finite_number
 
 
 class SimulatedExecutor(metaclass=abc.ABCMeta):
-    def __init__(self, contracts_to_tickers_mapper: ContractTickerMapper, data_handler: DataHandler,
-                 monitor: AbstractMonitor, portfolio: Portfolio, timer: Timer, order_id_generator: count,
-                 commission_model: CommissionModel, slippage_model: Slippage, frequency: Frequency):
+    def __init__(self, data_handler: DataHandler, monitor: AbstractMonitor, portfolio: Portfolio, timer: Timer,
+                 order_id_generator: count, commission_model: CommissionModel, slippage_model: Slippage,
+                 frequency: Frequency):
 
-        self._contracts_to_tickers_mapper = contracts_to_tickers_mapper
         self._data_handler = data_handler
-
         self._data_provider = data_handler.data_provider
         self._frequency = frequency
 
@@ -90,8 +87,7 @@ class SimulatedExecutor(metaclass=abc.ABCMeta):
         if not open_orders_list:
             return
 
-        tickers = [self._contracts_to_tickers_mapper.contract_to_ticker(order.contract) for order in open_orders_list]
-
+        tickers = [order.ticker for order in open_orders_list]
         no_slippage_fill_prices_list, to_be_executed_orders, expired_orders_list = \
             self._get_orders_with_fill_prices_without_slippage(open_orders_list, tickers, market_open, market_close)
 
@@ -118,11 +114,9 @@ class SimulatedExecutor(metaclass=abc.ABCMeta):
         Simulates execution of a single Order by converting the Order into Transaction.
         """
         timestamp = self._timer.now()
-        contract = order.contract
-
         commission = self._commission_model.calculate_commission(fill_volume, fill_price)
 
-        transaction = Transaction(timestamp, contract, fill_volume, fill_price, commission)
+        transaction = Transaction(timestamp, order.ticker, fill_volume, fill_price, commission)
 
         self._monitor.record_transaction(transaction)
         self._portfolio.transact_transaction(transaction)

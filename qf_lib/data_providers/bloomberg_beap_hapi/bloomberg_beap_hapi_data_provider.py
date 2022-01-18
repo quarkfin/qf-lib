@@ -8,6 +8,8 @@ import requests
 import pandas as pd
 import warnings
 
+from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
+
 try:
     from beap_lib.beap_auth import Credentials, BEAPAdapter
     from beap_lib.sseclient import SSEClient
@@ -19,7 +21,7 @@ from qf_lib.data_providers.bloomberg.exceptions import BloombergError
 from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
-from qf_lib.common.tickers.tickers import BloombergTicker, tickers_as_strings
+from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
@@ -40,7 +42,6 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider):
     """
     Data Provider which provides financial data from Bloomberg BEAP HAPI.
     """
-
     def __init__(self, settings: Settings, reply_timeout: int = 5):
         self.settings = settings
         self.credentials = Credentials.from_dict({'client_id': settings.hapi_credentials.client_id,
@@ -63,7 +64,7 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider):
         self.catalog_id = self._get_catalog_id(host)
         account_url = urljoin(host, '/eap/catalogs/{c}/'.format(c=self.catalog_id))
         self.logger.info("Scheduled catalog URL: %s", account_url)
-        trigger_url = urljoin(host, '/eap/catalogs/{c}/triggers/ctaAdhocTrigger/'.format(c=self.catalog_id))
+        trigger_url = urljoin(host, '/eap/catalogs/{c}/triggers/prodDataStreamTrigger/'.format(c=self.catalog_id))
         self.logger.info("Scheduled trigger URL: %s", trigger_url)
 
         self.universe_hapi_provider = BloombergBeapHapiUniverseProvider(host, self.session, account_url)
@@ -130,7 +131,7 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider):
         tickers, got_single_ticker = convert_to_list(tickers, BloombergTicker)
         fields, got_single_field = convert_to_list(fields, str)
 
-        tickers_str = tickers_as_strings(tickers)
+        tickers_str = [t.as_string() for t in tickers]
 
         if universe_creation_time:
             universe_creation_time = datetime.strptime(universe_creation_time, "%Y%m%d%H%M")
@@ -195,9 +196,9 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider):
     def supported_ticker_types(self):
         return {BloombergTicker, BloombergFutureTicker}
 
-    def get_futures_chain_tickers(self, tickers: Union[BloombergFutureTicker, Sequence[BloombergFutureTicker]],
-                                  expiration_date_fields: Union[ExpirationDateField, Sequence[ExpirationDateField]],
-                                  universe_creation_time: datetime = None):
+    def _get_futures_chain_dict(self, tickers: Union[FutureTicker, Sequence[FutureTicker]],
+                                expiration_date_fields: Union[str, Sequence[str]],
+                                universe_creation_time: datetime = None) -> Dict[FutureTicker, QFDataFrame]:
         """
         Returns tickers of futures contracts, which belong to the same futures contract chain as the provided ticker
         (tickers), along with their expiration dates using Bloomberg HAPI.
@@ -213,7 +214,7 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider):
 
         Returns
         -------
-        Dict[BloombergFutureTicker, Union[QFSeries, QFDataFrame]]
+        Dict[BloombergFutureTicker, QFDataFrame]
             Dictionary mapping each BloombergFutureTicker to a QFSeries or QFDataFrame, containing specific future
             contracts tickers (BloombergTickers), indexed by these tickers
 
@@ -248,22 +249,13 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider):
 
             Returns
             -------
-            QFSeries, QFDataFrame
+            QFDataFrame
                 Container containing all the dates, indexed by tickers
             """
-
-            # Download the expiration dates for each of the future contracts
-            mapping_dict = self.expiration_date_field_str_map()
-            expiration_date_fields_str = [mapping_dict[field] for field in expiration_date_fields]
-            exp_dates = self.get_current_values(specific_tickers,
-                                                expiration_date_fields_str)  # type: Union[QFSeries, QFDataFrame]
+            exp_dates = self.get_current_values(specific_tickers, expiration_date_fields)  # type: QFDataFrame
 
             # Drop these futures, for which no expiration date was found and cast all string dates into datetime
-            exp_dates = exp_dates.dropna(how="all")
-            exp_dates = exp_dates.astype('datetime64[ns]')
-            exp_dates = exp_dates.rename(columns=self.str_to_expiration_date_field_map())
-
-            return exp_dates
+            return exp_dates.dropna(how="all").astype('datetime64[ns]')
 
         all_specific_tickers = [ticker for specific_tickers_list in future_ticker_to_chain_tickers_list.values()
                                 for ticker in specific_tickers_list]
@@ -313,7 +305,7 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider):
         tickers, got_single_ticker = convert_to_list(tickers, BloombergTicker)
         fields, got_single_field = convert_to_list(fields, str)
 
-        tickers_str = tickers_as_strings(tickers)
+        tickers_str = [t.as_string() for t in tickers]
 
         if universe_creation_time:
             universe_creation_time = datetime.strptime(universe_creation_time, "%Y%m%d%H%M")
@@ -381,11 +373,17 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider):
 
         out_path = self._download_response(request_id)
 
-        future_ticker_str_to_chain_tickers_list = self.parser.get_chain(out_path)
+        future_ticker_str_to_chain_tickers_str_list = self.parser.get_chain(out_path)
+
+        future_ticker_to_chain_tickers_str_list = {
+            future_ticker_from_string(future_ticker_str): specific_tickers_strings_list
+            for future_ticker_str, specific_tickers_strings_list in future_ticker_str_to_chain_tickers_str_list.items()
+        }
 
         future_ticker_str_to_chain_tickers_list = {
-            future_ticker_from_string(future_ticker_str): BloombergTicker.from_string(specific_tickers_strings_list)
-            for future_ticker_str, specific_tickers_strings_list in future_ticker_str_to_chain_tickers_list.items()
+            future_ticker: BloombergTicker.from_string(specific_tickers_strings_list, future_ticker.security_type,
+                                                       future_ticker.point_value)
+            for future_ticker, specific_tickers_strings_list in future_ticker_to_chain_tickers_str_list.items()
         }
 
         # Check if for all of the requested tickers the futures chains were returned, and if not - log an error

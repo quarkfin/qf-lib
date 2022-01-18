@@ -12,27 +12,27 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.portfolio.position import Position
+from qf_lib.common.tickers.tickers import Ticker
 
 
 class BrokerPosition(Position):
-    def __init__(self, contract: Contract, position: float, avg_cost: float):
-        self._contract = contract
+    def __init__(self, ticker: Ticker, position: int, avg_cost: float):
+        self._ticker = ticker
         self._quantity = position
         self._avg_cost = avg_cost
 
-    def contract(self) -> Contract:
-        return self._contract
+    def ticker(self) -> Ticker:
+        return self._ticker
 
-    def quantity(self) -> float:
+    def quantity(self) -> int:
         return self._quantity
 
     def avg_cost_per_share(self) -> float:
         return self._avg_cost
 
     def __str__(self):
-        return 'BrokerPosition:\n' \
-               '\tcontract: {}\n' \
-               '\tquantity: {}\n' \
-               '\tavg cost per share: {}\n'.format(str(self.contract()), self.quantity(), self.avg_cost_per_share())
+        return f'BrokerPosition:\n' \
+               f'\tticker: {self.ticker()}\n' \
+               f'\tquantity: {self.quantity()}\n' \
+               f'\tavg cost per share: {self.avg_cost_per_share()}\n'

@@ -47,7 +47,6 @@ class SimpleMAStrategy:
         self.broker = ts.broker
         self.order_factory = ts.order_factory
         self.data_handler = ts.data_handler
-        self.contract_ticker_mapper = ts.contract_ticker_mapper
         self.position_sizer = ts.position_sizer
         self.timer = ts.timer
 
@@ -66,12 +65,10 @@ class SimpleMAStrategy:
         short_ma_series = long_ma_series.tail(short_ma_len)
         short_ma_price = short_ma_series.mean()
 
-        contract = self.contract_ticker_mapper.ticker_to_contract(self.ticker)
-
         if short_ma_price >= long_ma_price:
-            orders = self.order_factory.target_percent_orders({contract: 1.0}, MarketOrder(), TimeInForce.GTC)
+            orders = self.order_factory.target_percent_orders({self.ticker: 1.0}, MarketOrder(), TimeInForce.GTC)
         else:
-            orders = self.order_factory.target_percent_orders({contract: 0.0}, MarketOrder(), TimeInForce.GTC)
+            orders = self.order_factory.target_percent_orders({self.ticker: 0.0}, MarketOrder(), TimeInForce.GTC)
 
         self.broker.cancel_all_open_orders()
         self.broker.place_orders(orders)

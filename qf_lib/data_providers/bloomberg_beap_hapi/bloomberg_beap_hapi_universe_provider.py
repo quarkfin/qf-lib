@@ -37,7 +37,7 @@ class BloombergBeapHapiUniverseProvider:
         ----------
         universe_id: str
             ID of the hapi universe
-        contains: Union[dict, str, Sequence[str]]
+        tickers: Union[dict, str, Sequence[str]]
             Ticker str, list of tickers str or dict
         fieldsOverrides: bool
             If True, it uses fieldsOvverides

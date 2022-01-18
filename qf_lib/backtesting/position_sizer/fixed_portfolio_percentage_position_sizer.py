@@ -15,7 +15,6 @@ from typing import Optional, List
 
 from qf_lib.backtesting.signals.signal import Signal
 from qf_lib.backtesting.broker.broker import Broker
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.signals.signals_register import SignalsRegister
 from qf_lib.backtesting.order.execution_style import MarketOrder
 from qf_lib.backtesting.order.order import Order
@@ -36,7 +35,6 @@ class FixedPortfolioPercentagePositionSizer(PositionSizer):
     broker: Broker
     data_provider: DataProvider
     order_factory: OrderFactory
-    contract_ticker_mapper: ContractTickerMapper
     fixed_percentage: float
         should be set once for all signals. It corresponds to the fraction of a portfolio that we
         are investing in every asset on single trade.
@@ -47,22 +45,17 @@ class FixedPortfolioPercentagePositionSizer(PositionSizer):
     """
 
     def __init__(self, broker: Broker, data_provider: DataProvider, order_factory: OrderFactory,
-                 contract_ticker_mapper: ContractTickerMapper, signals_register: SignalsRegister,
-                 fixed_percentage: float, tolerance_percentage: float = 0.0):
+                 signals_register: SignalsRegister, fixed_percentage: float, tolerance_percentage: float = 0.0):
 
-        super().__init__(broker, data_provider, order_factory, contract_ticker_mapper, signals_register)
+        super().__init__(broker, data_provider, order_factory, signals_register)
 
         self.fixed_percentage = fixed_percentage
         self.tolerance_percentage = tolerance_percentage
 
     def _generate_market_orders(self, signals: List[Signal], time_in_force: TimeInForce, frequency: Frequency = None) \
             -> List[Optional[Order]]:
-        def signal_to_contract(signal):
-            # Map signal to contract
-            return self._contract_ticker_mapper.ticker_to_contract(signal.ticker)
-
         target_percentages = {
-            signal_to_contract(signal): signal.suggested_exposure.value * self.fixed_percentage
+            self._get_specific_ticker(signal.ticker): signal.suggested_exposure.value * self.fixed_percentage
             for signal in signals
         }
 

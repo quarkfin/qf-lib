@@ -22,7 +22,6 @@ from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
 from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.backtesting.signals.signal import Signal
 from qf_lib.backtesting.broker.broker import Broker
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.order.order_factory import OrderFactory
 from qf_lib.backtesting.portfolio.position import Position
 from qf_lib.backtesting.strategies.abstract_strategy import AbstractStrategy
@@ -67,11 +66,9 @@ class AlphaModelStrategy(AbstractStrategy):
 
         self._futures_rolling_orders_generator = self._get_futures_rolling_orders_generator(all_future_tickers,
                                                                                             ts.timer, ts.data_provider,
-                                                                                            ts.broker, ts.order_factory,
-                                                                                            ts.contract_ticker_mapper)
+                                                                                            ts.broker, ts.order_factory)
         self._broker = ts.broker
         self._order_factory = ts.order_factory
-        self._contract_ticker_mapper = ts.contract_ticker_mapper
         self._position_sizer = ts.position_sizer
         self._orders_filters = ts.orders_filters
         self._frequency = ts.frequency
@@ -88,14 +85,12 @@ class AlphaModelStrategy(AbstractStrategy):
         self._log_configuration()
 
     def _get_futures_rolling_orders_generator(self, future_tickers: Sequence[FutureTicker], timer: Timer,
-                                              data_provider: DataProvider, broker: Broker, order_factory: OrderFactory,
-                                              contract_ticker_mapper: ContractTickerMapper):
-
+                                              data_provider: DataProvider, broker: Broker, order_factory: OrderFactory):
         # Initialize timer and data provider in case of FutureTickers
         for future_ticker in future_tickers:
             future_ticker.initialize_data_provider(timer, data_provider)
 
-        return FuturesRollingOrdersGenerator(future_tickers, timer, broker, order_factory, contract_ticker_mapper)
+        return FuturesRollingOrdersGenerator(future_tickers, timer, broker, order_factory)
 
     def calculate_and_place_orders(self):
         date = self.timer.now().date()
@@ -128,10 +123,7 @@ class AlphaModelStrategy(AbstractStrategy):
         (for example Gold) and not specific contracts (Jul 2020 Gold). Therefore even if 2 or more contracts
         corresponding to one family existed in the portfolio, they would be counted as 1 open position.
         """
-        open_positions_specific_tickers = set(
-            self._contract_ticker_mapper.contract_to_ticker(position.contract())
-            for position in self._broker.get_positions()
-        )
+        open_positions_specific_tickers = set(position.ticker() for position in self._broker.get_positions())
 
         def position_for_ticker_exists_in_portfolio(ticker: Ticker) -> bool:
             if isinstance(ticker, FutureTicker):
@@ -141,13 +133,11 @@ class AlphaModelStrategy(AbstractStrategy):
                 return ticker in open_positions_specific_tickers
 
         # Signals corresponding to tickers, that already have a position open in the portfolio
-        open_positions_signals = [signal for signal in signals if
-                                  position_for_ticker_exists_in_portfolio(signal.ticker)]
+        open_positions_signals = [s for s in signals if position_for_ticker_exists_in_portfolio(s.ticker)]
 
         # Signals, which indicate openings of new positions in the portfolio
-        new_positions_signals = [signal for signal in signals
-                                 if not position_for_ticker_exists_in_portfolio(signal.ticker) and
-                                 signal.suggested_exposure != Exposure.OUT]
+        new_positions_signals = [s for s in signals if not position_for_ticker_exists_in_portfolio(s.ticker) and
+                                 s.suggested_exposure != Exposure.OUT]
 
         number_of_positions_to_be_open = len(new_positions_signals) + len(open_positions_signals)
 
@@ -173,17 +163,13 @@ class AlphaModelStrategy(AbstractStrategy):
         signals = []
 
         for model, tickers in self._model_tickers_dict.items():
-            def get_specific_ticker(t: Ticker):
+            for ticker in set(tickers):
                 try:
-                    return t.ticker
+                    current_exposure = self._get_current_exposure(ticker, current_positions)
+                    signal = model.get_signal(ticker, current_exposure, self.timer.now(), self._frequency)
+                    signals.append(signal)
                 except NoValidTickerException:
-                    return None
-
-            currently_valid_tickers = [t for t in tickers if get_specific_ticker(t) is not None]
-            for ticker in list(set(currently_valid_tickers)):  # remove duplicates
-                current_exposure = self._get_current_exposure(ticker, current_positions)
-                signal = model.get_signal(ticker, current_exposure, self.timer.now(), self._frequency)
-                signals.append(signal)
+                    pass
 
         return signals
 
@@ -217,31 +203,28 @@ class AlphaModelStrategy(AbstractStrategy):
         defined either as the exposure of current contract or (if current contract is not present in the portfolio)
         the exposure of the previous contract.
         """
-        contract_to_quantity = {position.contract(): position.quantity() for position in current_positions}
-        assert len(contract_to_quantity.keys()) == len(current_positions), "There should be max 1 position open per" \
-                                                                           " contract"
+        ticker_to_quantity = {position.ticker(): position.quantity() for position in current_positions}
+        assert len(ticker_to_quantity.keys()) == len(current_positions), "There should be max 1 position open per" \
+                                                                         " ticker"
 
-        current_contract = self._contract_ticker_mapper.ticker_to_contract(ticker)
-        current_contract_quantity = contract_to_quantity.get(current_contract, 0)
+        current_ticker = ticker.get_current_specific_ticker() if isinstance(ticker, FutureTicker) else ticker
+        current_ticker_quantity = ticker_to_quantity.get(current_ticker, 0)
 
         # There are no positions open for the current (specific) contract, in case of Future Tickers it is possible that
         # there are still positions open for previous contracts - in that case exposure will be based on them
-        if current_contract_quantity == 0 and isinstance(ticker, FutureTicker):
-            matching_positions = [
-                position for position in current_positions if
-                ticker.belongs_to_family(self._contract_ticker_mapper.contract_to_ticker(position.contract()))
-            ]
+        if current_ticker_quantity == 0 and isinstance(ticker, FutureTicker):
+            matching_positions = [p for p in current_positions if ticker.belongs_to_family(p.ticker())]
 
             if len(matching_positions) > 1:
-                matching_contracts = [p.contract().symbol for p in matching_positions]
+                matching_tickers = [p.ticker().as_string() for p in matching_positions]
                 raise AssertionError(
                     "There should be no more then 1 position open for an already expired contract for a"
                     " future ticker. Detected positions open for the following contracts: {}.".format(
-                        ", ".join(matching_contracts)))
+                        ", ".join(matching_tickers)))
 
-            current_contract_quantity = 0 if not matching_positions else matching_positions[0].quantity()
+            current_ticker_quantity = 0 if not matching_positions else matching_positions[0].quantity()
 
-        current_exposure = Exposure(np.sign(current_contract_quantity))
+        current_exposure = Exposure(np.sign(current_ticker_quantity))
         return current_exposure
 
     def _log_configuration(self):

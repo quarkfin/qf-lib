@@ -23,10 +23,16 @@ class MarketOrder(ExecutionStyle):
     def __eq__(self, other):
         return type(other) == MarketOrder
 
+    def __hash__(self):
+        return hash(self.__class__.__name__)
+
 
 class MarketOnCloseOrder(ExecutionStyle):
     def __eq__(self, other):
         return type(other) == MarketOnCloseOrder
+
+    def __hash__(self):
+        return hash(self.__class__.__name__)
 
 
 class StopOrder(ExecutionStyle):
@@ -44,3 +50,6 @@ class StopOrder(ExecutionStyle):
             return False
 
         return self.stop_price == other.stop_price
+
+    def __hash__(self):
+        return hash((self.__class__.__name__, self.stop_price))

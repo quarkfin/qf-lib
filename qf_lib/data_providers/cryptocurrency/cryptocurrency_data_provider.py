@@ -98,9 +98,9 @@ class CryptoCurrencyDataProvider(AbstractPriceDataProvider):
 
         data_url = "http://coinmarketcap.com/currencies/{ticker_str}/historical-data/?" \
                    "start={start_date_str}&end={end_date_str}".format(
-                       ticker_str=ticker.as_string(),
-                       start_date_str=start_date.strftime("%Y%m%d"),
-                       end_date_str=end_date.strftime("%Y%m%d"))
+                    ticker_str=ticker.as_string(),
+                    start_date_str=start_date.strftime("%Y%m%d"),
+                    end_date_str=end_date.strftime("%Y%m%d"))
 
         request = session.get(data_url)
 
@@ -188,9 +188,8 @@ class CryptoCurrencyDataProvider(AbstractPriceDataProvider):
 
         return table
 
-    def get_futures_chain_tickers(self, tickers: Union[FutureTicker, Sequence[FutureTicker]],
-                                  expiration_date_fields: Union[ExpirationDateField, Sequence[ExpirationDateField]]) \
-            -> Dict[FutureTicker, Union[QFSeries, QFDataFrame]]:
+    def _get_futures_chain_dict(self, tickers: Union[FutureTicker, Sequence[FutureTicker]],
+                                expiration_date_fields: Union[str, Sequence[str]]) -> Dict[FutureTicker, QFDataFrame]:
         raise NotImplementedError("Downloading Future Chain Tickers in CryptoCurrencyDataProvider is not supported yet")
 
     def expiration_date_field_str_map(self, ticker: Ticker = None) -> Dict[ExpirationDateField, str]:

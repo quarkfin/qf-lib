@@ -18,7 +18,6 @@ from typing import List, Sequence, Dict
 
 import numpy as np
 
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.events.time_event.periodic_event.intraday_bar_event import IntradayBarEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.after_market_close_event import AfterMarketCloseEvent
@@ -56,8 +55,7 @@ class SimulatedExecutionHandler(ExecutionHandler):
     """
 
     def __init__(self, data_handler: DataHandler, timer: Timer, scheduler: Scheduler, monitor: AbstractMonitor,
-                 commission_model: CommissionModel, contracts_to_tickers_mapper: ContractTickerMapper,
-                 portfolio: Portfolio, slippage_model: Slippage,
+                 commission_model: CommissionModel, portfolio: Portfolio, slippage_model: Slippage,
                  scheduling_time_delay: RelativeDelta = RelativeDelta(minutes=1),
                  frequency: Frequency = Frequency.DAILY) -> None:
 
@@ -77,7 +75,6 @@ class SimulatedExecutionHandler(ExecutionHandler):
 
         self.data_handler = data_handler
         self.commission_model = commission_model
-        self.contracts_to_tickers_mapper = contracts_to_tickers_mapper
         self.portfolio = portfolio
         self.monitor = monitor
         self.timer = timer
@@ -85,21 +82,19 @@ class SimulatedExecutionHandler(ExecutionHandler):
 
         order_id_generator = count(start=1)
 
-        self._market_orders_executor = MarketOrdersExecutor(
-            contracts_to_tickers_mapper, data_handler, monitor, portfolio,
-            timer, order_id_generator, commission_model, slippage_model, frequency)
+        self._market_orders_executor = MarketOrdersExecutor(data_handler, monitor, portfolio, timer, order_id_generator,
+                                                            commission_model, slippage_model, frequency)
 
-        self._stop_orders_executor = StopOrdersExecutor(
-            contracts_to_tickers_mapper, data_handler, monitor, portfolio,
-            timer, order_id_generator, commission_model, slippage_model, frequency)
+        self._stop_orders_executor = StopOrdersExecutor(data_handler, monitor, portfolio, timer, order_id_generator,
+                                                        commission_model, slippage_model, frequency)
 
-        self._market_on_close_orders_executor = MarketOnCloseOrdersExecutor(
-            contracts_to_tickers_mapper, data_handler, monitor, portfolio,
-            timer, order_id_generator, commission_model, slippage_model, frequency)
+        self._market_on_close_orders_executor = MarketOnCloseOrdersExecutor(data_handler, monitor, portfolio, timer,
+                                                                            order_id_generator, commission_model,
+                                                                            slippage_model, frequency)
 
-        self._market_on_open_orders_executor = MarketOnOpenOrdersExecutor(
-            contracts_to_tickers_mapper, data_handler, monitor, portfolio,
-            timer, order_id_generator, commission_model, slippage_model, frequency)
+        self._market_on_open_orders_executor = MarketOnOpenOrdersExecutor(data_handler, monitor, portfolio, timer,
+                                                                          order_id_generator, commission_model,
+                                                                          slippage_model, frequency)
 
     def on_after_market_close(self, _: AfterMarketCloseEvent):
         # Update the portfolio and record its state, current assets and positions
@@ -203,20 +198,15 @@ class SimulatedExecutionHandler(ExecutionHandler):
         a week (during this time not a single price for the asset was available). The price of this transaction is the
         last price of the asset recorded by the portfolio and the commission is set to 0, as no real order is created.
         """
-        contract_to_ticker_dict = {
-            contract: self.contracts_to_tickers_mapper.contract_to_ticker(contract)
-            for contract in self.portfolio.open_positions_dict.keys()
-        }
-
-        all_tickers_in_portfolio = list(contract_to_ticker_dict.values())
+        all_tickers_in_portfolio = list(self.portfolio.open_positions_dict.keys())
         current_prices_series = self.data_handler.get_last_available_price(tickers=all_tickers_in_portfolio)
         positions_to_be_removed = [p for p in self.portfolio.open_positions_dict.values()
-                                   if np.isnan(current_prices_series[contract_to_ticker_dict[p.contract()]])]
+                                   if np.isnan(current_prices_series[p.ticker()])]
 
         for position in positions_to_be_removed:
-            closing_transaction = Transaction(self.timer.now(), position.contract(), -position.quantity(),
+            closing_transaction = Transaction(self.timer.now(), position.ticker(), -position.quantity(),
                                               position.current_price, 0)
             self.monitor.record_transaction(closing_transaction)
             self.portfolio.transact_transaction(closing_transaction)
-            self.logger.warning("{}: position assigned to Ticker {} removed due to incomplete price data."
-                                .format(str(self.timer.now()), position.contract().symbol))
+            self.logger.warning(f"{self.timer.now()}: position assigned to Ticker {position.ticker()} removed due to "
+                                f"incomplete price data.")

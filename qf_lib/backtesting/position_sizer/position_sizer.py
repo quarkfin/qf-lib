@@ -19,8 +19,6 @@ from typing import List, Optional, Dict
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
 from qf_lib.backtesting.signals.signal import Signal
 from qf_lib.backtesting.broker.broker import Broker
-from qf_lib.backtesting.contract.contract import Contract
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.signals.signals_register import SignalsRegister
 from qf_lib.backtesting.order.execution_style import StopOrder
 from qf_lib.backtesting.order.order import Order
@@ -38,11 +36,10 @@ class PositionSizer(metaclass=ABCMeta):
     """ The PositionSizer abstract class converts signals to orders with size specified. """
 
     def __init__(self, broker: Broker, data_provider: DataProvider, order_factory: OrderFactory,
-                 contract_ticker_mapper: ContractTickerMapper, signals_register: SignalsRegister):
+                 signals_register: SignalsRegister):
         self._broker = broker
         self._data_provider = data_provider
         self._order_factory = order_factory
-        self._contract_ticker_mapper = contract_ticker_mapper
         self._signals_register = signals_register
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
@@ -65,8 +62,8 @@ class PositionSizer(metaclass=ABCMeta):
         StopOrders details
         -------------------
         For each Market Order a Stop Order is generated if and only if the quantity in Market Order + position quantity
-        for this contract != 0. This means that StopOrders are not generated if the MarketOrder should completely close
-        the position for the contract.
+        for this ticker != 0. This means that StopOrders are not generated if the MarketOrder should completely close
+        the position for the ticker.
 
         """
         self._check_for_duplicates(signals)
@@ -80,17 +77,17 @@ class PositionSizer(metaclass=ABCMeta):
         orders = market_orders
 
         for order in market_orders:
-            self.logger.info("Market Order for {}, {}".format(order.contract, order))
+            self.logger.info("Market Order for {}, {}".format(order.ticker, order))
 
         if use_stop_losses:
             # As the market orders are not sorted according to signals, create a dictionary mapping
-            # contracts to market orders (orders contain now only these market orders which are not None)
-            contract_to_market_order = {
-                order.contract: order for order in market_orders
+            # tickers to market orders (orders contain now only these market orders which are not None)
+            ticker_to_market_order = {
+                order.ticker: order for order in market_orders
             }
 
             stop_orders = [
-                self._generate_stop_order(signal, contract_to_market_order)
+                self._generate_stop_order(signal, ticker_to_market_order)
                 for signal in updated_signals if signal.suggested_exposure != Exposure.OUT
             ]
 
@@ -98,7 +95,18 @@ class PositionSizer(metaclass=ABCMeta):
             orders = market_orders + stop_orders
 
             for order in stop_orders:
-                self.logger.info("Stop Order for {}, {}".format(order.contract, order))
+                self.logger.info("Stop Order for {}, {}".format(order.ticker, order))
+
+        # Update strategy information inside the Orders
+        def current_specific_ticker(ticker: Ticker):
+            return ticker.get_current_specific_ticker() if isinstance(ticker, FutureTicker) else ticker
+
+        ticker_to_alpha_model = {
+            current_specific_ticker(signal.ticker): signal.alpha_model for signal in updated_signals
+        }
+        for order in orders:
+            alpha_model = ticker_to_alpha_model[order.ticker]
+            order.strategy = str(alpha_model)
 
         # The signals are saved at the very end of the function, so that in case if stop orders are being computed, it
         # is not necessary to filter out signals which happened after the <current time> in the _cap_stop_price
@@ -112,9 +120,7 @@ class PositionSizer(metaclass=ABCMeta):
         Remove all these signals, which do not need to be passed into order factory as they obviously do not change the
         state of the portfolio (current exposure equals Exposure.OUT and suggested exposure is also Exposure.OUT).
         """
-        specific_tickers_with_open_position = set(
-            self._contract_ticker_mapper.contract_to_ticker(p.contract()) for p in self._broker.get_positions()
-        )
+        specific_tickers_with_open_position = set(p.ticker() for p in self._broker.get_positions())
 
         def position_for_ticker_exists_in_portfolio(ticker: Ticker) -> bool:
             if isinstance(ticker, FutureTicker):
@@ -135,18 +141,16 @@ class PositionSizer(metaclass=ABCMeta):
             -> List[Optional[Order]]:
         raise NotImplementedError("Should implement _generate_market_orders()")
 
-    def _generate_stop_order(self, signal, contract_to_market_order: Dict[Contract, Order]) -> Optional[Order]:
+    def _generate_stop_order(self, signal, ticker_to_market_order: Dict[Ticker, Order]) -> Optional[Order]:
         """
         As each of the stop orders relies on the precomputed stop_price, which considers a.o. last available price of
         the security, orders are being created separately for each of the signals.
         """
-        contract = self._contract_ticker_mapper.ticker_to_contract(signal.ticker)
-
         # stop_quantity = existing position size + recent market orders quantity
-        stop_quantity = self._get_existing_position_quantity(contract)
+        stop_quantity = self._get_existing_position_quantity(signal.ticker)
 
         try:
-            market_order = contract_to_market_order[contract]
+            market_order = ticker_to_market_order[signal.ticker]
             stop_quantity += market_order.quantity
         except KeyError:
             # Generated Market Order was equal to None
@@ -161,7 +165,8 @@ class PositionSizer(metaclass=ABCMeta):
             stop_price = self._cap_stop_price(stop_price, signal)
 
             # put minus before the quantity as stop order has to go in the opposite direction
-            stop_orders = self._order_factory.orders({contract: -stop_quantity}, StopOrder(stop_price), TimeInForce.GTC)
+            stop_orders = self._order_factory.orders({signal.ticker: -stop_quantity}, StopOrder(stop_price),
+                                                     TimeInForce.GTC)
 
             assert len(stop_orders) == 1, "Only one order should be generated"
             return stop_orders[0]
@@ -173,19 +178,18 @@ class PositionSizer(metaclass=ABCMeta):
         """
         Prevent the stop price from moving down in case of a long position or up in case of a short position.
 
-        Adjust the stop price only in case if there is an existing open position for specifically this contract. E.g.
+        Adjust the stop price only in case if there is an existing open position for specifically this ticker. E.g.
         in case if there exists an open position for the December Cotton future contract, which expired today, if
         we are creating an order for the January Cotton contract we should not adjust the StopOrders stop price.
         """
-        # If there exist an open position for the contract - check the previous Stop Order
+        # If there exist an open position for the ticker - check the previous Stop Order
         specific_ticker = signal.ticker.get_current_specific_ticker() \
             if isinstance(signal.ticker, FutureTicker) else signal.ticker
 
-        contract = self._contract_ticker_mapper.ticker_to_contract(specific_ticker)
-        position_quantity = self._get_existing_position_quantity(contract)
+        position_quantity = self._get_existing_position_quantity(specific_ticker)
 
         if position_quantity != 0:
-            # Get the last signal that was generated for the contract
+            # Get the last signal that was generated for the ticker
             signals_series = self._signals_register.get_signals_for_ticker(ticker=specific_ticker,
                                                                            alpha_model=signal.alpha_model)
             if not signals_series.empty:
@@ -195,19 +199,19 @@ class PositionSizer(metaclass=ABCMeta):
                 last_date_with_current_exposure = exposure_series.where(exposure_series == current_exposure)\
                     .last_valid_index()
                 if last_date_with_current_exposure is None:
-                    self.logger.error("There is an open position for the contract {} but no signal was found")
+                    self.logger.error("There is an open position for the ticker {} but no signal was found")
                     return stop_price
 
-                last_signal_for_the_contract = signals_series.loc[last_date_with_current_exposure]  # type: Signal
-                previous_stop_price = self._calculate_stop_price(last_signal_for_the_contract)
+                last_signal_for_the_ticker = signals_series.loc[last_date_with_current_exposure]  # type: Signal
+                previous_stop_price = self._calculate_stop_price(last_signal_for_the_ticker)
 
-                if last_signal_for_the_contract.suggested_exposure == Exposure.OUT or \
+                if last_signal_for_the_ticker.suggested_exposure == Exposure.OUT or \
                         not is_finite_number(previous_stop_price):
                     return stop_price
 
-                if last_signal_for_the_contract.suggested_exposure == Exposure.LONG:
+                if last_signal_for_the_ticker.suggested_exposure == Exposure.LONG:
                     stop_price = max([stop_price, previous_stop_price])
-                elif last_signal_for_the_contract.suggested_exposure == Exposure.SHORT:
+                elif last_signal_for_the_ticker.suggested_exposure == Exposure.SHORT:
                     stop_price = min([stop_price, previous_stop_price])
 
         return stop_price
@@ -224,9 +228,9 @@ class PositionSizer(metaclass=ABCMeta):
         stop_price = self._round_stop_price(stop_price)
         return stop_price
 
-    def _get_existing_position_quantity(self, contract):
+    def _get_existing_position_quantity(self, ticker: Ticker):
         positions = self._broker.get_positions()
-        quantity = next((position.quantity() for position in positions if position.contract() == contract), 0)
+        quantity = next((position.quantity() for position in positions if position.ticker() == ticker), 0)
         return quantity
 
     def _check_for_duplicates(self, signals: List[Signal]):
@@ -235,6 +239,10 @@ class PositionSizer(metaclass=ABCMeta):
             signal_list = list(signal_group)
             if len(signal_list) > 1:
                 raise ValueError("More than one signal for ticker {}".format(ticker.as_string()))
+
+    @staticmethod
+    def _get_specific_ticker(ticker: Ticker):
+        return ticker.get_current_specific_ticker() if isinstance(ticker, FutureTicker) else ticker
 
     @staticmethod
     def _round_stop_price(stop_price: float) -> float:

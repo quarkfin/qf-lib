@@ -16,8 +16,6 @@ from typing import Optional
 
 import pandas as pd
 
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.simulated_bloomberg_mapper import \
-    SimulatedBloombergContractTickerMapper
 from qf_lib.backtesting.data_handler.daily_data_handler import DailyDataHandler
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
@@ -42,7 +40,6 @@ class TestVolumeOrdersFilter(unittest.TestCase):
         """ Setup a preset data provider and a scenario, in which the sized orders will exceed the volume limits. """
         MarketCloseEvent.set_trigger_time({"hour": 20, "minute": 0, "second": 0, "microsecond": 0})
         cls.ticker = BloombergTicker("Example Index")
-        cls.contract_ticker_mapper = SimulatedBloombergContractTickerMapper()
 
     def test_volume_orders_filter__resize_orders(self):
         """Tests VolumeOrdersVerifier with orders exceeding the limit."""
@@ -50,13 +47,11 @@ class TestVolumeOrdersFilter(unittest.TestCase):
         volume_percentage_limit = 0.15
         volume_value = 100.0
         data_handler = self._setup_data_handler(volume_value)
-        volume_orders_verifier = VolumeOrdersFilter(data_handler, self.contract_ticker_mapper,
-                                                    volume_percentage_limit)
+        volume_orders_verifier = VolumeOrdersFilter(data_handler, volume_percentage_limit)
 
         # Initialize a list of orders, which exceed the maximum volume limit
-        contract = self.contract_ticker_mapper.ticker_to_contract(self.ticker)
-        buy_orders = [Order(contract, 100, MarketOrder(), TimeInForce.GTC)]
-        sell_orders = [Order(contract, 100, MarketOrder(), TimeInForce.GTC)]
+        buy_orders = [Order(self.ticker, 100, MarketOrder(), TimeInForce.GTC)]
+        sell_orders = [Order(self.ticker, 100, MarketOrder(), TimeInForce.GTC)]
 
         new_buy_orders = volume_orders_verifier.adjust_orders(buy_orders)
         new_sell_orders = volume_orders_verifier.adjust_orders(sell_orders)
@@ -73,15 +68,13 @@ class TestVolumeOrdersFilter(unittest.TestCase):
         volume_percentage_limit = 0.15
         volume_value = 100.0
         data_handler = self._setup_data_handler(volume_value)
-        volume_orders_verifier = VolumeOrdersFilter(data_handler, self.contract_ticker_mapper,
-                                                    volume_percentage_limit)
+        volume_orders_verifier = VolumeOrdersFilter(data_handler, volume_percentage_limit)
 
         # Initialize a list of orders, which do not exceed the maximum volume limit
-        contract = self.contract_ticker_mapper.ticker_to_contract(self.ticker)
         max_quantity = int(volume_percentage_limit * volume_value)
-        orders = [Order(contract, max_quantity, MarketOrder(), TimeInForce.GTC),
-                  Order(contract, -max_quantity // 2, MarketOrder(), TimeInForce.GTC),
-                  Order(contract, max_quantity // 3, MarketOrder(), TimeInForce.GTC)]
+        orders = [Order(self.ticker, max_quantity, MarketOrder(), TimeInForce.GTC),
+                  Order(self.ticker, -max_quantity // 2, MarketOrder(), TimeInForce.GTC),
+                  Order(self.ticker, max_quantity // 3, MarketOrder(), TimeInForce.GTC)]
 
         new_orders = volume_orders_verifier.adjust_orders(orders)
         self.assertCountEqual(orders, new_orders)
@@ -92,14 +85,12 @@ class TestVolumeOrdersFilter(unittest.TestCase):
         volume_percentage_limit = 0.15
         volume_value = None
         data_handler = self._setup_data_handler(volume_value)
-        volume_orders_verifier = VolumeOrdersFilter(data_handler, self.contract_ticker_mapper,
-                                                    volume_percentage_limit)
+        volume_orders_verifier = VolumeOrdersFilter(data_handler, volume_percentage_limit)
 
         # Initialize a list of orders, which do not exceed the maximum volume limit
-        contract = self.contract_ticker_mapper.ticker_to_contract(self.ticker)
-        orders = [Order(contract, 100, MarketOrder(), TimeInForce.GTC),
-                  Order(contract, 200, MarketOrder(), TimeInForce.GTC),
-                  Order(contract, -300, MarketOrder(), TimeInForce.GTC)]
+        orders = [Order(self.ticker, 100, MarketOrder(), TimeInForce.GTC),
+                  Order(self.ticker, 200, MarketOrder(), TimeInForce.GTC),
+                  Order(self.ticker, -300, MarketOrder(), TimeInForce.GTC)]
 
         new_orders = volume_orders_verifier.adjust_orders(orders)
         self.assertCountEqual(orders, new_orders)
@@ -107,7 +98,7 @@ class TestVolumeOrdersFilter(unittest.TestCase):
     def test_volume_orders_filter__adjust_buy_stop_orders(self):
         """
         Test if StopOrders are adjusted in a correct way. Suppose, the StopOrder quantity will be much bigger than
-        the current MarketOrder, because the position for the contract already existed for some time, e.g.
+        the current MarketOrder, because the position for the ticker already existed for some time, e.g.
         - there exists an open LONG position of size 100
         - the position needs to be adjusted to 200
         - a new MarketOrder of size 100 is created
@@ -119,18 +110,16 @@ class TestVolumeOrdersFilter(unittest.TestCase):
         volume_percentage_limit = 0.15
         volume_value = 100.0
         data_handler = self._setup_data_handler(volume_value)
-        volume_orders_verifier = VolumeOrdersFilter(data_handler, self.contract_ticker_mapper,
-                                                    volume_percentage_limit)
+        volume_orders_verifier = VolumeOrdersFilter(data_handler, volume_percentage_limit)
 
         # Initialize a list of orders, which do not exceed the maximum volume limit
-        contract = self.contract_ticker_mapper.ticker_to_contract(self.ticker)
-        buy_order = [Order(contract, 100, MarketOrder(), TimeInForce.GTC),
-                     Order(contract, -200, StopOrder(1.0), TimeInForce.GTC)]
+        buy_order = [Order(self.ticker, 100, MarketOrder(), TimeInForce.GTC),
+                     Order(self.ticker, -200, StopOrder(1.0), TimeInForce.GTC)]
 
         new_orders = volume_orders_verifier.adjust_orders(buy_order)
 
-        expected_buy_order = [Order(contract, 15, MarketOrder(), TimeInForce.GTC),
-                              Order(contract, -115, StopOrder(1.0), TimeInForce.GTC)]
+        expected_buy_order = [Order(self.ticker, 15, MarketOrder(), TimeInForce.GTC),
+                              Order(self.ticker, -115, StopOrder(1.0), TimeInForce.GTC)]
         self.assertCountEqual(new_orders, expected_buy_order)
 
     def test_volume_orders_filter__adjust_sell_stop_orders(self):
@@ -141,18 +130,16 @@ class TestVolumeOrdersFilter(unittest.TestCase):
         volume_percentage_limit = 0.15
         volume_value = 100.0
         data_handler = self._setup_data_handler(volume_value)
-        volume_orders_verifier = VolumeOrdersFilter(data_handler, self.contract_ticker_mapper,
-                                                    volume_percentage_limit)
+        volume_orders_verifier = VolumeOrdersFilter(data_handler, volume_percentage_limit)
 
         # Initialize a list of orders, which do not exceed the maximum volume limit
-        contract = self.contract_ticker_mapper.ticker_to_contract(self.ticker)
-        sell_order = [Order(contract, -100, MarketOrder(), TimeInForce.GTC),
-                      Order(contract, 200, StopOrder(1.0), TimeInForce.GTC)]
+        sell_order = [Order(self.ticker, -100, MarketOrder(), TimeInForce.GTC),
+                      Order(self.ticker, 200, StopOrder(1.0), TimeInForce.GTC)]
 
         new_orders = volume_orders_verifier.adjust_orders(sell_order)
 
-        expected_sell_order = [Order(contract, -15, MarketOrder(), TimeInForce.GTC),
-                               Order(contract, 115, StopOrder(1.0), TimeInForce.GTC)]
+        expected_sell_order = [Order(self.ticker, -15, MarketOrder(), TimeInForce.GTC),
+                               Order(self.ticker, 115, StopOrder(1.0), TimeInForce.GTC)]
         self.assertCountEqual(new_orders, expected_sell_order)
 
     def _setup_data_handler(self, volume_value: Optional[float]) -> DataHandler:

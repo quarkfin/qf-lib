@@ -43,13 +43,16 @@ class FactorComparisonSheet(AbstractDocument):
         timeseries of the benchmark
     title: str
         title of the document
+    dpi: int
+        Determines the DPI (Dots per Inch) of the chart (can be used to control the resolution)
     """
     def __init__(self, settings: Settings, pdf_exporter: PDFExporter, factors_series: List[QFSeries],
-                 benchmark_series: QFSeries, title: str = "Factor Comparison"):
+                 benchmark_series: QFSeries, title: str = "Factor Comparison", dpi: int = 400):
         super().__init__(settings, pdf_exporter)
         self.factors_series = factors_series
         self.benchmark_series = benchmark_series
         self.title = title
+        self.dpi = dpi
 
     def build_document(self):
         """Creates a document with charts"""
@@ -65,21 +68,25 @@ class FactorComparisonSheet(AbstractDocument):
                                         title="Factors - 1 Year")
 
         all_series = [self.benchmark_series] + self.factors_series
+
         self._add_perf_chart_for_factor(series_list=all_series,
-                                        title="Factors - Full History")
+                                        title="Factors - Full History",
+                                        force_log_scale=True)
 
         for series in self.factors_series:
             self.document.add_element(NewPageElement())
             self._add_header()
-            self._add_perf_chart_for_factor(series_list=[series.loc[start_date:],
-                                                         self.benchmark_series.loc[start_date:]],
+            self._add_perf_chart_for_factor(series_list=[self.benchmark_series.loc[start_date:],
+                                                         series.loc[start_date:]
+                                                         ],
                                             title="{} - 1 Year".format(series.name))
             self._add_relative_performance_chart(
                 series.loc[start_date:], self.benchmark_series.loc[start_date:],
                 chart_title="Relative Performance", legend_subtitle="Factor - Benchmark")
 
-            self._add_perf_chart_for_factor(series_list=[series, self.benchmark_series],
-                                            title="{} - Full History".format(series.name))
+            self._add_perf_chart_for_factor(series_list=[self.benchmark_series, series],
+                                            title="{} - Full History".format(series.name),
+                                            force_log_scale=True)
             self.document.add_element(ParagraphElement("\n"))
             self._add_relative_performance_chart(
                 series, self.benchmark_series,
@@ -88,8 +95,11 @@ class FactorComparisonSheet(AbstractDocument):
     def save(self, report_dir: str = ""):
         """Saves document to the file"""
         plt.style.use(['tearsheet'])
-        # Change the color map for the plots to use 10 different colors
-        hex_colors = [plt.colors.rgb2hex(c) for c in plt.cm.tab10(range(10))]
+        # Change the color map for the plots to use different colors
+        hex_colors_fancy = [plt.colors.rgb2hex(c) for c in plt.cm.tab10(range(10))]
+
+        hex_colors = ['#000000', '#ff5757', '#636363', '#969696', '#bdbdbd', '#9ecae1', '#3182bd', *hex_colors_fancy]
+
         plt.rcParams['axes.prop_cycle'] = cycler(color=hex_colors)
 
         file_name = "%Y_%m_%d-%H%M {}.pdf".format(self.title)
@@ -100,7 +110,8 @@ class FactorComparisonSheet(AbstractDocument):
 
         return self.pdf_exporter.generate([self.document], report_dir, file_name)
 
-    def _add_perf_chart_for_factor(self, series_list: List[QFSeries], title: str = "Factor Index Performance"):
+    def _add_perf_chart_for_factor(self, series_list: List[QFSeries], title: str = "Factor Index Performance",
+                                   force_log_scale: bool = False):
         """ Add performance chart for factor
 
         Parameters
@@ -110,6 +121,7 @@ class FactorComparisonSheet(AbstractDocument):
         title: str
             chart title
         """
-        self.document.add_element(ChartElement(self._get_perf_chart(series_list, is_large_chart=True,
-                                                                    title=title),
-                                               figsize=self.full_image_size, dpi=self.dpi))
+        chart = self._get_perf_chart(series_list, is_large_chart=True, title=title)
+        if force_log_scale:
+            chart.log_scale = True
+        self.document.add_element(ChartElement(chart, figsize=self.full_image_size, dpi=self.dpi))

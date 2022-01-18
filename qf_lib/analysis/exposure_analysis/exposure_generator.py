@@ -15,7 +15,6 @@
 from datetime import datetime
 from typing import List
 from sklearn import linear_model
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.utils.data_cleaner import DataCleaner
@@ -39,13 +38,10 @@ class ExposureGenerator:
         settings of the project
     data_provider: DataProvider
         DataProvider which provides data both for the tickers and regressors
-    contract_ticker_mapper: ContractTickerMapper
-        object mapping contracts to tickers
     """
-    def __init__(self, settings: Settings, data_provider: DataProvider, contract_ticker_mapper: ContractTickerMapper):
+    def __init__(self, settings: Settings, data_provider: DataProvider):
         self.settings = settings
         self._data_provider = data_provider
-        self._contract_ticker_mapper = contract_ticker_mapper
         self.positions_history = None
         self.portfolio_nav_history = None
         self._sector_exposure_tickers = None
@@ -152,14 +148,13 @@ class ExposureGenerator:
         df = QFDataFrame()
         for portfolio_date, positions in self.positions_history.iterrows():
             positions = positions.dropna()
-            positions_tickers = [self._contract_ticker_mapper.contract_to_ticker(x) for x in positions.index]
+            positions_tickers = positions.index.tolist()
             exposure = QFSeries([x.total_exposure for x in positions])
             portfolio_net_liquidation = self.portfolio_nav_history.asof(portfolio_date)
             positions_allocation = exposure / portfolio_net_liquidation
             from_date = portfolio_date - RelativeDelta(months=regression_len)
             coefficients, current_regressors_tickers = self._get_coefficients_and_current_regressors_tickers(
-                regressors_tickers, positions_tickers, positions_allocation, from_date,
-                portfolio_date)
+                regressors_tickers, positions_tickers, positions_allocation, from_date, portfolio_date)
 
             df = df.append(QFDataFrame({col: val for val, col in zip(coefficients, current_regressors_tickers)},
                                        index=[portfolio_date]))
@@ -177,8 +172,7 @@ class ExposureGenerator:
         clean_data = dc.proxy_using_value(0)
         positions_returns = clean_data.reindex(columns=positions_tickers,
                                                fill_value=0)  # we expect the same dim as positions_allocation series
-        regressors_returns = clean_data.reindex(columns=regressors_tickers).dropna(axis=1,
-                                                                                   how='all')  # missing regressors should be removed
+        regressors_returns = clean_data.reindex(columns=regressors_tickers).dropna(axis=1, how='all')
         portfolio_returns = positions_returns.dot(positions_allocation.values)
         return self._get_coefficients(regressors_returns, portfolio_returns), regressors_returns.columns
 

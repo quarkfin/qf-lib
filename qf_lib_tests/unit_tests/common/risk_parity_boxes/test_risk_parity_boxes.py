@@ -20,7 +20,7 @@ import pandas as pd
 
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.risk_parity_boxes.risk_parity_boxes import RiskParityBoxesFactory, ChangeDirection
-from qf_lib.common.tickers.tickers import str_to_ticker
+from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
@@ -47,7 +47,7 @@ class TestRiskParityBoxesFactory(TestCase):
 
         all_tickers_str = ['BCIT3T Index', 'IEF US Equity', 'LQD US Equity', 'MSBIERTR Index', 'MXUS Index',
                            'SPGSCITR Index', 'XAU Curncy']
-        all_tickers, _ = str_to_ticker(all_tickers_str)
+        all_tickers = BloombergTicker.from_string(all_tickers_str)
         assets_prices_df = PricesDataFrame(index=datetime_index, columns=all_tickers, data=[
             [263.7628, 106.24, 121.02, 321.8249, 2409.48, 2295.60, 1271.13],
             [263.9803, 106.39, 121.29, 322.0949, 2414.41, 2294.91, 1271.66],

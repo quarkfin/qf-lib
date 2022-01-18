@@ -12,24 +12,24 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.portfolio.backtest_equity_position import BacktestEquityPosition
 from qf_lib.backtesting.portfolio.backtest_future_position import BacktestFuturePosition
 from qf_lib.backtesting.portfolio.backtest_position import BacktestPosition
+from qf_lib.common.enums.security_type import SecurityType
+from qf_lib.common.tickers.tickers import Ticker
 
 
-class BacktestPositionFactory(object):
-
+class BacktestPositionFactory:
     @staticmethod
-    def create_position(contract: Contract) -> BacktestPosition:
+    def create_position(ticker: Ticker) -> BacktestPosition:
         """
         Creates a backtest position according to the asset class (security_type) of the security
         as defined in the Contract
         """
-        sec_type = contract.security_type
-        if sec_type == 'STK':
-            return BacktestEquityPosition(contract)
-        elif sec_type == 'FUT':
-            return BacktestFuturePosition(contract)
+        sec_type = ticker.security_type
+        if sec_type == SecurityType.STOCK:
+            return BacktestEquityPosition(ticker)
+        elif sec_type == SecurityType.FUTURE:
+            return BacktestFuturePosition(ticker)
         else:
-            raise ValueError("Contract security type: '{}' not correct. Use 'STK' or  'FUT' ".format(sec_type))
+            raise ValueError("Ticker security type: '{}' is not currently supported.")

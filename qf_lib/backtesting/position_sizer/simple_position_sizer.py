@@ -28,13 +28,8 @@ class SimplePositionSizer(PositionSizer):
 
     def _generate_market_orders(self, signals: List[Signal], time_in_force: TimeInForce, frequency: Frequency = None) \
             -> List[Optional[Order]]:
-
-        def signal_to_contract(signal):
-            # Map signal to contract
-            return self._contract_ticker_mapper.ticker_to_contract(signal.ticker)
-
         target_percentages = {
-            signal_to_contract(signal): signal.suggested_exposure.value for signal in signals
+            self._get_specific_ticker(signal.ticker): signal.suggested_exposure.value for signal in signals
         }
         market_order_list = self._order_factory.target_percent_orders(
             target_percentages, MarketOrder(), time_in_force, frequency=frequency

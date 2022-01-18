@@ -82,6 +82,10 @@ class FuturesChain(pd.Series):
         PricesDataFrame, PricesSeries
 
         """
+        if not self._future_ticker.initialized:
+            raise ValueError(f"The future ticker {self._future_ticker} is not initialized with Data Provider and "
+                             f"Timer. At first you need to setup them using initialize_data_provider() function.")
+
         # 1 - Check if the chain was generated at least once, if not - preload the necessary data using the
         # self._preload_data_and_generate_chain function, and then generate the chain of prices,
         # otherwise - store the last and first available dates from the chain

@@ -16,7 +16,6 @@ import numpy as np
 
 from qf_lib.backtesting.signals.signal import Signal
 from qf_lib.backtesting.broker.broker import Broker
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.signals.signals_register import SignalsRegister
 from qf_lib.backtesting.order.execution_style import MarketOrder
 from qf_lib.backtesting.order.order import Order
@@ -43,7 +42,6 @@ class InitialRiskWithVolumePositionSizer(InitialRiskPositionSizer):
     broker: Broker
     data_provider: DataProvider
     order_factory: OrderFactory
-    contract_ticker_mapper: ContractTickerMapper
     initial_risk: float
        should be set once for all signals. It corresponds to the value that we are willing to lose
        on single trade. For example: initial_risk = 0.02, means that we are willing to lose 2% of portfolio value in
@@ -60,12 +58,11 @@ class InitialRiskWithVolumePositionSizer(InitialRiskPositionSizer):
     """
 
     def __init__(self, broker: Broker, data_provider: DataProvider, order_factory: OrderFactory,
-                 contract_ticker_mapper: ContractTickerMapper, signals_register: SignalsRegister, initial_risk: float,
-                 max_target_percentage: float = None, tolerance_percentage: float = 0.0,
-                 max_volume_percentage: float = 1.0):
+                 signals_register: SignalsRegister, initial_risk: float, max_target_percentage: float = None,
+                 tolerance_percentage: float = 0.0, max_volume_percentage: float = 1.0):
 
-        super().__init__(broker, data_provider, order_factory, contract_ticker_mapper, signals_register, initial_risk,
-                         max_target_percentage, tolerance_percentage)
+        super().__init__(broker, data_provider, order_factory, signals_register, initial_risk, max_target_percentage,
+                         tolerance_percentage)
 
         self._cached_futures_chains_dict: Dict[FutureTicker, FuturesChain] = dict()
         self._max_volume_percentage = max_volume_percentage
@@ -73,8 +70,7 @@ class InitialRiskWithVolumePositionSizer(InitialRiskPositionSizer):
     def _generate_market_orders(self, signals: List[Signal], time_in_force: TimeInForce, frequency: Frequency = None) \
             -> List[Optional[Order]]:
         target_values = {
-            self._signal_to_contract(signal): self._compute_target_value(signal)
-            for signal in signals
+            self._get_specific_ticker(signal.ticker): self._compute_target_value(signal) for signal in signals
         }
 
         market_order_list = self._order_factory.target_value_orders(

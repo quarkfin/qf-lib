@@ -20,6 +20,7 @@ from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.data_providers.bloomberg.bloomberg_names import SECURITIES, SECURITY, FIELDS, RESPONSE_ERROR, SECURITY_DATA, \
     BAR_DATA, FIELD_EXCEPTIONS, SECURITY_ERROR
+from qf_lib.data_providers.bloomberg.exceptions import BloombergError
 
 
 def set_tickers(request, tickers):
@@ -47,7 +48,7 @@ def set_ticker(request, ticker):
     ----------
     request
         request to be sent
-    tickers: str
+    ticker: str
         required ticker
 
     """
@@ -86,18 +87,16 @@ def convert_to_bloomberg_date(date: datetime) -> str:
 
 
 def check_event_for_errors(event):
-    logger = qf_logger.getChild(__name__)
-
-    num_of_messages = count_messages(event)
+    num_of_messages = sum(1 for _ in event)
     if num_of_messages != 1:
         error_message = "Number of messages != 1"
-        logger.error(error_message)
+        raise BloombergError(error_message)
 
     first_msg = blpapi.event.MessageIterator(event).next()
 
     if first_msg.asElement().hasElement(RESPONSE_ERROR):
         error_message = "Response error: " + str(first_msg.asElement())
-        logger.error(error_message)
+        raise BloombergError(error_message)
 
 
 def extract_security_data(event):
@@ -108,14 +107,6 @@ def extract_security_data(event):
 def extract_bar_data(event):
     first_msg = blpapi.event.MessageIterator(event).next()
     return first_msg.getElement(BAR_DATA)
-
-
-def count_messages(event):
-    num_of_messages = 0
-    for _ in event:
-        num_of_messages += 1
-
-    return num_of_messages
 
 
 def get_response_events(session):
@@ -138,7 +129,9 @@ def check_security_data_for_errors(security_data):
         if field_exceptions.numValues() > 0:
             error_message = "Response contains field exceptions:\n" + str(security_data)
             logger.error(error_message)
+            raise BloombergError(error_message)
 
     if security_data.hasElement(SECURITY_ERROR):
         error_message = "Response contains security error:\n" + str(security_data)
         logger.error(error_message)
+        raise BloombergError(error_message)

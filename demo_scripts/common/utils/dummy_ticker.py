@@ -11,21 +11,17 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-from typing import Union, Sequence
+from typing import Sequence, Union
+
+from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.tickers.tickers import Ticker
 
 
 class DummyTicker(Ticker):
     def __init__(self, ticker: str):
-        super().__init__(ticker)
+        super().__init__(ticker, SecurityType.STOCK, 1)
 
     @classmethod
-    def from_string(cls, ticker_str: Union[str, Sequence[str]]) \
-            -> Union["DummyTicker", Sequence["DummyTicker"]]:
-        """
-        Example: DummyTicker.from_string('AAA')
-        """
-        if isinstance(ticker_str, str):
-            return DummyTicker(ticker_str)
-        else:
-            return [DummyTicker(t) for t in ticker_str]
+    def from_string(cls, ticker_str: Union[str, Sequence[str]]) -> Union["DummyTicker", Sequence["DummyTicker"]]:
+        """ Example: DummyTicker.from_string('AAA') """
+        return DummyTicker(ticker_str) if isinstance(ticker_str, str) else [DummyTicker(t) for t in ticker_str]

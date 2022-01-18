@@ -15,6 +15,7 @@
 from typing import List, Optional, Sequence
 
 from qf_lib.backtesting.broker.broker import Broker
+from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.execution_handler.execution_handler import ExecutionHandler
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
@@ -22,7 +23,9 @@ from qf_lib.backtesting.portfolio.position import Position
 
 
 class BacktestBroker(Broker):
-    def __init__(self, portfolio: Portfolio, execution_handler: ExecutionHandler):
+    def __init__(self, contract_ticker_mapper: ContractTickerMapper, portfolio: Portfolio,
+                 execution_handler: ExecutionHandler):
+        super().__init__(contract_ticker_mapper)
         self.portfolio = portfolio
         self.execution_handler = execution_handler
 

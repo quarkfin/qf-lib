@@ -23,8 +23,6 @@ from tqdm import tqdm
 
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
-from qf_lib.backtesting.contract.contract import Contract
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.fast_alpha_model_tester.backtest_summary import BacktestSummary, BacktestSummaryElement
 from qf_lib.backtesting.fast_alpha_model_tester.fast_data_handler import FastDataHandler
@@ -87,27 +85,23 @@ class FastAlphaModelTester:
     """
 
     def __init__(self, alpha_model_configs: Sequence[FastAlphaModelTesterConfig],
-                 tickers: Sequence[Ticker],
-                 contract_ticker_mapper: ContractTickerMapper, start_date: datetime, end_date: datetime,
+                 tickers: Sequence[Ticker], start_date: datetime, end_date: datetime,
                  data_handler: FastDataHandler, timer: SettableTimer, n_jobs: int = 1):
 
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
         self._start_date = start_date
         self._end_date = end_date
-        self._contract_ticker_mapper = contract_ticker_mapper
 
         self._alpha_model_configs = alpha_model_configs
         assert len(set(config.model_type for config in alpha_model_configs)) == 1, \
             "All passed FastAlphaModelTesterConfig should have the same alpha model type"
 
         self._model_type = alpha_model_configs[0].model_type
-
         self._data_handler = data_handler
         self._timer = timer
 
-        self._tickers_to_contracts = self._get_valid_tickers_to_contracts(tickers)
-        self._tickers = list(self._tickers_to_contracts.keys())
+        self._tickers = self._get_valid_tickers(tickers)
         self._n_jobs = n_jobs
 
         if type(self._data_handler) is not FastDataHandler:
@@ -121,23 +115,22 @@ class FastAlphaModelTester:
         backtest_summary_elem_list = self._calculate_backtest_summary_elements(exposure_values_df_list,
                                                                                prices_data_array)
         backtest_summary = BacktestSummary(
-            self._tickers, self._contract_ticker_mapper, self._model_type, backtest_summary_elem_list,
+            self._tickers, self._model_type, backtest_summary_elem_list,
             self._start_date, self._end_date)
         return backtest_summary
 
-    def _get_valid_tickers_to_contracts(self, tickers: Sequence[Ticker]) -> Dict[Ticker, Contract]:
-
-        tickers_to_contracts = {}
-        for ticker in tickers:
+    def _get_valid_tickers(self, original_ticker: Sequence[Ticker]) -> List[Ticker]:
+        tickers = []
+        for ticker in original_ticker:
             try:
                 if isinstance(ticker, FutureTicker):
                     ticker.initialize_data_provider(self._timer, self._data_handler)
-                contract = self._contract_ticker_mapper.ticker_to_contract(ticker)
-                tickers_to_contracts[ticker] = contract
+                    ticker = ticker.get_current_specific_ticker()
+                tickers.append(ticker)
             except NoValidTickerException:
                 self.logger.warning("No valid ticker for {}".format(ticker.name))
 
-        return tickers_to_contracts
+        return tickers
 
     def _get_data_for_backtest(self) -> QFDataArray:
         """
@@ -313,7 +306,7 @@ class FastAlphaModelTester:
                     trades_list.append(Trade(
                         start_time=trade_start_date,
                         end_time=curr_date,
-                        contract=self._tickers_to_contracts[ticker],
+                        ticker=ticker,
                         pnl=(curr_price / trade_start_price - 1) * trade_exposure,
                         commission=0.0,
                         direction=int(trade_exposure)

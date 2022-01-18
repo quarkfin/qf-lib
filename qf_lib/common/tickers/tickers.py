@@ -12,13 +12,12 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-import logging
 from abc import abstractmethod, ABCMeta
 from functools import total_ordering
-from os.path import basename
-from typing import Union, Sequence, Tuple, List, Optional
+from typing import Union, Sequence
 
 from qf_lib.common.enums.quandl_db_type import QuandlDBType
+from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 
 
@@ -30,9 +29,18 @@ class Ticker(metaclass=ABCMeta):
     --------------
     ticker: str
         identifier of the security in a specific database
+    security_type: SecurityType
+        denotes the type of the security, that the ticker is representing e.g. SecurityType.STOCK for a stock,
+        SecurityType.FUTURE for a futures contract etc.
+    point_value: int
+        size of the contract as given by the ticker's Data Provider.
     """
-    def __init__(self, ticker: str):
+    def __init__(self, ticker: str, security_type: SecurityType, point_value: int):
         self.ticker = ticker
+        self.security_type = security_type
+        self.point_value = point_value
+        self._name = ticker
+
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
     def __str__(self):
@@ -54,11 +62,19 @@ class Ticker(metaclass=ABCMeta):
         The property should be adjusted for different Ticker classes to provide a string representation of a Ticker,
         which in some cases could be more understandable than the output of as_string() function.
         """
-        return self.ticker
+        return self._name
+
+    def set_name(self, name: str):
+        """ Sets the name of the ticker. Name should be used for different Ticker classes to provide a readable string
+        representation of a Ticker. For example, for tickers of security type FUTURE it is a good idea to set the name
+        to point to the name of the asset (e.g. Cotton, Corn) to faciliate the further analysis of the tickers in
+        transactions, portfolio etc. """
+        self._name = name
 
     @abstractmethod
     def from_string(self, ticker_str: Union[str, Sequence[str]]) -> Union['Ticker', Sequence['Ticker']]:
-        """allows creation of a ticker from a string"""
+        """ Allows creation of a ticker from a string """
+        pass
 
     def __eq__(self, other):
         return self is other or (
@@ -88,60 +104,58 @@ class Ticker(metaclass=ABCMeta):
 
 
 class BloombergTicker(Ticker):
-    """Representation of bloomberg tickers."""
-    def __init__(self, ticker: str):
-        super().__init__(ticker)
+    """ Representation of Bloomberg tickers.
+
+    Parameters
+    --------------
+    ticker: str
+        identifier of the security, e.g. 'CTZ9 Comdty' or 'MSFT US Equity'
+    security_type: SecurityType
+        denotes the type of the security, that the ticker is representing e.g. SecurityType.STOCK for a stock,
+        SecurityType.FUTURE for a futures contract etc. By default equals SecurityType.STOCK.
+    point_value: int
+        size of the contract as given by the ticker's Data Provider. Used mostly by tickers of security_type FUTURE and
+        by default equals 1.
+    """
+    def __init__(self, ticker: str, security_type: SecurityType = SecurityType.STOCK, point_value: int = 1):
+        super().__init__(ticker, security_type, point_value)
 
     @classmethod
-    def from_string(cls, ticker_str: Union[str, Sequence[str]]) \
-            -> Union["BloombergTicker", Sequence["BloombergTicker"]]:
+    def from_string(cls, ticker_str: Union[str, Sequence[str]], security_type: SecurityType = SecurityType.STOCK,
+                    point_value: int = 1) -> Union["BloombergTicker", Sequence["BloombergTicker"]]:
         """
         Example: BloombergTicker.from_string('SPX Index')
         """
         if isinstance(ticker_str, str):
-            return BloombergTicker(ticker_str)
+            return BloombergTicker(ticker_str, security_type, point_value)
         else:
-            return [BloombergTicker(t) for t in ticker_str]
+            return [BloombergTicker(t, security_type, point_value) for t in ticker_str]
 
 
-class InternalDBTicker(Ticker):
-    """Representation of tickers inside the database.
+class PortaraTicker(Ticker):
+    """ Representation of Portara tickers.
 
     Parameters
-    ------------
-    ticker: int, str
-       string is either timeseriesID or 'timeseriesName'
-       for example 123 or 'My Strategy Name'
-       if ticker is int - it corresponds to the ID of the timeseries in the DB
-       if ticker is str - it corresponds to the timeseries name
-   """
-    def __init__(self, ticker: Union[int, str]):
-        assert isinstance(ticker, (int, str)), "Ticker value must be either series name (string) or series id (int)"
-        super().__init__(ticker)
-
-    def as_string(self) -> str:
-        return '#' + str(self.ticker)
+    --------------
+    ticker: str
+        identifier of the security, e.g. 'SI2012Z'. The naming convention used to generate the data in Portara should
+        be the "SymYYYYM".
+    security_type: SecurityType
+        denotes the type of the security, that the ticker is representing e.g. SecurityType.STOCK for a stock,
+        SecurityType.FUTURE for a futures contract etc. By default equals SecurityType.STOCK.
+    point_value: int
+        size of the contract as given by the Portara (e.g. 50 for Silver future contracts).
+    """
+    def __init__(self, ticker: str, security_type: SecurityType, point_value):
+        super().__init__(ticker, security_type, point_value)
 
     @classmethod
-    def from_string(cls, ticker_str: Union[str, int, Sequence[Union[str, int]]]) \
-            -> Union["InternalDBTicker", Sequence["InternalDBTicker"]]:
-        """
-        Example: InternalDBTicker.from_string('#TimeseriesName')
-        Example: InternalDBTicker.from_string('#123')
-        """
-
-        def to_ticker(ticker_string: str):
-            clean_str = ticker_string[1:]  # skip '#'
-            try:
-                integer_value = int(clean_str)
-                return InternalDBTicker(integer_value)
-            except ValueError:
-                return InternalDBTicker(clean_str)
-
+    def from_string(cls, ticker_str: Union[str, Sequence[str]], security_type: SecurityType = SecurityType.STOCK,
+                    point_value: int = 1) -> Union["PortaraTicker", Sequence["PortaraTicker"]]:
         if isinstance(ticker_str, str):
-            return to_ticker(ticker_str)
+            return PortaraTicker(ticker_str, security_type, point_value)
         else:
-            return [to_ticker(t) for t in ticker_str]
+            return [PortaraTicker(t, security_type, point_value) for t in ticker_str]
 
 
 class HaverTicker(Ticker):
@@ -153,9 +167,16 @@ class HaverTicker(Ticker):
         string containing series ID within a specific database
     database_name: str
         name of the database where the series is located
+    security_type: SecurityType
+        denotes the type of the security, that the ticker is representing e.g. SecurityType.STOCK for a stock,
+        SecurityType.FUTURE for a futures contract etc. By default equals SecurityType.STOCK.
+    point_value: int
+        size of the contract as given by the ticker's Data Provider. Used mostly by tickers of security_type FUTURE and
+        by default equals 1.
     """
-    def __init__(self, ticker: str, database_name: str):
-        super().__init__(ticker)
+    def __init__(self, ticker: str, database_name: str, security_type: SecurityType = SecurityType.STOCK,
+                 point_value: int = 1):
+        super().__init__(ticker, security_type, point_value)
         self.database_name = database_name
 
     def as_string(self) -> str:
@@ -165,14 +186,13 @@ class HaverTicker(Ticker):
         return self.ticker + '@' + self.database_name
 
     @classmethod
-    def from_string(cls, ticker_str: Union[str, Sequence[str]]) -> Union["HaverTicker", Sequence["HaverTicker"]]:
-        """
-        Example: HaverTicker.from_string('RECESSQ2@USECON')
-        """
+    def from_string(cls, ticker_str: Union[str, Sequence[str]], security_type: SecurityType = SecurityType.STOCK,
+                    point_value: int = 1) -> Union["HaverTicker", Sequence["HaverTicker"]]:
+        """ Example: HaverTicker.from_string('RECESSQ2@USECON') """
 
         def to_ticker(ticker_string: str):
             ticker, db_name = ticker_string.split('@')
-            return HaverTicker(ticker, db_name)
+            return HaverTicker(ticker, db_name, security_type=security_type, point_value=point_value)
 
         if isinstance(ticker_str, str):
             return to_ticker(ticker_str)
@@ -181,9 +201,26 @@ class HaverTicker(Ticker):
 
 
 class QuandlTicker(Ticker):
-    """Representation of Quandl tickers."""
-    def __init__(self, ticker: str, database_name: str, database_type: QuandlDBType = QuandlDBType.Timeseries):
-        super().__init__(ticker)
+    """ Representation of Quandl tickers.
+
+    Parameters
+    ------------
+    ticker: str
+        string containing series ID within a specific database
+    database_name: str
+        name of the database where the series is located
+    database_type: QuandlDBType
+        type of the database
+    security_type: SecurityType
+        denotes the type of the security, that the ticker is representing e.g. SecurityType.STOCK for a stock,
+        SecurityType.FUTURE for a futures contract etc. By default equals SecurityType.STOCK.
+    point_value: int
+        size of the contract as given by the ticker's Data Provider. Used mostly by tickers of security_type FUTURE and
+        by default equals 1.
+    """
+    def __init__(self, ticker: str, database_name: str, database_type: QuandlDBType = QuandlDBType.Timeseries,
+                 security_type: SecurityType = SecurityType.STOCK, point_value: int = 1):
+        super().__init__(ticker, security_type, point_value)
         self.database_name = database_name
         self.database_type = database_type
 
@@ -200,7 +237,8 @@ class QuandlTicker(Ticker):
         return self.as_string() + ' - ' + field
 
     @classmethod
-    def from_string(cls, ticker_str: Union[str, Sequence[str]], db_type: QuandlDBType = QuandlDBType.Timeseries) \
+    def from_string(cls, ticker_str: Union[str, Sequence[str]], db_type: QuandlDBType = QuandlDBType.Timeseries,
+                    security_type: SecurityType = SecurityType.STOCK, point_value: int = 1) \
             -> Union["QuandlTicker", Sequence["QuandlTicker"]]:
         """
         Example: QuandlTicker.from_string('WIKI/MSFT')
@@ -209,7 +247,7 @@ class QuandlTicker(Ticker):
 
         def to_ticker(ticker_string: str):
             db_name, ticker = ticker_string.rsplit('/', 1)
-            return QuandlTicker(ticker, db_name, db_type)
+            return QuandlTicker(ticker, db_name, db_type, security_type=security_type, point_value=point_value)
 
         if isinstance(ticker_str, str):
             return to_ticker(ticker_str)
@@ -218,102 +256,31 @@ class QuandlTicker(Ticker):
 
 
 class CcyTicker(Ticker):
-    """Representation of Cryptocurrency tickers.
+    """ Representation of Cryptocurrency tickers.
 
     Parameters
     ------------
     ticker: str
         The name of the crypto currency. For example Bitcoin -> ticker: bitcoin
-
+    security_type: SecurityType
+        denotes the type of the security, that the ticker is representing e.g. SecurityType.STOCK for a stock,
+        SecurityType.FUTURE for a futures contract etc. By default equals SecurityType.STOCK.
+    point_value: int
+        size of the contract as given by the ticker's Data Provider. Used mostly by tickers of security_type FUTURE and
+        by default equals 1.
     """
-    def __init__(self, ticker: str):
-        super().__init__(ticker)
+    def __init__(self, ticker: str, security_type: SecurityType = SecurityType.STOCK, point_value: int = 1):
+        super().__init__(ticker, security_type, point_value)
 
     @classmethod
-    def from_string(cls, ticker_str: Union[str, Sequence[str]]) -> Union["CcyTicker", Sequence["CcyTicker"]]:
-        """
-        Example: CcyTicker.from_string('Bitcoin')
-        """
+    def from_string(cls, ticker_str: Union[str, Sequence[str]], security_type: SecurityType = SecurityType.STOCK,
+                    point_value: int = 1) -> Union["CcyTicker", Sequence["CcyTicker"]]:
+        """ Example: CcyTicker.from_string('Bitcoin'). """
 
-        def to_ticker(ticker_string: str):
-            return CcyTicker(ticker_string.lower())
+        def to_ticker(ticker_string: str,):
+            return CcyTicker(ticker_string.lower(), security_type, point_value)
 
         if isinstance(ticker_str, str):
             return to_ticker(ticker_str)
         else:
             return [to_ticker(t) for t in ticker_str]
-
-
-def tickers_as_strings(tickers: Union[Ticker, Sequence[Ticker]]) -> Union[str, List[str]]:
-    """
-    Converts a single ticker or sequence of tickers to strings representations.
-    if single ticker is passed -> returns a single string
-    if sequence of tickers is passed -> returns list of strings
-    """
-    if isinstance(tickers, Ticker):
-        return tickers.as_string()
-    else:
-        return [t.as_string() for t in tickers]
-
-
-def str_to_ticker(ticker_str: Union[str, Sequence[str]]) -> Union[None, Ticker, Tuple[List[Ticker], List[str]]]:
-    """
-    Converts a single string or sequence of strings to ticker representation.
-
-    if single ticker is passed -> returns single_ticker or None
-
-    if sequence of tickers is passed -> returns a tuple
-        (successfully converted tickers, unsuccessfully converted tickers)
-        If all tickers were successfully converted the second list should be empty
-
-    """
-
-    def convert_single_ticker(single_ticker_str: str) -> Optional[Ticker]:
-        if single_ticker_str[0] == "#":
-            return InternalDBTicker.from_string(single_ticker_str)
-        elif "@" in single_ticker_str:
-            return HaverTicker.from_string(single_ticker_str)
-        elif " " in single_ticker_str:
-            return BloombergTicker.from_string(single_ticker_str)
-        elif "/" in single_ticker_str:
-            return QuandlTicker.from_string(single_ticker_str)
-        else:
-            return None
-
-    logger = logging.getLogger(basename(__file__))
-    if isinstance(ticker_str, str):
-        ticker = convert_single_ticker(ticker_str)
-        if ticker is None:
-            logger.warning("Value '{}' cannot be recognised as a ticker".format(ticker_str))
-        return ticker
-    else:
-        successful_tickers = []
-        unsuccessful_tickers = []
-
-        for t in ticker_str:
-            ticker = convert_single_ticker(t)
-            if ticker is not None:
-                successful_tickers.append(ticker)
-            else:
-                unsuccessful_tickers.append(t)
-
-        if unsuccessful_tickers:
-            for faulty_ticker in unsuccessful_tickers:
-                logger.warning("Value '{}' cannot be recognised as a ticker".format(faulty_ticker))
-
-        return successful_tickers, unsuccessful_tickers
-
-
-def ticker_type_to_class(ticker_type: str):
-    """
-    Takes name of a specific Ticker class (e.g. "BloombergTicker") and returns a corresponding Ticker object.
-    """
-    mapping = {
-        'BloombergTicker': BloombergTicker,
-        'InternalDBTicker': InternalDBTicker,
-        'HaverTicker': HaverTicker,
-        'QuandlTicker': QuandlTicker,
-        'CcyTicker': CcyTicker
-    }
-
-    return mapping[ticker_type]

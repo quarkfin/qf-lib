@@ -13,40 +13,22 @@
 #     limitations under the License.
 
 import unittest
-from typing import Sequence, Union
 from unittest.mock import Mock
 
 from numpy.core.umath import sign
 
 from qf_lib.analysis.trade_analysis.trades_generator import TradesGenerator
-from qf_lib.backtesting.contract.contract import Contract
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.backtesting.portfolio.transaction import Transaction
+from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_series_equal
-from qf_lib.common.tickers.tickers import Ticker
-
-
-class DummyTicker(Ticker):
-    def __init__(self, ticker: str):
-        super().__init__(ticker)
-
-    @classmethod
-    def from_string(cls, ticker_str: Union[str, Sequence[str]]) \
-            -> Union["DummyTicker", Sequence["DummyTicker"]]:
-        """
-        Example: DummyTicker.from_string('AAA')
-        """
-        if isinstance(ticker_str, str):
-            return DummyTicker(ticker_str)
-        else:
-            return [DummyTicker(t) for t in ticker_str]
+from qf_lib_tests.unit_tests.backtesting.portfolio.dummy_ticker import DummyTicker
 
 
 class TestPortfolio(unittest.TestCase):
@@ -54,11 +36,11 @@ class TestPortfolio(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.initial_cash = 1000000  # 1M
-        cls.contract = Contract('AAPL US Equity', security_type='STK', exchange='NYSE')
-        cls.contract_size = 75
-        cls.fut_contract = Contract('CTZ9 Comdty', security_type='FUT', exchange='CME', contract_size=cls.contract_size)
+        cls.ticker = DummyTicker('AAPL US Equity', SecurityType.STOCK)
+        cls.point_value = 75
+        cls.fut_ticker = DummyTicker('CTZ9 Comdty', SecurityType.FUTURE, cls.point_value)
 
-        tickers = [DummyTicker(cls.contract.symbol), DummyTicker(cls.fut_contract.symbol)]
+        tickers = [cls.ticker, cls.fut_ticker]
         cls.prices_series = QFSeries(data=[120, 250], index=tickers)
         cls.prices_up = QFSeries(data=[130, 270], index=tickers)
         cls.prices_down = QFSeries(data=[100, 210], index=tickers)
@@ -76,13 +58,10 @@ class TestPortfolio(unittest.TestCase):
         data_handler.get_last_available_price.side_effect = lambda tickers: self.data_handler_prices[tickers] \
             if tickers else None
 
-        contract_mapper = Mock(spec=ContractTickerMapper)
-        contract_mapper.contract_to_ticker.side_effect = lambda contract: DummyTicker(contract.symbol)
-
         timer = SettableTimer()
         timer.set_current_time(self.start_time)
 
-        portfolio = Portfolio(data_handler, self.initial_cash, timer, contract_mapper)
+        portfolio = Portfolio(data_handler, self.initial_cash, timer)
         return portfolio, data_handler, timer
 
     def test_initial_cash(self):
@@ -94,12 +73,12 @@ class TestPortfolio(unittest.TestCase):
 
     @staticmethod
     def _cash_move(transaction: Transaction):
-        return -1 * transaction.price * transaction.quantity * transaction.contract.contract_size - transaction.commission
+        return -1 * transaction.price * transaction.quantity * transaction.ticker.point_value - transaction.commission
 
     def test_transact_transaction_1(self):
         portfolio, _, _ = self.get_portfolio_and_data_handler()
 
-        transaction = Transaction(self.random_time, self.contract, quantity=50, price=100, commission=5)
+        transaction = Transaction(self.random_time, self.ticker, quantity=50, price=100, commission=5)
         portfolio.transact_transaction(transaction)
 
         cash_move_1 = self._cash_move(transaction)
@@ -110,7 +89,7 @@ class TestPortfolio(unittest.TestCase):
         self.assertEqual(portfolio.current_cash, self.initial_cash + cash_move_1)
         self.assertEqual(len(portfolio.open_positions_dict), 1)
 
-        transaction = Transaction(self.random_time, self.contract, quantity=-20, price=110, commission=5)
+        transaction = Transaction(self.random_time, self.ticker, quantity=-20, price=110, commission=5)
         portfolio.transact_transaction(transaction)
 
         cash_move_2 = self._cash_move(transaction)
@@ -123,11 +102,9 @@ class TestPortfolio(unittest.TestCase):
 
     def test_transact_transaction_2(self):
         portfolio, dh, _ = self.get_portfolio_and_data_handler()
-        contract = self.contract
-        ticker = portfolio.contract_ticker_mapper.contract_to_ticker(contract)
 
         # First transaction
-        transaction_1 = Transaction(self.random_time, contract, quantity=50, price=100, commission=5)
+        transaction_1 = Transaction(self.random_time, self.ticker, quantity=50, price=100, commission=5)
         portfolio.transact_transaction(transaction_1)
 
         # Set new prices
@@ -135,9 +112,9 @@ class TestPortfolio(unittest.TestCase):
         portfolio.update()
 
         # Get the new price of the contract
-        new_price = dh.get_last_available_price(ticker)
+        new_price = dh.get_last_available_price(self.ticker)
 
-        pnl_1 = (new_price - transaction_1.price) * transaction_1.quantity * transaction_1.contract.contract_size \
+        pnl_1 = (new_price - transaction_1.price) * transaction_1.quantity * transaction_1.ticker.point_value \
             - transaction_1.commission
         cash_move1 = self._cash_move(transaction_1)
 
@@ -148,30 +125,28 @@ class TestPortfolio(unittest.TestCase):
         self.assertEqual(len(portfolio.open_positions_dict), 1)
 
         # Second transaction
-        transaction_2 = Transaction(self.random_time, contract, quantity=-20, price=110, commission=5)
+        transaction_2 = Transaction(self.random_time, self.ticker, quantity=-20, price=110, commission=5)
         portfolio.transact_transaction(transaction_2)
         portfolio.update()
 
-        pnl_2 = (new_price - transaction_2.price) * transaction_2.quantity * transaction_2.contract.contract_size \
+        pnl_2 = (new_price - transaction_2.price) * transaction_2.quantity * transaction_2.ticker.point_value \
             - transaction_2.commission
         cash_move_2 = self._cash_move(transaction_2)
 
         self.assertEqual(portfolio.initial_cash, self.initial_cash)
         self.assertEqual(portfolio.net_liquidation, self.initial_cash + pnl_1 + pnl_2)
 
-        position = portfolio.open_positions_dict[contract]
+        position = portfolio.open_positions_dict[self.ticker]
         self.assertEqual(portfolio.gross_exposure_of_positions,
-                         new_price * position.quantity() * contract.contract_size)
+                         new_price * position.quantity() * self.ticker.point_value)
         self.assertEqual(portfolio.current_cash, self.initial_cash + cash_move1 + cash_move_2)
         self.assertEqual(len(portfolio.open_positions_dict), 1)
 
     def test_transact_transaction_3(self):
         portfolio, dh, _ = self.get_portfolio_and_data_handler()
-        contract = self.fut_contract
-        ticker = portfolio.contract_ticker_mapper.contract_to_ticker(contract)
 
         # First transaction
-        transaction_1 = Transaction(self.random_time, contract, quantity=50, price=200, commission=7)
+        transaction_1 = Transaction(self.random_time, self.fut_ticker, quantity=50, price=200, commission=7)
         portfolio.transact_transaction(transaction_1)
 
         # Set new prices
@@ -179,20 +154,20 @@ class TestPortfolio(unittest.TestCase):
         portfolio.update()
 
         # Get the new price of the contract
-        new_price = dh.get_last_available_price(ticker)
+        new_price = dh.get_last_available_price(self.fut_ticker)
 
-        pnl_1 = (new_price - transaction_1.price) * transaction_1.quantity * transaction_1.contract.contract_size \
+        pnl_1 = (new_price - transaction_1.price) * transaction_1.quantity * transaction_1.ticker.point_value \
             - transaction_1.commission
         cash_move_1 = -transaction_1.commission
 
         self.assertEqual(portfolio.net_liquidation, self.initial_cash + pnl_1)
         self.assertEqual(portfolio.gross_exposure_of_positions,
-                         transaction_1.quantity * contract.contract_size * new_price)
+                         transaction_1.quantity * self.fut_ticker.point_value * new_price)
         self.assertEqual(portfolio.current_cash, self.initial_cash + cash_move_1)
         self.assertEqual(len(portfolio.open_positions_dict), 1)
 
         # Second transaction
-        transaction_2 = Transaction(self.random_time, contract, quantity=-20, price=new_price, commission=15)
+        transaction_2 = Transaction(self.random_time, self.fut_ticker, quantity=-20, price=new_price, commission=15)
         portfolio.transact_transaction(transaction_2)
         portfolio.update()
 
@@ -200,44 +175,42 @@ class TestPortfolio(unittest.TestCase):
         # the pnl of the trade, as the commission trades
         trade_size = min(abs(transaction_1.quantity), abs(transaction_2.quantity))
 
-        realised_pnl = (-1) * transaction_1.price * trade_size * sign(transaction_1.quantity) * contract.contract_size
-        realised_pnl += (-1) * transaction_2.price * trade_size * sign(transaction_2.quantity) * contract.contract_size
+        realised_pnl = (-1) * transaction_1.price * trade_size * sign(
+            transaction_1.quantity) * self.fut_ticker.point_value
+        realised_pnl += (-1) * transaction_2.price * trade_size * sign(
+            transaction_2.quantity) * self.fut_ticker.point_value
         realised_pnl -= transaction_2.commission  # Only transaction2 commission is yet realised
 
         self.assertEqual(portfolio.current_cash, self.initial_cash + cash_move_1 + realised_pnl)
 
-        position = portfolio.open_positions_dict[contract]
+        position = portfolio.open_positions_dict[self.fut_ticker]
         position_unrealised_pnl = position.unrealised_pnl
         self.assertEqual(portfolio.net_liquidation, portfolio.current_cash + position_unrealised_pnl)
 
-        exposure = position.quantity() * contract.contract_size * new_price
+        exposure = position.quantity() * self.fut_ticker.point_value * new_price
         self.assertEqual(portfolio.gross_exposure_of_positions, position.total_exposure())
         self.assertEqual(exposure, position.total_exposure())
 
     def test_transact_transaction_close_position_2_transactions(self):
-
         for quantity in (-50, 50):
             portfolio, dh, _ = self.get_portfolio_and_data_handler()
-            contract = self.fut_contract
-            ticker = portfolio.contract_ticker_mapper.contract_to_ticker(contract)
-
             all_commissions = 0.0
 
-            transaction_1 = Transaction(self.random_time, contract, quantity=quantity, price=200, commission=7)
+            transaction_1 = Transaction(self.random_time, self.fut_ticker, quantity=quantity, price=200, commission=7)
             portfolio.transact_transaction(transaction_1)
             all_commissions += transaction_1.commission
             self.data_handler_prices = self.prices_series
             portfolio.update()
 
-            new_price = dh.get_last_available_price(ticker)
-            transaction_2 = Transaction(self.end_time, contract, quantity=-transaction_1.quantity,
+            new_price = dh.get_last_available_price(self.fut_ticker)
+            transaction_2 = Transaction(self.end_time, self.fut_ticker, quantity=-transaction_1.quantity,
                                         price=new_price,
                                         commission=transaction_1.commission)
             portfolio.transact_transaction(transaction_2)
             all_commissions += transaction_2.commission
             portfolio.update()
 
-            pnl = (new_price - transaction_1.price) * transaction_1.quantity * contract.contract_size \
+            pnl = (new_price - transaction_1.price) * transaction_1.quantity * self.fut_ticker.point_value \
                 - all_commissions
 
             self.assertEqual(portfolio.initial_cash, self.initial_cash)
@@ -248,8 +221,6 @@ class TestPortfolio(unittest.TestCase):
 
     def test_transact_transaction_split_position(self):
         portfolio, dh, _ = self.get_portfolio_and_data_handler()
-        contract = self.fut_contract
-        ticker = portfolio.contract_ticker_mapper.contract_to_ticker(contract)
 
         # Transact two transaction, which will result in transactions splitting
         quantity_after_first_transaction = 50
@@ -258,18 +229,18 @@ class TestPortfolio(unittest.TestCase):
         commission = 7
 
         # Transact the initial transaction
-        transaction_1 = Transaction(self.random_time, contract, quantity_after_first_transaction,
+        transaction_1 = Transaction(self.random_time, self.fut_ticker, quantity_after_first_transaction,
                                     initial_price, commission)
         portfolio.transact_transaction(transaction_1)
 
         # Set new prices
         self.data_handler_prices = self.prices_series
-        new_price = dh.get_last_available_price(ticker)  # == 250
+        new_price = dh.get_last_available_price(self.fut_ticker)  # == 250
         portfolio.update()
 
         # Transact the second transaction
         transaction_quantity = -quantity_after_first_transaction + quantity_after_second_transaction
-        transaction_2 = Transaction(self.end_time, contract, transaction_quantity, new_price, commission)
+        transaction_2 = Transaction(self.end_time, self.fut_ticker, transaction_quantity, new_price, commission)
         portfolio.transact_transaction(transaction_2)
         portfolio.update()
 
@@ -277,7 +248,7 @@ class TestPortfolio(unittest.TestCase):
         quantity = max(abs(quantity_after_first_transaction), abs(quantity_after_second_transaction))
         quantity *= sign(quantity_after_first_transaction)
         all_commissions = transaction_1.commission + transaction_2.commission
-        pnl = (new_price - initial_price) * quantity * contract.contract_size - all_commissions
+        pnl = (new_price - initial_price) * quantity * self.fut_ticker.point_value - all_commissions
 
         position = list(portfolio.open_positions_dict.values())[0]
         self.assertEqual(position.quantity(), -10)
@@ -286,13 +257,11 @@ class TestPortfolio(unittest.TestCase):
         self.assertEqual(portfolio.net_liquidation, self.initial_cash + pnl)
 
         self.assertEqual(portfolio.gross_exposure_of_positions,
-                         abs(quantity_after_second_transaction * self.contract_size * new_price))
+                         abs(quantity_after_second_transaction * self.point_value * new_price))
         self.assertEqual(len(portfolio.open_positions_dict), 1)
 
     def test_transact_transaction_split_and_close(self):
         portfolio, dh, _ = self.get_portfolio_and_data_handler()
-        contract = self.fut_contract
-        ticker = portfolio.contract_ticker_mapper.contract_to_ticker(contract)
 
         # Transact the initial transaction
         transactions = []
@@ -300,9 +269,9 @@ class TestPortfolio(unittest.TestCase):
 
         # Set initial price for the given ticker
         self.data_handler_prices = self.prices_down
-        price_1 = dh.get_last_available_price(ticker)  # == 210
+        price_1 = dh.get_last_available_price(self.fut_ticker)  # == 210
 
-        initial_transaction = Transaction(self.random_time, contract, quantity=quantity, price=price_1,
+        initial_transaction = Transaction(self.random_time, self.fut_ticker, quantity=quantity, price=price_1,
                                           commission=10)
         portfolio.transact_transaction(initial_transaction)
         transactions.append(initial_transaction)
@@ -310,22 +279,22 @@ class TestPortfolio(unittest.TestCase):
 
         # Change of price for the given ticker
         self.data_handler_prices = self.prices_series
-        price_2 = dh.get_last_available_price(ticker)  # == 250
+        price_2 = dh.get_last_available_price(self.fut_ticker)  # == 250
 
-        transaction_to_split = Transaction(self.random_time, contract, quantity=(-2) * quantity,
+        transaction_to_split = Transaction(self.random_time, self.fut_ticker, quantity=(-2) * quantity,
                                            price=price_2, commission=18)
         portfolio.transact_transaction(transaction_to_split)
         transactions.append(transaction_to_split)
         portfolio.update()
 
-        trade_pnl = (price_2 - price_1) * contract.contract_size * quantity
+        trade_pnl = (price_2 - price_1) * self.fut_ticker.point_value * quantity
         trade_pnl -= initial_transaction.commission
         trade_pnl -= transaction_to_split.commission * abs(initial_transaction.quantity / transaction_to_split.quantity)
 
         # Change of price for the given ticker
         self.data_handler_prices = self.prices_series
-        price_3 = dh.get_last_available_price(ticker)  # == 270
-        closing_transaction = Transaction(self.random_time, contract, quantity=quantity,
+        price_3 = dh.get_last_available_price(self.fut_ticker)  # == 270
+        closing_transaction = Transaction(self.random_time, self.fut_ticker, quantity=quantity,
                                           price=price_3, commission=5)
         portfolio.transact_transaction(closing_transaction)
         transactions.append(closing_transaction)
@@ -342,20 +311,17 @@ class TestPortfolio(unittest.TestCase):
         portfolio.update(record=True)
         expected_portfolio_eod_series[timer.time] = self.initial_cash
 
-        contract = self.fut_contract
-        ticker = portfolio.contract_ticker_mapper.contract_to_ticker(contract)
-
         # Buy contract
         self._shift_timer_to_next_day(timer)
-        transaction_1 = Transaction(timer.time, contract, quantity=50, price=250, commission=7)
+        transaction_1 = Transaction(timer.time, self.fut_ticker, quantity=50, price=250, commission=7)
         portfolio.transact_transaction(transaction_1)
         self.data_handler_prices = self.prices_series
         portfolio.update(record=True)
 
-        position = portfolio.open_positions_dict[contract]
+        position = portfolio.open_positions_dict[self.fut_ticker]
 
-        price_1 = dh.get_last_available_price(ticker)
-        pnl = contract.contract_size * transaction_1.quantity * (price_1 - transaction_1.price)
+        price_1 = dh.get_last_available_price(self.fut_ticker)
+        pnl = self.fut_ticker.point_value * transaction_1.quantity * (price_1 - transaction_1.price)
         nav = self.initial_cash + pnl - transaction_1.commission
         expected_portfolio_eod_series[timer.time] = nav
 
@@ -364,19 +330,20 @@ class TestPortfolio(unittest.TestCase):
         self.data_handler_prices = self.prices_up
         portfolio.update(record=True)
 
-        price_2 = dh.get_last_available_price(ticker)  # == 270
-        pnl = contract.contract_size * transaction_1.quantity * (price_2 - price_1)
+        price_2 = dh.get_last_available_price(self.fut_ticker)  # == 270
+        pnl = self.fut_ticker.point_value * transaction_1.quantity * (price_2 - price_1)
         nav += pnl
         expected_portfolio_eod_series[timer.time] = nav
 
         # Sell part of the contract
         self._shift_timer_to_next_day(timer)
-        transaction_2 = Transaction(timer.time, contract, quantity=-25, price=price_2, commission=19)
+        transaction_2 = Transaction(timer.time, self.fut_ticker, quantity=-25, price=price_2, commission=19)
         portfolio.transact_transaction(transaction_2)
         self.data_handler_prices = self.prices_up
         portfolio.update(record=True)
 
-        pnl = (transaction_2.price - price_2) * transaction_2.quantity * contract.contract_size - transaction_2.commission
+        pnl = (transaction_2.price - price_2) * transaction_2.quantity * self.fut_ticker.point_value - \
+            transaction_2.commission
         nav += pnl
         expected_portfolio_eod_series[timer.time] = nav
 
@@ -385,8 +352,8 @@ class TestPortfolio(unittest.TestCase):
         self.data_handler_prices = self.prices_down
         portfolio.update(record=True)
 
-        price_3 = dh.get_last_available_price(ticker)  # == 210
-        pnl2 = contract.contract_size * position.quantity() * (price_3 - price_2)
+        price_3 = dh.get_last_available_price(self.fut_ticker)  # == 210
+        pnl2 = self.fut_ticker.point_value * position.quantity() * (price_3 - price_2)
         nav += pnl2
         expected_portfolio_eod_series[timer.time] = nav
 
@@ -403,7 +370,6 @@ class TestPortfolio(unittest.TestCase):
 
         expected_leverage_series = QFSeries()
         nav = self.initial_cash
-        contract = self.fut_contract
         position = None
 
         def record_leverage():
@@ -415,15 +381,15 @@ class TestPortfolio(unittest.TestCase):
 
         # Buy contract
         self._shift_timer_to_next_day(timer)
-        transaction_1 = Transaction(timer.now(), contract, quantity=50, price=250, commission=7)
+        transaction_1 = Transaction(timer.now(), self.fut_ticker, quantity=50, price=250, commission=7)
         portfolio.transact_transaction(transaction_1)
         self.data_handler_prices = self.prices_series
         portfolio.update(record=True)
 
-        position = portfolio.open_positions_dict[contract]
+        position = portfolio.open_positions_dict[self.fut_ticker]
 
         # Compute the leverage
-        pnl = contract.contract_size * transaction_1.quantity * (position.current_price - transaction_1.price)
+        pnl = self.fut_ticker.point_value * transaction_1.quantity * (position.current_price - transaction_1.price)
         nav += pnl - transaction_1.commission
         record_leverage()
 
@@ -434,19 +400,20 @@ class TestPortfolio(unittest.TestCase):
 
         # Compute the leverage
         price_after_increase = position.current_price
-        pnl = contract.contract_size * transaction_1.quantity * (price_after_increase - transaction_1.price)
+        pnl = self.fut_ticker.point_value * transaction_1.quantity * (price_after_increase - transaction_1.price)
         nav = self.initial_cash + pnl - transaction_1.commission
         record_leverage()
 
         # Sell part of the contract
         self._shift_timer_to_next_day(timer)
-        transaction_2 = Transaction(timer.time, contract, quantity=-30, price=position.current_price, commission=9)
+        transaction_2 = Transaction(timer.time, self.fut_ticker, quantity=-30, price=position.current_price,
+                                    commission=9)
         portfolio.transact_transaction(transaction_2)
         self.data_handler_prices = self.prices_up
         portfolio.update(record=True)
 
         # Compute the leverage
-        pnl = (transaction_2.price - price_after_increase) * transaction_2.quantity * contract.contract_size
+        pnl = (transaction_2.price - price_after_increase) * transaction_2.quantity * self.fut_ticker.point_value
         nav += pnl - transaction_2.commission
         record_leverage()
 
@@ -455,7 +422,7 @@ class TestPortfolio(unittest.TestCase):
         self.data_handler_prices = self.prices_down
         portfolio.update(record=True)
 
-        pnl = contract.contract_size * position.quantity() * (position.current_price - transaction_2.price)
+        pnl = self.fut_ticker.point_value * position.quantity() * (position.current_price - transaction_2.price)
         nav += pnl
         record_leverage()
 
@@ -478,7 +445,7 @@ class TestPortfolio(unittest.TestCase):
         commission1 = 7
         new_time = timer.time + RelativeDelta(days=1)
 
-        portfolio.transact_transaction(Transaction(new_time, self.contract, quantity, price, commission1))
+        portfolio.transact_transaction(Transaction(new_time, self.ticker, quantity, price, commission1))
         timer.set_current_time(new_time)
         self.data_handler_prices = self.prices_series
         portfolio.update(record=True)
@@ -506,7 +473,7 @@ class TestPortfolio(unittest.TestCase):
         price = 130
         commission2 = 9
         new_time = timer.time + RelativeDelta(days=1)
-        portfolio.transact_transaction(Transaction(new_time, self.contract, quantity, price, commission2))
+        portfolio.transact_transaction(Transaction(new_time, self.ticker, quantity, price, commission2))
         timer.set_current_time(new_time)
         self.data_handler_prices = self.prices_up
         portfolio.update(record=True)
@@ -545,13 +512,13 @@ class TestPortfolio(unittest.TestCase):
         commission1 = 7
         new_time = timer.time + RelativeDelta(days=1)
 
-        portfolio.transact_transaction(Transaction(new_time, self.fut_contract, quantity, price, commission1))
+        portfolio.transact_transaction(Transaction(new_time, self.fut_ticker, quantity, price, commission1))
         timer.set_current_time(new_time)
         self.data_handler_prices = self.prices_series
         portfolio.update(record=True)
 
         # buy another instrument - price goes up
-        portfolio.transact_transaction(Transaction(new_time, self.contract, 20, 120, commission1))
+        portfolio.transact_transaction(Transaction(new_time, self.ticker, 20, 120, commission1))
         new_time = timer.time + RelativeDelta(days=1)
         timer.set_current_time(new_time)
         self.data_handler_prices = self.prices_up
@@ -562,7 +529,7 @@ class TestPortfolio(unittest.TestCase):
         price = 270
         commission2 = 9
         new_time = timer.time + RelativeDelta(days=1)
-        portfolio.transact_transaction(Transaction(new_time, self.fut_contract, quantity, price, commission2))
+        portfolio.transact_transaction(Transaction(new_time, self.fut_ticker, quantity, price, commission2))
         timer.set_current_time(new_time)
         self.data_handler_prices = self.prices_up
         portfolio.update(record=True)

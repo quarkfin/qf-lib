@@ -21,14 +21,12 @@ import pandas as pd
 from pandas.core.dtypes.common import is_numeric_dtype
 
 from qf_lib.analysis.strategy_monitoring.pnl_calculator import PnLCalculator
-from qf_lib.backtesting.contract.contract import Contract
-
 from qf_lib.analysis.common.abstract_document import AbstractDocument
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 
 from qf_lib.backtesting.portfolio.transaction import Transaction
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
+from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.exceptions.future_contracts_exceptions import NoValidTickerException
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.timer import SettableTimer
@@ -40,6 +38,7 @@ from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 from qf_lib.containers.futures.futures_adjustment_method import FuturesAdjustmentMethod
 from qf_lib.containers.futures.futures_chain import FuturesChain
 from qf_lib.containers.series.prices_series import PricesSeries
+from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
 from qf_lib.data_providers.data_provider import DataProvider
 from qf_lib.documents_utils.document_exporting.element.df_table import DFTable
@@ -65,9 +64,6 @@ class AssetPerfAndDrawdownSheet(AbstractDocument):
         Dictionary mapping a string, which denotes a category / sector etc, into a list of tickers. The categories are
         used to provide aggregated information about performance contribution in each of them (e.g. to compute
         performance contribution of different sectors, a dictionary mapping sector names into tickers objects).
-    contract_ticker_mapper: ContractTickerMapper
-        An instance of the ContractTickerMapper used to map the tickers into corresponding contracts, which are
-        used in the Transactions objects
     transactions: Union[List[Transaction], str]
         Either list of Transaction objects or a path to the Transactions file.
     start_date: datetime
@@ -89,10 +85,9 @@ class AssetPerfAndDrawdownSheet(AbstractDocument):
         frequencies are supported.
     """
 
-    def __init__(self, category_to_model_tickers: Dict[str, List[Ticker]], contract_ticker_mapper: ContractTickerMapper,
-                 transactions: Union[List[Transaction], str], start_date: datetime, end_date: datetime,
-                 data_provider: DataProvider, settings: Settings, pdf_exporter: PDFExporter,
-                 title: str = "Assets Monitoring Sheet", initial_cash: int = 10000000,
+    def __init__(self, category_to_model_tickers: Dict[str, List[Ticker]], transactions: Union[List[Transaction], str],
+                 start_date: datetime, end_date: datetime, data_provider: DataProvider, settings: Settings,
+                 pdf_exporter: PDFExporter, title: str = "Assets Monitoring Sheet", initial_cash: int = 10000000,
                  frequency: Frequency = Frequency.YEARLY):
 
         super().__init__(settings, pdf_exporter, title=title)
@@ -100,10 +95,8 @@ class AssetPerfAndDrawdownSheet(AbstractDocument):
         self.tickers = [t for tickers_list in category_to_model_tickers.values() for t in tickers_list]
         self._ticker_to_category = {ticker: c for c, tickers_list in category_to_model_tickers.items()
                                     for ticker in tickers_list}
-        self._contract_ticker_mapper = contract_ticker_mapper
 
-        self._pnl_calculator = PnLCalculator(data_provider, contract_ticker_mapper)
-
+        self._pnl_calculator = PnLCalculator(data_provider)
         self.transactions = self._parse_transactions_file(transactions) if isinstance(transactions, str) \
             else transactions
 
@@ -129,33 +122,40 @@ class AssetPerfAndDrawdownSheet(AbstractDocument):
 
     def _parse_transactions_file(self, path_to_transactions_file: str) -> List[Transaction]:
         """ Parse the Transactions csv file created by the Monitor and generate a list of transactions objects. """
+        ticker_params_to_ticker = {
+            (ticker.name, ticker.security_type, ticker.point_value): ticker for ticker in self.tickers
+        }
+
+        def get_matching_ticker(row: QFSeries) -> Ticker:
+            """ Returns the matching specific ticker. In case if the ticker does not belong to the list of tickers
+            passed as the parameter, the transaction is excluded. """
+            ticker_str = row.loc["Contract symbol"]
+            name = row.loc["Asset Name"]
+            sec_type = SecurityType(row.loc["Security type"])
+            point_value = row.loc["Contract size"]
+            ticker = ticker_params_to_ticker.get((name, sec_type, point_value), None)
+            if isinstance(ticker, FutureTicker):
+                ticker_type = ticker.supported_ticker_type()
+                ticker = ticker_type(ticker_str, sec_type, point_value)
+            return ticker
+
         transactions_df = pd.read_csv(path_to_transactions_file)
-        transactions = [
-            Transaction(
-                time=pd.to_datetime(row.loc["Timestamp"]),
-                contract=Contract(
-                    symbol=row.loc["Contract symbol"],
-                    security_type=row.loc["Security type"],
-                    exchange=row.loc["Exchange"],
-                    contract_size=row.loc["Contract size"]
-                ),
-                quantity=row.loc["Quantity"],
-                price=row.loc["Price"],
-                commission=row.loc["Commission"]
-            ) for _, row in transactions_df.iterrows()
-        ]
+        transactions = [Transaction(time=pd.to_datetime(row.loc["Timestamp"]),
+                                    ticker=get_matching_ticker(row),
+                                    quantity=row.loc["Quantity"],
+                                    price=row.loc["Price"],
+                                    commission=row.loc["Commission"]) for _, row in transactions_df.iterrows()]
+        transactions = [t for t in transactions if t.ticker is not None]
         return transactions
 
     def _compute_pnl(self) -> Dict[Ticker, PricesSeries]:
-        """ Computes PnL time series for each of the tickers. """
-        ticker_to_pnl_series = {ticker: self._pnl_calculator.compute_pnl(ticker, self.transactions, self._start_date,
-                                                                         self._end_date) for ticker in self.tickers}
-        return ticker_to_pnl_series
+        """ Returns a dictionary, which maps tickers into corresponding PnL time series. """
+        return {ticker: self._pnl_calculator.compute_pnl(ticker, self.transactions, self._start_date, self._end_date)
+                for ticker in self.tickers}
 
     def _add_performance_statistics(self, ticker_to_pnl_series: Dict[Ticker, PricesSeries]):
         """ Generate performance and drawdown plots, which provide the comparison between the strategy performance
-        and Buy and Hold performance for each of the assets.
-        """
+        and Buy and Hold performance for each of the assets. """
         self.document.add_element(NewPageElement())
         self.document.add_element(HeadingElement(level=2, text="Performance and Drawdowns - Strategy vs Buy and Hold"))
         self.document.add_element(ParagraphElement("\n"))

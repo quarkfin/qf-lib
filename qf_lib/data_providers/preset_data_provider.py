@@ -292,7 +292,7 @@ class PresetDataProvider(DataProvider):
                 base=base_data_array_1,
                 label='left',
                 skipna=True
-            ).apply(lambda x: self._aggregate_data_array(x, tickers, fields))
+            ).map(lambda x: self._aggregate_data_array(x, tickers, fields))
 
         if len(data_array_2) > 0:
             base_data_array_2 = MarketOpenEvent.trigger_time().minute
@@ -301,7 +301,7 @@ class PresetDataProvider(DataProvider):
                 base=base_data_array_2,
                 label='left',
                 skipna=True
-            ).apply(lambda x: self._aggregate_data_array(x, tickers, fields))
+            ).map(lambda x: self._aggregate_data_array(x, tickers, fields))
 
         data_array = QFDataArray.concat([data_array_1, data_array_2], dim=DATES)
 

@@ -19,9 +19,6 @@ import pandas as pd
 from numpy import nan
 from pandas import date_range
 
-from qf_lib.backtesting.contract.contract import Contract
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.simulated_bloomberg_mapper import \
-    SimulatedBloombergContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.events.time_event.periodic_event.intraday_bar_event import IntradayBarEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
@@ -60,11 +57,8 @@ class TestStopLossExecutionStyle(TestCase):
         self.number_of_minutes = 5
 
         before_close = self.start_date + MarketCloseEvent.trigger_time() - RelativeDelta(minutes=self.number_of_minutes)
-
-        self.msft_contract = Contract(self.MSFT_TICKER_STR, security_type='STK', exchange='TEST')
         self.msft_ticker = BloombergTicker(self.MSFT_TICKER_STR)
 
-        contracts_to_tickers_mapper = SimulatedBloombergContractTickerMapper()
         self.timer = SettableTimer(initial_time=before_close)
 
         self.data_handler = Mock(spec=DataHandler)
@@ -80,19 +74,18 @@ class TestStopLossExecutionStyle(TestCase):
         self.monitor = Mock(spec=AbstractMonitor)
         self.portfolio = Mock(spec=Portfolio)
 
-        slippage_model = PriceBasedSlippage(0.0, self.data_handler, contracts_to_tickers_mapper)
+        slippage_model = PriceBasedSlippage(0.0, self.data_handler)
         self.exec_handler = SimulatedExecutionHandler(self.data_handler, self.timer, scheduler, self.monitor,
-                                                      commission_model, contracts_to_tickers_mapper,
-                                                      self.portfolio, slippage_model,
+                                                      commission_model, self.portfolio, slippage_model,
                                                       RelativeDelta(minutes=self.number_of_minutes))
 
         self._set_last_available_price(100.0)
-        self.stop_loss_order_1 = Order(self.msft_contract, quantity=-1, execution_style=StopOrder(95.0),
+        self.stop_loss_order_1 = Order(self.msft_ticker, quantity=-1, execution_style=StopOrder(95.0),
                                        time_in_force=TimeInForce.GTC)
-        self.stop_loss_order_2 = Order(self.msft_contract, quantity=-1, execution_style=StopOrder(90.0),
+        self.stop_loss_order_2 = Order(self.msft_ticker, quantity=-1, execution_style=StopOrder(90.0),
                                        time_in_force=TimeInForce.GTC)
 
-        self.stop_loss_order_3 = Order(self.msft_contract, quantity=-1, execution_style=StopOrder(50.0),
+        self.stop_loss_order_3 = Order(self.msft_ticker, quantity=-1, execution_style=StopOrder(50.0),
                                        time_in_force=TimeInForce.DAY)
 
         self.exec_handler.assign_order_ids([self.stop_loss_order_1, self.stop_loss_order_2, self.stop_loss_order_3])
@@ -172,7 +165,7 @@ class TestStopLossExecutionStyle(TestCase):
 
         assert_lists_equal([self.stop_loss_order_2], self.exec_handler.get_open_orders())
 
-        expected_transaction = Transaction(self.timer.now(), self.msft_contract, -1,
+        expected_transaction = Transaction(self.timer.now(), self.msft_ticker, -1,
                                            self.stop_loss_order_1.execution_style.stop_price, 0.0)
         self.monitor.record_transaction.assert_called_once_with(expected_transaction)
         self.portfolio.transact_transaction.assert_called_once_with(expected_transaction)
@@ -186,8 +179,8 @@ class TestStopLossExecutionStyle(TestCase):
         assert_lists_equal([], self.exec_handler.get_open_orders())
 
         expected_transactions = [
-            Transaction(self.timer.now(), self.msft_contract, -1, self.stop_loss_order_1.execution_style.stop_price, 0),
-            Transaction(self.timer.now(), self.msft_contract, -1, self.stop_loss_order_2.execution_style.stop_price, 0),
+            Transaction(self.timer.now(), self.msft_ticker, -1, self.stop_loss_order_1.execution_style.stop_price, 0),
+            Transaction(self.timer.now(), self.msft_ticker, -1, self.stop_loss_order_2.execution_style.stop_price, 0),
         ]
         self.monitor.record_transaction.assert_has_calls(call(t) for t in expected_transactions)
         self.portfolio.transact_transaction.assert_has_calls(call(t) for t in expected_transactions)
@@ -202,8 +195,8 @@ class TestStopLossExecutionStyle(TestCase):
 
         assert_lists_equal([], self.exec_handler.get_open_orders())
         expected_transactions = [
-            Transaction(self.timer.now(), self.msft_contract, -1, 70.0, 0),
-            Transaction(self.timer.now(), self.msft_contract, -1, 70.0, 0),
+            Transaction(self.timer.now(), self.msft_ticker, -1, 70.0, 0),
+            Transaction(self.timer.now(), self.msft_ticker, -1, 70.0, 0),
         ]
         self.monitor.record_transaction.assert_has_calls(call(t) for t in expected_transactions)
         self.portfolio.transact_transaction.assert_has_calls(call(t) for t in expected_transactions)
@@ -212,7 +205,7 @@ class TestStopLossExecutionStyle(TestCase):
         self.assertEqual(self.portfolio.transact_transaction.call_count, 2)
 
     def test_market_opens_at_much_higher_price_than_it_closed_at_yesterday(self):
-        self.buy_stop_loss_order = Order(self.msft_contract, quantity=1, execution_style=StopOrder(120.0),
+        self.buy_stop_loss_order = Order(self.msft_ticker, quantity=1, execution_style=StopOrder(120.0),
                                          time_in_force=TimeInForce.GTC)
 
         self.exec_handler.assign_order_ids([self.buy_stop_loss_order])
@@ -225,9 +218,9 @@ class TestStopLossExecutionStyle(TestCase):
         assert_lists_equal([], self.exec_handler.get_open_orders())
 
         expected_transactions = [
-            Transaction(self.timer.now(), self.msft_contract, -1, self.stop_loss_order_1.execution_style.stop_price, 0),
-            Transaction(self.timer.now(), self.msft_contract, -1, self.stop_loss_order_2.execution_style.stop_price, 0),
-            Transaction(self.timer.now(), self.msft_contract, 1, 120, 0),
+            Transaction(self.timer.now(), self.msft_ticker, -1, self.stop_loss_order_1.execution_style.stop_price, 0),
+            Transaction(self.timer.now(), self.msft_ticker, -1, self.stop_loss_order_2.execution_style.stop_price, 0),
+            Transaction(self.timer.now(), self.msft_ticker, 1, 120, 0),
 
         ]
         self.monitor.record_transaction.assert_has_calls(call(t) for t in expected_transactions)

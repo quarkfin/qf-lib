@@ -19,10 +19,9 @@ from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
-from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
-from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
+from qf_lib.data_providers.helpers import chain_tickers_within_range
 from qf_lib.data_providers.preset_data_provider import PresetDataProvider
 from qf_lib.data_providers.data_provider import DataProvider
 
@@ -47,9 +46,9 @@ class PrefetchingDataProvider(PresetDataProvider):
     start_date: datetime
         first date to be downloaded
     end_date: datetime
-        last date to be downlaoded
+        last date to be downloaded
     frequency: Frequency
-        frequency od the data
+        frequency of the data
     """
 
     def __init__(self, data_provider: DataProvider,
@@ -60,7 +59,10 @@ class PrefetchingDataProvider(PresetDataProvider):
         # Convert fields into list in order to return a QFDataArray as the result of get_price function
         fields, _ = convert_to_list(fields, PriceField)
 
+        # Convert the tickers to list and remove duplicates
         tickers, _ = convert_to_list(tickers, Ticker)
+        tickers = list(dict.fromkeys(tickers))
+
         future_tickers = [ticker for ticker in tickers if isinstance(ticker, FutureTicker)]
         non_future_tickers = [ticker for ticker in tickers if not isinstance(ticker, FutureTicker)]
 
@@ -72,7 +74,7 @@ class PrefetchingDataProvider(PresetDataProvider):
 
             # Filter out all theses specific future contracts, which expired before start_date
             for ft in future_tickers:
-                all_tickers.extend(self._chain_tickers_within_range(ft, exp_dates[ft], start_date, end_date))
+                all_tickers.extend(chain_tickers_within_range(ft, exp_dates[ft], start_date, end_date))
 
         data_array = data_provider.get_price(all_tickers, fields, start_date, end_date, frequency)
 
@@ -81,21 +83,3 @@ class PrefetchingDataProvider(PresetDataProvider):
                          start_date=start_date,
                          end_date=end_date,
                          frequency=frequency)
-
-    @staticmethod
-    def _chain_tickers_within_range(future_ticker: FutureTicker, exp_dates: QFDataFrame, start_date: datetime,
-                                    end_date: datetime):
-        """
-        Returns only these tickers belonging to the chain of a given FutureTicker, which were valid only for the given
-        time frame.
-
-        As it is possible to select the contracts to be traded for a given future ticker (e.g. for Bloomberg
-        future tickers we could specify only to trade "M" contracts), the end date is computed as the original end date
-        + 1 year x contract number to trade.
-        E.g. if we specify that we only want to trade "M" contracts and we always want to trade the front M contract,
-        we add 1 year x 1. If instead of the front M, we would like to trade the second next M contract,
-        we add 2 years to the end date etc.
-        """
-        exp_dates = exp_dates[exp_dates >= start_date].dropna()
-        exp_dates = exp_dates[exp_dates <= end_date + RelativeDelta(years=future_ticker.N)].dropna()
-        return exp_dates.index.tolist()

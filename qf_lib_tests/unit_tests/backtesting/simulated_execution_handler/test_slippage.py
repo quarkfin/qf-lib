@@ -19,8 +19,6 @@ from unittest.mock import MagicMock, Mock
 import pandas as pd
 import numpy as np
 
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.simulated_bloomberg_mapper import \
-    SimulatedBloombergContractTickerMapper
 from qf_lib.backtesting.execution_handler.slippage.fixed_slippage import FixedSlippage
 from qf_lib.backtesting.execution_handler.slippage.price_based_slippage import PriceBasedSlippage
 from qf_lib.backtesting.execution_handler.slippage.square_root_market_impact_slippage import SquareRootMarketImpactSlippage
@@ -45,23 +43,21 @@ class TestSlippage(TestCase):
         self.tickers = [msft_ticker, aapl_ticker, googl_ticker]
         self.data_provider = self._create_data_provider_mock()
 
-        self.contract_ticker_mapper = SimulatedBloombergContractTickerMapper()
-
         self.orders = [
             Order(
-                contract=self.contract_ticker_mapper.ticker_to_contract(msft_ticker),
+                ticker=msft_ticker,
                 quantity=1250,
                 execution_style=MarketOrder(),
                 time_in_force=TimeInForce.GTC
             ),
             Order(
-                contract=self.contract_ticker_mapper.ticker_to_contract(aapl_ticker),
+                ticker=aapl_ticker,
                 quantity=-200,
                 execution_style=MarketOrder(),
                 time_in_force=TimeInForce.GTC
             ),
             Order(
-                contract=self.contract_ticker_mapper.ticker_to_contract(googl_ticker),
+                ticker=googl_ticker,
                 quantity=1,
                 execution_style=MarketOrder(),
                 time_in_force=TimeInForce.GTC
@@ -69,7 +65,7 @@ class TestSlippage(TestCase):
         ]
 
         self.market_on_close_order = [Order(
-                contract=self.contract_ticker_mapper.ticker_to_contract(msft_ticker),
+                ticker=msft_ticker,
                 quantity=1250,
                 execution_style=MarketOnCloseOrder(),
                 time_in_force=TimeInForce.GTC
@@ -104,7 +100,7 @@ class TestSlippage(TestCase):
     def test_price_based_slippage__no_volume_limits(self):
         """Volume should remain the same. Prices should be increased by the slippage rate."""
         slippage_rate = 0.1
-        slippage_model = PriceBasedSlippage(slippage_rate, self.data_provider, self.contract_ticker_mapper)
+        slippage_model = PriceBasedSlippage(slippage_rate, self.data_provider)
 
         prices_without_slippage = [20.0, 30.0, 40.0]
         # Each price should be changed by +0.1 / -0.1 depending on whether it is a BUY or SELL
@@ -125,8 +121,7 @@ class TestSlippage(TestCase):
         remain unchanged."""
         slippage_rate = 0.0
         max_volume_share_limit = 0.1
-        slippage_model = PriceBasedSlippage(slippage_rate, self.data_provider, self.contract_ticker_mapper,
-                                            max_volume_share_limit)
+        slippage_model = PriceBasedSlippage(slippage_rate, self.data_provider, max_volume_share_limit)
 
         prices_without_slippage = [20.0, 30.0, 40.0]
         expected_fill_prices = prices_without_slippage
@@ -144,7 +139,7 @@ class TestSlippage(TestCase):
 
     def test_price_based_slippage__nan_prices(self):
         slippage_rate = 0.1
-        slippage_model = PriceBasedSlippage(slippage_rate, self.data_provider, self.contract_ticker_mapper)
+        slippage_model = PriceBasedSlippage(slippage_rate, self.data_provider)
 
         prices_without_slippage = [float('nan'), np.nan, float('nan')]
         expected_fill_prices = [float('nan'), float('nan'), float('nan')]
@@ -157,8 +152,7 @@ class TestSlippage(TestCase):
     def test_fixed_slippage__no_volume(self):
         """Volume should remain unchanged. Prices should be increased by the slippage rate."""
         slippage_per_share = 0.05
-        slippage_model = FixedSlippage(slippage_per_share=slippage_per_share, data_provider=self.data_provider,
-                                       contract_ticker_mapper=self.contract_ticker_mapper)
+        slippage_model = FixedSlippage(slippage_per_share=slippage_per_share, data_provider=self.data_provider)
 
         prices_without_slippage = [20.0, 30.0, 40.0]
         # [BUY, SELL, BUY] => [+, -, +]
@@ -179,7 +173,6 @@ class TestSlippage(TestCase):
         slippage_per_share = 0.0
         max_volume_share_limit = 0.1
         slippage_model = FixedSlippage(slippage_per_share=slippage_per_share, data_provider=self.data_provider,
-                                       contract_ticker_mapper=self.contract_ticker_mapper,
                                        max_volume_share_limit=max_volume_share_limit)
 
         prices_without_slippage = [20.0, 30.0, 40.0]
@@ -197,7 +190,7 @@ class TestSlippage(TestCase):
 
     def test_fixed_slippage__nan_prices(self):
         slippage_per_share = 0.1
-        slippage_model = FixedSlippage(slippage_per_share, self.data_provider, self.contract_ticker_mapper)
+        slippage_model = FixedSlippage(slippage_per_share, self.data_provider)
 
         prices_without_slippage = [float('nan'), np.nan, float('nan')]
         expected_fill_prices = [float('nan'), float('nan'), float('nan')]
@@ -214,8 +207,7 @@ class TestSlippage(TestCase):
         prices_without_slippage = [20.0, 30.0, 40.0]
 
         slippage_model = SquareRootMarketImpactSlippage(price_impact=price_impact,
-                                                        data_provider=self.data_provider,
-                                                        contract_ticker_mapper=self.contract_ticker_mapper)
+                                                        data_provider=self.data_provider)
 
         slippage_model._compute_volatility = Mock()
         slippage_model._compute_volatility.return_value = close_prices_volatility
@@ -241,8 +233,7 @@ class TestSlippage(TestCase):
         prices_without_slippage = [20.0, 30.0, 40.0]
 
         slippage_model = SquareRootMarketImpactSlippage(price_impact=price_impact,
-                                                        data_provider=self.data_provider,
-                                                        contract_ticker_mapper=self.contract_ticker_mapper)
+                                                        data_provider=self.data_provider)
 
         actual_fill_prices, actual_fill_volumes = slippage_model.process_orders(str_to_date('2020-01-01'),
                                                                                 self.orders,
@@ -265,7 +256,6 @@ class TestSlippage(TestCase):
 
         slippage_model = SquareRootMarketImpactSlippage(price_impact=price_impact,
                                                         data_provider=self.data_provider,
-                                                        contract_ticker_mapper=self.contract_ticker_mapper,
                                                         max_volume_share_limit=max_volume_share_limit)
         slippage_model._compute_volatility = Mock()
         slippage_model._compute_volatility.return_value = close_prices_volatility
@@ -291,8 +281,7 @@ class TestSlippage(TestCase):
         expected_fill_prices = [float('nan'), float('nan'), float('nan')]
 
         slippage_model = SquareRootMarketImpactSlippage(price_impact=price_impact,
-                                                        data_provider=self.data_provider,
-                                                        contract_ticker_mapper=self.contract_ticker_mapper)
+                                                        data_provider=self.data_provider)
 
         slippage_model._compute_volatility = Mock()
         slippage_model._compute_volatility.return_value = close_prices_volatility
@@ -305,8 +294,7 @@ class TestSlippage(TestCase):
     def test_square_root_market_slippage__nan_prices_without_slippage(self):
         price_impact = 0.1
         slippage_model = SquareRootMarketImpactSlippage(price_impact=price_impact,
-                                                        data_provider=self.data_provider,
-                                                        contract_ticker_mapper=self.contract_ticker_mapper)
+                                                        data_provider=self.data_provider)
 
         prices_without_slippage = [float('nan'), np.nan, float('nan')]
         expected_fill_prices = [float('nan'), float('nan'), float('nan')]
@@ -324,8 +312,7 @@ class TestSlippage(TestCase):
         expected_fill_prices = [float('nan'), float('nan'), float('nan')]
 
         slippage_model = SquareRootMarketImpactSlippage(price_impact=price_impact,
-                                                        data_provider=self.data_provider,
-                                                        contract_ticker_mapper=self.contract_ticker_mapper)
+                                                        data_provider=self.data_provider)
         slippage_model._compute_average_volume = Mock()
         slippage_model._compute_average_volume.return_value = avg_daily_volume
         actual_fill_prices, actual_fill_volumes = slippage_model.process_orders(str_to_date("2020-01-01"),

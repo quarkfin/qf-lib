@@ -12,12 +12,13 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.portfolio.transaction import Transaction
+from qf_lib.common.enums.security_type import SecurityType
+from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 
 time = str_to_date("2010-01-01")
-ticker = Contract("MSFT US Equity", security_type='SEK', exchange='TEST_XCHANGE')
+ticker = BloombergTicker("MSFT US Equity", security_type=SecurityType.STOCK)
 quantity = 13
 price = 100.5
 commission = 1.2

@@ -12,7 +12,9 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 import unittest
+from typing import Type
 
+from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.date_format import DateFormat
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
@@ -24,23 +26,29 @@ from qf_lib_tests.unit_tests.config.test_settings import get_test_settings
 
 
 class CustomTicker(Ticker):
+    def __init__(self, ticker: str, security_type: SecurityType = SecurityType.STOCK, point_value: int = 1):
+        super().__init__(ticker, security_type, point_value)
+
     def from_string(self, ticker_str):
         pass
 
 
 class CustomFutureTicker(FutureTicker, CustomTicker):
+    def supported_ticker_type(self) -> Type[Ticker]:
+        return CustomTicker
+
     def belongs_to_family(self, ticker: CustomTicker) -> bool:
         pass
 
     def _get_futures_chain_tickers(self):
         tickers = [
-            CustomTicker("A"),
-            CustomTicker("B"),
-            CustomTicker("C"),
-            CustomTicker("D"),
-            CustomTicker("E"),
-            CustomTicker("F"),
-            CustomTicker("G")
+            CustomTicker("A", SecurityType.FUTURE, self.point_value),
+            CustomTicker("B", SecurityType.FUTURE, self.point_value),
+            CustomTicker("C", SecurityType.FUTURE, self.point_value),
+            CustomTicker("D", SecurityType.FUTURE, self.point_value),
+            CustomTicker("E", SecurityType.FUTURE, self.point_value),
+            CustomTicker("F", SecurityType.FUTURE, self.point_value),
+            CustomTicker("G", SecurityType.FUTURE, self.point_value)
         ]
 
         exp_dates = [

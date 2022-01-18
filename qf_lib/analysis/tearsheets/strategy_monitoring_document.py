@@ -82,7 +82,7 @@ class StrategyMonitoringDocument(AbstractTearsheet):
         chart_element = ChartElement(cone_chart, self.full_image_size, self.dpi, False)
         self.document.add_element(chart_element)
 
-    def save(self, report_dir: str = ""):
+    def save(self, report_dir: str = "", file_name=None):
         # Set the style for the report
         plt.style.use(['tearsheet'])
 

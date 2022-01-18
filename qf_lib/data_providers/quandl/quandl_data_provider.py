@@ -233,7 +233,7 @@ class QuandlDataProvider(DataProvider):
         NOTE: Only use one Quandl Database at the time. Do not mix multiple databases.
         """
         tickers = list(tickers)  # allows iterating the sequence more then once
-        tickers_str = [t.as_string() for t in tickers]
+        tickers_map = {t.as_string(): t for t in tickers}
 
         kwargs = {}
         if start_date is not None:
@@ -241,11 +241,11 @@ class QuandlDataProvider(DataProvider):
         if end_date is not None:
             kwargs['end_date'] = date_to_str(end_date)
 
-        data = quandl.get(tickers_str, **kwargs)  # type: pd.DataFrame
+        data = quandl.get(list(tickers_map.keys()), **kwargs)  # type: pd.DataFrame
 
         def extract_ticker_name(column_name):
             ticker_str, _ = column_name.split(' - ')
-            ticker = QuandlTicker.from_string(ticker_str)
+            ticker = tickers_map[ticker_str]
             return ticker
 
         ticker_grouping = data.groupby(extract_ticker_name, axis=1)

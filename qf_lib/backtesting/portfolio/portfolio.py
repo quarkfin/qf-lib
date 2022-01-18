@@ -14,13 +14,12 @@
 from datetime import datetime
 from typing import List, Dict
 
-from qf_lib.backtesting.contract.contract import Contract
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.portfolio.backtest_position import BacktestPosition, BacktestPositionSummary
 from qf_lib.backtesting.portfolio.position_factory import BacktestPositionFactory
 from qf_lib.backtesting.portfolio.transaction import Transaction
 from qf_lib.backtesting.portfolio.utils import split_transaction_if_needed
+from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
@@ -28,9 +27,8 @@ from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 
 
-class Portfolio(object):
-    def __init__(self, data_handler: DataHandler, initial_cash: float, timer: Timer,
-                 contract_ticker_mapper: ContractTickerMapper):
+class Portfolio:
+    def __init__(self, data_handler: DataHandler, initial_cash: float, timer: Timer):
         """
         On creation, the Portfolio object contains no positions and all values are "reset" to the initial
         cash, with no PnL.
@@ -38,7 +36,6 @@ class Portfolio(object):
         self.initial_cash = initial_cash
         self.data_handler = data_handler
         self.timer = timer
-        self.contract_ticker_mapper = contract_ticker_mapper
 
         self.net_liquidation = initial_cash
         """ Cash value includes futures P&L + stock value + securities options value + bond value + fund value. """
@@ -49,7 +46,7 @@ class Portfolio(object):
         self.current_cash = initial_cash
         """ Represents the free cash in the portfolio. Part of the cash might be use for margin. """
 
-        self.open_positions_dict = {}  # type: Dict[Contract, BacktestPosition]
+        self.open_positions_dict = {}  # type: Dict[Ticker, BacktestPosition]
         """ Represents all open positions at a certain moment. """
 
         # dates and portfolio values are kept separately because it is inefficient to append to the QFSeries
@@ -58,7 +55,7 @@ class Portfolio(object):
         self._portfolio_values = []  # type: List[float]
         self._leverage_list = []  # type: List[float]
 
-        self._positions_history = []  # type: List[Dict[Contract, BacktestPositionSummary]]
+        self._positions_history = []  # type: List[Dict[Ticker, BacktestPositionSummary]]
         """ A list containing dictionaries with summarized assets information in form of BacktestPositionSummary
         objects, which provide information about open positions at a certain point of time. """
 
@@ -74,7 +71,7 @@ class Portfolio(object):
         """
         transaction_cost = 0.0
 
-        existing_position = self.open_positions_dict.get(transaction.contract, None)
+        existing_position = self.open_positions_dict.get(transaction.ticker, None)
 
         if existing_position is None:  # open new, empty position
             new_position = self._create_new_position(transaction)
@@ -85,8 +82,8 @@ class Portfolio(object):
 
             transaction_cost += existing_position.transact_transaction(basic_transaction)
             if existing_position.is_closed():
-                contract = transaction.contract
-                self.open_positions_dict.pop(contract)
+                ticker = transaction.ticker
+                self.open_positions_dict.pop(ticker)
                 self._closed_positions.append(existing_position)
 
             if results_in_opposite_direction:  # means we were going from Long to Short in one transaction
@@ -105,16 +102,11 @@ class Portfolio(object):
         self.net_liquidation = self.current_cash
         self.gross_exposure_of_positions = 0
 
-        contracts = self.open_positions_dict.keys()
-        contract_to_ticker_dict = {
-            contract: self.contract_ticker_mapper.contract_to_ticker(contract) for contract in contracts}
-
-        all_tickers_in_portfolio = list(contract_to_ticker_dict.values())
-        current_prices_series = self.data_handler.get_last_available_price(tickers=all_tickers_in_portfolio)
+        tickers = list(self.open_positions_dict.keys())
+        current_prices_series = self.data_handler.get_last_available_price(tickers=tickers)
 
         current_positions = {}
-        for contract, position in self.open_positions_dict.items():
-            ticker = contract_to_ticker_dict[contract]
+        for ticker, position in self.open_positions_dict.items():
             security_price = current_prices_series[ticker]
             position.update_price(bid_price=security_price, ask_price=security_price)
             position_value = position.market_value()
@@ -122,7 +114,7 @@ class Portfolio(object):
             self.net_liquidation += position_value
             self.gross_exposure_of_positions += abs(position_exposure)
             if record:
-                current_positions[contract] = BacktestPositionSummary(position)
+                current_positions[ticker] = BacktestPositionSummary(position)
 
         if record:
             self._dates.append(self.timer.now())
@@ -154,6 +146,6 @@ class Portfolio(object):
         return self._closed_positions
 
     def _create_new_position(self, transaction: Transaction):
-        new_position = BacktestPositionFactory.create_position(transaction.contract)
-        self.open_positions_dict[transaction.contract] = new_position
+        new_position = BacktestPositionFactory.create_position(transaction.ticker)
+        self.open_positions_dict[transaction.ticker] = new_position
         return new_position

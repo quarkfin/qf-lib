@@ -125,7 +125,7 @@ class ExcelImporter(object):
         assert exists(file_path)
         with open(file_path, "rb") as f:
             in_memory_file = io.BytesIO(f.read())
-        work_book = load_workbook(in_memory_file, read_only=True)
+        work_book = load_workbook(in_memory_file, read_only=True, data_only=True)
         return work_book
 
     def _get_work_sheet(self, work_book, sheet_name):

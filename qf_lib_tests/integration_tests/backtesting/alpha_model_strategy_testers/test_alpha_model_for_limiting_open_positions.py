@@ -17,12 +17,12 @@ from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
 from qf_lib.backtesting.strategies.signal_generators import OnBeforeMarketOpenSignalGeneration
 from qf_lib.backtesting.strategies.alpha_model_strategy import AlphaModelStrategy
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
-from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
+from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.tickers.tickers import BloombergTicker, Ticker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
@@ -74,9 +74,9 @@ class TestAlphaModelPositionsLimit(TestCase):
         tickers = [
             BloombergTicker("MSFT US Equity"),
             BloombergTicker("AUDUSD Curncy"),
-            BloombergTicker("HOZ9 Comdty"),  # Mock three contracts for Heating Oil
-            BloombergTicker("HOF0 Comdty"),
-            BloombergTicker("HOG0 Comdty"),
+            BloombergTicker("HOZ9 Comdty", SecurityType.FUTURE, 100),  # Mock three contracts for Heating Oil
+            BloombergTicker("HOF0 Comdty", SecurityType.FUTURE, 100),
+            BloombergTicker("HOG0 Comdty", SecurityType.FUTURE, 100),
         ]
 
         # Mock price data array
@@ -111,7 +111,9 @@ class TestAlphaModelPositionsLimit(TestCase):
                         str_to_date("2019-12-01"), str_to_date("2020-01-07"), str_to_date("2020-02-03")
                     ],
                 },
-                index=[BloombergTicker("HOZ9 Comdty"), BloombergTicker("HOF0 Comdty"), BloombergTicker("HOG0 Comdty")]
+                index=[BloombergTicker("HOZ9 Comdty", SecurityType.FUTURE, 100),
+                       BloombergTicker("HOF0 Comdty", SecurityType.FUTURE, 100),
+                       BloombergTicker("HOG0 Comdty", SecurityType.FUTURE, 100)]
             )
         }
 
@@ -121,19 +123,20 @@ class TestAlphaModelPositionsLimit(TestCase):
                                   end_date=self.test_end_date,
                                   frequency=self.frequency)
 
-    @staticmethod
-    def _get_assets_number_series(portfolio: Portfolio):
+    def _get_assets_number_series(self, portfolio: Portfolio):
         """
         Returns series indexed by dates, containing the number of assets in the portfolio (where e.g. all Heating Oil
         contracts correspond to one asset)
         """
         positions_history = portfolio.positions_history()
 
-        def contract_to_ticker(c: Contract):
-            return portfolio.contract_ticker_mapper. \
-                contract_to_ticker(c, strictly_to_specific_ticker=False)
+        def map_to_traded_ticker(ticker):
+            for fut_ticker in [t for t in self.tickers if isinstance(t, BloombergFutureTicker)]:
+                if fut_ticker.belongs_to_family(ticker):
+                    return fut_ticker
+            return ticker
 
-        assets_history = positions_history.rename(columns=contract_to_ticker)
+        assets_history = positions_history.rename(columns=map_to_traded_ticker)
         assets_history = assets_history.groupby(level=0, axis=1).apply(func=(
             lambda x: x.notna().any(axis=1).astype(int)
         ))

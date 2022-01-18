@@ -51,7 +51,7 @@ class Signal:
         the symbol should point to the specific ticker that was used to generate the signal, e.g. "ExampleZ9 Equity".
         With ticker + symbol fields we are always able to track the exact ticker and contract that were used to generate
         a signal.
-    alpha_model
+    alpha_model: "AlphaModel"
         reference to the alpha model that generated the signal
     """
 

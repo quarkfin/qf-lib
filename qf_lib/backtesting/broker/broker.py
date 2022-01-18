@@ -15,11 +15,27 @@
 from abc import ABCMeta, abstractmethod
 from typing import List, Optional, Sequence
 
+from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.portfolio.position import Position
 
 
-class Broker(object, metaclass=ABCMeta):
+class Broker(metaclass=ABCMeta):
+    """ Base Broker class. Main purpose of the Broker class is to connect with the API of a specific Broker (e.g.
+    Interactive Brokers broker) and sends the orders.
+
+    Parameters
+    -----------
+    contract_ticker_mapper: ContractTickerMapper
+        object which contains a set of parameters for every ticker and allows to map a ticker onto a broker specific
+        contract / ticker object that could be afterwards used while sending the Order. For example in case of
+        Interactive Brokers the mapper provides the functionality which allows to map a ticker from any data provider
+        (BloombergTicker, PortaraTicker etc.) onto the contract object from the Interactive Brokers API. The parameters
+        which are necessary depend on the Broker class.
+    """
+    def __init__(self, contract_ticker_mapper: ContractTickerMapper):
+        self.contract_ticker_mapper = contract_ticker_mapper
+
     @abstractmethod
     def get_portfolio_value(self) -> float:
         pass

@@ -20,7 +20,6 @@ plt.ion()  # required for dynamic chart, good to keep this at the beginning of i
 from demo_scripts.backtester.moving_average_alpha_model import MovingAverageAlphaModel
 from demo_scripts.demo_configuration.demo_ioc import container
 from qf_lib.backtesting.strategies.alpha_model_strategy import AlphaModelStrategy
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.quandl_mapper import DummyQuandlContractTickerMapper
 from qf_lib.backtesting.execution_handler.commission_models.ib_commission_model import IBCommissionModel
 from qf_lib.backtesting.position_sizer.initial_risk_position_sizer import InitialRiskPositionSizer
 from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
@@ -39,7 +38,6 @@ def main():
     session_builder = container.resolve(BacktestTradingSessionBuilder)  # type: BacktestTradingSessionBuilder
     session_builder.set_backtest_name('Moving Average Alpha Model Backtest')
     session_builder.set_position_sizer(InitialRiskPositionSizer, initial_risk=initial_risk)
-    session_builder.set_contract_ticker_mapper(DummyQuandlContractTickerMapper())
     session_builder.set_commission_model(IBCommissionModel)
     session_builder.set_frequency(Frequency.DAILY)
     ts = session_builder.build(start_date, end_date)

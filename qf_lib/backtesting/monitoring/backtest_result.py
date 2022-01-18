@@ -20,7 +20,7 @@ from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.backtesting.portfolio.transaction import Transaction
 
 
-class BacktestResult(object):
+class BacktestResult:
     """
     BacktestResult is a class providing simple data model containing information about the backtest:
     for example it contains a portfolio with its timeseries and trades. It can also gather additional information

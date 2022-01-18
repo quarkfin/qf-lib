@@ -13,6 +13,8 @@
 #     limitations under the License.
 from unittest.mock import Mock
 
+from qf_lib.backtesting.contract.contract_to_ticker_conversion.simulated_contract_ticker_mapper import \
+    SimulatedContractTickerMapper
 from qf_lib.backtesting.data_handler.daily_data_handler import DailyDataHandler
 from qf_lib.backtesting.data_handler.intraday_data_handler import IntradayDataHandler
 from qf_lib.backtesting.events.time_event.regular_time_event.after_market_close_event import AfterMarketCloseEvent
@@ -22,8 +24,6 @@ from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event i
 from qf_lib.backtesting.monitoring.backtest_monitor import BacktestMonitor
 from qf_lib.backtesting.monitoring.backtest_result import BacktestResult
 from qf_lib.backtesting.broker.backtest_broker import BacktestBroker
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.simulated_bloomberg_mapper import \
-    SimulatedBloombergContractTickerMapper
 from qf_lib.backtesting.events.notifiers import Notifiers
 from qf_lib.backtesting.events.time_flow_controller import BacktestTimeFlowController
 from qf_lib.backtesting.execution_handler.commission_models.fixed_commission_model import FixedCommissionModel
@@ -77,29 +77,28 @@ class TradingSessionForTests(TradingSession):
         else:
             data_handler = IntradayDataHandler(data_provider, timer)
 
-        contract_ticker_mapper = SimulatedBloombergContractTickerMapper()
-        portfolio = Portfolio(data_handler, initial_cash, timer, contract_ticker_mapper)
+        portfolio = Portfolio(data_handler, initial_cash, timer)
         signals_register = BacktestSignalsRegister()
         backtest_result = BacktestResult(portfolio=portfolio, backtest_name="Testing the Backtester",
                                          start_date=start_date, end_date=end_date, signals_register=signals_register)
 
         monitor = Mock(spec=BacktestMonitor)
         commission_model = FixedCommissionModel(0.0)
-        slippage_model = PriceBasedSlippage(0.0, data_provider, contract_ticker_mapper)
+        slippage_model = PriceBasedSlippage(0.0, data_provider)
 
         execution_handler = SimulatedExecutionHandler(
             data_handler, timer, notifiers.scheduler, monitor, commission_model,
-            contract_ticker_mapper, portfolio, slippage_model, frequency=frequency)
+            portfolio, slippage_model, frequency=frequency)
 
-        broker = BacktestBroker(portfolio, execution_handler)
-        order_factory = OrderFactory(broker, data_handler, contract_ticker_mapper)
+        contract_ticker_mapper = SimulatedContractTickerMapper()
+        broker = BacktestBroker(contract_ticker_mapper, portfolio, execution_handler)
+        order_factory = OrderFactory(broker, data_handler)
 
         event_manager = self._create_event_manager(timer, notifiers)
         time_flow_controller = BacktestTimeFlowController(
             notifiers.scheduler, event_manager, timer, notifiers.empty_queue_event_notifier, end_date
         )
-        position_sizer = SimplePositionSizer(broker, data_handler, order_factory, contract_ticker_mapper,
-                                             signals_register)
+        position_sizer = SimplePositionSizer(broker, data_handler, order_factory, signals_register)
 
         self.logger.info(
             "\n".join([
@@ -112,7 +111,6 @@ class TradingSessionForTests(TradingSession):
                 "Execution Handler: {:s}".format(execution_handler.__class__.__name__),
                 "Commission Model: {:s}".format(commission_model.__class__.__name__),
                 "Broker: {:s}".format(broker.__class__.__name__),
-                "Contract-Ticker Mapper: {:s}".format(contract_ticker_mapper.__class__.__name__)
             ])
         )
 

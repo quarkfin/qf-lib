@@ -16,7 +16,6 @@ from typing import List, Optional, Tuple
 
 import numpy as np
 
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.order.execution_style import StopOrder
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.orders_filter.orders_filter import OrdersFilter
@@ -39,9 +38,8 @@ class VolumeOrdersFilter(OrdersFilter):
         defines the maximum percentage of the volume value, that the orders size should not exceed
     """
 
-    def __init__(self, data_provider: DataProvider, contract_ticker_mapper: ContractTickerMapper,
-                 volume_percentage_limit: float):
-        super().__init__(data_provider, contract_ticker_mapper)
+    def __init__(self, data_provider: DataProvider, volume_percentage_limit: float):
+        super().__init__(data_provider)
         self._volume_percentage_limit = volume_percentage_limit
 
     def adjust_orders(self, orders: List[Order]) -> List[Order]:
@@ -58,13 +56,13 @@ class VolumeOrdersFilter(OrdersFilter):
         List[Order]
             list of orders, that do not exceed the given volume percentage limit
         """
-        tickers = [self._contract_ticker_mapper.contract_to_ticker(order.contract) for order in orders]
+        tickers = [order.ticker for order in orders]
         try:
             volume_df = self._data_provider.historical_price(tickers, PriceField.Volume, 5, frequency=Frequency.DAILY)
 
             # The stop orders will be adjusted only along with corresponding market orders
-            stop_orders_dict = {order.contract: order for order in orders if isinstance(order.execution_style, StopOrder)}
-            adjusted_orders_tuples = [self._adjust_quantity(order, stop_orders_dict.get(order.contract, None), volume_df)
+            stop_orders_dict = {order.ticker: order for order in orders if isinstance(order.execution_style, StopOrder)}
+            adjusted_orders_tuples = [self._adjust_quantity(order, stop_orders_dict.get(order.ticker, None), volume_df)
                                       for order in orders if not isinstance(order.execution_style, StopOrder)]
 
             # Flatten the list of orders tuples
@@ -80,7 +78,7 @@ class VolumeOrdersFilter(OrdersFilter):
     def _adjust_quantity(self, order: Order, stop_order: Optional[Order], volume_df: QFDataFrame) -> \
             Tuple[Order, Order]:
         """Returns order with adjusted quantity if applicable."""
-        ticker = self._contract_ticker_mapper.contract_to_ticker(order.contract)
+        ticker = order.ticker
 
         def average_past_volume(ticker: Ticker) -> Optional[float]:
             volume_series = volume_df[ticker]
