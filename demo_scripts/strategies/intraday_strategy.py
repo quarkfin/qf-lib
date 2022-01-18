@@ -14,6 +14,7 @@
 import logging
 
 import matplotlib.pyplot as plt
+from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 
 from qf_lib.backtesting.events.time_event.periodic_event.periodic_event import PeriodicEvent
 from qf_lib.backtesting.strategies.abstract_strategy import AbstractStrategy
@@ -84,11 +85,13 @@ class IntradayMAStrategy(AbstractStrategy):
         short_ma_series = long_ma_series.tail(short_ma_len)
         short_ma_price = short_ma_series.mean()
 
+        specific_ticker = self.ticker.get_current_specific_ticker() if isinstance(self.ticker, FutureTicker) \
+            else self.ticker
         if short_ma_price >= long_ma_price:
             # Place a buy Market Order, adjusting the position to a value equal to 100% of the portfolio
-            orders = self.order_factory.target_percent_orders({self.ticker: 1.0}, MarketOrder(), TimeInForce.DAY)
+            orders = self.order_factory.target_percent_orders({specific_ticker: 1.0}, MarketOrder(), TimeInForce.DAY)
         else:
-            orders = self.order_factory.target_percent_orders({self.ticker: 0.0}, MarketOrder(), TimeInForce.DAY)
+            orders = self.order_factory.target_percent_orders({specific_ticker: 0.0}, MarketOrder(), TimeInForce.DAY)
 
         # Cancel any open orders and place the newly created ones
         self.broker.cancel_all_open_orders()
