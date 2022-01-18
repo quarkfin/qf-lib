@@ -19,7 +19,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name='qf-lib',
-    version='1.1',
+    version='1.2',
     author='Jacek Witkowski, Marcin Borratynski, Thomas Ruxton, Dominik Picheta, Olga Kalinowska, Karolina Cynk, '
            'Jakub Czerski, Bartlomiej Czajewski',
     description='Quantitative Finance Library',
