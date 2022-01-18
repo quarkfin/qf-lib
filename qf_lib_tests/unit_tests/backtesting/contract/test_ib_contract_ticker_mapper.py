@@ -11,31 +11,27 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-#
-#     Licensed under the Apache License, Version 2.0 (the "License");
-#     you may not use this file except in compliance with the License.
-#     You may obtain a copy of the License at
-#
-#         http://www.apache.org/licenses/LICENSE-2.0
-#
-#     Unless required by applicable law or agreed to in writing, software
-#     distributed under the License is distributed on an "AS IS" BASIS,
-#     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#     See the License for the specific language governing permissions and
-#     limitations under the License.
+
 from datetime import datetime
-from unittest import TestCase
+from unittest import TestCase, skipIf
 from unittest.mock import Mock
 
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.ib_contract_ticker_mapper import IBContractTickerMapper
 from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.containers.futures.future_tickers.bloomberg_future_ticker import BloombergFutureTicker
 from qf_lib.containers.series.qf_series import QFSeries
-from qf_lib.interactive_brokers.ib_contract import IBContract
+
+try:
+    from qf_lib.interactive_brokers.ib_contract import IBContract
+    from qf_lib.backtesting.contract.contract_to_ticker_conversion.ib_contract_ticker_mapper import \
+        IBContractTickerMapper
+    is_ibapi_installed = True
+except ImportError:
+    is_ibapi_installed = False
 
 
+@skipIf(not is_ibapi_installed, "No Interactive Brokers API installed. Tests are being skipped.")
 class TestIBContractTickerMapper(TestCase):
     def setUp(self) -> None:
         self.data_provider = Mock()

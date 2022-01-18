@@ -47,7 +47,7 @@ def main():
 
     settings = container.resolve(Settings)  # type: Settings
     pdf_exporter = container.resolve(PDFExporter)  # type: PDFExporter
-    nr_of_assets_traded = len(set(t.name for t in trades))
+    nr_of_assets_traded = len(set(t.ticker.name for t in trades))
 
     trade_analysis_sheet = TradeAnalysisSheet(
         settings, pdf_exporter, nr_of_assets_traded, trades, start_date, end_date, title="Sample trade analysis")

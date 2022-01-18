@@ -12,14 +12,19 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 from datetime import datetime
-from unittest import TestCase
-
-from ibapi.contract import Contract
+from unittest import TestCase, skipIf
 
 from qf_lib.common.enums.security_type import SecurityType
-from qf_lib.interactive_brokers.ib_contract import IBContract
+
+try:
+    from qf_lib.interactive_brokers.ib_contract import IBContract
+    from ibapi.contract import Contract
+    is_ibapi_installed = True
+except ImportError:
+    is_ibapi_installed = False
 
 
+@skipIf(not is_ibapi_installed, "No Interactive Brokers API installed. Tests are being skipped.")
 class TestIBContract(TestCase):
 
     def test_futures_ibcontract_from_ib_contract(self):

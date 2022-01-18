@@ -11,10 +11,6 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-#
-#     Licensed under the Apache License, Version 2.0 (the "License");
-#     you may not use this file except in compliance with the License.
-#     You may obtain a copy of the License at
 
 """ PortaraDataProvider Demo
 
@@ -31,6 +27,7 @@ import pandas as pd
 
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
+from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.tickers.tickers import PortaraTicker
 from qf_lib.common.utils.dateutils.date_format import DateFormat
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
@@ -61,7 +58,7 @@ def daily_data_example(path_to_data_files: str):
     start_date = str_to_date('2018-02-26')
     end_date = str_to_date('2018-06-15')
     fields = PriceField.ohlcv()
-    ticker = PortaraTicker('EP2018M')
+    ticker = PortaraTicker('EP2018M', SecurityType.FUTURE, 50)
     daily_freq = Frequency.DAILY
 
     if path_to_data_files is None:
@@ -95,7 +92,7 @@ def intraday_data_example(path_to_data_files: str):
     start_date = str_to_date('2019-02-22 00:00:00.0', DateFormat.FULL_ISO)
     end_date = str_to_date('2019-02-22 00:09:00.0', DateFormat.FULL_ISO)
     fields = PriceField.ohlcv()
-    ticker = PortaraTicker('JGB2019H')
+    ticker = PortaraTicker('JGB2019H', SecurityType.FUTURE, 1000000)
     intraday_frequency = Frequency.MIN_1
 
     if path_to_data_files is None:
@@ -121,7 +118,7 @@ def continuous_contracts(path_to_data_files: str):
     Notes
     ---------
     The two files containing data for the ticker should have the same name as the tickers that you are passing as the
-    parameter. For example - to run the example below, you will need to save prices of the data as VE.csv and WEAT.csv.
+    parameter. For example - to run the example below, you will need to save prices of the data as VX.csv and WEAT.csv.
 
     Parameters
     -----------
@@ -132,7 +129,7 @@ def continuous_contracts(path_to_data_files: str):
     start_date = str_to_date('2019-01-01')
     end_date = str_to_date('2019-01-10')
     fields = PriceField.ohlcv()
-    tickers = [PortaraTicker("VX"), PortaraTicker("WEAT")]
+    tickers = [PortaraTicker("VX", SecurityType.FUTURE, 1000), PortaraTicker("WEAT", SecurityType.FUTURE, 100)]
     daily_freq = Frequency.DAILY
 
     if path_to_data_files is None:

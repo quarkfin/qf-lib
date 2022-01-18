@@ -26,6 +26,7 @@ import pandas as pd
 
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
+from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.tickers.tickers import PortaraTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.dateutils.timer import SettableTimer
@@ -84,13 +85,13 @@ def future_ticker_example(path_to_data_files: str):
     print(f'> {current_ticker}')
 
     print('\nCheck if the following tickers belong to the Silver futures chain:')
-    ticker = PortaraTicker('SIA2017H')
+    ticker = PortaraTicker('SIA2017H', SecurityType.FUTURE, 50)
     print(f'- {ticker}: {future_ticker.belongs_to_family(ticker)}')
-    ticker = PortaraTicker('OH2017H')
+    ticker = PortaraTicker('OH2017H', SecurityType.FUTURE, 50)
     print(f'- {ticker}: {future_ticker.belongs_to_family(ticker)}')
-    ticker = PortaraTicker('SIA2017')
+    ticker = PortaraTicker('SIA2017', SecurityType.FUTURE, 50)
     print(f'- {ticker}: {future_ticker.belongs_to_family(ticker)}')
-    ticker = PortaraTicker('SIA1999Z')
+    ticker = PortaraTicker('SIA1999Z', SecurityType.FUTURE, 50)
     print(f'- {ticker}: {future_ticker.belongs_to_family(ticker)}')
 
     print('\nOpen, High, Low, Close and Volume pricing data for the current specific ticker (as of 10th January 2021)')
