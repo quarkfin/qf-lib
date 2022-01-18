@@ -15,6 +15,7 @@ import re
 from datetime import datetime
 from typing import Sequence, Dict, List
 
+from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.containers.futures.future_tickers.bloomberg_future_ticker import BloombergFutureTicker
@@ -48,15 +49,16 @@ class FuturesDataProvider(object):
         def future_ticker_from_string(active_ticker_string: str) -> BloombergFutureTicker:
             return active_ticker_string_to_future_ticker[active_ticker_string]
 
-        def tickers_from_strings(tickers_strings: List[str]) -> List[BloombergTicker]:
-            return [BloombergTicker.from_string(ticker) for ticker in tickers_strings]
+        def tickers_from_strings(tickers_strings: List[str], security_type: SecurityType, point_value: int) \
+                -> List[BloombergTicker]:
+            return [BloombergTicker.from_string(ticker, security_type, point_value) for ticker in tickers_strings]
 
         # Create and send the request
         self._create_and_send_request(list(active_ticker_string_to_future_ticker.keys()))
 
         # Return dictionary mapping the tickers to lists of futures chains tickers
-        future_ticker_str_to_chain_tickers_list = {
-            key: value for key, value in
+        future_ticker_to_chain_tickers_list: Dict[BloombergFutureTicker, List[str]] = {
+            future_ticker_from_string(future_ticker_str): value for future_ticker_str, value in
             self._receive_futures_response(active_ticker_string_to_future_ticker).items() if value
         }
 
@@ -64,8 +66,9 @@ class FuturesDataProvider(object):
         # corresponding futures chains (map all of the strings from future_ticker_to_chain_tickers_list dictionary
         # into BloombergTickers and BloombergFutureTickers)
         future_ticker_str_to_chain_tickers_list = {
-            future_ticker_from_string(future_ticker_str): tickers_from_strings(specific_tickers_strings_list)
-            for future_ticker_str, specific_tickers_strings_list in future_ticker_str_to_chain_tickers_list.items()
+            future_ticker: tickers_from_strings(specific_tickers_strings_list, future_ticker.security_type,
+                                                future_ticker.point_value)
+            for future_ticker, specific_tickers_strings_list in future_ticker_to_chain_tickers_list.items()
         }
 
         # Check if for all of the requested tickers the futures chains were returned, and if not - log an error

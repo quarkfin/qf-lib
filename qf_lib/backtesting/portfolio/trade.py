@@ -13,7 +13,7 @@
 #     limitations under the License.
 from datetime import datetime
 
-from qf_lib.backtesting.contract.contract import Contract
+from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.date_to_string import date_to_str
 
 
@@ -30,8 +30,8 @@ class Trade:
         Moment when we opened the position corresponding to this trade.
     end_time: datetime
         Moment when we close the trade.
-    contract: Contract
-        Contract defining the security.
+    ticker: Ticker
+        Ticker defining the security.
     pnl: float
         Profit or loss associated with a trade expressed in currency units including transaction costs and commissions.
     commission: float
@@ -43,11 +43,11 @@ class Trade:
        Total pnl divided by the most recent value of the portfolio.
     """
 
-    def __init__(self, start_time: datetime, end_time: datetime, contract: Contract, pnl: float, commission: float,
+    def __init__(self, start_time: datetime, end_time: datetime, ticker: Ticker, pnl: float, commission: float,
                  direction: int, percentage_pnl: float = float('nan')):
         self.start_time = start_time
         self.end_time = end_time
-        self.contract = contract
+        self.ticker = ticker
 
         self.pnl = pnl
         self.commission = commission
@@ -62,22 +62,16 @@ class Trade:
         if not isinstance(other, Trade):
             return False
 
-        return (self.contract, self.start_time, self.end_time, self.pnl, self.commission, self.direction,
-                self.percentage_pnl) == (other.contract, other.start_time, other.end_time, other.pnl, other.commission,
+        return (self.ticker, self.start_time, self.end_time, self.pnl, self.commission, self.direction,
+                self.percentage_pnl) == (other.ticker, other.start_time, other.end_time, other.pnl, other.commission,
                                          other.direction, other.percentage_pnl)
 
     def __str__(self):
-        string_template = "{class_name:s} ({start_date:s} - {end_date:s}) -> " \
-                          "Asset: {asset:>20}, " \
-                          "Direction: {direction:>8}, " \
-                          "P&L %: {percentage_pnl:>10.2%}, " \
-                          "P&L: {pnl:>10.2f}".format(class_name=self.__class__.__name__,
-                                                     start_date=date_to_str(self.start_time),
-                                                     end_date=date_to_str(self.end_time),
-                                                     direction=self.direction,
-                                                     asset=self.contract.symbol,
-                                                     percentage_pnl=self.percentage_pnl,
-                                                     pnl=self.pnl,
-                                                     )
+        string_template = f"{self.__class__.__name__} ({date_to_str(self.start_time)} - " \
+                          f"{date_to_str(self.end_time)}) -> " \
+                          f"Asset: {self.ticker:>20}, " \
+                          f"Direction: {self.direction:>8}, " \
+                          f"P&L %: {self.percentage_pnl:>10.2%}, " \
+                          f"P&L: {self.pnl:>10.2f}"
 
         return string_template

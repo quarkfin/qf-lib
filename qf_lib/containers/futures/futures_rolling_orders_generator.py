@@ -14,8 +14,6 @@
 from typing import Sequence, List, Set
 
 from qf_lib.backtesting.broker.broker import Broker
-from qf_lib.backtesting.contract.contract import Contract
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.order.execution_style import MarketOrder
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.order_factory import OrderFactory
@@ -43,18 +41,14 @@ class FuturesRollingOrdersGenerator:
         Broker used to get the list of currently open positions in the portfolio
     order_factory: OrderFactory
         Order Factory used to create orders to close the expired contracts
-    contract_ticker_mapper: ContractTickerMapper
-        Contract ticker mapper used to map the contracts into tickers
     """
 
     def __init__(self, future_tickers: Sequence[FutureTicker], timer: Timer, broker: Broker,
-                 order_factory: OrderFactory,
-                 contract_ticker_mapper: ContractTickerMapper):
+                 order_factory: OrderFactory):
         self._future_tickers = future_tickers
         self._timer = timer
         self._broker = broker
         self._order_factory = order_factory
-        self._contract_ticker_mapper = contract_ticker_mapper
 
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
@@ -67,8 +61,6 @@ class FuturesRollingOrdersGenerator:
 
         # Get all futures contracts, for which there exist an open position in the portfolio
         open_positions = self._broker.get_positions()
-        fut_contracts_with_open_positions = [position.contract() for position in open_positions
-                                             if position.contract().security_type == 'FUT']  # type: List[Contract]
 
         # Get current specific tickers
         def valid_ticker(fut_ticker: FutureTicker) -> Ticker:
@@ -85,9 +77,8 @@ class FuturesRollingOrdersGenerator:
 
         # Get all the contracts, which should be rolled and which do not contain the most recent specific ticker
         expired_contracts = {
-            contract for contract in fut_contracts_with_open_positions
-            if should_be_rolled(self._contract_ticker_mapper.contract_to_ticker(contract)) and
-            self._contract_ticker_mapper.contract_to_ticker(contract) not in valid_specific_tickers
+            position.ticker() for position in open_positions
+            if should_be_rolled(position.ticker()) and position.ticker() not in valid_specific_tickers
         }
 
         if expired_contracts:
@@ -102,13 +93,12 @@ class FuturesRollingOrdersGenerator:
 
         return market_order_list
 
-    def _generate_expiration_warnings(self, expired_contracts: Set[Contract]):
+    def _generate_expiration_warnings(self, expired_contracts: Set[Ticker]):
         """
-        Checks if the contract still can be found in the portfolio even though the real expiration date (non-shifted)
+        Checks if the ticker still can be found in the portfolio even though the real expiration date (non-shifted)
         already passed.
         """
-        for expired_contract in expired_contracts:
-            expired_specific_ticker = self._contract_ticker_mapper.contract_to_ticker(expired_contract)
+        for expired_specific_ticker in expired_contracts:
             corresponding_future_tickers = [fut_ticker for fut_ticker in self._future_tickers
                                             if fut_ticker.belongs_to_family(expired_specific_ticker)]
             assert len(corresponding_future_tickers) == 1, "The ticker should belong to only one future family"
@@ -117,4 +107,4 @@ class FuturesRollingOrdersGenerator:
             date = exp_dates[exp_dates == expired_specific_ticker].index[0]
             if date <= self._timer.now():
                 self.logger.error("{} - Contract {} still found in the portfolio after expiration date {}"
-                                  .format(self._timer.now(), expired_contract.symbol, date))
+                                  .format(self._timer.now(), expired_specific_ticker, date))

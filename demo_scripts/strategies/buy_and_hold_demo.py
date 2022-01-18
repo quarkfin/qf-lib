@@ -17,7 +17,6 @@ from qf_lib.backtesting.trading_session.trading_session import TradingSession
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.backtesting.order.execution_style import MarketOrder
-from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
 from demo_scripts.demo_configuration.demo_ioc import container
 import matplotlib.pyplot as plt
@@ -34,19 +33,17 @@ class BuyAndHoldStrategy(AbstractStrategy):
     of a backtest.
     """
 
-    CONTRACT = Contract(symbol="SPY US Equity", security_type='STK', exchange='NASDAQ')
     TICKER = BloombergTicker("SPY US Equity")
 
     def __init__(self, ts: TradingSession):
         super().__init__(ts)
         self.order_factory = ts.order_factory
         self.broker = ts.broker
-
         self.invested = False
 
     def calculate_and_place_orders(self):
         if not self.invested:
-            orders = self.order_factory.percent_orders({self.CONTRACT: 1.0}, MarketOrder(), TimeInForce.GTC)
+            orders = self.order_factory.percent_orders({self.TICKER: 1.0}, MarketOrder(), TimeInForce.GTC)
 
             self.broker.place_orders(orders)
             self.invested = True

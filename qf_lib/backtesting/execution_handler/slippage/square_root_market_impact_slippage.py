@@ -16,7 +16,6 @@ from typing import Sequence, Optional
 
 import numpy as np
 
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.execution_handler.slippage.base import Slippage
 from qf_lib.backtesting.order.order import Order
 from qf_lib.common.enums.frequency import Frequency
@@ -45,17 +44,14 @@ class SquareRootMarketImpactSlippage(Slippage):
         factor which implies how big will be the slippage
     data_provider: DataProvider
         DataProvider component
-    contract_ticker_mapper: ContractTickerMapper
-        ContractTickerMapper component
     max_volume_share_limit: float, None
         number from range [0,1] which denotes how big (volume-wise) the Order can be i.e. if it's 0.5 and a daily
         volume for a given asset is 1,000,000 USD, then max volume of the Order can be 500,000 USD. If not provided, no
         volume checks are performed.
     """
-    def __init__(self, price_impact: float, data_provider: DataProvider, contract_ticker_mapper: ContractTickerMapper,
-                 max_volume_share_limit: Optional[float] = None):
+    def __init__(self, price_impact: float, data_provider: DataProvider, max_volume_share_limit: Optional[float] = None):
 
-        super().__init__(data_provider, contract_ticker_mapper, max_volume_share_limit)
+        super().__init__(data_provider, max_volume_share_limit)
 
         self.price_impact = price_impact
         self._number_of_samples = 20
@@ -64,8 +60,7 @@ class SquareRootMarketImpactSlippage(Slippage):
                          fill_volumes: Sequence[int]) -> Sequence[float]:
         no_slippage_fill_prices = np.array(no_slippage_fill_prices)
 
-        tickers = [self._contract_ticker_mapper.contract_to_ticker(order.contract) for order in orders]
-
+        tickers = [order.ticker for order in orders]
         market_impact_values = self._compute_market_impact(date, tickers, fill_volumes)
         fill_prices = no_slippage_fill_prices * np.add(market_impact_values, 1.0)
 

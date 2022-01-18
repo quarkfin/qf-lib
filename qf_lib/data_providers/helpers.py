@@ -11,17 +11,19 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-
+from datetime import datetime
 from typing import Union, Dict, Sequence
 
 import pandas as pd
 
 from qf_lib.common.tickers.tickers import Ticker
+from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.cast_dataframe import cast_dataframe
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.dimension_names import DATES, TICKERS, FIELDS
+from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.cast_series import cast_series
 from qf_lib.containers.series.prices_series import PricesSeries
@@ -186,3 +188,21 @@ def get_fields_from_tickers_data_dict(tickers_data_dict):
 
     fields = list(fields)
     return fields
+
+
+def chain_tickers_within_range(future_ticker: FutureTicker, exp_dates: QFDataFrame, start_date: datetime,
+                               end_date: datetime):
+    """
+    Returns only these tickers belonging to the chain of a given FutureTicker, which were valid only for the given
+    time frame.
+
+    As it is possible to select the contracts to be traded for a given future ticker (e.g. for Bloomberg
+    future tickers we could specify only to trade "M" contracts), the end date is computed as the original end date
+    + 1 year x contract number to trade.
+    E.g. if we specify that we only want to trade "M" contracts and we always want to trade the front M contract,
+    we add 1 year x 1. If instead of the front M, we would like to trade the second next M contract,
+    we add 2 years to the end date etc.
+    """
+    exp_dates = exp_dates[exp_dates >= start_date].dropna()
+    exp_dates = exp_dates[exp_dates <= end_date + RelativeDelta(years=future_ticker.N)].dropna()
+    return exp_dates.index.tolist()

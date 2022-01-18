@@ -16,8 +16,6 @@ from typing import List, Dict
 
 from pandas import concat, date_range
 
-from qf_lib.backtesting.contract.contract import Contract
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.events.time_event.regular_time_event.after_market_close_event import AfterMarketCloseEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
@@ -37,7 +35,7 @@ from qf_lib.data_providers.data_provider import DataProvider
 
 
 class PnLCalculator:
-    def __init__(self, data_provider: DataProvider, contract_ticker_mapper: ContractTickerMapper):
+    def __init__(self, data_provider: DataProvider):
         """
         The purpose of this class is the computation of Profit and Loss for a given ticker, based on a list of
         Transaction objects. The PnL is computed every day, at the AfterMarketCloseEvent time. The calculation requires
@@ -50,11 +48,8 @@ class PnLCalculator:
         -----------
         data_provider: DataProvider
             data provider used to download prices data
-        contract_ticker_mapper: ContractTickerMapper
-            contract ticker mapper used to map contracts from the Transaction objects onto Ticker objects
         """
         self._data_provider = data_provider
-        self._contract_ticker_mapper = contract_ticker_mapper
 
     def compute_pnl(self, ticker: Ticker, transactions: List[Transaction], start_date: datetime, end_date: datetime) \
             -> PricesSeries:
@@ -121,11 +116,9 @@ class PnLCalculator:
                         <= t.time <= end_date + MarketCloseEvent.trigger_time()]
 
         if isinstance(ticker, FutureTicker):
-            transactions_for_tickers = [t for t in transactions if ticker.belongs_to_family(
-                self._contract_ticker_mapper.contract_to_ticker(t.contract))]
+            transactions_for_tickers = [t for t in transactions if ticker.belongs_to_family(t.ticker)]
         else:
-            transactions_for_tickers = [t for t in transactions
-                                        if ticker == self._contract_ticker_mapper.contract_to_ticker(t.contract)]
+            transactions_for_tickers = [t for t in transactions if ticker == t.ticker]
 
         transactions_records = [(t, t.time) for t in transactions_for_tickers]
         transactions_series = QFDataFrame.from_records(transactions_records, columns=["Transaction", "Index"]) \
@@ -136,7 +129,7 @@ class PnLCalculator:
                                 end_date: datetime) -> PricesSeries:
         pnl_values = []
         current_realised_pnl = 0
-        contract_to_position = {}  # type: Dict[Contract, BacktestPosition]
+        ticker_to_position = {}  # type: Dict[Ticker, BacktestPosition]
         prices_df = prices_df.ffill()
 
         for timestamp in date_range(start_date, end_date, freq="B"):
@@ -148,19 +141,18 @@ class PnLCalculator:
                 .where(transactions_for_past_day.index > previous_after_market_close).dropna(how="all")
 
             for t in transactions_for_past_day:
-                position = contract_to_position.get(t.contract, BacktestPositionFactory.create_position(t.contract))
-                contract_to_position[t.contract] = position
+                position = ticker_to_position.get(t.ticker, BacktestPositionFactory.create_position(t.ticker))
+                ticker_to_position[t.ticker] = position
 
                 position.transact_transaction(t)
                 if position.is_closed():
-                    contract_to_position.pop(t.contract)
+                    ticker_to_position.pop(t.ticker)
                     current_realised_pnl += position.total_pnl
 
             # update prices of all existing positions and get their unrealised pnl
             current_unrealised_pnl = 0.0
-            for contract, position in contract_to_position.items():
-                specific_ticker = self._contract_ticker_mapper.contract_to_ticker(contract)
-                price = prices_df.loc[:timestamp, specific_ticker].iloc[-1]
+            for ticker, position in ticker_to_position.items():
+                price = prices_df.loc[:timestamp, ticker].iloc[-1]
 
                 position.update_price(price, price)
                 current_unrealised_pnl += position.total_pnl

@@ -13,7 +13,6 @@
 #     limitations under the License.
 from demo_scripts.backtester.moving_average_alpha_model import MovingAverageAlphaModel
 from demo_scripts.common.utils.dummy_ticker import DummyTicker
-from demo_scripts.common.utils.dummy_ticker_mapper import DummyTickerMapper
 from demo_scripts.demo_configuration.demo_data_provider import daily_data_provider
 from demo_scripts.demo_configuration.demo_ioc import container
 from qf_lib.backtesting.strategies.signal_generators import OnBeforeMarketOpenSignalGeneration
@@ -38,7 +37,6 @@ def main():
     session_builder = container.resolve(BacktestTradingSessionBuilder)  # type: BacktestTradingSessionBuilder
     session_builder.set_backtest_name('Moving Average Alpha Model Backtest')
     session_builder.set_position_sizer(InitialRiskPositionSizer, initial_risk=initial_risk)
-    session_builder.set_contract_ticker_mapper(DummyTickerMapper())
     session_builder.set_commission_model(IBCommissionModel)
     session_builder.set_data_provider(data_provider)
     session_builder.set_frequency(Frequency.DAILY)

@@ -14,10 +14,10 @@
 
 import unittest
 
-from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.portfolio.position_factory import BacktestPositionFactory
 from qf_lib.backtesting.portfolio.transaction import Transaction
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
+from qf_lib_tests.unit_tests.backtesting.portfolio.dummy_ticker import DummyTicker
 
 
 class TestBacktestPosition(unittest.TestCase):
@@ -27,14 +27,14 @@ class TestBacktestPosition(unittest.TestCase):
     """
 
     def setUp(self):
-        self.contract = Contract('AAPL US Equity', security_type='STK', exchange='NYSE')
+        self.ticker = DummyTicker('Example Stock')
         self.start_time = str_to_date('2017-01-01')  # dummy time
         self.random_time = str_to_date('2017-02-02')  # dummy time
         self.end_time = str_to_date('2018-02-03')  # dummy time
 
     def test_creating_empty_position(self):
-        position = BacktestPositionFactory.create_position(self.contract)
-        self.assertEqual(position.contract(), self.contract)
+        position = BacktestPositionFactory.create_position(self.ticker)
+        self.assertEqual(position.ticker(), self.ticker)
         self.assertEqual(position._is_closed, False)
         self.assertEqual(position.quantity(), 0)
         self.assertEqual(position.current_price, 0)
@@ -42,16 +42,16 @@ class TestBacktestPosition(unittest.TestCase):
         self.assertEqual(position.start_time, None)
 
     def test_transact_transaction_1(self):
-        position = BacktestPositionFactory.create_position(self.contract)
+        position = BacktestPositionFactory.create_position(self.ticker)
         quantity = 50
         price = 100
         commission = 5
 
-        transaction = Transaction(self.random_time, self.contract, quantity, price, commission)
+        transaction = Transaction(self.random_time, self.ticker, quantity, price, commission)
 
         position.transact_transaction(transaction)
 
-        self.assertEqual(position.contract(), self.contract)
+        self.assertEqual(position.ticker(), self.ticker)
         self.assertEqual(position._is_closed, False)
         self.assertEqual(position.quantity(), quantity)
         self.assertEqual(position.current_price, 0)  # set by update_price
@@ -59,21 +59,21 @@ class TestBacktestPosition(unittest.TestCase):
         self.assertEqual(position.start_time, self.random_time)
 
     def test_transact_transaction_2(self):
-        position = BacktestPositionFactory.create_position(self.contract)
+        position = BacktestPositionFactory.create_position(self.ticker)
 
         quantity1 = 50
         price1 = 100
         commission1 = 5
-        transaction1 = Transaction(self.random_time, self.contract, quantity1, price1, commission1)
+        transaction1 = Transaction(self.random_time, self.ticker, quantity1, price1, commission1)
         position.transact_transaction(transaction1)
 
         quantity2 = 30
         price2 = 120
         commission2 = 7
-        transaction2 = Transaction(self.random_time, self.contract, quantity2, price2, commission2)
+        transaction2 = Transaction(self.random_time, self.ticker, quantity2, price2, commission2)
         position.transact_transaction(transaction2)
 
-        self.assertEqual(position.contract(), self.contract)
+        self.assertEqual(position.ticker(), self.ticker)
         self.assertEqual(position._is_closed, False)
         self.assertEqual(position.quantity(), quantity1 + quantity2)
         self.assertEqual(position.direction(), 1)
@@ -81,36 +81,36 @@ class TestBacktestPosition(unittest.TestCase):
         self.assertEqual(position.current_price, 0)  # set by update_price
 
     def test_transact_transaction_3(self):
-        position = BacktestPositionFactory.create_position(self.contract)
+        position = BacktestPositionFactory.create_position(self.ticker)
 
         quantity1 = 50
         price1 = 100
         commission1 = 5
-        position.transact_transaction(Transaction(self.random_time, self.contract, quantity1, price1, commission1))
+        position.transact_transaction(Transaction(self.random_time, self.ticker, quantity1, price1, commission1))
 
         quantity2 = 30
         price2 = 120
         commission2 = 7
-        position.transact_transaction(Transaction(self.random_time, self.contract, quantity2, price2, commission2))
+        position.transact_transaction(Transaction(self.random_time, self.ticker, quantity2, price2, commission2))
 
         quantity3 = -40
         price3 = 150
         commission3 = 11
-        transaction3 = Transaction(self.random_time, self.contract, quantity3, price3, commission3)
+        transaction3 = Transaction(self.random_time, self.ticker, quantity3, price3, commission3)
         position.transact_transaction(transaction3)
 
-        self.assertEqual(position.contract(), self.contract)
+        self.assertEqual(position.ticker(), self.ticker)
         self.assertEqual(position._is_closed, False)
         self.assertEqual(position.quantity(), quantity1 + quantity2 + quantity3)
         self.assertEqual(position.direction(), 1)
         self.assertEqual(position.start_time, self.random_time)
 
     def test_update_price(self):
-        position = BacktestPositionFactory.create_position(self.contract)
+        position = BacktestPositionFactory.create_position(self.ticker)
         quantity = 50
         price = 100
         commission = 5
-        position.transact_transaction(Transaction(self.random_time, self.contract, quantity, price, commission))
+        position.transact_transaction(Transaction(self.random_time, self.ticker, quantity, price, commission))
 
         self.assertEqual(position.current_price, 0)  # set by update_price
 
@@ -124,16 +124,16 @@ class TestBacktestPosition(unittest.TestCase):
         self.assertEqual(position.current_price, bid_price)
 
     def test_without_commission_position(self):
-        position = BacktestPositionFactory.create_position(self.contract)
+        position = BacktestPositionFactory.create_position(self.ticker)
 
         transactions = [
-            Transaction(self.start_time, self.contract, 50, 100, 0),
-            Transaction(self.start_time, self.contract, 30, 120, 0),
-            Transaction(self.start_time, self.contract, -20, 175, 0),
-            Transaction(self.start_time, self.contract, -30, 160, 0),
-            Transaction(self.start_time, self.contract, 10, 150, 0),
-            Transaction(self.start_time, self.contract, 10, 170, 0),
-            Transaction(self.start_time, self.contract, -20, 150, 0)
+            Transaction(self.start_time, self.ticker, 50, 100, 0),
+            Transaction(self.start_time, self.ticker, 30, 120, 0),
+            Transaction(self.start_time, self.ticker, -20, 175, 0),
+            Transaction(self.start_time, self.ticker, -30, 160, 0),
+            Transaction(self.start_time, self.ticker, 10, 150, 0),
+            Transaction(self.start_time, self.ticker, 10, 170, 0),
+            Transaction(self.start_time, self.ticker, -20, 150, 0)
         ]
 
         for transaction in transactions:
@@ -142,7 +142,7 @@ class TestBacktestPosition(unittest.TestCase):
         current_price = 110
         position.update_price(current_price, 120)
 
-        self.assertEqual(position.contract(), self.contract)
+        self.assertEqual(position.ticker(), self.ticker)
 
         position_quantity = sum(t.quantity for t in transactions)
         self.assertEqual(position.quantity(), position_quantity)
@@ -150,45 +150,45 @@ class TestBacktestPosition(unittest.TestCase):
         self.assertEqual(position.current_price, current_price)
 
     def test_position(self):
-        position = BacktestPositionFactory.create_position(self.contract)
+        position = BacktestPositionFactory.create_position(self.ticker)
 
         transactions = (
-            Transaction(self.start_time, self.contract, 50, 100, 5),
-            Transaction(self.start_time, self.contract, 30, 120, 3),
-            Transaction(self.start_time, self.contract, -20, 175, 2),
-            Transaction(self.start_time, self.contract, -30, 160, 1),
-            Transaction(self.start_time, self.contract, 10, 150, 7),
-            Transaction(self.start_time, self.contract, 10, 170, 4),
-            Transaction(self.start_time, self.contract, -20, 150, 5)
+            Transaction(self.start_time, self.ticker, 50, 100, 5),
+            Transaction(self.start_time, self.ticker, 30, 120, 3),
+            Transaction(self.start_time, self.ticker, -20, 175, 2),
+            Transaction(self.start_time, self.ticker, -30, 160, 1),
+            Transaction(self.start_time, self.ticker, 10, 150, 7),
+            Transaction(self.start_time, self.ticker, 10, 170, 4),
+            Transaction(self.start_time, self.ticker, -20, 150, 5)
         )
 
         for transaction in transactions:
             position.transact_transaction(transaction)
         position.update_price(110, 120)
 
-        self.assertEqual(position.contract(), self.contract)
+        self.assertEqual(position.ticker(), self.ticker)
         self.assertEqual(position.quantity(), 30)
         self.assertEqual(position.current_price, 110)
 
     def test_position_close(self):
-        position = BacktestPositionFactory.create_position(self.contract)
+        position = BacktestPositionFactory.create_position(self.ticker)
         self.assertEqual(position._is_closed, False)
-        position.transact_transaction(Transaction(self.start_time, self.contract, 20, 100, 0))
+        position.transact_transaction(Transaction(self.start_time, self.ticker, 20, 100, 0))
         self.assertEqual(position._is_closed, False)
-        position.transact_transaction(Transaction(self.start_time, self.contract, -10, 120, 20))
+        position.transact_transaction(Transaction(self.start_time, self.ticker, -10, 120, 20))
         self.assertEqual(position._is_closed, False)
-        position.transact_transaction(Transaction(self.start_time, self.contract, -10, 110, 20))
+        position.transact_transaction(Transaction(self.start_time, self.ticker, -10, 110, 20))
         self.assertEqual(position._is_closed, True)
 
     def test_position_stats_on_close(self):
-        position = BacktestPositionFactory.create_position(self.contract)
-        position.transact_transaction(Transaction(self.start_time, self.contract, 20, 100, 50))
+        position = BacktestPositionFactory.create_position(self.ticker)
+        position.transact_transaction(Transaction(self.start_time, self.ticker, 20, 100, 50))
         position.update_price(110, 120)
 
-        closing_transaction = Transaction(self.start_time, self.contract, -20, 120, 50)
+        closing_transaction = Transaction(self.start_time, self.ticker, -20, 120, 50)
         position.transact_transaction(closing_transaction)
 
-        self.assertEqual(position.contract(), self.contract)
+        self.assertEqual(position.ticker(), self.ticker)
         self.assertEqual(position._is_closed, True)
         self.assertEqual(position.quantity(), 0)
         self.assertEqual(position.current_price, 110)  # set by update_price
@@ -196,48 +196,48 @@ class TestBacktestPosition(unittest.TestCase):
         self.assertEqual(position.start_time, self.start_time)
 
     def test_position_direction1(self):
-        position = BacktestPositionFactory.create_position(self.contract)
+        position = BacktestPositionFactory.create_position(self.ticker)
         self.assertEqual(position.direction(), 0)
-        position.transact_transaction(Transaction(self.start_time, self.contract, 20, 100, 0))
+        position.transact_transaction(Transaction(self.start_time, self.ticker, 20, 100, 0))
         self.assertEqual(position.direction(), 1)
-        position.transact_transaction(Transaction(self.start_time, self.contract, -10, 100, 0))
+        position.transact_transaction(Transaction(self.start_time, self.ticker, -10, 100, 0))
         self.assertEqual(position.direction(), 1)
-        position.transact_transaction(Transaction(self.start_time, self.contract, -10, 100, 0))
+        position.transact_transaction(Transaction(self.start_time, self.ticker, -10, 100, 0))
         self.assertEqual(position.direction(), 1)
 
     def test_position_direction2(self):
-        position = BacktestPositionFactory.create_position(self.contract)
+        position = BacktestPositionFactory.create_position(self.ticker)
         self.assertEqual(position.direction(), 0)
 
-        position.transact_transaction(Transaction(self.start_time, self.contract, 20, 100, 0))
+        position.transact_transaction(Transaction(self.start_time, self.ticker, 20, 100, 0))
         self.assertEqual(position.direction(), 1)
 
         with self.assertRaises(AssertionError):
             # position does not allow going directly short from long
-            position.transact_transaction(Transaction(self.start_time, self.contract, -30, 100, 0))
+            position.transact_transaction(Transaction(self.start_time, self.ticker, -30, 100, 0))
 
-        position = BacktestPositionFactory.create_position(self.contract)
+        position = BacktestPositionFactory.create_position(self.ticker)
         self.assertEqual(position.direction(), 0)
 
-        position.transact_transaction(Transaction(self.start_time, self.contract, -20, 100, 0))
+        position.transact_transaction(Transaction(self.start_time, self.ticker, -20, 100, 0))
         self.assertEqual(position.direction(), -1)
 
         with self.assertRaises(AssertionError):
             # position does not allow going directly short from long
-            position.transact_transaction(Transaction(self.start_time, self.contract, 30, 100, 0))
+            position.transact_transaction(Transaction(self.start_time, self.ticker, 30, 100, 0))
 
     def test_closed_position(self):
-        position = BacktestPositionFactory.create_position(self.contract)
-        position.transact_transaction(Transaction(self.start_time, self.contract, 20, 100, 0))
-        position.transact_transaction(Transaction(self.start_time, self.contract, -20, 100, 0))
+        position = BacktestPositionFactory.create_position(self.ticker)
+        position.transact_transaction(Transaction(self.start_time, self.ticker, 20, 100, 0))
+        position.transact_transaction(Transaction(self.start_time, self.ticker, -20, 100, 0))
 
         with self.assertRaises(AssertionError):
             # position is now closed and should not accept new transactions
-            position.transact_transaction(Transaction(self.start_time, self.contract, 1, 100, 0))
+            position.transact_transaction(Transaction(self.start_time, self.ticker, 1, 100, 0))
 
         with self.assertRaises(AssertionError):
             # position is now closed and should not accept new transactions
-            position.transact_transaction(Transaction(self.start_time, self.contract, -1, 100, 0))
+            position.transact_transaction(Transaction(self.start_time, self.ticker, -1, 100, 0))
 
         with self.assertRaises(AssertionError):
             # position is now closed

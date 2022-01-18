@@ -16,11 +16,14 @@ from abc import abstractmethod, ABCMeta
 from datetime import datetime
 from typing import Optional
 
+from numpy import nan
+
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
 from qf_lib.backtesting.signals.signal import Signal
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.miscellaneous.average_true_range import average_true_range
 from qf_lib.data_providers.data_provider import DataProvider
 
@@ -42,6 +45,7 @@ class AlphaModel(metaclass=ABCMeta):
     def __init__(self, risk_estimation_factor: float, data_provider: DataProvider):
         self.risk_estimation_factor = risk_estimation_factor
         self.data_provider = data_provider
+        self.logger = qf_logger.getChild(self.__class__.__name__)
 
     def get_signal(self, ticker: Ticker, current_exposure: Exposure, current_time: Optional[datetime] = None,
                    frequency: Frequency = Frequency.DAILY) -> Signal:
@@ -130,15 +134,20 @@ class AlphaModel(metaclass=ABCMeta):
 
         Returns
         -------
+        float
             fraction_at_risk value for an AlphaModel and a Ticker, calculated as Normalized Average True Range
             multiplied by the risk_estimation_factor, being a property of each AlphaModel:
             fraction_at_risk = ATR / last_close * risk_estimation_factor
         """
         num_of_bars_needed = time_period + 1
         fields = [PriceField.High, PriceField.Low, PriceField.Close]
-        prices_df = self.data_provider.historical_price(ticker, fields, num_of_bars_needed)
-        fraction_at_risk = average_true_range(prices_df, normalized=True) * self.risk_estimation_factor
-        return fraction_at_risk
+        try:
+            prices_df = self.data_provider.historical_price(ticker, fields, num_of_bars_needed)
+            fraction_at_risk = average_true_range(prices_df, normalized=True) * self.risk_estimation_factor
+            return fraction_at_risk
+        except ValueError:
+            self.logger.error(f"Could not calculate the fraction_at_risk for the ticker {ticker.name}", exc_info=True)
+            return nan
 
     def __str__(self):
         return self.__class__.__name__

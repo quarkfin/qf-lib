@@ -22,7 +22,6 @@ from pandas.tseries.offsets import BDay
 
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.quandl_mapper import DummyQuandlContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
@@ -64,8 +63,6 @@ class TestFastAlphaModelsTester(TestCase):
         self._price_provider_mock = PresetDataProvider(self._mocked_prices_arr,
                                                        self.data_start_date, self.data_end_date, self.frequency)
         self.timer = SettableTimer()
-        self.contract_ticker_mapper = DummyQuandlContractTickerMapper()
-
         self.alpha_model_type = DummyAlphaModel
 
     @classmethod
@@ -100,8 +97,7 @@ class TestFastAlphaModelsTester(TestCase):
                                               "risk_estimation_factor": None},
                                              ("period_length", "first_suggested_exposure"))]
 
-        tester = FastAlphaModelTester(params, self.tickers, self.contract_ticker_mapper,
-                                      self.test_start_date, self.test_end_date, data_handler, self.timer)
+        tester = FastAlphaModelTester(params, self.tickers, self.test_start_date, self.test_end_date, data_handler, self.timer)
 
         backtest_summary = tester.test_alpha_models()
         self.assertEqual(self.tickers, backtest_summary.tickers)
@@ -120,8 +116,7 @@ class TestFastAlphaModelsTester(TestCase):
         ]
 
         generated_trades_data = [
-            [self.contract_ticker_mapper.contract_to_ticker(t.contract), t.start_time, t.end_time, t.pnl, t.direction]
-            for t in first_elem.trades
+            [t.ticker, t.start_time, t.end_time, t.pnl, t.direction] for t in first_elem.trades
         ]
 
         self.assertCountEqual(generated_trades_data, expected_trades_data)
@@ -149,8 +144,7 @@ class TestFastAlphaModelsTester(TestCase):
             [self.ibm_ticker, str_to_date("2015-01-23"), str_to_date("2015-01-30"), (1 - 365.0 / 315.0), -1.0]
         ]
         generated_trades_data = [
-            [self.contract_ticker_mapper.contract_to_ticker(t.contract), t.start_time, t.end_time, t.pnl,
-             t.direction]
+            [t.ticker, t.start_time, t.end_time, t.pnl, t.direction]
             for t in second_elem.trades
         ]
         self.assertCountEqual(expected_trades_data, generated_trades_data)

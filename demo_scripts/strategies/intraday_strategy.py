@@ -23,7 +23,6 @@ from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 plt.ion()  # required for dynamic chart, good to keep this at the beginning of imports
 
 from demo_scripts.common.utils.dummy_ticker import DummyTicker
-from demo_scripts.common.utils.dummy_ticker_mapper import DummyTickerMapper
 from demo_scripts.demo_configuration.demo_data_provider import intraday_data_provider
 from demo_scripts.demo_configuration.demo_ioc import container
 from qf_lib.backtesting.order.execution_style import MarketOrder
@@ -64,7 +63,6 @@ class IntradayMAStrategy(AbstractStrategy):
         self.broker = ts.broker
         self.order_factory = ts.order_factory
         self.data_handler = ts.data_handler
-        self.contract_ticker_mapper = ts.contract_ticker_mapper
         self.position_sizer = ts.position_sizer
         self.timer = ts.timer
         self.ticker = ticker
@@ -86,14 +84,11 @@ class IntradayMAStrategy(AbstractStrategy):
         short_ma_series = long_ma_series.tail(short_ma_len)
         short_ma_price = short_ma_series.mean()
 
-        # Map the given ticker onto a Contract object, which can be further used to place an Order
-        contract = self.contract_ticker_mapper.ticker_to_contract(self.ticker)
-
         if short_ma_price >= long_ma_price:
             # Place a buy Market Order, adjusting the position to a value equal to 100% of the portfolio
-            orders = self.order_factory.target_percent_orders({contract: 1.0}, MarketOrder(), TimeInForce.DAY)
+            orders = self.order_factory.target_percent_orders({self.ticker: 1.0}, MarketOrder(), TimeInForce.DAY)
         else:
-            orders = self.order_factory.target_percent_orders({contract: 0.0}, MarketOrder(), TimeInForce.DAY)
+            orders = self.order_factory.target_percent_orders({self.ticker: 0.0}, MarketOrder(), TimeInForce.DAY)
 
         # Cancel any open orders and place the newly created ones
         self.broker.cancel_all_open_orders()
@@ -118,7 +113,6 @@ def main():
     session_builder.set_frequency(Frequency.MIN_1)
     session_builder.set_backtest_name(backtest_name)
     session_builder.set_data_provider(intraday_data_provider)
-    session_builder.set_contract_ticker_mapper(DummyTickerMapper())
 
     ts = session_builder.build(start_date, end_date)
 

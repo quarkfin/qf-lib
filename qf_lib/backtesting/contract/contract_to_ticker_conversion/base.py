@@ -13,24 +13,21 @@
 #     limitations under the License.
 
 from abc import ABCMeta, abstractmethod
-from typing import Union
+from typing import Any
 
-from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.common.tickers.tickers import Ticker
-from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 
 
 class ContractTickerMapper(metaclass=ABCMeta):
     @abstractmethod
-    def contract_to_ticker(self, contract: Contract, strictly_to_specific_ticker=True) -> Union[Ticker, FutureTicker]:
-        """Maps Contract object onto corresponding Ticker.
+    def contract_to_ticker(self, contract: Any) -> Ticker:
+        """ Maps Broker specific contract objects onto corresponding Tickers.
 
         Parameters
         ----------
-        contract: Contract
-            contract that should be mapped
-        strictly_to_specific_ticker: bool
-            allows to map a Future contract to either Ticker (default) or FutureTicker
+        contract: Any
+            broker specific object, which is used to identify an asset (e.g. Contracts for Interactive Brokers,
+            Tickers for Bloomberg EMSX etc.)
 
         Returns
         -------
@@ -40,7 +37,7 @@ class ContractTickerMapper(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def ticker_to_contract(self, ticker: Ticker) -> Contract:
+    def ticker_to_contract(self, ticker: Ticker) -> Any:
         """Maps ticker to corresponding ticker.
 
         Parameters
@@ -50,8 +47,8 @@ class ContractTickerMapper(metaclass=ABCMeta):
 
         Returns
         -------
-        Contract
-            corresponding contract
+        Any
+            corresponding broker specific object
         """
         pass
 

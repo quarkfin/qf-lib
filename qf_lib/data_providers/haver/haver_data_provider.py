@@ -32,6 +32,7 @@ from qf_lib.settings import Settings
 
 try:
     import Haver
+
     is_haver_installed = True
 except ImportError:
     is_haver_installed = False
@@ -143,9 +144,8 @@ class HaverDataProvider(AbstractPriceDataProvider):
         if not self.connected:
             raise ConnectionError("No Haver connection.")
 
-    def get_futures_chain_tickers(self, tickers: Union[FutureTicker, Sequence[FutureTicker]],
-                                  expiration_date_fields: Union[ExpirationDateField, Sequence[ExpirationDateField]]) \
-            -> Dict[FutureTicker, Union[QFSeries, QFDataFrame]]:
+    def _get_futures_chain_dict(self, tickers: Union[FutureTicker, Sequence[FutureTicker]],
+                                expiration_date_fields: Union[str, Sequence[str]]) -> Dict[FutureTicker, QFDataFrame]:
         raise NotImplementedError("Downloading Future Chain Tickers in HaverDataProvider is not supported yet")
 
     def expiration_date_field_str_map(self, ticker: Ticker = None) -> Dict[ExpirationDateField, str]:

@@ -30,7 +30,6 @@ from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.exceptions.not_enough_data_exception import NotEnoughDataException
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
-from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.miscellaneous.average_true_range import average_true_range
 from qf_lib.common.utils.numberutils.is_finite_number import is_finite_number
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
@@ -68,9 +67,6 @@ class FuturesModel(AlphaModel, metaclass=abc.ABCMeta):
 
         # Precomputed futures chains
         self.futures_data: Dict[Ticker, FuturesChain] = {}
-
-        self.logger = qf_logger.getChild(self.__class__.__name__)
-
         if cache_path is not None:
             memory = Memory(cache_path, verbose=0)
             self.get_data = memory.cache(self.get_data, ignore=['self'])

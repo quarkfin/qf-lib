@@ -19,7 +19,6 @@ from datetime import datetime
 from itertools import groupby
 from typing import Sequence, Tuple, Optional
 
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.order.order import Order
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
@@ -29,7 +28,7 @@ from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.data_providers.data_provider import DataProvider
 
 
-class Slippage(object, metaclass=ABCMeta):
+class Slippage(metaclass=ABCMeta):
     """
     Base class for slippage models.
     It can limit the Order's volume. This model needs to know the daily volume of the traded asset, thus it uses the
@@ -39,19 +38,14 @@ class Slippage(object, metaclass=ABCMeta):
     ----------
     data_provider: DataProvider
         DataProvider component
-    contract_ticker_mapper: ContractTickerMapper
-        ContractTickerMapper component
     max_volume_share_limit: float, None
         number from range [0,1] which denotes how big (volume-wise) the Order can be i.e. if it's 0.5 and a daily
         volume for a given asset is 1,000,000 USD, then max volume of the Order can be 500,000 USD. If not provided, no
         volume checks are performed.
     """
 
-    def __init__(self, data_provider: DataProvider, contract_ticker_mapper: ContractTickerMapper,
-                 max_volume_share_limit: Optional[float] = None):
+    def __init__(self, data_provider: DataProvider, max_volume_share_limit: Optional[float] = None):
         self.max_volume_share_limit = max_volume_share_limit
-
-        self._contract_ticker_mapper = contract_ticker_mapper
         self._data_provider = data_provider
 
         self._logger = qf_logger.getChild(self.__class__.__name__)
@@ -83,7 +77,7 @@ class Slippage(object, metaclass=ABCMeta):
 
         # Compute the fill volumes for orders
         if self.max_volume_share_limit is not None:
-            tickers = [self._contract_ticker_mapper.contract_to_ticker(order.contract) for order in orders]
+            tickers = [order.ticker for order in orders]
             market_daily_volumes = self._volumes_traded_today(date, tickers)
             fill_volumes = self._get_fill_volumes(order_volumes, market_daily_volumes)
         else:
@@ -132,10 +126,10 @@ class Slippage(object, metaclass=ABCMeta):
         return real_fill_volumes
 
     def _check_for_duplicates(self, date: datetime, orders: Sequence[Order]):
-        sorted_orders = sorted(orders, key=lambda order: order.contract.symbol)
-        for contract, orders_group in groupby(sorted_orders, lambda order: order.contract.symbol):
+        sorted_orders = sorted(orders, key=lambda order: order.ticker)
+        for ticker, orders_group in groupby(sorted_orders, lambda order: order.ticker):
             orders_list = list(orders_group)
             if len(orders_list) > 1:
-                self._logger.warning("{} More than one order for ticker {}:".format(date, contract))
+                self._logger.warning("{} More than one order for ticker {}:".format(date, ticker))
                 for order in orders_list:
                     self._logger.warning(order)

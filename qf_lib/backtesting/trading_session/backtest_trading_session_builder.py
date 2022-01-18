@@ -16,9 +16,8 @@ from datetime import datetime
 from typing import List, Tuple, Type, Dict
 
 from qf_lib.backtesting.broker.backtest_broker import BacktestBroker
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.simulated_bloomberg_mapper import \
-    SimulatedBloombergContractTickerMapper
+from qf_lib.backtesting.contract.contract_to_ticker_conversion.simulated_contract_ticker_mapper import \
+    SimulatedContractTickerMapper
 from qf_lib.backtesting.data_handler.daily_data_handler import DailyDataHandler
 from qf_lib.backtesting.data_handler.intraday_data_handler import IntradayDataHandler
 from qf_lib.backtesting.events.event_manager import EventManager
@@ -63,7 +62,7 @@ class BacktestTradingSessionBuilder(object):
 
     - backtest name is set to "Backtest Results"
     - initial cash is set to 10000000
-    - SimulatedBloombergContractTickerMapper is used to map contracts to tickers
+    - SimulatedContractTickerMapper is used to map contracts to tickers
     - no commissions are introduced (FixedCommissionModel(0.0))
     - no slippage is introduced (PriceBasedSlippage(0.0))
     - SimplePositionSizer is used
@@ -94,7 +93,7 @@ class BacktestTradingSessionBuilder(object):
         self._benchmark_tms = None
         self._monitor_settings = None
 
-        self._contract_ticker_mapper = SimulatedBloombergContractTickerMapper()
+        self._contract_ticker_mapper = SimulatedContractTickerMapper()
 
         self._commission_model_type = FixedCommissionModel
         self._commission_model_kwargs = {"commission": 0.0}
@@ -223,17 +222,6 @@ class BacktestTradingSessionBuilder(object):
             timeseries of the benchmark
         """
         self._benchmark_tms = benchmark_tms
-
-    @ConfigExporter.update_config
-    def set_contract_ticker_mapper(self, contract_ticker_mapper: ContractTickerMapper):
-        """Sets the mapping between contracts and tickers.
-
-        Parameters
-        -----------
-        contract_ticker_mapper: ContractTickerMapper
-            mapping between contracts and tickers
-        """
-        self._contract_ticker_mapper = contract_ticker_mapper
 
     @ConfigExporter.update_config
     def set_commission_model(self, commission_model_type: Type[CommissionModel], **kwargs):
@@ -387,7 +375,7 @@ class BacktestTradingSessionBuilder(object):
         self._data_handler = self._create_data_handler(self._data_provider, self._timer)
         signals_register = self._signals_register if self._signals_register else BacktestSignalsRegister()
 
-        self._portfolio = Portfolio(self._data_handler, self._initial_cash, self._timer, self._contract_ticker_mapper)
+        self._portfolio = Portfolio(self._data_handler, self._initial_cash, self._timer)
 
         self._backtest_result = BacktestResult(self._portfolio, signals_register, self._backtest_name, start_date,
                                                end_date, self._initial_risk)
@@ -397,15 +385,15 @@ class BacktestTradingSessionBuilder(object):
         self._commission_model = self._commission_model_setup()
         self._execution_handler = SimulatedExecutionHandler(
             self._data_handler, self._timer, self._notifiers.scheduler, self._monitor, self._commission_model,
-            self._contract_ticker_mapper, self._portfolio, self._slippage_model,
+            self._portfolio, self._slippage_model,
             scheduling_time_delay=self._scheduling_time_delay, frequency=self._frequency)
 
         self._time_flow_controller = BacktestTimeFlowController(
             self._notifiers.scheduler, self._events_manager, self._timer,
             self._notifiers.empty_queue_event_notifier, end_date)
 
-        self._broker = BacktestBroker(self._portfolio, self._execution_handler)
-        self._order_factory = OrderFactory(self._broker, self._data_handler, self._contract_ticker_mapper)
+        self._broker = BacktestBroker(self._contract_ticker_mapper, self._portfolio, self._execution_handler)
+        self._order_factory = OrderFactory(self._broker, self._data_handler)
         self._position_sizer = self._position_sizer_setup(signals_register)
         self._orders_filters = self._orders_filter_setup()
 
@@ -414,7 +402,6 @@ class BacktestTradingSessionBuilder(object):
                 "Creating Backtest Trading Session.",
                 "\tBacktest Name: {}".format(self._backtest_name),
                 "\tData Provider: {}".format(self._data_provider.__class__.__name__),
-                "\tContract - Ticker Mapper: {}".format(self._contract_ticker_mapper.__class__.__name__),
                 "\tStart Date: {}".format(start_date),
                 "\tEnd Date: {}".format(end_date),
                 "\tTrading frequency:{}".format(self._frequency),
@@ -464,20 +451,17 @@ class BacktestTradingSessionBuilder(object):
 
     def _position_sizer_setup(self, signals_register: SignalsRegister):
         return self._position_sizer_type(
-            self._broker, self._data_handler, self._order_factory, self._contract_ticker_mapper, signals_register,
-            **self._position_sizer_kwargs)
+            self._broker, self._data_handler, self._order_factory, signals_register, **self._position_sizer_kwargs)
 
     def _orders_filter_setup(self):
         orders_filters = []
         for orders_filter_type, kwargs in self._orders_filter_types_params:
-            orders_filter = orders_filter_type(self._data_handler, self._contract_ticker_mapper, **kwargs)
+            orders_filter = orders_filter_type(self._data_handler, **kwargs)
             orders_filters.append(orders_filter)
         return orders_filters
 
     def _slippage_model_setup(self):
-        return self._slippage_model_type(data_provider=self._data_provider,
-                                         contract_ticker_mapper=self._contract_ticker_mapper,
-                                         **self._slippage_model_kwargs)
+        return self._slippage_model_type(data_provider=self._data_provider, **self._slippage_model_kwargs)
 
     def _commission_model_setup(self):
         return self._commission_model_type(**self._commission_model_kwargs)

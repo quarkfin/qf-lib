@@ -23,12 +23,10 @@ contract
     :toctree: _autosummary
     :template: short_class.rst
 
-    contract.Contract
     contract_to_ticker_conversion.base.ContractTickerMapper
-    contract_to_ticker_conversion.simulated_bloomberg_mapper.SimulatedBloombergContractTickerMapper
-    contract_to_ticker_conversion.ib_bloomberg_mapper.IB_Bloomberg_ContractTickerMapper
-    contract_to_ticker_conversion.quandl_mapper.DummyQuandlContractTickerMapper
-    contract_to_ticker_conversion.vol_strategy_mapper.VolStrategyContractTickerMapper
+    contract.contract_to_ticker_conversion.simulated_contract_ticker_mapper.SimulatedContractTickerMapper
+    contract.contract_to_ticker_conversion.ib_contract_ticker_mapper.IBContractTickerMapper
+
 
 data_handler
 ==================

@@ -16,6 +16,7 @@ import unittest
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
 from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
+from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.date_format import DateFormat
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
@@ -177,4 +178,4 @@ class TestBloombergFutures(unittest.TestCase):
         for ticker in specific_tickers_different_family:
             self.assertFalse(self.ticker_1.belongs_to_family(ticker))
 
-        self.assertTrue(self.ticker_1.belongs_to_family(BloombergTicker("ESZ9 Index")))
+        self.assertTrue(self.ticker_1.belongs_to_family(BloombergTicker("ESZ9 Index", SecurityType.FUTURE, 100)))

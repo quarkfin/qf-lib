@@ -13,9 +13,11 @@
 #     limitations under the License.
 import abc
 from datetime import datetime
+from typing import Optional, Type
 
 import pandas as pd
 
+from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.exceptions.future_contracts_exceptions import NoValidTickerException
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
@@ -31,13 +33,14 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
     DataHandler functions get_price, get_last_available_price, get_current_price etc.), without the need to manually
     manage the rolling of the contracts or to select a certain specific Ticker.
 
-    .. note:
-        While downloading historical data (using for example get_price function) all of the prices would be provided for
-        the current specific ticker, e.g. in case of the family of Cotton future contracts, if on a certain day the
-        specific contract returned by the FutureTicker will be the December 2019 Cotton contract, all of the prices
-        returned by get_price will pertain to this specific December contract and no prices chaining will occur.
-        In order to use the get_price function along with futures contracts chaining (and eventual adjustments),
-        the FuturesChain object has to be used.
+    Notes
+    ------
+    While downloading historical data (using for example get_price function) all of the prices would be provided for
+    the current specific ticker, e.g. in case of the family of Cotton future contracts, if on a certain day the
+    specific contract returned by the FutureTicker will be the December 2019 Cotton contract, all of the prices
+    returned by get_price will pertain to this specific December contract and no prices chaining will occur.
+    In order to use the get_price function along with futures contracts chaining (and eventual adjustments),
+    the FuturesChain object has to be used.
 
     Parameters
     -----------
@@ -48,26 +51,36 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
         its purpose is to build an identificator, used by the data provider to download the chain of corresponding
         Tickers, and to verify whether a specific Ticker belongs to a certain futures family.
     N: int
-        Used to identify which specific Ticker should be considered by the Backtester, while using the general
-        Future Ticker class. For example N parameter set to 1, denotes the front future contract.
+        Since we chain individual contracts, we need to know which one to select. N determines which contract is used
+        at any given time when we have to select a specific contract. For example N parameter set to 1,
+        denotes the first (front) future contract. N set to 2 will be the second contract and so on.
     days_before_exp_date: int
         Number of days before the expiration day of each of the contract, when the “current” specific contract
         should be substituted with the next consecutive one.
     point_value: int
         Used to define the size of the contract.
+    designated_contracts: str
+        It is a string, which represents all month codes, that are being downloaded and stored
+        in the chain of future contracts. Any specific order of letters is not required. E.g. providing this
+        parameter value equal to "HMUZ", would restrict the future chain to only the contracts, which expire in
+        March, June, September and December, even if contracts for any other months exist and are returned by the
+        DataProvider get_futures_chain_tickers function.
     """
-    def __init__(self, name: str, family_id: str, N: int, days_before_exp_date: int, point_value: int = 1):
-        super().__init__(family_id)
+    def __init__(self, name: str, family_id: str, N: int, days_before_exp_date: int, point_value: int = 1,
+                 designated_contracts: Optional[str] = None, security_type: SecurityType = SecurityType.FUTURE):
+        super().__init__(family_id, security_type, point_value)
         self._name = name
         self.family_id = family_id
         self.point_value = point_value
         self.N = N
+        self.designated_contracts = designated_contracts
+
         self._days_before_exp_date = days_before_exp_date
 
         self._exp_dates = None  # type: QFSeries
         self._timer = None  # type: Timer
         self._data_provider = None  # type: "DataProvider"
-        self._ticker_initialized = False
+        self._ticker_initialized = False  # type: bool
 
         # Date used for optimization purposes
         self._ticker = None  # type: Ticker
@@ -85,12 +98,17 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
             Data provider which is used to download symbols of tickers, belonging to the given future ticker family
         """
         if self._ticker_initialized:
-            self.logger.warning("The FutureTicker {} has been already initialized with Timer and Data Provider. "
-                                "The previous Timer and Data Provider references will be overwritten".format(self._name))
+            self.logger.warning(f"The FutureTicker {self._name} has been already initialized with Timer and Data "
+                                f"Provider. The previous Timer and Data Provider references will be overwritten")
 
         self._data_provider = data_provider
         self._timer = timer
-        self._exp_dates = self._get_futures_chain_tickers()
+
+        # Download and validate expiration dates for the future ticker
+        exp_dates = self._get_futures_chain_tickers()
+        self._validate_expiration_dates(exp_dates)
+        self._exp_dates = exp_dates
+
         self._ticker_initialized = True
 
     @property
@@ -131,8 +149,8 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
 
         # If the timer or data provider were not set
         if not self._ticker_initialized:
-            raise ValueError("Set up the timer and data provider by calling initialize_data_provider() "
-                             "before using the future ticker {}".format(self._name))
+            raise ValueError(f"Set up the timer and data provider by calling initialize_data_provider() "
+                             f"before using the future ticker {self._name}")
         try:
             def _get_current_specific_ticker() -> Ticker:
                 """
@@ -179,11 +197,8 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
             # Function "iloc" may rise IndexError if the requested indexer is out-of-bonds (e.g. a high value of self.N)
             # Therefore, in case if the data with expiration dates is not available for the current date, the
             # _get_current_specific_ticker function will raise a LookupError.
-
-            raise NoValidTickerException("No valid ticker for the FutureTicker {} found on {}".format(
-                self._name,
-                self._timer.now()
-            ))
+            raise NoValidTickerException(f"No valid ticker for the FutureTicker {self._name} found on "
+                                         f"{self._timer.now()}") from None
 
     def get_expiration_dates(self) -> QFSeries:
         """
@@ -231,10 +246,36 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
         """
         pass
 
+    def _validate_expiration_dates(self, expiration_dates: QFSeries):
+        """ Raises an error in case if the expiration dates series is invalid. """
+        if any(expiration_dates.index.duplicated()):
+            duplicated_rows = expiration_dates.loc[expiration_dates.index.duplicated(keep=False)]
+            raise ValueError(f"The Expiration Dates for ticker {self} contain duplicated dates for the following "
+                             f"contracts: \n{duplicated_rows}\n"
+                             f"In order to fix this issue you can skip some of the contract months using the "
+                             f"designated_contracts parameter of the {self.__class__.__name__}.")
+
+        # Make sure that all the tickers have the correct point_value and security type
+        if any([ticker.point_value != self.point_value for ticker in expiration_dates.values]):
+            raise ValueError(f"Not all tickers in the chain have the point_value set to {self.point_value} as the "
+                             f"Future Ticker. Please make sure that correct values are inserted by the DataProvider "
+                             f"and _get_futures_chain_tickers() function.")
+
+        if any([ticker.security_type != self.security_type for ticker in expiration_dates.values]):
+            raise ValueError(f"Not all tickers in the chain have the point_value set to {self.point_value} as the "
+                             f"Future Ticker. Please make sure that correct values are inserted by the DataProvider "
+                             f"and _get_futures_chain_tickers() function.")
+
     @ticker.setter
     def ticker(self, _):
         # The purpose of this function is to enable the initial setting of ticker value, in the __init__ function.
         pass
+
+    @property
+    def initialized(self) -> bool:
+        """ Boolean providing information on whether the data provider and timer were set for this Future Ticker
+        instance or not. """
+        return self._ticker_initialized
 
     def __repr__(self):
         return self._get_str_repr()
@@ -243,7 +284,7 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
         return self._get_str_repr()
 
     def _get_str_repr(self):
-        return "{}('{}', '{}')".format(self.__class__.__name__, self._name, self.family_id)
+        return f"{self.__class__.__name__}('{self._name}', '{self.family_id}')"
 
     def __eq__(self, other):
         if other is self:
@@ -297,5 +338,13 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
         Returns
         -------
         bool
+        """
+        pass
+
+    @abc.abstractmethod
+    def supported_ticker_type(self) -> Type[Ticker]:
+        """
+        Returns class of specific tickers which are supported by this FutureTicker (e.g. it should return
+        BloombergTicker for the BloombergFutureTicker etc.
         """
         pass

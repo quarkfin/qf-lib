@@ -18,10 +18,9 @@ import numpy as np
 
 from demo_scripts.demo_configuration.demo_ioc import container
 from qf_lib.analysis.trade_analysis.trade_analysis_sheet import TradeAnalysisSheet
-from qf_lib.backtesting.contract.contract import Contract
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.simulated_bloomberg_mapper import \
-    SimulatedBloombergContractTickerMapper
 from qf_lib.backtesting.portfolio.trade import Trade
+from qf_lib.common.enums.security_type import SecurityType
+from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.common.utils.miscellaneous.get_cached_value import cached_value
@@ -33,9 +32,9 @@ def get_data():
     end_date = str_to_date('2017-12-31')
 
     number_of_trades = 200
-    contract = Contract("Example Comdty", "STK", "SIM EXCHANGE")
+    ticker = BloombergTicker("MY_STOCK", SecurityType.STOCK, 1)
     trades = [
-        Trade(start_date, end_date, contract, pnl, 0, 1, pnl / 10000)
+        Trade(start_date, end_date, ticker, pnl, 0, 1, pnl / 10000)
         for pnl in np.random.normal(0, 200, number_of_trades)
     ]
     return trades, 1, start_date, end_date
@@ -48,11 +47,7 @@ def main():
 
     settings = container.resolve(Settings)  # type: Settings
     pdf_exporter = container.resolve(PDFExporter)  # type: PDFExporter
-    contract_ticker_mapper = SimulatedBloombergContractTickerMapper()
-
-    nr_of_assets_traded = len(
-        set(contract_ticker_mapper.contract_to_ticker(t.contract, False) for t in trades)
-    )
+    nr_of_assets_traded = len(set(t.ticker.name for t in trades))
 
     trade_analysis_sheet = TradeAnalysisSheet(
         settings, pdf_exporter, nr_of_assets_traded, trades, start_date, end_date, title="Sample trade analysis")

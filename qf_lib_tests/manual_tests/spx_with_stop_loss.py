@@ -43,7 +43,6 @@ class SpxWithStopLoss:
         self.broker = ts.broker
         self.order_factory = ts.order_factory
         self.data_handler = ts.data_handler
-        self.contract_ticker_mapper = ts.contract_ticker_mapper
         self.position_sizer = ts.position_sizer
         self.timer = ts.timer
 
@@ -55,14 +54,12 @@ class SpxWithStopLoss:
     def calculate_signals(self):
         last_price = self.data_handler.get_last_available_price(self.ticker)
 
-        contract = self.contract_ticker_mapper.ticker_to_contract(self.ticker)
-
-        orders = self.order_factory.target_percent_orders({contract: 1.0}, MarketOrder(),
+        orders = self.order_factory.target_percent_orders({self.ticker: 1.0}, MarketOrder(),
                                                           time_in_force=TimeInForce.OPG, tolerance_percentage=0.02)
 
         stop_price = last_price * (1 - self.percentage)
         execution_style = StopOrder(stop_price=stop_price)
-        stop_order = self.order_factory.percent_orders({contract: -1}, execution_style=execution_style,
+        stop_order = self.order_factory.percent_orders({self.ticker: -1}, execution_style=execution_style,
                                                        time_in_force=TimeInForce.DAY)
 
         self.broker.cancel_all_open_orders()

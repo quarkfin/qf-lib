@@ -22,9 +22,6 @@ from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
 from qf_lib.backtesting.signals.backtest_signals_register import BacktestSignalsRegister
 from qf_lib.backtesting.signals.signal import Signal
 from qf_lib.backtesting.broker.broker import Broker
-from qf_lib.backtesting.contract.contract import Contract
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.simulated_bloomberg_mapper import \
-    SimulatedBloombergContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.order.execution_style import MarketOrder, StopOrder
 from qf_lib.backtesting.order.order import Order
@@ -47,12 +44,11 @@ class TestPositionSizer(unittest.TestCase):
         cls.last_price = 110
         cls.initial_position = 200
         cls.initial_allocation = 0.5  # 50% of our portfolio is invested in AAPL
-        cls.contract = Contract(cls.ticker.ticker, 'STK', 'SIM_EXCHANGE')
         cls.initial_risk = 0.02
         cls.max_target_percentage = 1.5
 
     def setUp(self) -> None:
-        position = BrokerPosition(self.contract, self.initial_position, 25)
+        position = BrokerPosition(self.ticker, self.initial_position, 25)
 
         self.timer = Mock(spec=Timer)
         self.timer.now.return_value = str_to_date("2017-01-01")
@@ -65,12 +61,10 @@ class TestPositionSizer(unittest.TestCase):
         data_handler.get_last_available_price.side_effect = lambda _: self.last_price
 
         order_factory = self._mock_order_factory(self.initial_position, self.initial_allocation)
-        contract_ticker_mapper = SimulatedBloombergContractTickerMapper()
 
         self.simple_position_sizer = SimplePositionSizer(self.broker, data_handler, order_factory,
-                                                         contract_ticker_mapper, BacktestSignalsRegister())
+                                                         BacktestSignalsRegister())
         self.initial_risk_position_sizer = InitialRiskPositionSizer(self.broker, data_handler, order_factory,
-                                                                    contract_ticker_mapper,
                                                                     BacktestSignalsRegister(),
                                                                     self.initial_risk,
                                                                     self.max_target_percentage)
@@ -100,11 +94,11 @@ class TestPositionSizer(unittest.TestCase):
 
         quantity = np.floor(self.initial_position * (1 / self.initial_allocation - 1))
         self.assertEqual(len(orders), 2)  # market order and stop order
-        self.assertEqual(orders[0], Order(self.contract, quantity, MarketOrder(), TimeInForce.OPG))
+        self.assertEqual(orders[0], Order(self.ticker, quantity, MarketOrder(), TimeInForce.OPG))
 
         stop_price = self.last_price * (1 - fraction_at_risk)
         stop_quantity = -(self.initial_position + quantity)
-        self.assertEqual(orders[1], Order(self.contract, stop_quantity, StopOrder(stop_price), TimeInForce.GTC))
+        self.assertEqual(orders[1], Order(self.ticker, stop_quantity, StopOrder(stop_price), TimeInForce.GTC))
 
     def test_initial_risk_position_sizer_with_cap(self):
         """
@@ -119,11 +113,11 @@ class TestPositionSizer(unittest.TestCase):
         max_leverage = self.initial_risk_position_sizer.max_target_percentage
         target_quantity = int(np.floor(portfolio_value * max_leverage))
         additional_contracts = target_quantity - self.initial_position
-        self.assertEqual(orders[0], Order(self.contract, additional_contracts, MarketOrder(), TimeInForce.OPG))
+        self.assertEqual(orders[0], Order(self.ticker, additional_contracts, MarketOrder(), TimeInForce.OPG))
 
         stop_price = self.last_price * (1 - fraction_at_risk)
         stop_quantity = -(self.initial_position + additional_contracts)
-        self.assertEqual(orders[1], Order(self.contract, stop_quantity, StopOrder(stop_price), TimeInForce.GTC))
+        self.assertEqual(orders[1], Order(self.ticker, stop_quantity, StopOrder(stop_price), TimeInForce.GTC))
 
     def test_initial_risk_position_sizer_without_cap(self):
         """
@@ -137,11 +131,11 @@ class TestPositionSizer(unittest.TestCase):
         portfolio_value = self.initial_position / self.initial_allocation
         target_quantity = int(np.floor(portfolio_value * self.initial_risk / fraction_at_risk))
         additional_contracts = target_quantity - self.initial_position
-        self.assertEqual(orders[0], Order(self.contract, additional_contracts, MarketOrder(), TimeInForce.OPG))
+        self.assertEqual(orders[0], Order(self.ticker, additional_contracts, MarketOrder(), TimeInForce.OPG))
 
         stop_price = self.last_price * (1 - fraction_at_risk)
         stop_quantity = -(self.initial_position + additional_contracts)
-        self.assertEqual(orders[1], Order(self.contract, stop_quantity, StopOrder(stop_price), TimeInForce.GTC))
+        self.assertEqual(orders[1], Order(self.ticker, stop_quantity, StopOrder(stop_price), TimeInForce.GTC))
 
     def test_out_signal(self):
         fraction_at_risk = 0.02
@@ -149,7 +143,7 @@ class TestPositionSizer(unittest.TestCase):
         orders = self.simple_position_sizer.size_signals([signal])
 
         self.assertEqual(len(orders), 1)  # market order only
-        self.assertEqual(orders[0], Order(self.contract, -200, MarketOrder(), TimeInForce.OPG))
+        self.assertEqual(orders[0], Order(self.ticker, -200, MarketOrder(), TimeInForce.OPG))
 
     def test_decreasing_stop_price__with_open_positions(self):
         """

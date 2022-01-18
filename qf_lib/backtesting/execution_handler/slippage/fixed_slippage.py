@@ -16,7 +16,6 @@ from typing import Sequence, Optional
 
 import numpy as np
 
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.execution_handler.slippage.base import Slippage
 from qf_lib.backtesting.order.order import Order
 from qf_lib.data_providers.data_provider import DataProvider
@@ -28,8 +27,8 @@ class FixedSlippage(Slippage):
     """
 
     def __init__(self, slippage_per_share: float, data_provider: DataProvider,
-                 contract_ticker_mapper: ContractTickerMapper, max_volume_share_limit: Optional[float] = None):
-        super().__init__(data_provider, contract_ticker_mapper, max_volume_share_limit)
+                 max_volume_share_limit: Optional[float] = None):
+        super().__init__(data_provider, max_volume_share_limit)
         self.slippage_per_share = slippage_per_share
 
     def _get_fill_prices(self, date: datetime, orders: Sequence[Order], no_slippage_fill_prices: Sequence[float],

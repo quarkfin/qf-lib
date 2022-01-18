@@ -29,7 +29,7 @@ from qf_lib.data_providers.helpers import cast_data_array_to_proper_type
 
 class StopOrdersExecutor(SimulatedExecutor):
     def assign_order_ids(self, orders: Sequence[Order]) -> List[int]:
-        tickers = [self._contracts_to_tickers_mapper.contract_to_ticker(order.contract) for order in orders]
+        tickers = [order.ticker for order in orders]
 
         unique_tickers_list = list(set(tickers))
         prices_at_acceptance_time = self._data_handler.get_last_available_price(unique_tickers_list)
@@ -72,8 +72,7 @@ class StopOrdersExecutor(SimulatedExecutor):
 
         unique_tickers = list(set(tickers))
         # index=tickers, columns=fields
-        current_bars_df = self._get_current_bars(unique_tickers)
-        # type: QFDataFrame
+        current_bars_df = self._get_current_bars(unique_tickers)  # type: QFDataFrame
 
         # Check at first if at this moment of time, expiry checks should be made or not (optimization reasons)
         if market_close:
@@ -115,8 +114,8 @@ class StopOrdersExecutor(SimulatedExecutor):
         if not tickers:
             return QFDataFrame()
 
-        assert self._frequency >= Frequency.DAILY, "Lower than daily frequency is not supported by the simulated" \
-                                                   " executor"
+        assert self._frequency >= Frequency.DAILY, "Lower than daily frequency is not supported by the simulated " \
+                                                   "executor"
         current_datetime = self._timer.now()
 
         market_close_time = current_datetime + MarketCloseEvent.trigger_time() == current_datetime

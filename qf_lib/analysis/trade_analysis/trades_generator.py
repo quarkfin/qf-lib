@@ -14,12 +14,12 @@
 from typing import List, Sequence, Union, Optional
 
 
-from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.portfolio.backtest_position import BacktestPosition
 from qf_lib.backtesting.portfolio.position_factory import BacktestPositionFactory
 from qf_lib.backtesting.portfolio.trade import Trade
 from qf_lib.backtesting.portfolio.transaction import Transaction
 from qf_lib.backtesting.portfolio.utils import split_transaction_if_needed
+from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
@@ -58,7 +58,7 @@ class TradesGenerator:
                 return None
 
         trades = [
-            Trade(p.start_time, p.end_time, p.contract(), p.total_pnl, p.total_commission(), p.direction(),
+            Trade(p.start_time, p.end_time, p.ticker(), p.total_pnl, p.total_commission(), p.direction(),
                   compute_percentage_pnl(p))
             for p in positions
         ]
@@ -87,19 +87,19 @@ class TradesGenerator:
             List containing trades information, sorted by the time of their creation
         """
         transactions_df = QFDataFrame.from_records(
-            [(t, t.time, t.contract.symbol, t.quantity) for t in transactions],
-            columns=["transaction", "time", "contract", "quantity"])
+            [(t, t.time, t.ticker, t.quantity) for t in transactions],
+            columns=["transaction", "time", "ticker", "quantity"])
 
-        # Position size after transacting the transaction, where position is identified by "contract" variable
+        # Position size after transacting the transaction, where position is identified by "ticker" variable
         transactions_df.sort_values(by="time", inplace=True)
-        transactions_df["position size"] = transactions_df.groupby(by="contract")["quantity"].cumsum()
+        transactions_df["position size"] = transactions_df.groupby(by="ticker")["quantity"].cumsum()
 
         # Assign position start values - a position was opened when the position size was equal to the quantity of
-        # the transaction (the quantity of the contract in the portfolio before transaction was = 0)
+        # the transaction (the quantity of the ticker in the portfolio before transaction was = 0)
         new_positions_beginning = transactions_df["position size"] - transactions_df["quantity"] == 0
         transactions_df.loc[:, "position start"] = None
         transactions_df.loc[new_positions_beginning, "position start"] = transactions_df.loc[new_positions_beginning].index
-        transactions_df.loc[:, "position start"] = transactions_df.groupby(by="contract")["position start"].apply(
+        transactions_df.loc[:, "position start"] = transactions_df.groupby(by="ticker")["position start"].apply(
             lambda tms: tms.fillna(method="ffill"))
 
         trades_series = transactions_df.groupby(by=["position start"])["transaction"].apply(
@@ -122,16 +122,16 @@ class TradesGenerator:
 
         transactions = self._split_transactions_if_needed(transactions)
 
-        contract = transactions[0].contract  # type: Contract
+        ticker = transactions[0].ticker  # type: Ticker
         backtest_positions = []
 
-        backtest_position = BacktestPositionFactory.create_position(contract)
+        backtest_position = BacktestPositionFactory.create_position(ticker)
         for transaction in transactions:
             backtest_position.transact_transaction(transaction)
 
             if backtest_position.is_closed():
                 backtest_positions.append(backtest_position)
-                backtest_position = BacktestPositionFactory.create_position(contract)
+                backtest_position = BacktestPositionFactory.create_position(ticker)
 
         trades = self.create_trades_from_backtest_positions(backtest_positions, portfolio_values)
 

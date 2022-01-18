@@ -44,8 +44,7 @@ class ConeDecorator(ChartDecorator):
         super().__init__(key)
         self._live_start_date = live_start_date
 
-        assert isinstance(series, PricesSeries), \
-            "Cone can only work with PricesSeries. {} is not supported" % type(series)
+        assert isinstance(series, PricesSeries), f"Cone can only work with PricesSeries. {type(series)} is not supported"
         self.series = series
 
         if isinstance(cone_stds, (float, int)):

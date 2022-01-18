@@ -19,12 +19,10 @@ from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.backtesting.strategies.alpha_model_strategy import AlphaModelStrategy
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
 from qf_lib.backtesting.signals.signal import Signal
-from qf_lib.backtesting.contract.contract import Contract
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.simulated_bloomberg_mapper import \
-    SimulatedBloombergContractTickerMapper
 from qf_lib.backtesting.portfolio.backtest_position import BacktestPosition
 from qf_lib.backtesting.portfolio.position_factory import BacktestPositionFactory
 from qf_lib.common.enums.frequency import Frequency
+from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.date_format import DateFormat
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
@@ -45,11 +43,10 @@ class TestAlphaModelStrategy(unittest.TestCase):
 
         # Mock trading session
         self.ts = MagicMock()
-        self.ts.contract_ticker_mapper = SimulatedBloombergContractTickerMapper()
         self.ts.timer = SettableTimer(str_to_date("2000-01-04 08:00:00.0", DateFormat.FULL_ISO))
         self.ts.frequency = Frequency.DAILY
 
-        self.positions_in_portfolio = []  # type: List[Contract]
+        self.positions_in_portfolio = []  # type: List[BacktestPosition]
         """Contracts for which a position in the portfolio currently exists. This list is used to return backtest
         positions list by the broker."""
 
@@ -69,7 +66,7 @@ class TestAlphaModelStrategy(unittest.TestCase):
 
         # Open long position in the portfolio
         self.positions_in_portfolio = [Mock(spec=BacktestPosition, **{
-            'contract.return_value': Contract("Example Ticker", "STK", "SIM_EXCHANGE"),
+            'ticker.return_value': BloombergTicker("Example Ticker", SecurityType.STOCK, 1),
             'quantity.return_value': 10,
             'start_time': str_to_date("2000-01-01")
         })]
@@ -78,16 +75,17 @@ class TestAlphaModelStrategy(unittest.TestCase):
 
         # Open short position in the portfolio
         self.positions_in_portfolio = [Mock(spec=BacktestPosition, **{
-            'contract.return_value': Contract("Example Ticker", "STK", "SIM_EXCHANGE"),
+            'ticker.return_value': BloombergTicker("Example Ticker", SecurityType.STOCK, 1),
             'quantity.return_value': -10,
             'start_time': str_to_date("2000-01-01")
         })]
         alpha_model_strategy.calculate_and_place_orders()
         self.alpha_model.get_signal.assert_called_with(self.ticker, Exposure.SHORT, self.ts.timer.now(), Frequency.DAILY)
 
-        # Verify if in case of two positions for the same contract an exception will be raised by the strategy
+        # Verify if in case of two positions for the same ticker an exception will be raised by the strategy
         self.positions_in_portfolio = [BacktestPositionFactory.create_position(c) for c in (
-            Contract("Example Ticker", "STK", "SIM_EXCHANGE"), Contract("Example Ticker", "STK", "SIM_EXCHANGE"))]
+            BloombergTicker("Example Ticker", SecurityType.STOCK, 1),
+            BloombergTicker("Example Ticker", SecurityType.STOCK, 1))]
         self.assertRaises(AssertionError, alpha_model_strategy.calculate_and_place_orders)
 
     def test__get_current_exposure__future_ticker(self):
@@ -97,7 +95,8 @@ class TestAlphaModelStrategy(unittest.TestCase):
         """
         expected_current_exposure_values = []
         # Set current specific ticker to ExampleZ00 Comdty and open position in the portfolio for the current ticker
-        self.future_ticker.get_current_specific_ticker.return_value = BloombergTicker("ExampleZ00 Comdty")
+        ticker = BloombergTicker("ExampleZ00 Comdty", SecurityType.FUTURE, 1)
+        self.future_ticker.get_current_specific_ticker.return_value = ticker
         futures_alpha_model_strategy = AlphaModelStrategy(self.ts, {self.alpha_model: [self.future_ticker]},
                                                           use_stop_losses=False)
         # In case of empty portfolio get_signal function should have current exposure set to OUT
@@ -107,7 +106,7 @@ class TestAlphaModelStrategy(unittest.TestCase):
                                                        Frequency.DAILY)
 
         self.positions_in_portfolio = [Mock(spec=BacktestPosition, **{
-            'contract.return_value': Contract("ExampleZ00 Comdty", "FUT", "SIM_EXCHANGE"),
+            'ticker.return_value': ticker,
             'quantity.return_value': 10,
             'start_time': str_to_date("2000-01-01")
         })]
@@ -115,8 +114,7 @@ class TestAlphaModelStrategy(unittest.TestCase):
         self.alpha_model.get_signal.assert_called_with(self.future_ticker, Exposure.LONG, self.ts.timer.now(),
                                                        Frequency.DAILY)
 
-        self.positions_in_portfolio = [BacktestPositionFactory.create_position(c) for c in (
-            Contract("ExampleZ00 Comdty", "STK", "SIM_EXCHANGE"), Contract("ExampleZ00 Comdty", "STK", "SIM_EXCHANGE"))]
+        self.positions_in_portfolio = [BacktestPositionFactory.create_position(c) for c in (ticker, ticker)]
         self.assertRaises(AssertionError, futures_alpha_model_strategy.calculate_and_place_orders)
 
     @patch.object(FuturesRollingOrdersGenerator, 'generate_close_orders')
@@ -126,12 +124,13 @@ class TestAlphaModelStrategy(unittest.TestCase):
         contract exists in portfolio and the rolling should be performed.
         """
         # Set the future ticker to point to a new specific ticker, different from the one in the position from portfolio
-        self.future_ticker.ticker = "ExampleN01 Comdty"
+        current_ticker = BloombergTicker("ExampleN01 Comdty", SecurityType.FUTURE, 1)
+        self.future_ticker.get_current_specific_ticker.return_value = current_ticker
 
         futures_alpha_model_strategy = AlphaModelStrategy(self.ts, {self.alpha_model: [self.future_ticker]},
                                                           use_stop_losses=False)
         self.positions_in_portfolio = [Mock(spec=BacktestPosition, **{
-            'contract.return_value': Contract("ExampleZ00 Comdty", "FUT", "SIM_EXCHANGE"),
+            'ticker.return_value': BloombergTicker("ExampleZ00 Comdty", SecurityType.FUTURE, 1),
             'quantity.return_value': 10,
             'start_time': str_to_date("2000-01-01")
         })]
@@ -141,11 +140,11 @@ class TestAlphaModelStrategy(unittest.TestCase):
                                                             Frequency.DAILY)
 
         self.positions_in_portfolio = [Mock(spec=BacktestPosition, **{
-            'contract.return_value': Contract("ExampleZ00 Comdty", "FUT", "SIM_EXCHANGE"),
+            'ticker.return_value': BloombergTicker("ExampleZ00 Comdty", SecurityType.FUTURE, 1),
             'quantity.return_value': 10,
             'start_time': str_to_date("2000-01-01")
         }), Mock(spec=BacktestPosition, **{
-            'contract.return_value': Contract("ExampleZ00 Comdty", "FUT", "SIM_EXCHANGE"),
+            'ticker.return_value': BloombergTicker("ExampleZ00 Comdty", SecurityType.FUTURE, 1),
             'quantity.return_value': 20,
             'start_time': str_to_date("2000-01-02")
         })]
@@ -158,17 +157,18 @@ class TestAlphaModelStrategy(unittest.TestCase):
         contract exists in portfolio and the rolling should be performed.
         """
         # Set the future ticker to point to a new specific ticker, different from the one in the position from portfolio
-        self.future_ticker.ticker = "ExampleN01 Comdty"
+        current_ticker = BloombergTicker("ExampleN01 Comdty", SecurityType.FUTURE, 1)
+        self.future_ticker.get_current_specific_ticker.return_value = current_ticker
 
         futures_alpha_model_strategy = AlphaModelStrategy(self.ts, {self.alpha_model: [self.future_ticker]},
                                                           use_stop_losses=False)
 
         self.positions_in_portfolio = [Mock(spec=BacktestPosition, **{
-            'contract.return_value': Contract("ExampleZ00 Comdty", "FUT", "SIM_EXCHANGE"),
+            'ticker.return_value': BloombergTicker("ExampleZ00 Comdty", SecurityType.FUTURE, 1),
             'quantity.return_value': -10,
             'start_time': str_to_date("2000-01-01")
         }), Mock(spec=BacktestPosition, **{
-            'contract.return_value': Contract("ExampleN01 Comdty", "FUT", "SIM_EXCHANGE"),
+            'ticker.return_value': current_ticker,
             'quantity.return_value': 20,
             'start_time': str_to_date("2000-01-02")
         })]
@@ -188,15 +188,15 @@ class TestAlphaModelStrategy(unittest.TestCase):
                                                           use_stop_losses=False)
 
         self.positions_in_portfolio = [Mock(spec=BacktestPosition, **{
-            'contract.return_value': Contract("ExampleZ00 Comdty", "FUT", "SIM_EXCHANGE"),
+            'ticker.return_value': BloombergTicker("ExampleZ00 Comdty", SecurityType.FUTURE, 1),
             'quantity.return_value': -10,
             'start_time': str_to_date("2000-01-01")
         }), Mock(spec=BacktestPosition, **{
-            'contract.return_value': Contract("ExampleN01 Comdty", "FUT", "SIM_EXCHANGE"),
+            'ticker.return_value': BloombergTicker("ExampleN01 Comdty", SecurityType.FUTURE, 1),
             'quantity.return_value': 20,
             'start_time': str_to_date("2000-01-02")
         }), Mock(spec=BacktestPosition, **{
-            'contract.return_value': Contract("ExampleZ01 Comdty", "FUT", "SIM_EXCHANGE"),
+            'ticker.return_value': BloombergTicker("ExampleZ01 Comdty", SecurityType.FUTURE, 1),
             'quantity.return_value': 20,
             'start_time': str_to_date("2000-01-02")
         })]
@@ -221,7 +221,7 @@ class TestAlphaModelStrategy(unittest.TestCase):
                                                           Mock())
 
         self.positions_in_portfolio = [Mock(spec=BacktestPosition, **{
-            'contract.return_value': Contract("ExampleZ00 Comdty", "FUT", "SIM_EXCHANGE"),
+            'ticker.return_value': BloombergTicker("ExampleZ00 Comdty", SecurityType.FUTURE, 1),
             'quantity.return_value': -10,
             'start_time': str_to_date("2000-01-01")
         })]
@@ -244,7 +244,7 @@ class TestAlphaModelStrategy(unittest.TestCase):
         self.alpha_model.get_signal.return_value = Signal(self.future_ticker, Exposure.LONG, 1, Mock(), Mock())
 
         self.positions_in_portfolio = [Mock(spec=BacktestPosition, **{
-            'contract.return_value': Contract("ExampleZ00 Comdty", "FUT", "SIM_EXCHANGE"),
+            'ticker.return_value': BloombergTicker("ExampleZ00 Comdty", SecurityType.FUTURE, 1),
             'quantity.return_value': -10,
             'start_time': str_to_date("2000-01-01")
         })]
@@ -268,7 +268,7 @@ class TestAlphaModelStrategy(unittest.TestCase):
                                                                                               Mock(), Mock())
 
         self.positions_in_portfolio = [Mock(spec=BacktestPosition, **{
-            'contract.return_value': Contract("ExampleZ00 Comdty", "FUT", "SIM_EXCHANGE"),
+            'ticker.return_value': BloombergTicker("ExampleZ00 Comdty", SecurityType.FUTURE, 1),
             'quantity.return_value': -10,
             'start_time': str_to_date("2000-01-01")
         })]
@@ -303,7 +303,7 @@ class TestAlphaModelStrategy(unittest.TestCase):
                                                                                               1, Mock(), Mock())
 
         self.positions_in_portfolio = [Mock(spec=BacktestPosition, **{
-            'contract.return_value': Contract("ExampleZ00 Comdty", "FUT", "SIM_EXCHANGE"),
+            'ticker.return_value': BloombergTicker("ExampleZ00 Comdty", SecurityType.FUTURE, 1),
             'quantity.return_value': -10,
             'start_time': str_to_date("2000-01-01")
         })]
@@ -336,7 +336,7 @@ class TestAlphaModelStrategy(unittest.TestCase):
                                                        Mock(), Mock())
 
         self.positions_in_portfolio = [Mock(spec=BacktestPosition, **{
-            'contract.return_value': Contract("ExampleZ00 Comdty", "FUT", "SIM_EXCHANGE"),
+            'ticker.return_value': BloombergTicker("ExampleZ00 Comdty", SecurityType.FUTURE, 1),
             'quantity.return_value': -10,
             'start_time': str_to_date("2000-01-01")
         })]
@@ -371,7 +371,7 @@ class TestAlphaModelStrategy(unittest.TestCase):
         alpha_model_2.get_signal.return_value = Signal(BloombergTicker("Example Ticker"), Exposure.LONG, 1, Mock(), Mock())
 
         self.positions_in_portfolio = [Mock(spec=BacktestPosition, **{
-            'contract.return_value': Contract("ExampleZ00 Comdty", "FUT", "SIM_EXCHANGE"),
+            'ticker.return_value': BloombergTicker("ExampleZ00 Comdty", SecurityType.FUTURE, 1),
             'quantity.return_value': -10,
             'start_time': str_to_date("2000-01-01")
         })]
@@ -407,7 +407,7 @@ class TestAlphaModelStrategy(unittest.TestCase):
                                                        Mock(), Mock())
 
         self.positions_in_portfolio = [Mock(spec=BacktestPosition, **{
-            'contract.return_value': Contract("ExampleZ00 Comdty", "FUT", "SIM_EXCHANGE"),
+            'ticker.return_value': BloombergTicker("ExampleZ00 Comdty", SecurityType.FUTURE, 1),
             'quantity.return_value': -10,
             'start_time': str_to_date("2000-01-01")
         })]

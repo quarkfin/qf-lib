@@ -11,37 +11,38 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-
 from threading import Event
 from typing import List
 
 from ibapi.client import OrderId, TickerId
-from ibapi.contract import Contract as IBContract
+from ibapi.contract import Contract
 from ibapi.order import Order as IBOrder
 from ibapi.order_state import OrderState
 from ibapi.utils import iswrapper, current_fn_name
 from ibapi.wrapper import EWrapper
 
-from qf_lib.backtesting.contract.contract import Contract
+from qf_lib.backtesting.contract.contract_to_ticker_conversion.ib_contract_ticker_mapper import IBContractTickerMapper
 from qf_lib.backtesting.order.execution_style import StopOrder, MarketOrder
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.backtesting.portfolio.broker_positon import BrokerPosition
-from qf_lib.backtesting.portfolio.position import Position
 from qf_lib.common.utils.logging.qf_parent_logger import ib_logger
+from qf_lib.interactive_brokers.ib_contract import IBContract
 
 
 class IBWrapper(EWrapper):
-    def __init__(self, action_event_lock: Event):
-
+    def __init__(self, action_event_lock: Event, contract_ticker_mapper: IBContractTickerMapper):
+        super().__init__()
         self.action_event_lock = action_event_lock
         self.logger = ib_logger.getChild(self.__class__.__name__)
+        self.contract_ticker_mapper = contract_ticker_mapper
 
         self.net_liquidation = None
         self.tmp_value = None
         self.nextValidOrderId = None
-        self.position_list = []  # type: List[Position]
+        self.position_list = []  # type: List[BrokerPosition]
         self.order_list = []  # type: List[Order]
+        self.contract_details = None
         self._order_id_awaiting_submit = None  # type: int
         self._order_id_awaiting_cancel = None  # type: int
 
@@ -71,6 +72,11 @@ class IBWrapper(EWrapper):
         self.action_event_lock.set()
 
     @iswrapper
+    def contractDetails(self, reqId, contractDetails):
+        super(IBWrapper, self).contractDetails(reqId, contractDetails)
+        self.contract_details = contractDetails
+
+    @iswrapper
     def accountSummary(self, reqId: int, account: str, tag: str, value: str, currency: str):
         if tag == 'NetLiquidation':
             self.net_liquidation = float(value)
@@ -83,14 +89,22 @@ class IBWrapper(EWrapper):
         self.action_event_lock.set()
 
     @iswrapper
-    def position(self, account: str, ib_contract: IBContract, position: float, avgCost: float):
-        contract = Contract(ib_contract.symbol, ib_contract.secType, ib_contract.exchange)
-
+    def position(self, account: str, ib_contract: Contract, position: float, avgCost: float):
+        """
+        Important note: For futures, the exchange field will not be populated in the position callback as some futures
+        trade on multiple exchanges.
+        """
         if not position.is_integer():
-            self.logger.warning("Position {} has non-integer quantity = {}".format(contract, position))
+            self.logger.warning(f"Position {ib_contract} has non-integer quantity = {position}")
 
-        position_info = BrokerPosition(contract, int(position), avgCost)
-        self.position_list.append(position_info)
+        if int(position) != 0:
+            try:
+                ticker = self.contract_ticker_mapper.contract_to_ticker(IBContract.from_ib_contract(ib_contract))
+                position_info = BrokerPosition(ticker, int(position), avgCost)
+                self.position_list.append(position_info)
+            except ValueError as e:
+                self.logger.error(f"Position for contract {ib_contract} will be skipped due to the following error "
+                                  f"during parsing: \n{e}")
 
     @iswrapper
     def positionEnd(self):
@@ -101,7 +115,7 @@ class IBWrapper(EWrapper):
                     permId: int, parentId: int, lastFillPrice: float, clientId: int, whyHeld: str, mktCapPrice: float):
         self.logAnswer(current_fn_name(), vars())
 
-        if self._order_id_awaiting_submit == orderId and status in ['PreSubmitted', 'Submitted']:
+        if self._order_id_awaiting_submit == orderId and status in ['PreSubmitted', 'Submitted', 'PendingSubmit']:
             self.logger.info('===> Order ID: {}, status: {}'.format(orderId, status))
             self.action_event_lock.set()
 
@@ -110,8 +124,8 @@ class IBWrapper(EWrapper):
             self.action_event_lock.set()
 
     @iswrapper
-    def openOrder(self, orderId: OrderId, ib_contract: IBContract, ib_order: IBOrder, orderState: OrderState):
-        contract = Contract(ib_contract.symbol, ib_contract.secType, ib_contract.exchange)
+    def openOrder(self, orderId: OrderId, ib_contract: Contract, ib_order: IBOrder, orderState: OrderState):
+        super().openOrder(orderId, ib_contract, ib_order, orderState)
 
         if ib_order.orderType.upper() == 'STP':
             execution_style = StopOrder(ib_order.auxPrice)
@@ -142,14 +156,39 @@ class IBWrapper(EWrapper):
             self.logger.error(error_message)
             raise ValueError(error_message)
 
-        order = Order(contract=contract, quantity=quantity, execution_style=execution_style,
-                      time_in_force=time_in_force, order_state=orderState.status)
+        try:
+            ticker = self.contract_ticker_mapper.contract_to_ticker(IBContract.from_ib_contract(ib_contract))
+            order = Order(ticker=ticker, quantity=quantity, execution_style=execution_style,
+                          time_in_force=time_in_force, order_state=orderState.status)
 
-        order.id = int(orderId)
-        self.order_list.append(order)
+            order.id = int(orderId)
+            self.order_list.append(order)
+        except ValueError as e:
+            self.logger.error(f"Open Order for contract {ib_contract} will be skipped due to the following error "
+                              f"during parsing: \n{e}")
 
     @iswrapper
     def openOrderEnd(self):
+        self.action_event_lock.set()
+
+    @iswrapper
+    def execDetails(self, reqId: int, contract: IBContract, execution):
+        super().execDetails(reqId, contract, execution)
+        self.logger.info(f"ExecDetails. ReqId: {reqId}, Symbol: {contract.symbol}, SecType: {contract.secType}, "
+                         f"Currency: {contract.currency}, execution")
+
+    @iswrapper
+    def execDetailsEnd(self, reqId: int):
+        super().execDetailsEnd(reqId)
+        self.action_event_lock.set()
+
+    @iswrapper
+    def commissionReport(self, commissionReport):
+        super().commissionReport(commissionReport)
+        self.logger.info(f"CommissionReport: {commissionReport}")
+
+    @iswrapper
+    def contractDetailsEnd(self, reqId: int):
         self.action_event_lock.set()
 
     def next_order_id(self):
@@ -168,3 +207,9 @@ class IBWrapper(EWrapper):
 
     def set_cancel_order_id(self, order_id):
         self._order_id_awaiting_cancel = order_id
+
+    def reset_contract_details(self):
+        self.contract_details = None
+
+    def set_contract_details(self, contract_details):
+        self.contract_details = contract_details

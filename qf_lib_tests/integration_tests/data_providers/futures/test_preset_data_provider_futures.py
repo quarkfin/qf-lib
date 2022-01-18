@@ -13,8 +13,6 @@
 #     limitations under the License.
 import unittest
 
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.simulated_bloomberg_mapper import \
-    SimulatedBloombergContractTickerMapper
 from qf_lib.backtesting.data_handler.daily_data_handler import DailyDataHandler
 from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
@@ -40,8 +38,6 @@ class TestPresetDataProviderWithFutures(unittest.TestCase):
         cls.frequency = Frequency.DAILY
         cls.TICKER_1 = BloombergFutureTicker("Cotton", "CT{} Comdty", 1, 3)
         cls.TICKER_2 = BloombergFutureTicker("Corn", 'C {} Comdty', 1, 5)
-
-        cls.contract_ticker_mapper = SimulatedBloombergContractTickerMapper()
 
     def setUp(self):
         try:

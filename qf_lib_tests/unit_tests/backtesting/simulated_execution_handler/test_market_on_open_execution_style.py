@@ -17,9 +17,6 @@ from unittest.mock import Mock
 
 import pandas as pd
 
-from qf_lib.backtesting.contract.contract import Contract
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.simulated_bloomberg_mapper import \
-    SimulatedBloombergContractTickerMapper
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
@@ -36,6 +33,7 @@ from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.backtesting.portfolio.transaction import Transaction
 from qf_lib.common.enums.frequency import Frequency
+from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.date_to_datetime import date_to_datetime
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
@@ -57,9 +55,7 @@ class TestMarketOnOpenExecutionStyle(TestCase):
         before_close = start_date + MarketCloseEvent.trigger_time() - RelativeDelta(minutes=self.scheduling_time_delay)
         self.timer = SettableTimer(initial_time=before_close)
 
-        contracts_to_tickers_mapper = SimulatedBloombergContractTickerMapper()
-        msft_contract = Contract("MSFT US Equity", security_type='STK', exchange='TEST')
-        self.msft_ticker = contracts_to_tickers_mapper.contract_to_ticker(msft_contract)
+        self.msft_ticker = BloombergTicker("MSFT US Equity")
 
         self.data_handler = Mock(spec=DataHandler)
         self.data_handler.frequency = Frequency.DAILY
@@ -71,20 +67,19 @@ class TestMarketOnOpenExecutionStyle(TestCase):
         self.monitor = Mock(spec=AbstractMonitor)
         self.portfolio = Mock(spec=Portfolio)
 
-        slippage_model = PriceBasedSlippage(0.0, self.data_handler, contracts_to_tickers_mapper)
+        slippage_model = PriceBasedSlippage(0.0, self.data_handler)
         self.exec_handler = SimulatedExecutionHandler(self.data_handler, self.timer, self.scheduler, self.monitor,
-                                                      self.commission_model, contracts_to_tickers_mapper,
-                                                      self.portfolio, slippage_model,
+                                                      self.commission_model, self.portfolio, slippage_model,
                                                       RelativeDelta(minutes=self.scheduling_time_delay))
 
-        self.order_1 = Order(msft_contract, quantity=10, execution_style=MarketOrder(),
+        self.order_1 = Order(self.msft_ticker, quantity=10, execution_style=MarketOrder(),
                              time_in_force=TimeInForce.OPG)
-        self.order_2 = Order(msft_contract, quantity=-5, execution_style=MarketOrder(),
+        self.order_2 = Order(self.msft_ticker, quantity=-5, execution_style=MarketOrder(),
                              time_in_force=TimeInForce.OPG)
-        self.order_3 = Order(msft_contract, quantity=-7, execution_style=MarketOrder(),
+        self.order_3 = Order(self.msft_ticker, quantity=-7, execution_style=MarketOrder(),
                              time_in_force=TimeInForce.OPG)
 
-        self.order_4 = Order(msft_contract, quantity=4, execution_style=MarketOnCloseOrder(),
+        self.order_4 = Order(self.msft_ticker, quantity=4, execution_style=MarketOnCloseOrder(),
                              time_in_force=TimeInForce.DAY)
 
     def _trigger_single_time_event(self):
@@ -194,10 +189,10 @@ class TestMarketOnOpenExecutionStyle(TestCase):
         self.exec_handler.on_market_open(...)
 
         timestamp = self.timer.now()
-        contract = order.contract
+        ticker = order.ticker
         quantity = order.quantity
-        commission = self.commission_model.calculate_commission(order, price)
-        expected_transaction = Transaction(timestamp, contract, quantity, price, commission)
+        commission = self.commission_model.calculate_commission(ticker, price)
+        expected_transaction = Transaction(timestamp, ticker, quantity, price, commission)
 
         self.monitor.record_transaction.assert_called_once_with(expected_transaction)
 
@@ -210,10 +205,10 @@ class TestMarketOnOpenExecutionStyle(TestCase):
         self.exec_handler.on_market_close(...)
 
         timestamp = self.timer.now()
-        contract = order.contract
+        ticker = order.ticker
         quantity = order.quantity
         commission = self.commission_model.calculate_commission(order, price)
-        expected_transaction = Transaction(timestamp, contract, quantity, price, commission)
+        expected_transaction = Transaction(timestamp, ticker, quantity, price, commission)
 
         self.monitor.record_transaction.assert_called_once_with(expected_transaction)
 

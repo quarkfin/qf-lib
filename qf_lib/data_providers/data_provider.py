@@ -40,7 +40,7 @@ class DataProvider(object, metaclass=ABCMeta):
     @abstractmethod
     def get_price(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
                   start_date: datetime, end_date: datetime = None, frequency: Frequency = None) -> Union[
-            None, PricesSeries, PricesDataFrame, QFDataArray]:
+                        None, PricesSeries, PricesDataFrame, QFDataArray]:
         """
         Gets adjusted historical Prices (Open, High, Low, Close) and Volume
 
@@ -72,9 +72,9 @@ class DataProvider(object, metaclass=ABCMeta):
 
     @abstractmethod
     def get_history(
-        self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[None, str, Sequence[str]],
-        start_date: datetime, end_date: datetime = None, frequency: Frequency = None, **kwargs) -> Union[
-            QFSeries, QFDataFrame, QFDataArray]:
+            self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[None, str, Sequence[str]],
+            start_date: datetime, end_date: datetime = None, frequency: Frequency = None, **kwargs) -> Union[
+                QFSeries, QFDataFrame, QFDataArray]:
         """
         Gets historical attributes (fields) of different securities (tickers).
 
@@ -129,7 +129,7 @@ class DataProvider(object, metaclass=ABCMeta):
             -> Dict[FutureTicker, Union[QFSeries, QFDataFrame]]:
         """
         Returns tickers of futures contracts, which belong to the same futures contract chain as the provided ticker
-        (tickers), along with their expiration dates in form of a QFSeries.
+        (tickers), along with their expiration dates in form of a QFSeries or QFDataFrame.
 
         Parameters
         ----------
@@ -142,9 +142,9 @@ class DataProvider(object, metaclass=ABCMeta):
         -------
         Dict[FutureTicker, Union[QFSeries, QFDataFrame]]
             Returns a dictionary, which maps Tickers to QFSeries, consisting of the expiration dates of Future
-            Contracts: Dict[FutureTicker, QFSeries]. The QFSeries contain the specific Tickers, which belong to the
-            corresponding futures family, same as the FutureTicker, and are indexed by the expiration dates of
-            the specific future contracts.
+            Contracts: Dict[FutureTicker, Union[QFSeries, QFDataFrame]]]. The QFSeries' / QFDataFrames contain the
+            specific Tickers, which belong to the corresponding futures family, same as the FutureTicker, and are
+            indexed by the expiration dates of the specific future contracts.
         """
         pass
 
@@ -203,9 +203,8 @@ class DataProvider(object, metaclass=ABCMeta):
                 tickers_as_strings = tickers.as_string()
             else:
                 tickers_as_strings = ", ".join(ticker.as_string() for ticker in tickers)
-            raise ValueError("Not enough data points for \ntickers: {} \ndate: {}."
-                             "\n{} Data points requested, \n{} Data points available.".format(
-                                tickers_as_strings, end_date, nr_of_bars, num_of_dates_available))
+            raise ValueError(f"Not enough data points for \ntickers: {tickers_as_strings} \ndate: {end_date}."
+                             f"\n{nr_of_bars} Data points requested, \n{num_of_dates_available} Data points available.")
 
         if isinstance(container, QFDataArray):
             return container.isel(dates=slice(-nr_of_bars, None))

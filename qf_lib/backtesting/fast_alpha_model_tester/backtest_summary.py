@@ -16,7 +16,6 @@ from datetime import datetime
 from typing import Tuple, Sequence, Type, List
 
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.portfolio.trade import Trade
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
@@ -48,11 +47,9 @@ class BacktestSummaryElement:
 
 
 class BacktestSummary:
-    def __init__(self, tickers: Sequence[Ticker], contract_ticker_mapper: ContractTickerMapper,
-                 alpha_model_type: Type[AlphaModel], elements_list: Sequence[BacktestSummaryElement],
-                 start_date: datetime, end_date: datetime):
+    def __init__(self, tickers: Sequence[Ticker], alpha_model_type: Type[AlphaModel],
+                 elements_list: Sequence[BacktestSummaryElement], start_date: datetime, end_date: datetime):
         self.tickers = tickers
-        self.contract_ticker_mapper = contract_ticker_mapper
         self.alpha_model_type = alpha_model_type
         self.elements_list = elements_list
         self.asset_class = None

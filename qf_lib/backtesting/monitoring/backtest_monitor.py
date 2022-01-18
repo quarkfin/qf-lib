@@ -171,7 +171,7 @@ class BacktestMonitor(AbstractMonitor):
             file_path = path.expanduser(path.join(output_dir, csv_filename))
 
             # Write new file header
-            fieldnames = ["Timestamp", "Contract symbol", "Security type", "Exchange", "Contract size", "Quantity",
+            fieldnames = ["Timestamp", "Asset Name", "Contract symbol", "Security type", "Contract size", "Quantity",
                           "Price", "Commission"]
 
             file_handler = open(file_path, 'a', newline='')
@@ -194,10 +194,10 @@ class BacktestMonitor(AbstractMonitor):
         if self._monitor_settings.issue_transaction_log and self._csv_writer is not None:
             self._csv_writer.writerow([
                 transaction.time,
-                transaction.contract.symbol,
-                transaction.contract.security_type,
-                transaction.contract.exchange,
-                transaction.contract.contract_size,
+                transaction.ticker.name,
+                transaction.ticker.ticker,
+                transaction.ticker.security_type.value,
+                transaction.ticker.point_value,
                 transaction.quantity,
                 transaction.price,
                 transaction.commission
@@ -263,16 +263,9 @@ class BacktestMonitor(AbstractMonitor):
             trades_list = trades_generator.create_trades_from_backtest_positions(closed_positions, portfolio_eod_series)
 
             if len(trades_list) > 0:
-                contract_ticker_mapper = self.backtest_result.portfolio.contract_ticker_mapper
-                nr_of_assets_traded = len(
-                    set(contract_ticker_mapper.contract_to_ticker(t.contract, False) for t in trades_list)
-                )
-
-                start_date = self.backtest_result.start_date if self.backtest_result.start_date is not None \
-                    else portfolio_eod_series.index[0]
-
-                end_date = self.backtest_result.end_date if self.backtest_result.end_date is not None \
-                    else datetime.now()
+                nr_of_assets_traded = len(set(t.ticker.name for t in trades_list))
+                start_date = self.backtest_result.start_date or portfolio_eod_series.index[0]
+                end_date = self.backtest_result.end_date or datetime.now()
 
                 trades_analysis_sheet = TradeAnalysisSheet(self._settings, self._pdf_exporter,
                                                            nr_of_assets_traded=nr_of_assets_traded,
@@ -284,14 +277,12 @@ class BacktestMonitor(AbstractMonitor):
                 trades_analysis_sheet.build_document()
                 trades_analysis_sheet.save(self._report_dir)
             else:
-                self.logger.info("No trades generated throughout the backtest - "
-                                 "Trade analysis sheet will not be generated.")
+                self.logger.info("No trades generated during the backtest - TradeAnalysisSheet will not be generated.")
 
     @ErrorHandling.error_logging
     def _issue_factor_sector_exposure_sheet(self):
         if self._monitor_settings.exposure_settings is not None:
-            exposure_generator = ExposureGenerator(self._settings, self._monitor_settings.exposure_settings.data_provider,
-                                                   self.backtest_result.portfolio.contract_ticker_mapper)
+            exposure_generator = ExposureGenerator(self._settings, self._monitor_settings.exposure_settings.data_provider)
 
             # setting ExposureGenerator parameters
             exposure_generator.set_positions_history(self.backtest_result.portfolio.positions_history())

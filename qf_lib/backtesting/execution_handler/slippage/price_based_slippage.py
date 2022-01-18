@@ -16,7 +16,6 @@ import math
 from datetime import datetime
 from typing import Sequence, Optional
 
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.execution_handler.slippage.base import Slippage
 from qf_lib.backtesting.order.order import Order
 from qf_lib.data_providers.data_provider import DataProvider
@@ -27,9 +26,9 @@ class PriceBasedSlippage(Slippage):
     Calculates the slippage by using some fixed fraction of the current securities' price (e.g. always 0.01%).
     """
 
-    def __init__(self, slippage_rate: float, data_provider: DataProvider, contract_ticker_mapper: ContractTickerMapper,
+    def __init__(self, slippage_rate: float, data_provider: DataProvider,
                  max_volume_share_limit: Optional[float] = None):
-        super().__init__(data_provider, contract_ticker_mapper, max_volume_share_limit)
+        super().__init__(data_provider, max_volume_share_limit)
         self.slippage_rate = slippage_rate
 
     def _get_fill_prices(self, date: datetime, orders: Sequence[Order], no_slippage_fill_prices: Sequence[float],

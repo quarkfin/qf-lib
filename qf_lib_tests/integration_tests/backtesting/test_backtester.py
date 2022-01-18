@@ -25,7 +25,6 @@ from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_seri
 from qf_lib_tests.integration_tests.connect_to_data_provider import get_data_provider
 
 from qf_lib_tests.integration_tests.backtesting.trading_session_for_tests import TradingSessionForTests
-from qf_lib.backtesting.contract.contract import Contract
 from qf_lib.backtesting.order.execution_style import MarketOrder
 from qf_lib.common.enums.price_field import PriceField
 
@@ -43,7 +42,6 @@ class BuyAndHoldStrategy:
     A testing strategy that simply purchases (longs) an asset as soon as it starts and then holds until the completion
     of a backtest.
     """
-    MICROSOFT_CONTRACT = Contract(symbol="MSFT US Equity", security_type='STK', exchange='NASDAQ')
     MICROSOFT_TICKER = BloombergTicker("MSFT US Equity")
 
     def __init__(self, broker: Broker, order_factory: OrderFactory, scheduler: Scheduler):
@@ -59,7 +57,7 @@ class BuyAndHoldStrategy:
 
     def calculate_signals(self):
         if not self.invested:
-            orders = self.order_factory.percent_orders({self.MICROSOFT_CONTRACT: 1.0}, MarketOrder(),
+            orders = self.order_factory.percent_orders({self.MICROSOFT_TICKER: 1.0}, MarketOrder(),
                                                        TimeInForce.GTC)
             self.broker.place_orders(orders)
             self.invested = True

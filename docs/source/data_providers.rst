@@ -19,6 +19,7 @@ data_providers
     quandl.quandl_data_provider.QuandlDataProvider
     haver.haver_data_provider.HaverDataProvider
     cryptocurrency.cryptocurrency_data_provider.CryptoCurrencyDataProvider
+    portara.portara_data_provider.PortaraDataProvider
 
 
 .. automodule:: qf_lib.data_providers.helpers

@@ -56,32 +56,22 @@ class CurrentPositionsSheet(AbstractDocument):
 
     def _add_open_positions_table(self):
         open_positions_dict = self._portfolio.open_positions_dict
-
-        contracts = open_positions_dict.keys()
-
-        # Return a readable name for each ticker (name property for FutureTickers and ticker for Tickers)
-        tickers = [self._portfolio.contract_ticker_mapper.contract_to_ticker(contract,
-                                                                             strictly_to_specific_ticker=False)
-                   for contract in contracts]
-        tickers = [ticker.name for ticker in tickers]
-
-        specific_tickers = [self._portfolio.contract_ticker_mapper.contract_to_ticker(contract).ticker
-                            for contract in contracts]
+        tickers = open_positions_dict.keys()
 
         # Get the information whether it is a long or short position
-        directions = [open_positions_dict[contract].direction() for contract in contracts]
+        directions = [open_positions_dict[t].direction() for t in tickers]
         directions = ["LONG" if direction == 1 else "SHORT" for direction in directions]
 
         # Get the total exposure and market value for each open position
-        total_exposures = ["{:,.2f}".format(open_positions_dict[contract].total_exposure()) for contract in contracts]
-        pnls = ["{:,.2f}".format(open_positions_dict[contract].unrealised_pnl) for contract in contracts]
+        total_exposures = ["{:,.2f}".format(open_positions_dict[t].total_exposure()) for t in tickers]
+        pnls = ["{:,.2f}".format(open_positions_dict[t].unrealised_pnl) for t in tickers]
 
         # Get the time of opening the positions
-        start_time = [open_positions_dict[contract].start_time.date() for contract in contracts]
+        start_time = [open_positions_dict[t].start_time.date() for t in tickers]
 
         data = {
-            "Tickers name": tickers,
-            "Specific ticker": specific_tickers,
+            "Tickers name": [t.name for t in tickers],
+            "Specific ticker": tickers,
             "Direction": directions,
             "Total Exposure": total_exposures,
             "PnL": pnls,
