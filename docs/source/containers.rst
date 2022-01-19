@@ -48,6 +48,7 @@ Futures
     futures.future_contract.FutureContract
     futures.future_tickers.future_ticker.FutureTicker
     futures.future_tickers.bloomberg_future_ticker.BloombergFutureTicker
+    futures.future_tickers.portara_future_ticker.PortaraFutureTicker
     futures.futures_adjustment_method.FuturesAdjustmentMethod
     futures.futures_rolling_orders_generator.FuturesRollingOrdersGenerator
 

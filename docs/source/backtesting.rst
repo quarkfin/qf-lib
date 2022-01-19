@@ -24,8 +24,8 @@ contract
     :template: short_class.rst
 
     contract_to_ticker_conversion.base.ContractTickerMapper
-    contract.contract_to_ticker_conversion.simulated_contract_ticker_mapper.SimulatedContractTickerMapper
-    contract.contract_to_ticker_conversion.ib_contract_ticker_mapper.IBContractTickerMapper
+    contract_to_ticker_conversion.simulated_contract_ticker_mapper.SimulatedContractTickerMapper
+    contract_to_ticker_conversion.ib_contract_ticker_mapper.IBContractTickerMapper
 
 
 data_handler
@@ -127,7 +127,10 @@ order
     :toctree: _autosummary
     :template: short_class.rst
 
-
+    execution_style.ExecutionStyle
+    execution_style.MarketOrder
+    execution_style.MarketOnCloseOrder
+    execution_style.StopOrder
     order_factory.OrderFactory
     order.Order
     time_in_force.TimeInForce
