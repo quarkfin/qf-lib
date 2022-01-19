@@ -32,9 +32,10 @@ setup(
         'Tutorials': 'https://quarkfin.github.io/qf-lib-info/'
     },
     classifiers=[
-        'Development Status :: 4 - Beta'
+        'Development Status :: 4 - Beta',
         'Programming Language :: Python :: 3.9',
     ],
+    download_url='https://github.com/quarkfin/qf-lib/archive/refs/tags/v1.2.0-beta.tar.gz',
     url='https://quarkfin.github.io/qf-lib/',
     packages=find_packages(include=('qf_lib', 'qf_lib_tests')),
     provides=[
