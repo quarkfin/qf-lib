@@ -70,6 +70,7 @@ class PortaraDataProvider(PresetDataProvider):
           qf_lib_tests > unit_tests > data_providers > portara > input_data.
         - To see examples using Portara data provider, check the demo scripts:
           demo_scripts > data_providers > portara.
+        - "Settle" data is currently not supported.
 
     """
 

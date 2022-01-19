@@ -21,7 +21,6 @@ data_providers
     cryptocurrency.cryptocurrency_data_provider.CryptoCurrencyDataProvider
     portara.portara_data_provider.PortaraDataProvider
 
-
 .. automodule:: qf_lib.data_providers.helpers
     :autosummary:
     :members:

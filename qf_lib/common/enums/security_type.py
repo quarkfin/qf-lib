@@ -15,9 +15,20 @@ from enum import Enum
 
 
 class SecurityType(Enum):
+    """
+    Enum which denotes the type of the security, that the ticker is representing e.g. SecurityType.STOCK for a stock,
+    SecurityType.FUTURE for a futures contract etc.
+    """
+
     STOCK = "STK"
+    """Stock"""
     FUTURE = "FUT"
+    """Futures contracts"""
     INDEX = "IND"
+    """Index"""
     FX = "FX"
+    """FX"""
     FACTOR = "FACTOR"
+    """Factor"""
     SPREAD = "SPREAD"
+    """Spread"""
