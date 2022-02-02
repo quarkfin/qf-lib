@@ -1,173 +1,47 @@
 # QF-Lib
-This document will guide you through the installation process and will help you configure the library.
 
-## Prerequisites
-It is assumed that you have already installed Python 3.9.
+[![PyPI](https://img.shields.io/pypi/v/qf-lib?color=green&label=PyPI%20Latest%20Release)](https://pypi.org/project/qf-lib/)
+[![Downloads](https://static.pepy.tech/personalized-badge/qf-lib?period=month&units=international_system&left_color=grey&right_color=blue&left_text=PyPI%20Downloads%20/%20month)](https://pepy.tech/project/qf-lib)
+[![GitHub](https://img.shields.io/github/license/quarkfin/qf-lib?color=orange&label=License)](https://github.com/quarkfin/qf-lib/blob/master/LICENSE)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/qf-lib?color=yellow&label=python)
 
-The library uses WeasyPrint to export documents to PDF. WeasyPrint requires additional dependencies, check the 
-following link for platform-specific instructions for Linux, macOS and Windows installation:
-`https://weasyprint.readthedocs.io/en/stable/install.html`.
+## What is QF-lib?
+**QF-Lib** is a Python library that provides high quality tools for quantitative finance. 
+A large part of the project is dedicated to backtesting investment strategies. 
+The Backtester uses an **event-driven architecture** and simulates events such as daily market opening 
+or closing. It is designed to **test and evaluate any custom investment strategy**.
 
-In order to facilitate the GTK3+ installation process for Windows you can use installers available at:
-`https://github.com/tschoonj/GTK-for-Windows-Runtime-Environment-Installer/releases`. Download and run the latest 
-`gtk3-runtime-x.x.x-x-x-x-ts-win64.exe` file to install the GTK3+.
+Main features include:
+* Flexible data sourcing - the project supports the possibility of an easy selection of the data source. Currently provides financial data from **Bloomberg**, **Quandl**, **Haver Analytics**, **CoinMarketCap** or **Portara**. To check if there are any additional dependencies necessary for any of these data providers please visit [the installation guide](https://quarkfin.github.io/qf-lib-info/installation/#tips-on-how-to-install-optional-data-providers).
+* Tools to prevent look-ahead bias in the backtesting environment.
+* Adapted [data containers](https://quarkfin.github.io/qf-lib-info/structure/#containers), which extend the functionality of pandas `Series'` and `Dataframes`.
+* Summary generation - all performed studies can be summarized with a practical and informative document explaining the results. [Several document templates](https://quarkfin.github.io/qf-lib-info/structure/#analysis) are available in the project.
+* Simple adjustment of existing settings and creation of new functionalities.
+
 
 ## Installation
 You can install `qf-lib` using the pip command:
 
-```pip install qf-lib```
+```sh
+pip install pandas
+```
  
 Alternatively, to install the library from sources, you can download the project and in the qf_lib directory 
 (same one where you found this file after cloning the repository) execute the following command:
 
-```python setup.py install```
-
-## Installation (using requirements.txt)
-In the qf_lib directory (same one where you found this file after cloning the repository) execute the following command:
-`python -m pip install -r requirements.txt`. This will install all necessary python dependencies.
-
-
-### [Optional] Tips on how to install optional data providers
-* Bloomberg API (version: 3.16.2) installation:
-    * `python -m pip install --index-url=https://bcms.bloomberg.com/pip/simple/ blpapi==3.16.2`
-    * Prebuilt binaries are provided for Python 2.7, 3.6, 3.7, 3.8 and 3.9 in both 32 and 64 bits, for Windows, macOS, 
-    and most versions of Linux. On Linux, 'pip' >= 19.0 is required to install these binaries.
- * Quandl Data Provider (version: 3.6.1):
-    * `python -m pip install quandl==3.6.1`
- * Interactive Brokers platform installation:
-    * Download the TWS API Stable for your operating system (Version: API 9.76).
-    * Link for windows msi file: `http://interactivebrokers.github.io/downloads/TWS%20API%20Install%20976.01.msi`.
-    * Install TWS API by running the downloaded file.
-    * Go to `TWS API\source\pythonclient` and run `python setup.py install`.
-  
-
-# Configuration
-## Starting directory
-Starting directory is used to turn relative paths into absolute paths. In many places you'll be required to specify
-a path which should be relative to the starting directory. To set up starting directory one needs to either:
-- call `set_starting_dir_abs_path("C:\abs\path\to\starting\directory")`
-- or set `QF_STARTING_DIRECTORY` environment variable and put as value path to the project. 
-- For example the path might look like this: `C:\Users\user_name\workspace\qf-lib`
-
-## Advanced configuration - Settings files
-Many components from `qf-lib` require the `Settings` object as a dependency. To create it one needs to put in their Python code:
-```python
-from qf_lib.settings import Settings
-
-
-settings_path = ...
-secret_settings_path = ...
-settings = Settings(settings_path, secret_settings_path)
-```  
-where `settings_path` is an absolute path of your file containing settings (JSON, described later) used
-by the application and the `secret_settings_path` which is complementary to the settings file but contains secret data
-(e.g. passwords) and thus mustn't be added to the CVS. When `Settings` object is created, it:
-- loads settings defined in the `settings.json` file
-- loads settings defined in the `secret_settings.json` file (if the file exists)
-- loads settings defined in the `QUANTFIN_SECRET` environment variable (if the `secret_settings.json` file doesn't exist)
-- merges both loaded sets of settings together.
-
-Sample content of the `settings.json`:
-```json
-{
-  "some_setting": "value of that setting",
-  "another_setting": "value of another setting",
-  "some_connection_settings": {
-    "username": "john.smith"
-  }
-}
+```sh
+python setup.py install
 ```
 
-Sample content of the `secret_settings.json`:
-```json
-{
-  "some_connection_settings": {
-    "password": "my_secret_pass"
-  }
-}
-```
+## Prerequisites
+The library uses [WeasyPrint](https://weasyprint.readthedocs.io) to export documents to PDF. WeasyPrint requires additional dependencies, check the 
+[platform-specific instructions for Linux, macOS and Windows installation](https://weasyprint.readthedocs.io/en/stable/install.html).
 
-## QF-Lib used settings
-You may define your own settings and later on have them loaded into `Settings` object. However there are some, which are
-required for some QF-Lib components to work correctly.
+In order to facilitate the GTK3+ installation process for Windows you can use 
+[following installers](https://github.com/tschoonj/GTK-for-Windows-Runtime-Environment-Installer/releases). Download and run the latest 
+`gtk3-runtime-x.x.x-x-x-x-ts-win64.exe` file to install the GTK3+.
 
-- Sample settings can be found in demo configuration `\qf-lib\demo_scripts\demo_configuration\config_files\demo_settings.json`
-- Sample secret settings can be found in demo configuration `\qf-lib\demo_scripts\demo_configuration\config_files\demo_secret_settings.json`
-
-
-NOTICE: all paths used in the settings should be relative to the starting directory. (which can be set either by using
-`set_starting_dir_abs_path(path)` function or by setting `QF_STARTING_DIRECTORY` environment variable)
-
-Below you'll find a list of examples that can be put into settings
-
-**company_name and logo_path (optional)**
-
-`settings.json`:
-```json
-    "company_name": "Sample Org Name",
-    "logo_path": "path/to/logo.jpg"
-```
-Used by components producing tearsheets (in a form of PDFs). The company name and a logo is put in the header of those
-tearsheets.
-
-**document_css_directory (optional)**
-
-`settings.json`:
-```json
-    "document_css_directory": "input/elements_css"
-```
-Setting used by the `PDFExporter` component to style the elements put in PDFs (e.g. tables, paragraphs, etc.).
-If `document_css_directory` is not specified then the default style will be applied.
-
-**bloomberg (optional)**
-
-`settings.json`:
-```json
-  "bloomberg": {
-    "host": "localhost",
-    "port": 8194
-  }
-```
-
-Used by the `BloombergDataProvider`. To have this component running, first you need to have a Bloomberg subscription.
-Then you need to have the BLPAPI running somewhere. Then you need to specify where the API is running by specifying its
-host and port.
-
-**email_templates_directory (optional)**
-
-`settings.json`:
-```json
-  "email_templates_directory": "input/email_templates"
-```
-
-Setting used by the `EmailPublisher`. Email templates are HTML templates with placeholders (e.g. {{user.name}}).
-
-**output_directory**
-
-`settings.json`:
-```json
-  "output_directory": "output"
-```
-A relative path to the directory into which different components will put their output (e.g. generated tearsheets).
-
-**smtp (optional)**
-
-`settings.json`:
-```json
-  "smtp": {
-    "host": "smtp.server.pl",
-    "port": 587,
-    "domain": "SOME_DOMAIN",
-    "tls": true,
-    "sender": "sample_user@some.domain.com"
-  }
-```
-
-`secret_settings.json`:
-```json
-  "smtp": {
-    "username": "sample_user",
-    "password": "VeryStrong P4ssw0rd with s0me Polish special characters (to confuse the hacker)"
-  }
-```
-SMTP settings used by the `EmailPublisher`.
+## Documentation
+* Installation guide: https://quarkfin.github.io/qf-lib-info/installation/
+* Configuration guide: https://quarkfin.github.io/qf-lib-info/installation/#configuration
+* API documentation: https://quarkfin.github.io/qf-lib/index.html
