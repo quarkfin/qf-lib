@@ -23,7 +23,7 @@ Main features include:
 You can install `qf-lib` using the pip command:
 
 ```sh
-pip install pandas
+pip install qf-lib
 ```
  
 Alternatively, to install the library from sources, you can download the project and in the qf_lib directory 
