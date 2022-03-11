@@ -51,7 +51,7 @@ setup(
         'scikit-learn==0.24.2',
         'cvxopt==1.2.7',
         'openpyxl==3.0.7',
-        'Pillow==9.0.0',
+        'Pillow==9.0.1',
         'WeasyPrint==52.5',
         'emails==0.6',
         'Jinja2==2.11.3',
