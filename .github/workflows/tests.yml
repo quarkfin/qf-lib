@@ -19,9 +19,10 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install --force-reinstall MarkupSafe==2.0.1
-  
-  test_style_check:
-    runs-on: ubuntu-latest
-    needs: [build]
-    steps:
-      - run: flake8
+        pip install flake8 pytest
+    - name: Style check
+      run: flake8 .
+    - name: Unit tests
+      run: pytest qf_lib_tests/unit_tests
+    - name: Integration tests
+      run: pytest qf_lib_tests/integration_tests
