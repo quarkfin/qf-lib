@@ -22,19 +22,9 @@ class BacktestEquityPosition(BacktestPosition):
         return self.quantity() * self.current_price
 
     def total_exposure(self) -> float:
-        """
-        It tells us what is the total exposure of the position to the market in currency units
-        """
         return self._quantity * self.current_price
 
     def _cash_to_buy_or_proceeds_from_sale(self, transaction: Transaction) -> float:
-        """
-        Calculates how much we paid to buy assets or how much we received for selling assets (including commission)
-
-        For BUY transaction: how much we paid for the transaction including commission (it will be a negative number)
-        For SELL transaction: how much we received for selling shares including commission
-                             (it will be a positive number)
-        """
         result = transaction.price * transaction.quantity + transaction.commission
         return -result
 

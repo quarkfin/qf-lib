@@ -20,6 +20,7 @@ from typing import Any, Union, Optional
 import numpy
 from openpyxl import Workbook, load_workbook
 from openpyxl.worksheet.worksheet import Worksheet
+from pandas import Series, DataFrame
 
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.numberutils.is_finite_number import is_finite_number
@@ -124,10 +125,10 @@ class ExcelExporter(object):
                 makedirs(dir_path, exist_ok=True)
 
         if write_mode == WriteMode.CREATE:
-            assert not exists(file_path)
+            assert not exists(file_path) or not isfile(file_path)
             work_book = Workbook()
         elif write_mode == WriteMode.OPEN_EXISTING:
-            assert exists(file_path)
+            assert exists(file_path) and isfile(file_path)
             work_book = load_workbook(file_path)
 
         return work_book
@@ -152,10 +153,10 @@ class ExcelExporter(object):
         in the worksheet. If the :exported_value isn't a series nor dataframe, then the :include_index
         and :include_column_names parameters should be False.
         """
-        if isinstance(exported_value, QFSeries):
+        if isinstance(exported_value, Series):
             self._write_series_to_worksheet(exported_value, work_sheet, starting_row, starting_column,
                                             include_index, exported_value.name if include_column_names else None)
-        elif isinstance(exported_value, QFDataFrame):
+        elif isinstance(exported_value, DataFrame):
             self._write_dataframe_to_worksheet(exported_value, work_sheet, starting_row, starting_column,
                                                include_index, include_column_names)
         else:
@@ -199,13 +200,13 @@ class ExcelExporter(object):
                                             column_name=series_name if include_column_names else None)
             column += 1
 
-    def _export_index(self, dataframe, starting_column, starting_row, work_sheet, include_column_names):
+    def _export_index(self, container, starting_column, starting_row, work_sheet, include_column_names):
         row = starting_row
         if include_column_names:
             work_sheet.cell(row=row, column=starting_column, value="Index")
             row += 1
 
-        for date in dataframe.index:
+        for date in container.index:
             work_sheet.cell(row=row, column=starting_column, value=self._to_supported_type(date))
             row += 1
 

@@ -13,54 +13,30 @@
 #     limitations under the License.
 import pathlib
 from os.path import join
-
-from pandas import read_csv
-
 from demo_scripts.common.utils.dummy_ticker import DummyTicker
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
-from qf_lib.containers.qf_data_array import QFDataArray
-from qf_lib.data_providers.preset_data_provider import PresetDataProvider
+from qf_lib.data_providers.csv.csv_data_provider import CSVDataProvider
+
+daily_data_path = join(pathlib.Path(__file__).parent.absolute(), "input", "daily_data.csv")
+intraday_data_path = join(pathlib.Path(__file__).parent.absolute(), "input", "intraday_data.csv")
 
 
-def _acquire_data(input_file: str):
-    data_frame = read_csv(input_file, parse_dates=['dates'])
+tickers = [DummyTicker('AAA'), DummyTicker('BBB'), DummyTicker('CCC'),
+           DummyTicker('DDD'), DummyTicker('EEE'), DummyTicker('FFF')]
 
-    # The data_frame contains following headers: dates, open, high, low, close, volume, ticker.
-    dates = data_frame['dates'].drop_duplicates()
-    tickers = [DummyTicker(t) for t in data_frame['tickers'].unique()]
+field_to_price_field_dict = {
+            'open': PriceField.Open,
+            'high': PriceField.High,
+            'low': PriceField.Low,
+            'close': PriceField.Close,
+            'volume': PriceField.Volume,
+        }
 
-    # The columns in the csv file are in the exactly same order as the corresponding fields in the list below
-    fields = PriceField.ohlcv()
+fields = ['open', 'high', 'low', 'close', 'volume']
 
-    # Create a data array
-    data_array = data_frame.set_index(['dates', 'tickers']).stack().to_xarray()
+daily_data_provider = CSVDataProvider(daily_data_path, tickers, 'dates', field_to_price_field_dict,
+                                      fields, ticker_col='tickers')
 
-    # Construct a QFDataArray based on the data_array and sort it by the 'dates' coordinate
-    data = QFDataArray.create(
-        dates=dates,
-        tickers=tickers,
-        fields=fields,
-        data=data_array
-    ).sortby('dates')
-
-    start_date = dates.iloc[0]
-    end_date = dates.iloc[-1]
-
-    return data, start_date, end_date
-
-
-def _get_demo_data_provider(frequency: Frequency):
-
-    frequency_to_data_file = {
-        Frequency.MIN_1: "intraday_data.csv",
-        Frequency.DAILY: "daily_data.csv"
-    }
-
-    input_file = join(pathlib.Path(__file__).parent.absolute(), "input", frequency_to_data_file[frequency])
-    data, start_date, end_date = _acquire_data(input_file)
-    return PresetDataProvider(data, start_date, end_date, frequency)
-
-
-daily_data_provider = _get_demo_data_provider(Frequency.DAILY)
-intraday_data_provider = _get_demo_data_provider(Frequency.MIN_1)
+intraday_data_provider = CSVDataProvider(intraday_data_path, tickers, 'dates', field_to_price_field_dict,
+                                         fields, frequency=Frequency.MIN_1, ticker_col='tickers')

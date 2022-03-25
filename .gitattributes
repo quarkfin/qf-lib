@@ -1,4 +1,2 @@
-win_dependencies/** filter=lfs diff=lfs merge=lfs -text
-win_dependencies/install.ps1  !filter !diff !merge text
 input/daily_data.csv filter=lfs diff=lfs merge=lfs -text
 input/intraday_data.csv filter=lfs diff=lfs merge=lfs -text

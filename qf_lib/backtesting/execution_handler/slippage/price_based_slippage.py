@@ -32,7 +32,7 @@ class PriceBasedSlippage(Slippage):
         self.slippage_rate = slippage_rate
 
     def _get_fill_prices(self, date: datetime, orders: Sequence[Order], no_slippage_fill_prices: Sequence[float],
-                         fill_volumes: Sequence[int]) -> Sequence[float]:
+                         fill_volumes: Sequence[float]) -> Sequence[float]:
 
         if self.slippage_rate == 0.0:
             return no_slippage_fill_prices

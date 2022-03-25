@@ -24,7 +24,6 @@ from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.date_to_datetime import date_to_datetime
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
-from qf_lib.data_providers.helpers import cast_data_array_to_proper_type
 
 
 class StopOrdersExecutor(SimulatedExecutor):
@@ -126,20 +125,15 @@ class StopOrdersExecutor(SimulatedExecutor):
                 return QFDataFrame(index=tickers, columns=PriceField.ohlcv())
             else:
                 current_datetime = date_to_datetime(current_datetime.date())
-                start_date = current_datetime - self._frequency.time_delta()
-                current_bar_start = current_datetime
+                start_date = current_datetime
         else:
             # In case of intraday trading the current full bar is always indexed by the left side of the time range
             start_date = current_datetime - self._frequency.time_delta()
-            current_bar_start = start_date
 
-        prices_data_array = self._data_handler.get_price(tickers=tickers, fields=PriceField.ohlcv(),
-                                                         start_date=start_date, end_date=current_datetime,
-                                                         frequency=self._frequency)
-        try:
-            current_bars = cast_data_array_to_proper_type(prices_data_array.loc[current_bar_start])
-        except KeyError:
-            current_bars = QFDataFrame(index=tickers, columns=PriceField.ohlcv())
+        current_bars = self._data_handler.get_price(tickers=tickers, fields=PriceField.ohlcv(),
+                                                    start_date=start_date, end_date=current_datetime,
+                                                    frequency=self._frequency)
+
         return current_bars
 
     def _calculate_no_slippage_fill_price(self, current_bar, order):

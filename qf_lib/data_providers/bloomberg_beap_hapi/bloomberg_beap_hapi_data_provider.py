@@ -22,6 +22,7 @@ import requests
 import pandas as pd
 import warnings
 
+from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 
 try:
@@ -135,11 +136,13 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider):
         if fields is None:
             raise ValueError("Fields being None is not supported by {}".format(self.__class__.__name__))
 
-        if end_date is None:
-            end_date = datetime.now()
+        end_date = end_date or datetime.now()
+        end_date = end_date + RelativeDelta(second=0, microsecond=0)
+        start_date = self._adjust_start_date(start_date, frequency)
 
-        got_single_date = start_date is not None and (
-            (start_date.date() == end_date.date()) if frequency == Frequency.DAILY else False
+        got_single_date = (
+            (start_date == end_date) if frequency <= Frequency.DAILY else
+            (start_date + frequency.time_delta() > end_date)
         )
 
         tickers, got_single_ticker = convert_to_list(tickers, BloombergTicker)

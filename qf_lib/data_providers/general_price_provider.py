@@ -16,6 +16,8 @@ from datetime import datetime
 from itertools import groupby
 from typing import Sequence, Union, Dict, Type
 
+import pandas as pd
+
 from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
@@ -43,6 +45,7 @@ class GeneralPriceProvider(DataProvider):
 
     def __init__(self, bloomberg: BloombergDataProvider = None, quandl: QuandlDataProvider = None,
                  haver: HaverDataProvider = None, cryptocurrency: CryptoCurrencyDataProvider = None):
+        super().__init__()
         self._ticker_type_to_data_provider_dict = {}  # type: Dict[Type[Ticker], DataProvider]
 
         for provider in [bloomberg, quandl, haver, cryptocurrency]:
@@ -179,15 +182,21 @@ class GeneralPriceProvider(DataProvider):
 
         for ticker_class, ticker_group in groupby(tickers, lambda t: type(t)):
             data_provider = self._identify_data_provider(ticker_class)
-
             partial_result = get_data_func(data_provider, list(ticker_group))
             if partial_result is not None:
                 partial_results.append(partial_result)
 
-        result = QFDataArray.concat(partial_results, dim=TICKERS)
-        normalized_result = normalize_data_array(
-            result, tickers, fields, got_single_date, got_single_ticker, got_single_field, use_prices_types)
-        return normalized_result
+        if not all(isinstance(partial_result, type(partial_results[0])) for partial_result in partial_results):
+            raise ValueError('Not all partial result are the same type')
+
+        if isinstance(partial_results[0], QFDataArray):
+            result = QFDataArray.concat(partial_results, dim=TICKERS)
+            result = normalize_data_array(
+                result, tickers, fields, got_single_date, got_single_ticker, got_single_field, use_prices_types)
+        else:
+            result = pd.concat(partial_results).squeeze(axis=1)
+
+        return result
 
     def _register_data_provider(self, price_provider: DataProvider):
         for ticker_class in price_provider.supported_ticker_types():

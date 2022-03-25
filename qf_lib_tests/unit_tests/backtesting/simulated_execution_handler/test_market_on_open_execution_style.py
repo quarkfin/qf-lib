@@ -34,11 +34,9 @@ from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.backtesting.portfolio.transaction import Transaction
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.tickers.tickers import BloombergTicker
-from qf_lib.common.utils.dateutils.date_to_datetime import date_to_datetime
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.dateutils.timer import SettableTimer
-from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.data_provider import DataProvider
 from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_lists_equal
@@ -237,7 +235,5 @@ class TestMarketOnOpenExecutionStyle(TestCase):
                                                                                     index=pd.Index([self.msft_ticker]))
 
     def _set_current_price(self, price):
-        current_time = self.timer.now() if self.data_handler.frequency > Frequency.DAILY else \
-            date_to_datetime(self.timer.now().date())
         self.data_handler.data_provider.get_price.side_effect = lambda a, b, c, d, e: \
-            QFDataFrame(data=[price], columns=pd.Index([self.msft_ticker]), index=[current_time])
+            QFSeries(data=[price], index=[self.msft_ticker])

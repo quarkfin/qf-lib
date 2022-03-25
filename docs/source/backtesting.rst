@@ -159,6 +159,9 @@ portfolio
 
     portfolio.Portfolio
     backtest_position.BacktestPosition
+    backtest_equity_position.BacktestEquityPosition
+    backtest_crypto_position.BacktestCryptoPosition
+    backtest_future_position.BacktestFuturePosition
     trade.Trade
     transaction.Transaction
 

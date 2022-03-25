@@ -57,7 +57,7 @@ class SquareRootMarketImpactSlippage(Slippage):
         self._number_of_samples = 20
 
     def _get_fill_prices(self, date: datetime, orders: Sequence[Order], no_slippage_fill_prices: Sequence[float],
-                         fill_volumes: Sequence[int]) -> Sequence[float]:
+                         fill_volumes: Sequence[float]) -> Sequence[float]:
         no_slippage_fill_prices = np.array(no_slippage_fill_prices)
 
         tickers = [order.ticker for order in orders]
@@ -66,7 +66,7 @@ class SquareRootMarketImpactSlippage(Slippage):
 
         return fill_prices
 
-    def _compute_market_impact(self, date: datetime, tickers: Sequence[Ticker], fill_volumes: Sequence[int]) \
+    def _compute_market_impact(self, date: datetime, tickers: Sequence[Ticker], fill_volumes: Sequence[float]) \
             -> Sequence[float]:
         """
         Market Impact is positive for buys and negative for sells.

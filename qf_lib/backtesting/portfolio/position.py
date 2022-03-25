@@ -23,5 +23,5 @@ class Position(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def quantity(self) -> int:
+    def quantity(self) -> float:
         pass

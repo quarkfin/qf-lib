@@ -55,13 +55,13 @@ class DataHandler(DataProvider):
     """
 
     def __init__(self, data_provider: DataProvider, timer: Timer):
+        super().__init__()
         self.data_provider = data_provider
 
         self._check_frequency(data_provider.frequency)
         self.default_frequency = data_provider.frequency  # type: Frequency
 
         self.timer = timer
-
         self.is_optimised = False
 
     def use_data_bundle(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
@@ -137,7 +137,8 @@ class DataHandler(DataProvider):
         assert frequency is not None, "Frequency cannot be equal to None"
 
         current_datetime = self.timer.now()
-        end_date = current_datetime if end_date is None else end_date
+        end_date = end_date or current_datetime
+        start_date = self._adjust_start_date(start_date, frequency)
 
         # end_date_without_look_ahead points to the latest market close in order to not return prices from the future
         # However, when the end_date falls between the market open and market close, the open price could also be
@@ -191,6 +192,8 @@ class DataHandler(DataProvider):
 
         assert frequency is not None, "Frequency cannot be equal to None"
         end_date_without_look_ahead = self._get_end_date_without_look_ahead(end_date)
+        start_date = self._adjust_start_date(start_date, frequency)
+
         return self.data_provider.get_history(tickers, fields, start_date, end_date_without_look_ahead, frequency)
 
     def get_futures_chain_tickers(self, tickers: Union[FutureTicker, Sequence[FutureTicker]],

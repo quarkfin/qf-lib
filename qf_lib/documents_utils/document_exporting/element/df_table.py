@@ -310,6 +310,7 @@ class ModelController(object):
                     self.logger.warning("The css class {} can not be removed, as it does not exist".format(class_name))
 
         def add_styles(self, styles_dict: Dict[str, str]):
+            styles_dict = {key.replace(" ", ""): value.replace(" ", "") for key, value in styles_dict.items()}
             self.style.update(styles_dict)
 
         def remove_styles(self, styles: Union[Dict[str, str], Sequence[str]]):

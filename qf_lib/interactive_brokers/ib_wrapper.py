@@ -13,6 +13,7 @@
 #     limitations under the License.
 from threading import Event
 from typing import List
+from math import isclose
 
 from ibapi.client import OrderId, TickerId
 from ibapi.contract import Contract
@@ -27,6 +28,7 @@ from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.backtesting.portfolio.broker_positon import BrokerPosition
 from qf_lib.common.utils.logging.qf_parent_logger import ib_logger
+from qf_lib.common.utils.miscellaneous.constants import ISCLOSE_REL_TOL, ISCLOSE_ABS_TOL
 from qf_lib.interactive_brokers.ib_contract import IBContract
 
 
@@ -97,10 +99,10 @@ class IBWrapper(EWrapper):
         if not position.is_integer():
             self.logger.warning(f"Position {ib_contract} has non-integer quantity = {position}")
 
-        if int(position) != 0:
+        if not isclose(position, 0, rel_tol=ISCLOSE_REL_TOL, abs_tol=ISCLOSE_ABS_TOL):
             try:
                 ticker = self.contract_ticker_mapper.contract_to_ticker(IBContract.from_ib_contract(ib_contract))
-                position_info = BrokerPosition(ticker, int(position), avgCost)
+                position_info = BrokerPosition(ticker, position, avgCost)
                 self.position_list.append(position_info)
             except ValueError as e:
                 self.logger.error(f"Position for contract {ib_contract} will be skipped due to the following error "

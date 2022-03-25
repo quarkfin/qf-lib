@@ -1,0 +1,41 @@
+[run]
+# Measure branch coverage in addition to statement coverage
+branch = True
+
+source =
+    qf_lib/
+
+omit =
+    qf_lib/plotting/*
+    qf_lib/analysis/*
+    qf_lib/documents_utils/document_exporting/*
+    *__init__*
+
+[report]
+exclude_lines =
+    pragma: no cover
+
+    # Don't complain about missing debug-only code:
+    def __repr__
+    def __str__
+
+    # Don't complain if abstractmethods are skipped
+    @abstractmethod
+    @abc.abstractmethod
+
+    # Don't complain if tests don't hit defensive assertion code:
+    raise NotImplementedError
+    raise AssertionError
+
+    # Don't complain if non-runnable code isn't run:
+    if 0:
+    if __name__ == .__main__.:
+
+omit =
+    qf_lib/plotting/*
+    qf_lib/analysis/*
+    qf_lib/documents_utils/document_exporting/*
+    *__init__*
+
+[html]
+directory = htmlcov

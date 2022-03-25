@@ -24,6 +24,7 @@ from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.backtesting.position_sizer.initial_risk_position_sizer import InitialRiskPositionSizer
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
+from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.utils.numberutils.is_finite_number import is_finite_number
@@ -111,10 +112,17 @@ class InitialRiskWithVolumePositionSizer(InitialRiskPositionSizer):
         current_price = signal.last_available_price
         contract_size = ticker.point_value if isinstance(ticker, FutureTicker) else 1
         divisor = current_price * contract_size
-        quantity = target_value // divisor
+
+        quantity = target_value / divisor
+
+        if ticker.security_type != SecurityType.CRYPTO:
+            quantity = float(np.floor(quantity))
 
         if abs(quantity) > mean_volume * self._max_volume_percentage:
-            target_quantity = np.floor(mean_volume * self._max_volume_percentage)
+            if ticker.security_type == SecurityType.CRYPTO:
+                target_quantity = mean_volume * self._max_volume_percentage
+            else:
+                target_quantity = float(np.floor(mean_volume * self._max_volume_percentage))
             target_value = target_quantity * divisor * np.sign(quantity)
             self.logger.info(
                 "InitialRiskWithVolumePositionSizer: capping {}.\n"

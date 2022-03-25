@@ -101,13 +101,13 @@ class IntradayMAStrategy(AbstractStrategy):
 def main():
     # settings
     backtest_name = 'Intraday MA Strategy Demo'
-    start_date = str_to_date("2019-07-01")
-    end_date = str_to_date("2019-10-01")
+    start_date = str_to_date("2019-06-04")
+    end_date = str_to_date("2019-10-17")
     ticker = DummyTicker("AAA")
 
     setup_logging(logging.INFO, console_logging=True)
 
-    OnNewBarEvent.set_frequency(Frequency.MIN_15)
+    OnNewBarEvent.set_frequency(Frequency.MIN_1)
     OnNewBarEvent.set_start_and_end_time({"hour": 10, "minute": 0, "second": 0, "microsecond": 0},
                                          {"hour": 13, "minute": 0, "second": 0, "microsecond": 0})
 

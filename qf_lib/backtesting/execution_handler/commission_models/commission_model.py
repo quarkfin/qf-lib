@@ -17,5 +17,5 @@ from abc import ABCMeta, abstractmethod
 
 class CommissionModel(object, metaclass=ABCMeta):
     @abstractmethod
-    def calculate_commission(self, fill_quantity: int, fill_price: float) -> float:
+    def calculate_commission(self, fill_quantity: float, fill_price: float) -> float:
         pass

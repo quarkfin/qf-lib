@@ -11,8 +11,8 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
+from math import isclose
 from typing import List, Sequence, Union, Optional
-
 
 from qf_lib.backtesting.portfolio.backtest_position import BacktestPosition
 from qf_lib.backtesting.portfolio.position_factory import BacktestPositionFactory
@@ -20,6 +20,7 @@ from qf_lib.backtesting.portfolio.trade import Trade
 from qf_lib.backtesting.portfolio.transaction import Transaction
 from qf_lib.backtesting.portfolio.utils import split_transaction_if_needed
 from qf_lib.common.tickers.tickers import Ticker
+from qf_lib.common.utils.miscellaneous.constants import ISCLOSE_REL_TOL, ISCLOSE_ABS_TOL
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
@@ -96,7 +97,7 @@ class TradesGenerator:
 
         # Assign position start values - a position was opened when the position size was equal to the quantity of
         # the transaction (the quantity of the ticker in the portfolio before transaction was = 0)
-        new_positions_beginning = transactions_df["position size"] - transactions_df["quantity"] == 0
+        new_positions_beginning = QFSeries([isclose(x, 0, rel_tol=ISCLOSE_REL_TOL, abs_tol=ISCLOSE_ABS_TOL) for x in transactions_df["position size"] - transactions_df["quantity"]])
         transactions_df.loc[:, "position start"] = None
         transactions_df.loc[new_positions_beginning, "position start"] = transactions_df.loc[new_positions_beginning].index
         transactions_df.loc[:, "position start"] = transactions_df.groupby(by="ticker")["position start"].apply(
@@ -144,7 +145,7 @@ class TradesGenerator:
         # before the transaction was -1, after it is 1)
         split_transactions = []  # type: List[Transaction]
 
-        total_quantity: int = 0
+        total_quantity: float = 0.0
         for transaction in transactions_series:
             split_required, closing_transaction, remaining_transaction = split_transaction_if_needed(total_quantity,
                                                                                                      transaction)

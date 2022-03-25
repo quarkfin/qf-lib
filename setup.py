@@ -43,7 +43,6 @@ setup(
     ],
     include_package_data=True,
     install_requires=[
-        'certifi==2020.12.5',
         'pandas==1.2.4',
         'numpy>=1.19.0,<1.21.0',
         'scipy==1.6.3',
@@ -64,9 +63,7 @@ setup(
         'statsmodels==0.12.2',
         'xarray==0.18.0',
         'dic==1.5.2b1',
-        'patsy==0.5.1',
         'tqdm==4.51.0',
-        'xlrd==1.1.0'
     ],
     extras_require={
         "documentation": ["autodocsumm==0.1.13", "sphinx_rtd_theme==0.5.0", "Sphinx==3.1.1"],

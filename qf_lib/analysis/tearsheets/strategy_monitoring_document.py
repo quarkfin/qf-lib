@@ -49,6 +49,9 @@ class StrategyMonitoringDocument(AbstractTearsheet):
         self.is_mean_return = None
         self.is_sigma = None
 
+        self.excess_is_mean_return = None
+        self.excess_is_sigma = None
+
         self.benchmark_series = benchmark_series
 
     def build_document(self):
@@ -59,7 +62,10 @@ class StrategyMonitoringDocument(AbstractTearsheet):
         self._add_perf_chart(series_list)
         self.document.add_element(ParagraphElement("\n\n"))
 
-        self._add_cone_chart()
+        self._add_relative_performance_chart(self.strategy_series, self.benchmark_series)
+        self.document.add_element(ParagraphElement("\n\n"))
+
+        self._add_excess_cone_chart()
         self.document.add_element(ParagraphElement("\n\n"))
 
         self._add_rolling_return_chart(series_list)
@@ -71,10 +77,19 @@ class StrategyMonitoringDocument(AbstractTearsheet):
         self.is_mean_return = is_mean_return
         self.is_sigma = is_sigma
 
-    def _add_cone_chart(self):
-        cone_chart = ConeChartOOS(self.strategy_series,
-                                  is_mean_return=self.is_mean_return,
-                                  is_sigma=self.is_sigma)
+    def set_in_sample_excess_statistics(self, excess_is_mean_return, excess_is_sigma):
+        self.excess_is_mean_return = excess_is_mean_return
+        self.excess_is_sigma = excess_is_sigma
+
+    def _add_excess_cone_chart(self):
+        diff = self.strategy_series.to_simple_returns().subtract(self.benchmark_series.to_simple_returns(),
+                                                                 fill_value=0)
+        diff = diff.iloc[-200:]
+        diff = diff.to_prices(1)
+        cone_chart = ConeChartOOS(diff,
+                                  is_mean_return=self.excess_is_mean_return,
+                                  is_sigma=self.excess_is_sigma,
+                                  title="Excess returns")
 
         position_decorator = AxesPositionDecorator(*self.full_image_axis_position)
         cone_chart.add_decorator(position_decorator)

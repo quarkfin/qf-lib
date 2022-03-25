@@ -51,6 +51,7 @@ class QuandlDataProvider(DataProvider):
     """
 
     def __init__(self, settings: Settings):
+        super().__init__()
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
         try:
@@ -63,6 +64,7 @@ class QuandlDataProvider(DataProvider):
     def get_price(self, tickers: Union[QuandlTicker, Sequence[QuandlTicker]],
                   fields: Union[PriceField, Sequence[PriceField]], start_date: datetime, end_date: datetime = None,
                   frequency: Frequency = Frequency.DAILY):
+        start_date = self._adjust_start_date(start_date, frequency)
         return self._get_history(
             convert_to_prices_types=True, tickers=tickers, fields=fields, start_date=start_date, end_date=end_date)
 

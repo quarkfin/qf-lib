@@ -20,8 +20,10 @@ from qf_lib.backtesting.order.execution_style import ExecutionStyle
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.common.enums.frequency import Frequency
+from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
+from qf_lib.common.utils.miscellaneous.constants import ISCLOSE_REL_TOL, ISCLOSE_ABS_TOL
 from qf_lib.common.utils.miscellaneous.function_name import get_function_name
 from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 from qf_lib.data_providers.data_provider import DataProvider
@@ -43,7 +45,7 @@ class OrderFactory:
         self.data_provider = data_provider
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
-    def orders(self, quantities: Mapping[Ticker, int], execution_style: ExecutionStyle,
+    def orders(self, quantities: Mapping[Ticker, float], execution_style: ExecutionStyle,
                time_in_force: TimeInForce) -> List[Order]:
         """
         Creates a list of Orders for given numbers of shares for each given asset.
@@ -52,7 +54,7 @@ class OrderFactory:
 
         Parameters
         ----------
-        quantities: Mapping[Ticker, int]
+        quantities: Mapping[Ticker, float]
             mapping of a Ticker to an amount of shares which should be bought/sold.
             If number is positive then asset will be bought. Otherwise it will be sold.
         execution_style: ExecutionStyle
@@ -86,7 +88,8 @@ class OrderFactory:
         ----------
         target_quantities: Mapping[Ticker, int]
             mapping of a Ticker to a target number of shares which should be present in the portfolio after the Order
-            is executed. After comparing with tolerance the math.floor of the quantity will be taken.
+            is executed. After comparing with tolerance the math.floor of the quantity will be taken for assets other
+            than crypto. The fraction value will be taken for crypto.
         execution_style: ExecutionStyle
             execution style of an order (e.g. MarketOrder, StopOrder, etc.)
         time_in_force: TimeInForce
@@ -123,8 +126,11 @@ class OrderFactory:
             quantity = target_quantity - current_quantity
             tolerance_quantity = tolerance_quantities.get(ticker, 0)
 
-            if abs(quantity) > tolerance_quantity and quantity != 0:  # tolerance_quantity can be 0
-                quantities[ticker] = math.floor(quantity)  # type: int
+            if ticker.security_type == SecurityType.CRYPTO:
+                if abs(quantity) > tolerance_quantity and not math.isclose(quantity, 0, rel_tol=ISCLOSE_REL_TOL, abs_tol=ISCLOSE_ABS_TOL):
+                    quantities[ticker]: float = quantity
+            elif abs(quantity) > tolerance_quantity and quantity != 0:  # tolerance_quantity can be 0
+                quantities[ticker]: float = float(math.floor(quantity))
 
         return self.orders(quantities, execution_style, time_in_force)
 
@@ -155,8 +161,9 @@ class OrderFactory:
         self._check_tickers_type(list(values.keys()))
 
         quantities, _ = self._calculate_target_shares_and_tolerances(values, frequency=frequency)
-        int_quantities = {ticker: math.floor(quantity) for ticker, quantity in quantities.items()}
-        return self.orders(int_quantities, execution_style, time_in_force)
+        quantities = {ticker: quantity if ticker.security_type == SecurityType.CRYPTO else float(math.floor(quantity))
+                      for ticker, quantity in quantities.items()}
+        return self.orders(quantities, execution_style, time_in_force)
 
     def percent_orders(self, percentages: Mapping[Ticker, float], execution_style: ExecutionStyle,
                        time_in_force: TimeInForce, frequency: Frequency = None) -> List[Order]:
@@ -200,7 +207,7 @@ class OrderFactory:
 
         Parameters
         ----------
-        target_values: Mapping[Ticker, int]
+        target_values: Mapping[Ticker, float]
             mapping of a Ticker to a value which should be allocated in the asset after the Order has been executed
             (expressed in the currency in which the asset is traded)
         execution_style: ExecutionStyle
