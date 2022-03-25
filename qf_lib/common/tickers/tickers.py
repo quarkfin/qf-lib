@@ -142,7 +142,7 @@ class PortaraTicker(Ticker):
         be the "SymYYYYM".
     security_type: SecurityType
         denotes the type of the security, that the ticker is representing e.g. SecurityType.STOCK for a stock,
-        SecurityType.FUTURE for a futures contract etc. By default equals SecurityType.STOCK.
+        SecurityType.FUTURE for a futures contract etc.
     point_value: int
         size of the contract as given by the Portara (e.g. 50 for Silver future contracts).
     """
@@ -156,6 +156,35 @@ class PortaraTicker(Ticker):
             return PortaraTicker(ticker_str, security_type, point_value)
         else:
             return [PortaraTicker(t, security_type, point_value) for t in ticker_str]
+
+
+class BinanceTicker(Ticker):
+    """ Representation of Binance tickers.
+
+    Parameters
+    --------------
+    ticker: str
+        identifier of the security, e.g. 'BTCBUSD'
+    security_type: SecurityType
+        denotes the type of the security, that the ticker is representing e.g. SecurityType.STOCK for a stock,
+        SecurityType.FUTURE for a futures contract etc. By default equals SecurityType.CRYPTO.
+    point_value: int
+        size of the contract as given by the ticker's Data Provider. Used mostly by tickers of security_type FUTURE and
+        by default equals 1.
+    """
+    def __init__(self, ticker: str, security_type: SecurityType = SecurityType.CRYPTO, point_value: int = 1):
+        super().__init__(ticker, security_type, point_value)
+
+    @classmethod
+    def from_string(cls, ticker_str: Union[str, Sequence[str]], security_type: SecurityType = SecurityType.CRYPTO,
+                    point_value: int = 1) -> Union["BinanceTicker", Sequence["BinanceTicker"]]:
+        """
+        Example: BinanceTicker.from_string('BTCBUSD')
+        """
+        if isinstance(ticker_str, str):
+            return BinanceTicker(ticker_str, security_type, point_value)
+        else:
+            return [BinanceTicker(t, security_type, point_value) for t in ticker_str]
 
 
 class HaverTicker(Ticker):

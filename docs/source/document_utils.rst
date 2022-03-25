@@ -11,4 +11,5 @@ document_utils
 	document_exporting.pdf_exporter.PDFExporter
 	document_exporting.html_exporter.HTMLExporter
 	excel.excel_importer.ExcelImporter
+	excel.excel_exporter.ExcelExporter
 	email_publishing.email_publisher.EmailPublisher	

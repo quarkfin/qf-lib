@@ -17,3 +17,6 @@ DAYS_PER_YEAR_AVG = 365.2425
 HIGHCHART_DASH_STYLES = {"dashed": "Dash", "solid": "Solid", "dashdot": "DashDot", "-": "Solid",
                          "--": "Dash", "-.": "DashDot"}
 HIGHCHART_COLORS = {"b": "blue", "r": "red", "g": "green", "o": "orange"}
+
+ISCLOSE_REL_TOL = 1e-09
+ISCLOSE_ABS_TOL = 0.0

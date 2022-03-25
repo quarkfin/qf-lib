@@ -93,6 +93,15 @@ class TestQuandlTable(unittest.TestCase):
         self.assertEqual(len(data), self.NUM_OF_DATES)
         self.assertEqual(data.name, self.SINGLE_TICKER.as_string())
 
+    def test_price_single_ticker_single_field_single_date(self):
+        # single ticker, single field; end_date by default now, frequency by default DAILY, currency by default None
+        data = self.quandl_provider.get_price(tickers=self.SINGLE_TICKER, fields=self.SINGLE_PRICE_FIELD,
+                                              start_date=self.END_DATE, end_date=self.END_DATE,
+                                              frequency=Frequency.DAILY)
+
+        self.assertIsInstance(data, float)
+        self.assertEqual(data, 138.88511439113)
+
     def test_price_single_ticker_multiple_fields(self):
         # single ticker, many fields; can be the same as for single field???
         data = self.quandl_provider.get_price(tickers=self.SINGLE_TICKER, fields=self.MANY_PRICE_FIELDS,

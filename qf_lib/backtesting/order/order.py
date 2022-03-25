@@ -22,7 +22,7 @@ class Order:
     Finally executed by ExecutionHandler.
     """
 
-    def __init__(self, ticker: Ticker, quantity: int, execution_style: ExecutionStyle,
+    def __init__(self, ticker: Ticker, quantity: float, execution_style: ExecutionStyle,
                  time_in_force: TimeInForce, order_state: str = "", strategy: str = ""):
         """
         This __init__ shouldn't be used anywhere beyond this module. Use OrderFactory for creating Order objects.

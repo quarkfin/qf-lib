@@ -11,7 +11,7 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-
+from qf_lib.backtesting.portfolio.backtest_crypto_position import BacktestCryptoPosition
 from qf_lib.backtesting.portfolio.backtest_equity_position import BacktestEquityPosition
 from qf_lib.backtesting.portfolio.backtest_future_position import BacktestFuturePosition
 from qf_lib.backtesting.portfolio.backtest_position import BacktestPosition
@@ -31,5 +31,7 @@ class BacktestPositionFactory:
             return BacktestEquityPosition(ticker)
         elif sec_type == SecurityType.FUTURE:
             return BacktestFuturePosition(ticker)
+        elif sec_type == SecurityType.CRYPTO:
+            return BacktestCryptoPosition(ticker)
         else:
             raise ValueError("Ticker security type: '{}' is not currently supported.")

@@ -20,6 +20,7 @@ data_providers
     haver.haver_data_provider.HaverDataProvider
     cryptocurrency.cryptocurrency_data_provider.CryptoCurrencyDataProvider
     portara.portara_data_provider.PortaraDataProvider
+    csv.csv_data_provider.CSVDataProvider
 
 .. automodule:: qf_lib.data_providers.helpers
     :autosummary:

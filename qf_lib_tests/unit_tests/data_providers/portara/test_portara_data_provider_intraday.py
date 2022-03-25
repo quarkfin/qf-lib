@@ -69,8 +69,8 @@ class TestPortaraDataProviderIntraday(TestCase):
         prices = data_provider.get_price(self.ticker, self.fields, date, date + RelativeDelta(minutes=1),
                                          Frequency.MIN_1)
 
-        self.assertEqual(type(prices), PricesDataFrame)
-        self.assertEqual(prices.shape, (1, len(self.fields)))
+        self.assertEqual(type(prices), PricesSeries)
+        self.assertEqual(prices.shape, (len(self.fields),))
 
     def test_get_price_single_ticker_single_field_many_dates(self):
         data_provider = self.get_data_provider(self.ticker, PriceField.Close)
@@ -85,8 +85,8 @@ class TestPortaraDataProviderIntraday(TestCase):
 
         prices = data_provider.get_price(self.ticker, PriceField.Close, date, date + RelativeDelta(minutes=1),
                                          Frequency.MIN_1)
-        self.assertEqual(len(prices), 1)
-        self.assertEqual(prices.iloc[0], 61640)
+        self.assertEqual(type(prices), int)
+        self.assertEqual(prices, 61640)
 
     def test_get_price_many_tickers_many_fields_many_dates(self):
         data_provider = self.get_data_provider(self.tickers, self.fields)
@@ -111,8 +111,8 @@ class TestPortaraDataProviderIntraday(TestCase):
         prices = data_provider.get_price(self.tickers, self.fields, date, date + RelativeDelta(minutes=1),
                                          Frequency.MIN_1)
 
-        self.assertEqual(type(prices), QFDataArray)
-        self.assertEqual(prices.shape, (1, len(self.tickers), len(self.fields)))
+        self.assertEqual(type(prices), PricesDataFrame)
+        self.assertEqual(prices.shape, (len(self.tickers), len(self.fields)))
 
     def test_get_price_many_tickers_single_field_single_date(self):
         date = datetime(2021, 6, 11, 17, 28)
@@ -120,8 +120,8 @@ class TestPortaraDataProviderIntraday(TestCase):
         prices = data_provider.get_price(self.tickers, PriceField.Close, date, date + RelativeDelta(minutes=1),
                                          Frequency.MIN_1)
 
-        self.assertEqual(type(prices), PricesDataFrame)
-        self.assertEqual(prices.shape, (1, len(self.tickers)))
+        self.assertEqual(type(prices), PricesSeries)
+        self.assertEqual(prices.shape, (len(self.tickers),))
 
     def test_get_price_single_future_ticker_many_fields(self):
         data_provider = self.get_data_provider(self.future_ticker, self.fields)
@@ -184,11 +184,10 @@ class TestPortaraDataProviderIntraday(TestCase):
         self.assertEqual(type(prices5), PricesSeries)
         self.assertEqual(Frequency.infer_freq(prices5.index), Frequency.MIN_5)
 
-        assert_series_equal(prices5, prices.resample('5T', origin=datetime(2021, 6, 17, 17, 13)).last().dropna(),
+        assert_series_equal(prices5, prices.loc[datetime(2021, 6, 11, 17, 15):].resample('5T').last().dropna(),
                             check_names=False)
 
         self.assertTrue(len(prices15))
         self.assertEqual(type(prices15), PricesSeries)
-        self.assertEqual(Frequency.infer_freq(prices15.index), Frequency.MIN_15)
-        assert_series_equal(prices15, prices.resample('15T', origin=datetime(2021, 6, 17, 17, 13)).last().dropna(),
+        assert_series_equal(prices15, prices.loc[datetime(2021, 6, 11, 17, 15):].resample('15T').last().dropna(),
                             check_names=False)

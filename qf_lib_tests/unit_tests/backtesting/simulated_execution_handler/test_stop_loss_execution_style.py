@@ -16,8 +16,6 @@ from unittest import TestCase
 from unittest.mock import Mock, call
 
 import pandas as pd
-from numpy import nan
-from pandas import date_range
 
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.events.time_event.periodic_event.intraday_bar_event import IntradayBarEvent
@@ -40,7 +38,7 @@ from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.dateutils.timer import SettableTimer
-from qf_lib.containers.qf_data_array import QFDataArray
+from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.data_provider import DataProvider
 from qf_lib_tests.helpers.testing_tools.containers_comparison import assert_lists_equal
@@ -236,7 +234,4 @@ class TestStopLossExecutionStyle(TestCase):
 
     def _set_bar_for_today(self, open_price, high_price, low_price, close_price, volume):
         self.data_handler.get_price.side_effect = lambda tickers, fields, start_date, end_date, frequency: \
-            QFDataArray.create(tickers=tickers, fields=fields,
-                               dates=date_range(start_date, end_date, freq=frequency.to_pandas_freq()),
-                               data=[[[nan, nan, nan, nan, nan]],
-                                     [[open_price, high_price, low_price, close_price, volume]]])
+            QFDataFrame(index=tickers, columns=fields, data=[[open_price, high_price, low_price, close_price, volume]])

@@ -29,5 +29,5 @@ class FixedCommissionModel(CommissionModel):
     def __init__(self, commission: float):
         self.commission = commission
 
-    def calculate_commission(self, fill_quantity: int, fill_price: float) -> float:
+    def calculate_commission(self, fill_quantity: float, fill_price: float) -> float:
         return self.commission

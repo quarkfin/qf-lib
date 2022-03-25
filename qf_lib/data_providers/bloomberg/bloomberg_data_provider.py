@@ -20,7 +20,9 @@ from typing import Union, Sequence, Dict, List, Optional
 from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
+from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.tickers.tickers import BloombergTicker, Ticker
+from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
@@ -55,6 +57,7 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
     """
 
     def __init__(self, settings: Settings):
+        super().__init__()
         self.settings = settings
 
         self.host = settings.bloomberg.host
@@ -137,33 +140,11 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
         # contracts belonging to the chain, e.g. it will map Cotton Bloomberg future ticker into:
         # [BloombergTicker("CTH7 Comdty"), BloombergTicker("CTK7 Comdty"), BloombergTicker("CTN7 Comdty"),
         # BloombergTicker("CTV7 Comdty"), BloombergTicker("CTZ7 Comdty") ... ]
-        future_ticker_to_chain_tickers_list = self._futures_data_provider.get_list_of_tickers_in_the_future_chain(
-            tickers)  # type: Dict[BloombergFutureTicker, List[BloombergTicker]]
-
-        def get_futures_expiration_dates(specific_tickers: Union[BloombergTicker, Sequence[BloombergTicker]]) -> \
-                Union[QFSeries, QFDataFrame]:
-            """
-            For a ticker (tickers) it returns a QFDataFrame consisting of the expiration dates fields of Future
-            Contracts, that are defined by the given tickers.
-
-            Parameters
-            ----------
-            specific_tickers
-                tickers for which the expiration dates of future contracts should be retrieved
-
-            Returns
-            -------
-            QFDataFrame
-                Container containing all the dates, indexed by tickers
-            """
-            exp_dates = self.get_current_values(specific_tickers, expiration_date_fields)  # type: QFDataFrame
-
-            # Drop these futures, for which no expiration date was found and cast all string dates into datetime
-            return exp_dates.dropna(how="all").astype('datetime64[ns]')
-
+        future_ticker_to_chain_tickers_list: Dict[BloombergFutureTicker, List[BloombergTicker]] = \
+            self._futures_data_provider.get_list_of_tickers_in_the_future_chain(tickers)
         all_specific_tickers = [ticker for specific_tickers_list in future_ticker_to_chain_tickers_list.values()
                                 for ticker in specific_tickers_list]
-        futures_expiration_dates = get_futures_expiration_dates(all_specific_tickers)
+        futures_expiration_dates = self.get_current_values(all_specific_tickers, expiration_date_fields).dropna(how="all")
 
         def specific_futures_index(future_ticker) -> pd.Index:
             """
@@ -181,7 +162,8 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
         return ticker_to_future_expiration_dates
 
     def get_current_values(self, tickers: Union[BloombergTicker, Sequence[BloombergTicker]],
-                           fields: Union[str, Sequence[str]]) -> Union[None, float, QFSeries, QFDataFrame]:
+                           fields: Union[str, Sequence[str]], override_name: str = None, override_value: str = None
+                           ) -> Union[None, float, QFSeries, QFDataFrame]:
         """
         Gets the current values of fields for given tickers.
 
@@ -209,7 +191,7 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
         tickers, got_single_ticker = convert_to_list(tickers, BloombergTicker)
         fields, got_single_field = convert_to_list(fields, (PriceField, str))
 
-        data_frame = self._reference_data_provider.get(tickers, fields)
+        data_frame = self._reference_data_provider.get(tickers, fields, override_name, override_value)
 
         # to keep the order of tickers and fields we reindex the data frame
         data_frame = data_frame.reindex(index=tickers, columns=fields)
@@ -267,11 +249,13 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
         self._connect_if_needed()
         self._assert_is_connected()
 
-        if end_date is None:
-            end_date = datetime.now()
+        end_date = end_date or datetime.now()
+        end_date = end_date + RelativeDelta(second=0, microsecond=0)
+        start_date = self._adjust_start_date(start_date, frequency)
 
-        got_single_date = start_date is not None and (
-            (start_date.date() == end_date.date()) if frequency == Frequency.DAILY else False
+        got_single_date = (
+            (start_date == end_date) if frequency <= Frequency.DAILY else
+            (start_date + frequency.time_delta() > end_date)
         )
 
         tickers, got_single_ticker = convert_to_list(tickers, BloombergTicker)
@@ -315,7 +299,8 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
             raise ValueError("BloombergDataProvider does not provide historical tickers_universe data")
         field = 'INDX_MEMBERS'
         ticker_data = self.get_tabular_data(universe_ticker, field)
-        tickers = [BloombergTicker(fields['Member Ticker and Exchange Code'] + " Equity") for fields in ticker_data]
+        tickers = [BloombergTicker(fields['Member Ticker and Exchange Code'] + " Equity", SecurityType.STOCK, 1)
+                   for fields in ticker_data]
         return tickers
 
     def get_unique_tickers(self, universe_ticker: Ticker) -> List[Ticker]:

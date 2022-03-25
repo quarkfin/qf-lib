@@ -1,0 +1,13 @@
+@page {
+  size: A4 landscape;
+
+  margin: 0.8cm 0.7cm;
+
+  @bottom-right {
+    content: "Page " counter(page) " of " counter(pages);
+    color: #7d7d7d;
+  }
+
+  border-bottom: 1px solid #5d5d5d;
+  padding-bottom: 20pt;
+}

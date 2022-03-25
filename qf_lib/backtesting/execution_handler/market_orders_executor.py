@@ -93,14 +93,13 @@ class MarketOrdersExecutor(SimulatedExecutor):
         if self._frequency == Frequency.DAILY:
             # Remove the time part from the datetime in case of daily frequency
             current_datetime = date_to_datetime(current_datetime.date())
-            start_time_range = current_datetime - self._frequency.time_delta()
-            end_time_range = current_datetime
+            start_time_range = current_datetime
+            end_time_range = start_time_range
         elif market_close_time:
             # At the market close, in order to get the current price we need to take a bar that ends at the current time
             # and use the close price value
             start_time_range = current_datetime - self._frequency.time_delta()
             end_time_range = current_datetime
-            current_datetime = start_time_range
         else:
             # At any other time during the day, in order to get the current price we need to take the bar that starts at
             # the current time and use the open price value
@@ -108,16 +107,8 @@ class MarketOrdersExecutor(SimulatedExecutor):
             end_time_range = current_datetime + self._frequency.time_delta()
 
         price_field = PriceField.Close if market_close_time else PriceField.Open
-        prices_df = self._data_provider.get_price(tickers, price_field, start_time_range, end_time_range,
-                                                  self._frequency)
-
-        try:
-            prices_series = prices_df.loc[current_datetime]
-        except KeyError:
-            prices_series = QFSeries(index=tickers)
-
-        prices_series.name = "Current prices series"
-        return prices_series
+        prices = self._data_provider.get_price(tickers, price_field, start_time_range, end_time_range, self._frequency)
+        return prices
 
     def _check_order_validity(self, order):
         assert order.execution_style == MarketOrder(), \

@@ -23,7 +23,7 @@ from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.order_factory import OrderFactory
 from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.backtesting.portfolio.position import Position
-from qf_lib.common.tickers.tickers import BloombergTicker
+from qf_lib.common.tickers.tickers import BloombergTicker, BinanceTicker
 from qf_lib.containers.series.qf_series import QFSeries
 
 
@@ -31,19 +31,25 @@ class TestOrderFactory(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.ticker = BloombergTicker('AAPL US Equity')
+        cls.crypto_ticker = BinanceTicker('BTCBUSD')
         cls.current_portfolio_value = 1000.0
         cls.share_price = 10.0
 
         position = Mock(spec=Position)
-        position.quantity.return_value = 10
+        position.quantity.return_value = 10.0
         position.ticker.return_value = cls.ticker
+
+        crypto_position = Mock(spec=Position)
+        crypto_position.quantity.return_value = 10.0
+        crypto_position.ticker.return_value = cls.crypto_ticker
 
         broker = Mock(spec=Broker)
         broker.get_portfolio_value.return_value = cls.current_portfolio_value
-        broker.get_positions.return_value = [position]
+        broker.get_positions.return_value = [position, crypto_position]
 
         data_handler = Mock(spec=DataHandler)
-        data_handler.get_last_available_price.return_value = QFSeries([cls.share_price], index=[cls.ticker])
+        data_handler.get_last_available_price.side_effect = lambda tickers, _: \
+            QFSeries([cls.share_price] * len(tickers), index=tickers)
 
         cls.order_factory = OrderFactory(broker, data_handler)
 
@@ -65,7 +71,7 @@ class TestOrderFactory(unittest.TestCase):
 
     def test_order_value(self):
         value = 100.0
-        quantity = floor(100.0 / self.share_price)  # type: int
+        quantity = float(floor(100.0 / self.share_price))  # type: float
         execution_style = StopOrder(4.20)
         time_in_force = TimeInForce.DAY
 
@@ -76,7 +82,7 @@ class TestOrderFactory(unittest.TestCase):
         percentage = 0.5
         execution_style = StopOrder(4.20)
         time_in_force = TimeInForce.GTC
-        quantity = floor(percentage * self.current_portfolio_value / self.share_price)  # type: int
+        quantity = float(floor(percentage * self.current_portfolio_value / self.share_price))  # type: float
 
         orders = self.order_factory.percent_orders({self.ticker: percentage}, execution_style, time_in_force)
         self.assertEqual(orders[0], Order(self.ticker, quantity, execution_style, time_in_force))
@@ -301,6 +307,18 @@ class TestOrderFactory(unittest.TestCase):
         quantity = 2
         self.assertEqual(orders[0], Order(self.ticker, quantity, ex_style, tif))
 
+    def test_crypto_order_target_percent_tolerance1(self):
+        # there are 10 shares price per share is 10 so position value is 100
+        ex_style = MarketOrder()
+        tif = TimeInForce.DAY
+        tolerance_percentage = 1 / 12
+        target_value = 0.12
+
+        orders = self.order_factory.target_percent_orders({self.crypto_ticker: target_value}, ex_style, tif,
+                                                          tolerance_percentage)
+        quantity = 2
+        self.assertEqual(orders[0], Order(self.crypto_ticker, quantity, ex_style, tif))
+
     def test_order_target_percent_tolerance2(self):
         # there are 10 shares, price per share is 10 so position value is 100
         ex_style = MarketOrder()
@@ -358,6 +376,31 @@ class TestOrderFactory(unittest.TestCase):
                                                           tolerance_percentage)
         quantity = 40
         self.assertEqual(orders[0], Order(self.ticker, quantity, ex_style, tif))
+
+    def test_crypto_order(self):
+        quantity = .5
+        execution_style = MarketOrder()
+        time_in_force = TimeInForce.GTC
+
+        orders = self.order_factory.orders({self.crypto_ticker: quantity}, execution_style, time_in_force)
+        self.assertEqual(orders[0], Order(self.crypto_ticker, quantity, execution_style, time_in_force))
+
+    def test_crypto_order_target(self):
+        quantity = -4.5
+        execution_style = StopOrder(4.20)
+        time_in_force = TimeInForce.DAY
+
+        orders = self.order_factory.target_orders({self.crypto_ticker: 5.5}, execution_style, time_in_force)
+        self.assertEqual(orders[0], Order(self.crypto_ticker, quantity, execution_style, time_in_force))
+
+    def test_crypto_order_value(self):
+        value = 100.0
+        quantity = 100.0 / self.share_price  # type: float
+        execution_style = StopOrder(4.20)
+        time_in_force = TimeInForce.DAY
+
+        orders = self.order_factory.value_orders({self.crypto_ticker: value}, execution_style, time_in_force)
+        self.assertEqual(orders[0], Order(self.crypto_ticker, quantity, execution_style, time_in_force))
 
 
 if __name__ == "__main__":

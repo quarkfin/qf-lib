@@ -29,7 +29,7 @@ class Transaction:
         time when the order was filled
     ticker: Ticker
         ticker identifying the asset
-    quantity: int
+    quantity: float
         filled quantity, positive for assets bought and negative for assets sold
     price: float
         price at which the trade was filled
@@ -37,7 +37,7 @@ class Transaction:
         brokerage commission for carrying out the trade. It is always a positive number
     """
 
-    def __init__(self, time: datetime, ticker: Ticker, quantity: int, price: float, commission: float):
+    def __init__(self, time: datetime, ticker: Ticker, quantity: float, price: float, commission: float):
         assert commission >= 0.0
 
         self.time = time

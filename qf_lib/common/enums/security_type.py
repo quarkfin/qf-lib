@@ -32,3 +32,5 @@ class SecurityType(Enum):
     """Factor"""
     SPREAD = "SPREAD"
     """Spread"""
+    CRYPTO = "CRYPTO"
+    """"Crypto"""

@@ -17,7 +17,7 @@ from qf_lib.common.tickers.tickers import Ticker
 
 
 class BrokerPosition(Position):
-    def __init__(self, ticker: Ticker, position: int, avg_cost: float):
+    def __init__(self, ticker: Ticker, position: float, avg_cost: float):
         self._ticker = ticker
         self._quantity = position
         self._avg_cost = avg_cost
@@ -25,7 +25,7 @@ class BrokerPosition(Position):
     def ticker(self) -> Ticker:
         return self._ticker
 
-    def quantity(self) -> int:
+    def quantity(self) -> float:
         return self._quantity
 
     def avg_cost_per_share(self) -> float:

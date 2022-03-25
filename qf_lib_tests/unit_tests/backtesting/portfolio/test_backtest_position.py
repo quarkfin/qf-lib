@@ -14,8 +14,10 @@
 
 import unittest
 
+from qf_lib.backtesting.portfolio.backtest_crypto_position import BacktestCryptoPosition
 from qf_lib.backtesting.portfolio.position_factory import BacktestPositionFactory
 from qf_lib.backtesting.portfolio.transaction import Transaction
+from qf_lib.common.tickers.tickers import BinanceTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib_tests.unit_tests.backtesting.portfolio.dummy_ticker import DummyTicker
 
@@ -28,6 +30,7 @@ class TestBacktestPosition(unittest.TestCase):
 
     def setUp(self):
         self.ticker = DummyTicker('Example Stock')
+        self.crypto_ticker = BinanceTicker('BTCBUSD')
         self.start_time = str_to_date('2017-01-01')  # dummy time
         self.random_time = str_to_date('2017-02-02')  # dummy time
         self.end_time = str_to_date('2018-02-03')  # dummy time
@@ -41,6 +44,16 @@ class TestBacktestPosition(unittest.TestCase):
         self.assertEqual(position.direction(), 0)
         self.assertEqual(position.start_time, None)
 
+    def test_creating_empty_crypto_position(self):
+        position = BacktestPositionFactory.create_position(self.crypto_ticker)
+        self.assertEqual(position.ticker(), self.crypto_ticker)
+        self.assertEqual(position._is_closed, False)
+        self.assertEqual(position.quantity(), 0)
+        self.assertEqual(position.current_price, 0)
+        self.assertEqual(position.direction(), 0)
+        self.assertEqual(position.start_time, None)
+        self.assertTrue(isinstance(position, BacktestCryptoPosition))
+
     def test_transact_transaction_1(self):
         position = BacktestPositionFactory.create_position(self.ticker)
         quantity = 50
@@ -52,6 +65,23 @@ class TestBacktestPosition(unittest.TestCase):
         position.transact_transaction(transaction)
 
         self.assertEqual(position.ticker(), self.ticker)
+        self.assertEqual(position._is_closed, False)
+        self.assertEqual(position.quantity(), quantity)
+        self.assertEqual(position.current_price, 0)  # set by update_price
+        self.assertEqual(position.direction(), 1)
+        self.assertEqual(position.start_time, self.random_time)
+
+    def test_crypto_transact_transaction_1(self):
+        position = BacktestPositionFactory.create_position(self.crypto_ticker)
+        quantity = 55.5
+        price = 100
+        commission = 5
+
+        transaction = Transaction(self.random_time, self.crypto_ticker, quantity, price, commission)
+
+        position.transact_transaction(transaction)
+
+        self.assertEqual(position.ticker(), self.crypto_ticker)
         self.assertEqual(position._is_closed, False)
         self.assertEqual(position.quantity(), quantity)
         self.assertEqual(position.current_price, 0)  # set by update_price

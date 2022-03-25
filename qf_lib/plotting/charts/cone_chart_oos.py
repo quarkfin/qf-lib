@@ -43,11 +43,12 @@ class ConeChartOOS(Chart):
         opacity of the cone
     cone_stds: Sequence[float]
         list/tuple of different standard deviations for which cones should be drawn
-
+    title: Optional[str]
+        title of the plot, by default it is 'Performance vs. Expectation'
     """
 
     def __init__(self, oos_series: QFSeries, is_mean_return: float, is_sigma: float, cone_opacity: float = 0.3,
-                 cone_stds: Sequence[float] = (1.0, 2.0)):
+                 cone_stds: Sequence[float] = (1.0, 2.0), title: str = 'Performance vs. Expectation'):
         super().__init__()
         self.assert_is_qfseries(oos_series)
         self.oos_series = oos_series
@@ -57,6 +58,7 @@ class ConeChartOOS(Chart):
 
         self.cone_opacity = cone_opacity
         self.cone_stds = cone_stds
+        self.title = title
 
     def plot(self, figsize: Tuple[float, float] = None):
         self._setup_axes_if_necessary(figsize)
@@ -88,7 +90,7 @@ class ConeChartOOS(Chart):
 
         ax.set_xlabel('Days in the past')
         ax.set_ylabel('Current valuation')
-        ax.set_title('Performance vs. Expectation')
+        ax.set_title(self.title)
         ax.set_xlim(0, self.oos_series.size)
 
         self._insert_valuation_text_box(cone, strategy_tms)

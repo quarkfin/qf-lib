@@ -20,15 +20,15 @@ from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
+from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
-from qf_lib.containers.dataframe.cast_dataframe import cast_dataframe
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 from qf_lib.containers.qf_data_array import QFDataArray
-from qf_lib.containers.series.cast_series import cast_series
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.data_providers.data_provider import DataProvider
+from qf_lib.data_providers.helpers import normalize_data_array
 
 
 class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
@@ -42,35 +42,36 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
                   start_date: datetime, end_date: datetime = None, frequency: Frequency = Frequency.DAILY) -> \
             Union[None, PricesSeries, PricesDataFrame, QFDataArray]:
 
-        got_single_date = start_date is not None and (
-            (start_date.date() == end_date.date()) if frequency == Frequency.DAILY else False
+        if end_date:
+            end_date = end_date + RelativeDelta(second=0, microsecond=0)
+        start_date = self._adjust_start_date(start_date, frequency)
+        got_single_date = (
+            (start_date == end_date) if frequency <= Frequency.DAILY else
+            (start_date + frequency.time_delta() > end_date)
         )
 
-        if got_single_date:
-            raise NotImplementedError("Single date queries are not supported yet")
+        tickers, got_single_ticker = convert_to_list(tickers, Ticker)
+        fields, got_single_field = convert_to_list(fields, PriceField)
 
         fields_str = self._map_field_to_str(tickers, fields)
         container = self.get_history(tickers, fields_str, start_date, end_date, frequency)
 
-        # Convert to PriceSeries / PriceDataFrame and replace the string index with PriceField index
-        if self._is_single_price_field(fields):
-            if self._is_single_ticker(tickers):
-                container = cast_series(container, PricesSeries)
-            else:
-                container = cast_dataframe(container, PricesDataFrame)
+        str_to_field_dict = self.str_to_price_field_map(self._get_first_ticker(tickers))
+
+        # Map the specific fields onto the fields given by the str_to_field_dict
+        if isinstance(container, QFDataArray):
+            container = container.assign_coords(fields=[str_to_field_dict[field_str] for field_str in container.fields.values])
+            normalized_result = normalize_data_array(
+                container, tickers, fields, got_single_date, got_single_ticker, got_single_field, use_prices_types=True
+            )
         else:
-            str_to_field_dict = self.str_to_price_field_map(self._get_first_ticker(tickers))
+            normalized_result = PricesDataFrame(container).rename(columns=str_to_field_dict)
+            if got_single_field:
+                normalized_result = normalized_result.squeeze(axis=1)
+            if got_single_ticker:
+                normalized_result = normalized_result.squeeze(axis=0)
 
-            if self._is_single_ticker(tickers):
-                # Many fields and single ticker - replace columns in PricesDataFrame
-                container = cast_dataframe(container, PricesDataFrame)
-                renaming_dict = {field_str: str_to_field_dict[field_str] for field_str in container.columns}
-                container.rename(columns=renaming_dict, inplace=True)
-            else:
-                container = container.assign_coords(fields=[str_to_field_dict[field_str]
-                                                            for field_str in container.fields.values])
-
-        return container
+        return normalized_result
 
     @abstractmethod
     def price_field_to_str_map(self, ticker: Ticker = None) -> Dict[PriceField, str]:

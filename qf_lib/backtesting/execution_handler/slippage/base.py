@@ -11,6 +11,7 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
+import math
 
 import numpy as np
 
@@ -22,6 +23,7 @@ from typing import Sequence, Tuple, Optional
 from qf_lib.backtesting.order.order import Order
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
+from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
@@ -51,7 +53,7 @@ class Slippage(metaclass=ABCMeta):
         self._logger = qf_logger.getChild(self.__class__.__name__)
 
     def process_orders(self, date: datetime, orders: Sequence[Order], no_slippage_fill_prices: Sequence[float]) -> \
-            Tuple[Sequence[float], Sequence[int]]:
+            Tuple[Sequence[float], Sequence[float]]:
         """
         Calculates fill prices and quantities for Orders. For Orders that can't be executed (missing security price,
         etc.) float("nan") will be returned.
@@ -67,21 +69,18 @@ class Slippage(metaclass=ABCMeta):
 
         Returns
         -------
-        Tuple[Sequence[float], Sequence[int]]
+        Tuple[Sequence[float], Sequence[float]]
             sequence of fill prices (order corresponds to the order of orders provided as an argument of the method),
             sequence of fill order quantities
         """
 
         self._check_for_duplicates(date, orders)
-        order_volumes = np.array([order.quantity for order in orders])
 
         # Compute the fill volumes for orders
         if self.max_volume_share_limit is not None:
-            tickers = [order.ticker for order in orders]
-            market_daily_volumes = self._volumes_traded_today(date, tickers)
-            fill_volumes = self._get_fill_volumes(order_volumes, market_daily_volumes)
+            fill_volumes = self._get_fill_volumes(orders, date)
         else:
-            fill_volumes = order_volumes
+            fill_volumes = np.array([order.quantity for order in orders])
 
         fill_prices = self._get_fill_prices(date, orders, no_slippage_fill_prices, fill_volumes)
         return fill_prices, fill_volumes
@@ -110,20 +109,25 @@ class Slippage(metaclass=ABCMeta):
         volumes[volumes < 0] = 0
         return volumes
 
-    def _get_fill_volumes(self, order_volumes: Sequence[int], market_volumes: Sequence[int]) -> Sequence[int]:
+    def _get_fill_volumes(self, orders: Sequence[Order], date: datetime) -> Sequence[float]:
         """
         Compute the fill volumes, where the fill volume for each asset should fulfill the following:
         abs(fill_volume) <= self.max_volume_share_limit * volume_traded_today
         """
+        order_volumes = np.array([order.quantity for order in orders])
+        tickers = [order.ticker for order in orders]
+        market_volumes = self._volumes_traded_today(date, tickers)
+
         max_abs_order_volumes = [volume * self.max_volume_share_limit for volume in market_volumes]
         abs_order_volumes = np.absolute(order_volumes)
 
         abs_fill_volumes = np.minimum(abs_order_volumes, max_abs_order_volumes)
         fill_volumes = np.copysign(abs_fill_volumes, order_volumes)
 
-        real_fill_volumes = np.floor(fill_volumes)
+        fill_volumes = np.array([volume if order.ticker.security_type == SecurityType.CRYPTO else float(math.floor(volume))
+                                 for volume, order in zip(fill_volumes, orders)])
 
-        return real_fill_volumes
+        return fill_volumes
 
     def _check_for_duplicates(self, date: datetime, orders: Sequence[Order]):
         sorted_orders = sorted(orders, key=lambda order: order.ticker)

@@ -17,12 +17,15 @@ from datetime import datetime
 from typing import Union, Sequence, Type, Set, Dict, Optional
 
 from numpy import nan
+from pandas._libs.tslibs.offsets import to_offset
+from pandas._libs.tslibs.timestamps import Timestamp
 
 from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
@@ -36,6 +39,9 @@ class DataProvider(object, metaclass=ABCMeta):
     """ An interface for data providers (for example AbstractPriceDataProvider or GeneralPriceProvider). """
 
     frequency = None
+
+    def __init__(self):
+        self.logger = qf_logger.getChild(self.__class__.__name__)
 
     @abstractmethod
     def get_price(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
@@ -188,6 +194,8 @@ class DataProvider(object, metaclass=ABCMeta):
 
         # Add additional days to ensure that any data absence will not impact the number of bars which will be returned
         start_date = self._compute_start_date(nr_of_bars, end_date, frequency)
+        start_date = self._adjust_start_date(start_date, frequency)
+
         container = self.get_price(tickers, fields, start_date, end_date, frequency)
         missing_bars = nr_of_bars - container.shape[0]
 
@@ -243,6 +251,8 @@ class DataProvider(object, metaclass=ABCMeta):
                                              "get_last_available_price function"
 
         start_date = self._compute_start_date(5, end_time, frequency)
+        start_date = self._adjust_start_date(start_date, frequency)
+
         open_prices = self.get_price(tickers, PriceField.Open, start_date, end_time, frequency)
         close_prices = self.get_price(tickers, PriceField.Close, start_date, end_time, frequency)
 
@@ -281,6 +291,18 @@ class DataProvider(object, metaclass=ABCMeta):
         # in case of intraday data, e.g. if the market opens at 13:30, the bars will also start at 13:30
         start_date = end_date - RelativeDelta(days=nr_of_days_to_go_back, hour=0, minute=0, second=0, microsecond=0)
         return start_date
+
+    def _adjust_start_date(self, start_date: datetime, frequency: Frequency):
+        if frequency > Frequency.DAILY:
+            frequency_delta = to_offset(frequency.to_pandas_freq()).delta.value
+            new_start_date = Timestamp(math.ceil(Timestamp(start_date).value / frequency_delta) * frequency_delta) \
+                .to_pydatetime()
+        else:
+            new_start_date = start_date + RelativeDelta(hour=0, minute=0, second=0, microsecond=0)
+
+        if new_start_date != start_date:
+            self.logger.info(f"Adjusting the starting date to {new_start_date} from {start_date}.")
+        return new_start_date
 
     def __str__(self):
         return self.__class__.__name__

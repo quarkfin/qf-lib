@@ -23,26 +23,9 @@ class BacktestFuturePosition(BacktestPosition):
         return self.unrealised_pnl
 
     def total_exposure(self) -> float:
-        """
-        It tells us what is the total exposure of the position to the market in currency units
-
-        For cash securities (Equities, Bonds, ETFs, etc)
-            It represents the value of the position (quantity * price)
-
-        For margin securities (Futures, Options)
-            It represents Notional of the position (quantity * price * contract_size)
-        """
         return self._quantity * self._ticker.point_value * self.current_price
 
     def _cash_to_buy_or_proceeds_from_sale(self, transaction: Transaction) -> float:
-        """
-        To buy a future contract we only pay a commission. There is some cash secured as a margin but it is not leaving
-        out portfolio.
-
-        Therefore, if the transaction is the first transaction or made in the direction of the position we only need to
-        pay for commission. In case of a transaction in the opposite direction to the position, we need to cover also
-        the profit and loss of the trade.
-        """
         transaction_pnl = self._compute_profit_and_loss_fraction(transaction.price, transaction.quantity)
         return transaction_pnl - transaction.commission
 

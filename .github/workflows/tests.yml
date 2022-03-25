@@ -3,7 +3,10 @@
 
 name: CI
 
-on: [push]
+on:
+  push:
+    branches:
+      - master
 
 jobs:
   build:
@@ -20,9 +23,20 @@ jobs:
         pip install -r requirements.txt
         pip install --force-reinstall MarkupSafe==2.0.1
         pip install flake8 pytest
+        pip install coverage
     - name: Style check
       run: flake8 .
     - name: Unit tests
-      run: pytest qf_lib_tests/unit_tests
+      run: |
+        coverage run -m pytest qf_lib_tests/unit_tests
     - name: Integration tests
-      run: pytest qf_lib_tests/integration_tests
+      run: |
+        coverage run -a -m pytest qf_lib_tests/integration_tests
+        coverage xml
+    - name: Upload to Codecov
+      uses: codecov/codecov-action@v2
+      with:
+        fail_ci_if_error: true
+        name: qf-lib-codecov
+        verbose: true
+

@@ -13,15 +13,14 @@
     "host": "smtp.cern.ch",
     "port": 587,
     "domain": "CERN",
-    "tls": true,
-    "sender": "pfreport@cern.ch"
+    "tls": true
   },
-  "haver_path": "O:\\Macro\\DLX\\DATA",
+  "haver_path": "XXX",
   "hapi_credentials": {
-    "client_id": "90b3a6c4db7ca5e3eef87747e645f676",
+    "client_id": "XXX",
     "name":"ctadatafeed",
     "scopes":["eap","beapData","reportingapi"],
-    "expiration_date": 1673194497122,
-    "created_date": 1625760897122
+    "expiration_date": "XXX",
+    "created_date": "XXX"
   }
 }

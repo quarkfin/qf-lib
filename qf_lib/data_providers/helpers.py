@@ -11,11 +11,11 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
+import warnings
 from datetime import datetime
 from typing import Union, Dict, Sequence
-
 import pandas as pd
-
+from xarray import DataArray
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
@@ -63,17 +63,25 @@ def normalize_data_array(
     QFSeries, QFDataFrame, QFDataArray, PricesSeries, PricesDataFrame
     """
     # to keep the order of tickers and fields we reindex the data_array
-    data_array = data_array.reindex(tickers=tickers, fields=fields)
+    if data_array.tickers.values.tolist() != tickers:
+        data_array = data_array.reindex(tickers=tickers)
+    if data_array.fields.values.tolist() != fields:
+        data_array = data_array.reindex(fields=fields)
+
     data_array = data_array.dropna(DATES, how='all')  # Delete rows, which contain only Nan values
 
-    squeezed_result = squeeze_data_array(data_array, got_single_date, got_single_ticker, got_single_field)
-    casted_result = cast_data_array_to_proper_type(squeezed_result, use_prices_types)
+    squeezed_and_casted_result = squeeze_data_array_and_cast_to_proper_type(data_array, got_single_date, got_single_ticker, got_single_field, use_prices_types)
 
-    return casted_result
+    return squeezed_and_casted_result
 
 
-def squeeze_data_array(original_data_array, got_single_date, got_single_ticker, got_single_field):
-    original_shape = original_data_array.shape
+def squeeze_data_array_and_cast_to_proper_type(original_data_array: QFDataArray, got_single_date: bool,
+                                               got_single_ticker: bool, got_single_field: bool, use_prices_types: bool):
+
+    if isinstance(original_data_array, DataArray) and not isinstance(original_data_array, QFDataArray):
+        warnings.warn("data_array to be normalized should be a QFDataFrame instance. "
+                      "Transforming data_array to QFDataArray. Please check types in the future.")
+        original_data_array = QFDataArray.from_xr_data_array(original_data_array)
 
     dimensions_to_squeeze = []
     if got_single_date:
@@ -83,15 +91,34 @@ def squeeze_data_array(original_data_array, got_single_date, got_single_ticker, 
     if got_single_field:
         dimensions_to_squeeze.append(FIELDS)
 
+    container = original_data_array
     if dimensions_to_squeeze:
-        container = original_data_array.squeeze(dimensions_to_squeeze)
-    else:
-        container = original_data_array
+        if original_data_array.size == 0:  # empty
+            container = QFDataFrame(index=original_data_array[TICKERS].values,
+                                    columns=original_data_array[FIELDS].values)
+            if use_prices_types:
+                container = PricesDataFrame(container)
+            if got_single_field:
+                container = container.squeeze(axis=1)
+            if got_single_ticker:
+                container = container.squeeze(axis=0)
+            if not got_single_date:
+                dates = original_data_array[DATES].values
+                if got_single_ticker and got_single_field:
+                    container = QFSeries(index=dates)
+                if use_prices_types:
+                    container = PricesSeries(container)
+                if not got_single_ticker or not got_single_field:
+                    container = container.to_frame().T.reindex(dates)
+        else:
+            container = original_data_array.squeeze(dimensions_to_squeeze)
 
-    # if single ticker was provided, name the series or data frame by the ticker
-    if original_shape[1] == 1 and original_shape[2] == 1:
+    if got_single_ticker and got_single_field:
         ticker = original_data_array.tickers[0].item()
         container.name = ticker.as_string()
+
+    if isinstance(container, QFDataArray):
+        container = cast_data_array_to_proper_type(container, use_prices_types)
 
     return container
 
