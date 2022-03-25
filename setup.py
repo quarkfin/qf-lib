@@ -44,7 +44,7 @@ setup(
     include_package_data=True,
     install_requires=[
         'pandas==1.2.4',
-        'numpy>=1.19.0,<1.21.0',
+        'numpy>=1.19.0,<1.22.0',
         'scipy==1.6.3',
         'matplotlib==3.4.2',
         'scikit-learn==0.24.2',
