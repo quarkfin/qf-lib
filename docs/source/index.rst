@@ -3,11 +3,12 @@ Welcome to QF Lib's documentation!
 Project website: `<https://quarkfin.github.io/qf-lib-info/>`_
 =========================================================================
 
-
+.. Hidden TOCs
 .. toctree::
+   :caption: Packages
    :maxdepth: 2
-   :caption: Contents:
-   
+   :hidden:
+
    analysis
    backtesting
    common
@@ -18,6 +19,11 @@ Project website: `<https://quarkfin.github.io/qf-lib-info/>`_
    indicators
    portfolio_construction
 
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+
+   changelog
 
 Indices and tables
 ==================
