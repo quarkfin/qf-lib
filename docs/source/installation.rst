@@ -30,6 +30,7 @@ Download and run the latest ``gtk3-runtime-x.x.x-x-x-x-ts-win64.exe``
 file to install the GTK3+.
 
 
+
 Installing optional data providers
 ------------------------------------
 

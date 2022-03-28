@@ -48,7 +48,6 @@ Analysis
     Market indicators that can be implemented in strategies or used for the analysis.
 
 :doc:`portfolio_construction`
-
     Components which facilitate the process of portfolio construction. The construction process involves covariance matrix optimization with one of the implemented optimizers.
 
 
