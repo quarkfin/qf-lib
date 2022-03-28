@@ -3,6 +3,7 @@ Installation
 This document will guide you through the installation process and will help you configure the library for the newest release.
 
 You can install the library using the pip command:
+
 .. code:: console
 
     $ pip install qf-lib
