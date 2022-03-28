@@ -4,6 +4,9 @@
 [![Downloads](https://static.pepy.tech/personalized-badge/qf-lib?period=month&units=international_system&left_color=grey&right_color=blue&left_text=PyPI%20Downloads%20/%20month)](https://pepy.tech/project/qf-lib)
 [![GitHub](https://img.shields.io/github/license/quarkfin/qf-lib?color=orange&label=License)](https://github.com/quarkfin/qf-lib/blob/master/LICENSE)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/qf-lib?color=yellow&label=python)
+[![Codecov](https://img.shields.io/codecov/c/gh/quarkfin/qf-lib?color=pink)](https://app.codecov.io/gh/quarkfin/qf-lib)
+[![Documentation Status](https://readthedocs.org/projects/qf-lib/badge/?version=coverage_fix)](https://qf-lib.readthedocs.io/en/coverage_fix/?badge=coverage_fix)
+
 
 ## What is QF-lib?
 **QF-Lib** is a Python library that provides high quality tools for quantitative finance. 

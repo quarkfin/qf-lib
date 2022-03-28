@@ -37,12 +37,13 @@ extensions = [
     'sphinx_rtd_theme',
     'sphinx.ext.autosummary',
     'sphinx.ext.viewcode',
-    'autodocsumm'
+    'autodocsumm',
 ]
 numpydoc_show_class_members = False
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
+pygments_style = 'default'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -55,6 +56,10 @@ exclude_patterns = []
 # a list of builtin themes.
 #
 html_theme = "sphinx_rtd_theme"
+html_theme_options = {
+    'logo_only': True,
+    'navigation_depth': 5,
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

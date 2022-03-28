@@ -38,4 +38,4 @@ omit =
     *__init__*
 
 [html]
-directory = xmlcov
+directory = htmlcov

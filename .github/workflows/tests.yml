@@ -6,7 +6,10 @@ name: CI
 on:
   push:
     branches:
-      - master
+    - master
+  pull_request:
+    branches:
+    - master
 
 jobs:
   build:
