@@ -123,6 +123,7 @@ class PortaraDataProvider(PresetDataProvider):
         for future_ticker in future_tickers:
             for path in list(Path(dir_path).glob('**/{}.txt'.format(future_ticker.family_id.replace("{}", "")))):
                 try:
+                    path = path.resolve()
                     df = pd.read_csv(path, names=['Contract', 'Expiration Date'], parse_dates=['Expiration Date'],
                                      date_parser=lambda date: datetime.strptime(date, '%Y%m%d'), index_col="Contract")
                     df = df.rename(columns={'Expiration Date': ExpirationDateField.LastTradeableDate})
@@ -178,6 +179,7 @@ class PortaraDataProvider(PresetDataProvider):
         contracts_data = {}
 
         for path in joined_tickers_paths:
+            path = path.resolve()
             ticker_str = path.name.replace('.csv', '')
             ticker = tickers_strings_to_tickers[ticker_str]
             # It is important to save the Time and Date as strings, in order to correctly infer the date format

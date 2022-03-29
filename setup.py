@@ -19,7 +19,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name='qf-lib',
-    version='1.2',
+    version='2.0',
     author='Jacek Witkowski, Marcin Borratynski, Thomas Ruxton, Dominik Picheta, Olga Kalinowska, Karolina Cynk, '
            'Jakub Czerski, Bartlomiej Czajewski',
     description='Quantitative Finance Library',
@@ -29,13 +29,20 @@ setup(
     project_urls={
         'Documentation': 'https://quarkfin.github.io/qf-lib/',
         'Source': 'https://github.com/quarkfin/qf-lib',
-        'Tutorials': 'https://quarkfin.github.io/qf-lib-info/'
+        'Tutorials': 'https://qf-lib.readthedocs.io/'
     },
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
         'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.7',
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3",
+        'Operating System :: OS Independent',
+        'Intended Audience :: Science/Research',
+        'Topic :: Office/Business :: Financial',
+        'Topic :: Scientific/Engineering :: Information Analysis',
     ],
-    download_url='https://github.com/quarkfin/qf-lib/archive/refs/tags/v1.2.0-beta.tar.gz',
     url='https://quarkfin.github.io/qf-lib/',
     packages=find_packages(include=('qf_lib', 'qf_lib_tests')),
     provides=[
@@ -43,27 +50,26 @@ setup(
     ],
     include_package_data=True,
     install_requires=[
-        'pandas==1.2.4',
-        'numpy>=1.19.0,<1.21.0',
-        'scipy==1.6.3',
-        'matplotlib==3.4.2',
-        'scikit-learn==0.24.2',
-        'cvxopt==1.2.7',
-        'openpyxl==3.0.7',
-        'Pillow==9.0.0',
-        'WeasyPrint==52.5',
-        'emails==0.6',
-        'Jinja2==2.11.3',
-        'arch==4.19',
-        'beautifulsoup4==4.9.3',
-        'joblib==1.0.1',
-        'quandl==3.6.1',
-        'requests==2.25.1',
-        'seaborn==0.11.1',
-        'statsmodels==0.12.2',
-        'xarray==0.18.0',
-        'dic==1.5.2b1',
-        'tqdm==4.51.0',
+        "pandas==1.2.4",
+        "numpy>=1.19.3,<1.21.0",
+        "scipy>=1.6.3,<1.8.0",
+        "Pillow>=9.0.0,<=9.0.1",
+        "markupsafe==2.0.1",
+        "matplotlib>=3.4.0,<=3.5.0",
+        "joblib>=1.0.1,<1.1.0",
+        "scikit-learn>=0.24.2,<1.0.0",
+        "cvxopt==1.2.7",
+        "openpyxl>=3.0.7,<=3.0.9",
+        "seaborn>=0.11.1",
+        "WeasyPrint==52.5",
+        "emails==0.6",
+        "dic==1.5.2b1",
+        "Jinja2==2.11.3",
+        "arch==4.19",
+        "requests==2.25.1",
+        "statsmodels==0.12.2",
+        "xarray==0.18.0",
+        "quandl>=3.6.1,<=3.7.0",
     ],
     extras_require={
         "documentation": ["autodocsumm==0.1.13", "sphinx_rtd_theme==0.5.0", "Sphinx==3.1.1"],
@@ -71,5 +77,5 @@ setup(
         "bloomberg_beap_hapi": ["PyJWT>=0.2.3,<2.0.0", "retrying==1.3.3"]
     },
     keywords='quantitative finance backtester',
-    python_requires='>=3.9.0'
+    python_requires='>=3.7.1'
 )

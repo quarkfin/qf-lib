@@ -161,7 +161,7 @@ class CSVDataProvider(PresetDataProvider):
             joined_tickers_paths = [item for sublist in tickers_paths for item in sublist]
 
             for path in joined_tickers_paths:
-                ticker_str = path.name.replace('.csv', '')
+                ticker_str = path.resolve().name.replace('.csv', '')
                 df = QFDataFrame(pd.read_csv(path, dtype={index_col: str}))
                 _process_df(df, ticker_str)
 

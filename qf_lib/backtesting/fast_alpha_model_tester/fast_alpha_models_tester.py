@@ -11,7 +11,6 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-import sys
 from datetime import datetime
 from itertools import count
 from typing import Sequence, Type, List, Union, Dict, Any
@@ -19,7 +18,6 @@ from typing import Sequence, Type, List, Union, Dict, Any
 import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed
-from tqdm import tqdm
 
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
@@ -139,7 +137,7 @@ class FastAlphaModelTester:
         print("\nLoading all price values of tickers:")
         self._timer.set_current_time(self._end_date)
         tickers_dict = {}
-        for ticker in tqdm(self._tickers, file=sys.stdout):
+        for ticker in self._tickers:
             if isinstance(ticker, FutureTicker):
                 fc = FuturesChain(ticker, self._data_handler)
                 tickers_dict[ticker] = fc.get_price(PriceField.ohlcv(), self._start_date, self._end_date,
@@ -155,8 +153,7 @@ class FastAlphaModelTester:
         print("\nGenerating exposures:")
         exposure_values_df_list = Parallel(n_jobs=self._n_jobs)(delayed(self._generate_exposure_values)
                                                                 (config, self._data_handler, self._tickers)
-                                                                for config in
-                                                                tqdm(self._alpha_model_configs, file=sys.stdout))
+                                                                for config in self._alpha_model_configs)
         print("\nFinished generation of exposures.")
         return exposure_values_df_list
 
@@ -179,7 +176,7 @@ class FastAlphaModelTester:
             delayed(self._calculate_backtest_summary)(tickers, config, prices_data_array,
                                                       open_to_open_returns_df[tickers],
                                                       exposure_values_df[tickers])
-            for config, exposure_values_df, tickers in tqdm(all_params, file=sys.stdout)
+            for config, exposure_values_df, tickers in all_params
         )
 
         return backtest_summary_elem_list

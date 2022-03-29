@@ -14,7 +14,7 @@
 import gzip
 import re
 from io import StringIO
-from typing import Tuple, List, Optional
+from typing import Tuple, List, Optional, Dict
 from pandas import to_datetime
 from pandas._libs.tslibs.nattype import NaT
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
@@ -52,7 +52,7 @@ class BloombergBeapHapiParser:
     def __init__(self):
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
-    def get_chain(self, filepath: str) -> dict[str, List[str]]:
+    def get_chain(self, filepath: str) -> Dict[str, List[str]]:
         """
         Method to parse hapi response and extract future chain tickers
 

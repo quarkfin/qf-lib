@@ -73,7 +73,7 @@ class TestBacktester(TestCase):
     def test_backtester_with_buy_and_hold_strategy(self):
         start_date = str_to_date("2010-01-01")
         end_date = str_to_date("2010-02-01")
-        data_provider = GeneralPriceProvider(self.data_provider, None, None, None)
+        data_provider = GeneralPriceProvider(self.data_provider, None, None)
 
         msft_prices = data_provider.get_price(
             BuyAndHoldStrategy.MICROSOFT_TICKER, fields=[PriceField.Open, PriceField.Close],
