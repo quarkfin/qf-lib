@@ -293,16 +293,16 @@ class CcyTicker(Ticker):
         The name of the crypto currency. For example Bitcoin -> ticker: bitcoin
     security_type: SecurityType
         denotes the type of the security, that the ticker is representing e.g. SecurityType.STOCK for a stock,
-        SecurityType.FUTURE for a futures contract etc. By default equals SecurityType.STOCK.
+        SecurityType.FUTURE for a futures contract etc. By default equals SecurityType.CRYPTO.
     point_value: int
         size of the contract as given by the ticker's Data Provider. Used mostly by tickers of security_type FUTURE and
         by default equals 1.
     """
-    def __init__(self, ticker: str, security_type: SecurityType = SecurityType.STOCK, point_value: int = 1):
+    def __init__(self, ticker: str, security_type: SecurityType = SecurityType.CRYPTO, point_value: int = 1):
         super().__init__(ticker, security_type, point_value)
 
     @classmethod
-    def from_string(cls, ticker_str: Union[str, Sequence[str]], security_type: SecurityType = SecurityType.STOCK,
+    def from_string(cls, ticker_str: Union[str, Sequence[str]], security_type: SecurityType = SecurityType.CRYPTO,
                     point_value: int = 1) -> Union["CcyTicker", Sequence["CcyTicker"]]:
         """ Example: CcyTicker.from_string('Bitcoin'). """
 

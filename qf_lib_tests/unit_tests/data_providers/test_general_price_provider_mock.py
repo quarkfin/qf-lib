@@ -19,12 +19,11 @@ import pandas as pd
 
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
-from qf_lib.common.tickers.tickers import QuandlTicker, BloombergTicker, HaverTicker, CcyTicker
+from qf_lib.common.tickers.tickers import QuandlTicker, BloombergTicker, HaverTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.data_providers.bloomberg import BloombergDataProvider
-from qf_lib.data_providers.cryptocurrency.cryptocurrency_data_provider import CryptoCurrencyDataProvider
 from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
 from qf_lib.data_providers.haver import HaverDataProvider
 from qf_lib.data_providers.quandl.quandl_data_provider import QuandlDataProvider
@@ -43,9 +42,6 @@ class TestGeneralPriceProviderMock(unittest.TestCase):
 
     HAVER_TICKERS = [HaverTicker('Haver1', 'DB'), HaverTicker('Haver2', 'DB'),
                      HaverTicker('Haver3', 'DB'), HaverTicker('Haver4', 'DB')]
-
-    CCY_TICKERS = [CcyTicker("Bitcoin"), CcyTicker("Ripple"),
-                   CcyTicker("Etherium"), CcyTicker("NEM")]
 
     SINGLE_PRICE_FIELD = PriceField.Close
     PRICE_FIELDS = [SINGLE_PRICE_FIELD]
@@ -90,12 +86,7 @@ class TestGeneralPriceProviderMock(unittest.TestCase):
                                                           fields=self.PRICE_FIELDS, data=data)
         haver.supported_ticker_types.return_value = {HaverTicker}
 
-        ccy = Mock(spec=CryptoCurrencyDataProvider)
-        ccy.get_price.return_value = QFDataArray.create(dates=datetime_index, tickers=self.CCY_TICKERS,
-                                                        fields=self.PRICE_FIELDS, data=data)
-        ccy.supported_ticker_types.return_value = {CcyTicker}
-
-        self.price_provider = GeneralPriceProvider(bloomberg, quandl, haver, ccy)
+        self.price_provider = GeneralPriceProvider(bloomberg, quandl, haver)
 
     # =========================== Test get_price method ==========================================================
 

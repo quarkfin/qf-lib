@@ -30,9 +30,13 @@ jobs:
     - name: Style check
       run: flake8 .
     - name: Unit tests
+      env:
+        QUANTFIN_SECRET: ${{ secrets.QUANTFIN_SECRET }}
       run: |
         coverage run -m pytest qf_lib_tests/unit_tests
     - name: Integration tests
+      env:
+        QUANTFIN_SECRET: ${{ secrets.QUANTFIN_SECRET }}
       run: |
         coverage run -a -m pytest qf_lib_tests/integration_tests
         coverage xml

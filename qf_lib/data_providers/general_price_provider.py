@@ -30,7 +30,6 @@ from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
-from qf_lib.data_providers.cryptocurrency.cryptocurrency_data_provider import CryptoCurrencyDataProvider
 from qf_lib.data_providers.haver import HaverDataProvider
 from qf_lib.data_providers.helpers import normalize_data_array
 from qf_lib.data_providers.data_provider import DataProvider
@@ -44,11 +43,11 @@ class GeneralPriceProvider(DataProvider):
     """
 
     def __init__(self, bloomberg: BloombergDataProvider = None, quandl: QuandlDataProvider = None,
-                 haver: HaverDataProvider = None, cryptocurrency: CryptoCurrencyDataProvider = None):
+                 haver: HaverDataProvider = None):
         super().__init__()
         self._ticker_type_to_data_provider_dict = {}  # type: Dict[Type[Ticker], DataProvider]
 
-        for provider in [bloomberg, quandl, haver, cryptocurrency]:
+        for provider in [bloomberg, quandl, haver]:
             if provider is not None:
                 self._register_data_provider(provider)
 

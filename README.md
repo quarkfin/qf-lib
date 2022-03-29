@@ -5,8 +5,8 @@
 [![GitHub](https://img.shields.io/github/license/quarkfin/qf-lib?color=orange&label=License)](https://github.com/quarkfin/qf-lib/blob/master/LICENSE)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/qf-lib?color=yellow&label=python)
 [![Codecov](https://img.shields.io/codecov/c/gh/quarkfin/qf-lib?color=pink)](https://app.codecov.io/gh/quarkfin/qf-lib)
-[![Documentation Status](https://readthedocs.org/projects/qf-lib/badge/?version=coverage_fix)](https://qf-lib.readthedocs.io/en/coverage_fix/?badge=coverage_fix)
-
+[![Documentation Status](https://readthedocs.org/projects/qf-lib/badge/)](https://qf-lib.readthedocs.io/)
+[![CI](https://github.com/quarkfin/qf-lib/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/quarkfin/qf-lib/actions/workflows/tests.yml)
 
 ## What is QF-lib?
 **QF-Lib** is a Python library that provides high quality tools for quantitative finance. 
@@ -15,7 +15,7 @@ The Backtester uses an **event-driven architecture** and simulates events such a
 or closing. It is designed to **test and evaluate any custom investment strategy**.
 
 Main features include:
-* Flexible data sourcing - the project supports the possibility of an easy selection of the data source. Currently provides financial data from **Bloomberg**, **Quandl**, **Haver Analytics**, **CoinMarketCap** or **Portara**. To check if there are any additional dependencies necessary for any of these data providers please visit [the installation guide](https://quarkfin.github.io/qf-lib-info/installation/#tips-on-how-to-install-optional-data-providers).
+* Flexible data sourcing - the project supports the possibility of an easy selection of the data source. Currently provides financial data from **Bloomberg**, **Quandl**, **Haver Analytics** or **Portara**. To check if there are any additional dependencies necessary for any of these data providers please visit [the installation guide](https://quarkfin.github.io/qf-lib-info/installation/#tips-on-how-to-install-optional-data-providers).
 * Tools to prevent look-ahead bias in the backtesting environment.
 * Adapted [data containers](https://quarkfin.github.io/qf-lib-info/structure/#containers), which extend the functionality of pandas `Series'` and `Dataframes`.
 * Summary generation - all performed studies can be summarized with a practical and informative document explaining the results. [Several document templates](https://quarkfin.github.io/qf-lib-info/structure/#analysis) are available in the project.
@@ -47,4 +47,4 @@ In order to facilitate the GTK3+ installation process for Windows you can use
 ## Documentation
 * Installation guide: https://quarkfin.github.io/qf-lib-info/installation/
 * Configuration guide: https://quarkfin.github.io/qf-lib-info/installation/#configuration
-* API documentation: https://quarkfin.github.io/qf-lib/index.html
+* API documentation: https://qf-lib.readthedocs.io/

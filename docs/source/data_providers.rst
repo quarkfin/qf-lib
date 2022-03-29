@@ -18,7 +18,6 @@ data_providers
     general_price_provider.GeneralPriceProvider
     quandl.quandl_data_provider.QuandlDataProvider
     haver.haver_data_provider.HaverDataProvider
-    cryptocurrency.cryptocurrency_data_provider.CryptoCurrencyDataProvider
     portara.portara_data_provider.PortaraDataProvider
     csv.csv_data_provider.CSVDataProvider
 
