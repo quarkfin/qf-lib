@@ -5,7 +5,7 @@
 [![GitHub](https://img.shields.io/github/license/quarkfin/qf-lib?color=orange&label=License)](https://github.com/quarkfin/qf-lib/blob/master/LICENSE)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/qf-lib?color=yellow&label=python)
 [![Codecov](https://img.shields.io/codecov/c/gh/quarkfin/qf-lib?color=pink)](https://app.codecov.io/gh/quarkfin/qf-lib)
-[![Documentation Status](https://readthedocs.org/projects/qf-lib/badge/)](https://qf-lib.readthedocs.io/en/coverage_fix/?badge=coverage_fix)
+[![Documentation Status](https://readthedocs.org/projects/qf-lib/badge/)](https://qf-lib.readthedocs.io/)
 [![CI](https://github.com/quarkfin/qf-lib/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/quarkfin/qf-lib/actions/workflows/tests.yml)
 
 ## What is QF-lib?
