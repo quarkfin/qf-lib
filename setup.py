@@ -27,9 +27,9 @@ setup(
     license='Apache License 2.0',
     long_description_content_type="text/markdown",
     project_urls={
-        'Documentation': 'https://quarkfin.github.io/qf-lib/',
+        'Documentation': 'https://qf-lib.readthedocs.io',
         'Source': 'https://github.com/quarkfin/qf-lib',
-        'Tutorials': 'https://qf-lib.readthedocs.io/'
+        'Tutorials': 'https://quarkfin.github.io/qf-lib-info'
     },
     classifiers=[
         'Development Status :: 5 - Production/Stable',
