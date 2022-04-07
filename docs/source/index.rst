@@ -17,8 +17,18 @@ Getting started
 :doc:`configuration`
     Library configuration and customization options.
 
-Backtesting
-------------
+:doc:`tutorials/first_strategy_backtest`
+    Step by step guide on how to implement and backtest a strategy.
+
+:doc:`tutorials/first_alpha_model`
+    Step by step guide on how to implement and backtest an Alpha model strategy.
+
+:doc:`tutorials/customize_your_backtest`
+    Enhance your backtest by adding commission and slippage models.
+
+
+API Reference
+----------------
 
 :doc:`backtesting`
     Code of the Backtester, which uses an event-driven architecture.
@@ -31,9 +41,6 @@ Backtesting
 
 :doc:`common`
     Various generic tools.
-
-Analysis
----------
 
 :doc:`analysis`
     Analyze strategy progress and generate files containing the analysis results
@@ -60,9 +67,12 @@ Analysis
 
    installation
    configuration
+   tutorials/first_strategy_backtest
+   tutorials/first_alpha_model
+   tutorials/customize_your_backtest
 
 .. toctree::
-   :caption: Backtesting
+   :caption: API Reference
    :maxdepth: 2
    :hidden:
 
@@ -70,17 +80,13 @@ Analysis
    data_providers
    containers
    common
-
-.. toctree::
-   :caption: Analysis
-   :maxdepth: 2
-   :hidden:
-
    analysis
    plotting
    document_utils
    indicators
    portfolio_construction
+
+
 
 
 Indices and tables

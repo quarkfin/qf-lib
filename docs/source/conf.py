@@ -18,8 +18,7 @@ sys.path.append(os.path.abspath('../..'))
 # -- Project information -----------------------------------------------------
 
 project = 'QF Lib'
-copyright = '2021'
-author = 'CERN'
+copyright = '2021, Karolina Cynk'
 
 # The full version, including alpha/beta/rc tags
 # release = 'release...'
@@ -33,11 +32,11 @@ author = 'CERN'
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
-    'sphinx.ext.githubpages',
     'sphinx_rtd_theme',
     'sphinx.ext.autosummary',
     'sphinx.ext.viewcode',
     'autodocsumm',
+    'sphinx.ext.intersphinx'
 ]
 numpydoc_show_class_members = False
 
