@@ -42,8 +42,6 @@ class SimpleMAStrategy(AbstractStrategy):
         self.broker = ts.broker
         self.order_factory = ts.order_factory
         self.data_handler = ts.data_handler
-        self.position_sizer = ts.position_sizer
-        self.timer = ts.timer
         self.ticker = ticker
 
     def calculate_and_place_orders(self):
@@ -52,8 +50,7 @@ class SimpleMAStrategy(AbstractStrategy):
         short_ma_len = 5
 
         # Use data handler to download last 20 daily close prices and use them to compute the moving averages
-        long_ma_series = self.data_handler.historical_price(self.ticker,
-                                                            PriceField.Close, long_ma_len)
+        long_ma_series = self.data_handler.historical_price(self.ticker, PriceField.Close, long_ma_len)
         long_ma_price = long_ma_series.mean()
 
         short_ma_series = long_ma_series.tail(short_ma_len)
