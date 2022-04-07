@@ -254,14 +254,14 @@ Limit fills volume
 --------------------
 In all the previous examples we ignored the volume parameter of the asset. However, this may result in us creating an order
 with volume exceeding the real life volume. Maybe you already thought about this and you tried to adjust the desired order volume based on
-the historical volume of the asset - if the daily volume never exceeded 1000 than creating an order of size 10,000 doest not simply make sense,
-so you tried to always cut it based on the historical data. Indeed, that is a good idea! But what if the volume was high for the past days or months and exactly
+the historical volume of the asset (for example if the daily volume never exceeded 1000 than creating an order of size 10,000 does not simply make sense).
+Indeed, that is a good idea! But what if the volume was high for the past days or months and exactly
 on the day, when you wanted to send the order it suddenly dropped? The above mentioned approach will not help us in this case. What you
 can do to address this issue is to use the `max_volume_share_limit` parameter of the Slippage.
 
-Slippage models can not only change the fill price of the transaction, but they can also limit the Order's volume. The `max_volume_share_limit`
-parameter should be a float number from range [0,1] and it would denotes how big (volume-wise) the Order can be. I.e. if it's 0.5 and a daily
-volume for a given asset is 1,000,000 USD, then max volume of the Order can be 500,000 USD.
+Slippage models can not only change the fill price of the transaction, but they can also limit the Order's volume depending on the volume for a particular
+day. The `max_volume_share_limit` parameter should be a float number from range [0,1] and it would denote how big (volume-wise) the Order can be.
+I.e. if it's 0.5 and the daily volume for a given asset is 1,000,000 USD, then the max volume of the fill will not exceed be 500,000 USD.
 
 Let's see how the Simple Moving Average strategy would perform in case of 0.1% price slippage and 15% max volume share limit:
 
