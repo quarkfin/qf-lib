@@ -94,6 +94,12 @@ table.table.shrink-font td, table.table.shrink-font th {
     padding: 3px 5px;
 }
 
+table.table.xsmall-font td, table.table.xsmall-font th {
+    font-size: 0.7em;
+    line-height: 0.8em;
+    padding: 3px 5px;
+}
+
 table.table td.sorted-by-column {
     font-weight: bold;
     background-color: #e8e8e8;

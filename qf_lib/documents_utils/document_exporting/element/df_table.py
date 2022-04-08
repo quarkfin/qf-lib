@@ -31,6 +31,7 @@ class DFTable(Element):
 
         self.model = ModelController(data=data, index=data.index,
                                      columns=columns if columns is not None else data.columns)
+        assert len(set(self.model.data.columns)) == len(self.model.data.columns), "Duplicated name columns are not allowed"
 
         # Set the initial Table css classes
         css_classes, _ = convert_to_list(css_classes, str)
@@ -44,7 +45,6 @@ class DFTable(Element):
         """
         env = templates.environment
         template = env.get_template("df_table.html")
-
         return template.render(css_class=self.model.table_styles.classes(), table=self)
 
     @property
