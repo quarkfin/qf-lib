@@ -31,6 +31,8 @@ Reference guides
 --------------------
 :doc:`reference/backtest_flow`
     Understand the event-driven architecture of the Backtester and compare different types of Events.
+:doc:`reference/structure`
+    Description of the main modules and components of the library
 
 API Reference
 ----------------
@@ -82,6 +84,7 @@ API Reference
    :hidden:
 
    reference/backtest_flow
+   reference/structure
 
 .. toctree::
    :caption: API Reference
