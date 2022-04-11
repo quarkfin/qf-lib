@@ -27,6 +27,11 @@ Getting started
     Enhance your backtest by adding commission and slippage models.
 
 
+Reference guides
+--------------------
+:doc:`reference/backtest_flow`
+    Understand the event-driven architecture of the Backtester and compare different types of Events.
+
 API Reference
 ----------------
 
@@ -70,6 +75,13 @@ API Reference
    tutorials/first_strategy_backtest
    tutorials/first_alpha_model
    tutorials/customize_your_backtest
+
+.. toctree::
+   :caption: Reference
+   :maxdepth: 1
+   :hidden:
+
+   reference/backtest_flow
 
 .. toctree::
    :caption: API Reference
