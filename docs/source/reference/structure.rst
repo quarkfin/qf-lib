@@ -15,14 +15,7 @@ Analysis
 ========
 
 The components included in this catalogue are used to analyze strategy
-progress and generate files containing the analysis results. Examples of
-some documents created using these components are as follows:
-
-* `TearsheetWithoutBenchmark <readme_example_files/tearsheet_without_benchmark.pdf>`__,
-* `PortfolioTradingSheet <readme_example_files/portfolio_trading_sheet.pdf>`__,
-* `TimeseriesAnalysis <readme_example_files/timeseries_analysis.xlsx>`__,
-* `TradesAnalysis <readme_example_files/trades_analysis.csv>`__, 
-* `ModelParamsEvaluator <readme_example_files/model_params_evaluator.pdf>`__.
+progress and generate files containing the analysis results. 
 
 Backtesting
 ===========
