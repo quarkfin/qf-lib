@@ -14,8 +14,6 @@
 
 from typing import List
 
-from pandas import Timedelta
-
 from qf_lib.common.utils.dateutils.to_days import to_days
 from qf_lib.common.utils.returns.drawdown_tms import drawdown_tms
 from qf_lib.containers.series.qf_series import QFSeries
@@ -42,22 +40,23 @@ def list_of_max_drawdowns(prices_tms: QFSeries) -> (List[float], List[float]):
     max_drawdowns = []
     duration_of_drawdowns = []
 
-    series_sample = QFSeries()
+    dd_start_date = None
+    series_sample = []
+
     for date, value in drawdown_timeseries.iteritems():
         if value == 0:
-            if not series_sample.empty:  # empty sequence returns false
-                max_drawdowns.append(series_sample.max())
-                time_span = series_sample.index[-1] - series_sample.index[0] + Timedelta('1 days')
-                duration_of_drawdowns.append(time_span)
+            if series_sample:  # empty sequence returns false
+                max_drawdowns.append(max(series_sample))
+                duration_of_drawdowns.append(date - dd_start_date)
 
-                series_sample = QFSeries()  # reset the sample series
+            series_sample = []  # reset the sample series
+            dd_start_date = date
         else:
-            series_sample[date] = value
+            series_sample.append(value)
 
-    if not series_sample.empty:  # the last element was not added if the drawdown did not recovered
-        max_drawdowns.append(series_sample.max())
-        time_span = series_sample.index[-1] - series_sample.index[0] + Timedelta('1 days')
-        duration_of_drawdowns.append(time_span)
+    if series_sample:  # the last element was not added if the drawdown did not recovered
+        max_drawdowns.append(max(series_sample))
+        duration_of_drawdowns.append(drawdown_timeseries.index[-1] - dd_start_date)
 
     # convert the duration of drawdown to float value expressed in days
     duration_of_drawdowns = list(map(to_days, duration_of_drawdowns))

@@ -156,6 +156,7 @@ class Frequency(Enum):
             "Q": Frequency.QUARTERLY,
             "Q-DEC": Frequency.QUARTERLY,
             "A": Frequency.YEARLY,
+            "Y": Frequency.YEARLY,
             None: Frequency.IRREGULAR
         }
 

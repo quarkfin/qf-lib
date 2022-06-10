@@ -51,7 +51,7 @@ class MarketOrdersExecutor(SimulatedExecutor):
         if market_open or market_close:
             # In case of market open or market close, some of the orders may expire
             for order, ticker in zip(market_orders_list, tickers):
-                security_price = current_prices_series[ticker]
+                security_price = current_prices_series.loc[ticker]
 
                 if is_finite_number(security_price):
                     to_be_executed_orders.append(order)
@@ -60,7 +60,7 @@ class MarketOrdersExecutor(SimulatedExecutor):
                     expired_orders.append(order.id)
         else:
             for order, ticker in zip(market_orders_list, tickers):
-                security_price = current_prices_series[ticker]
+                security_price = current_prices_series.loc[ticker]
 
                 if is_finite_number(security_price):
                     to_be_executed_orders.append(order)
@@ -94,20 +94,17 @@ class MarketOrdersExecutor(SimulatedExecutor):
             # Remove the time part from the datetime in case of daily frequency
             current_datetime = date_to_datetime(current_datetime.date())
             start_time_range = current_datetime
-            end_time_range = start_time_range
         elif market_close_time:
             # At the market close, in order to get the current price we need to take a bar that ends at the current time
             # and use the close price value
             start_time_range = current_datetime - self._frequency.time_delta()
-            end_time_range = current_datetime
         else:
             # At any other time during the day, in order to get the current price we need to take the bar that starts at
             # the current time and use the open price value
             start_time_range = current_datetime
-            end_time_range = current_datetime + self._frequency.time_delta()
 
         price_field = PriceField.Close if market_close_time else PriceField.Open
-        prices = self._data_provider.get_price(tickers, price_field, start_time_range, end_time_range, self._frequency)
+        prices = self._data_provider.get_price(tickers, price_field, start_time_range, start_time_range, self._frequency)
         return prices
 
     def _check_order_validity(self, order):

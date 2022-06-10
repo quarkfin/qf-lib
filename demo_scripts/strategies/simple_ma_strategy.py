@@ -13,8 +13,9 @@
 #     limitations under the License.
 import matplotlib.pyplot as plt
 
+from qf_lib.backtesting.events.time_event.regular_time_event.calculate_and_place_orders_event import \
+    CalculateAndPlaceOrdersRegularEvent
 from qf_lib.backtesting.strategies.abstract_strategy import AbstractStrategy
-from qf_lib.backtesting.strategies.signal_generators import OnBeforeMarketOpenSignalGeneration
 
 plt.ion()  # required for dynamic chart, good to keep this at the beginning of imports
 
@@ -82,7 +83,11 @@ def main():
 
     ts = session_builder.build(start_date, end_date)
 
-    OnBeforeMarketOpenSignalGeneration(SimpleMAStrategy(ts, ticker))
+    strategy = SimpleMAStrategy(ts, ticker)
+    CalculateAndPlaceOrdersRegularEvent.set_daily_default_trigger_time()
+    CalculateAndPlaceOrdersRegularEvent.exclude_weekends()
+    strategy.subscribe(CalculateAndPlaceOrdersRegularEvent)
+
     ts.start_trading()
 
 

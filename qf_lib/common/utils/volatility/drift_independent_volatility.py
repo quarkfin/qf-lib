@@ -22,7 +22,7 @@ from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
 
 
-class DriftIndependentVolatility(object):
+class DriftIndependentVolatility:
 
     @staticmethod
     def get_volatility(

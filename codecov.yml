@@ -21,7 +21,7 @@ comment:
 
 ignore:
   - "qf_lib/plotting"
-  - "qf_lib_tests"
+  - "qf_lib/tests"
   - "qf_lib/analysis"
   - "qf_lib/documents_utils/document_exporting"
   - "**/__init__.py"

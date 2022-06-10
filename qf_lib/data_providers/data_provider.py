@@ -245,7 +245,7 @@ class DataProvider(object, metaclass=ABCMeta):
         end_time = datetime.now() if end_time is None else end_time
         tickers, got_single_ticker = convert_to_list(tickers, Ticker)
         if not tickers:
-            return QFSeries()
+            return nan if got_single_ticker else PricesSeries()
 
         assert frequency >= Frequency.DAILY, "Frequency lower then daily is not supported by the " \
                                              "get_last_available_price function"
@@ -256,6 +256,12 @@ class DataProvider(object, metaclass=ABCMeta):
         open_prices = self.get_price(tickers, PriceField.Open, start_date, end_time, frequency)
         close_prices = self.get_price(tickers, PriceField.Close, start_date, end_time, frequency)
 
+        latest_available_prices_series = self._get_valid_latest_available_prices(start_date, tickers, open_prices, close_prices)
+        return latest_available_prices_series.iloc[0] if got_single_ticker else latest_available_prices_series
+
+    @staticmethod
+    def _get_valid_latest_available_prices(start_date: datetime, tickers: Sequence[Ticker], open_prices: QFDataFrame,
+                                           close_prices: QFDataFrame) -> QFSeries:
         latest_available_prices = []
         for ticker in tickers:
             last_valid_open_price_date = open_prices.loc[:, ticker].last_valid_index() or start_date
@@ -271,10 +277,11 @@ class DataProvider(object, metaclass=ABCMeta):
 
             latest_available_prices.append(price)
 
-        latest_available_prices_series = QFSeries(data=latest_available_prices, index=tickers)
-        return latest_available_prices_series.iloc[0] if got_single_ticker else latest_available_prices_series
+        latest_available_prices_series = PricesSeries(data=latest_available_prices, index=tickers)
+        return latest_available_prices_series
 
-    def _compute_start_date(self, nr_of_bars_needed: int, end_date: datetime, frequency: Frequency):
+    @staticmethod
+    def _compute_start_date(nr_of_bars_needed: int, end_date: datetime, frequency: Frequency):
         if frequency <= Frequency.DAILY:
             nr_of_days_to_go_back = math.ceil(nr_of_bars_needed * (365 / 252) + 10)
         else:
@@ -303,6 +310,11 @@ class DataProvider(object, metaclass=ABCMeta):
         if new_start_date != start_date:
             self.logger.info(f"Adjusting the starting date to {new_start_date} from {start_date}.")
         return new_start_date
+
+    @staticmethod
+    def _got_single_date(start_date: datetime, end_date: datetime, frequency: Frequency):
+        return start_date.date() == end_date.date() if frequency <= Frequency.DAILY else \
+                (start_date + frequency.time_delta() > end_date)
 
     def __str__(self):
         return self.__class__.__name__

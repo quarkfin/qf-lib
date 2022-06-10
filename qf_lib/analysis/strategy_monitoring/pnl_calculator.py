@@ -16,7 +16,6 @@ from typing import List, Dict
 
 from pandas import concat, date_range
 
-from qf_lib.backtesting.events.time_event.regular_time_event.after_market_close_event import AfterMarketCloseEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
 from qf_lib.backtesting.portfolio.backtest_position import BacktestPosition
@@ -113,14 +112,14 @@ class PnLCalculator:
         """ Filters out transactions, which do not correspond to the given ticker and returns a QFSeries of remaining
         transactions. Only transactions between start_date market open and end_date market close are considered. """
         transactions = [t for t in transactions if start_date + MarketOpenEvent.trigger_time()
-                        <= t.time <= end_date + MarketCloseEvent.trigger_time()]
+                        <= t.transaction_fill_time <= end_date + MarketCloseEvent.trigger_time()]
 
         if isinstance(ticker, FutureTicker):
             transactions_for_tickers = [t for t in transactions if ticker.belongs_to_family(t.ticker)]
         else:
             transactions_for_tickers = [t for t in transactions if ticker == t.ticker]
 
-        transactions_records = [(t, t.time) for t in transactions_for_tickers]
+        transactions_records = [(t, t.transaction_fill_time) for t in transactions_for_tickers]
         transactions_series = QFDataFrame.from_records(transactions_records, columns=["Transaction", "Index"]) \
             .set_index("Index").iloc[:, 0]
         return transactions_series
@@ -133,7 +132,7 @@ class PnLCalculator:
         prices_df = prices_df.ffill()
 
         for timestamp in date_range(start_date, end_date, freq="B"):
-            timestamp = timestamp + AfterMarketCloseEvent.trigger_time()
+            timestamp = timestamp + MarketCloseEvent.trigger_time()
 
             previous_after_market_close = timestamp - RelativeDelta(days=1)
             transactions_for_past_day = transactions_series.loc[previous_after_market_close:timestamp]

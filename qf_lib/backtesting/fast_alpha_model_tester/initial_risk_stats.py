@@ -23,7 +23,7 @@ from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.dataframe.simple_returns_dataframe import SimpleReturnsDataFrame
 
 
-class InitialRiskStatsFactory(object):
+class InitialRiskStatsFactory:
     FAILED = "Failed"
     SUCCEEDED = "Succeeded"
 

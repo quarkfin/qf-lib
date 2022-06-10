@@ -67,7 +67,7 @@ class PortaraDataProvider(PresetDataProvider):
           1-minute bars, it is possible to aggregate them selecting a different frequency in the get price.
         - In order to see exemplary files which may be used with the PortaraDataProvider (e.g. structure of expiration
           dates file), check the mock files in the tests directory:
-          qf_lib_tests > unit_tests > data_providers > portara > input_data.
+          tests > unit_tests > data_providers > portara > input_data.
         - To see examples using Portara data provider, check the demo scripts:
           demo_scripts > data_providers > portara.
 

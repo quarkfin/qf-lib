@@ -18,7 +18,7 @@ from qf_lib.common.utils.factorization.data_models.rolling_window_estimation imp
 from qf_lib.containers.series.qf_series import QFSeries
 
 
-class RollingDataModel(object):
+class RollingDataModel:
     """
     Class for preparing multiple data models using the rolling window.
 

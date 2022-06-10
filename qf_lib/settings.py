@@ -20,7 +20,7 @@ from typing import Optional
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 
 
-class Settings(object):
+class Settings:
     def __init__(self, settings_path: Optional[str], secret_path: Optional[str] = None, init_properties: bool = True):
         self.settings_path = settings_path
         self.secret_path = secret_path

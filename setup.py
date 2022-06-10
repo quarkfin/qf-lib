@@ -12,14 +12,14 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-from setuptools import setup, find_packages
+from setuptools import setup
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(
     name='qf-lib',
-    version='2.1',
+    version='2.2',
     author='Jacek Witkowski, Marcin Borratynski, Thomas Ruxton, Dominik Picheta, Olga Kalinowska, Karolina Cynk, '
            'Jakub Czerski, Bartlomiej Czajewski',
     description='Quantitative Finance Library',
@@ -44,10 +44,7 @@ setup(
         'Topic :: Scientific/Engineering :: Information Analysis',
     ],
     url='https://quarkfin.github.io/qf-lib/',
-    packages=find_packages(include=('qf_lib', 'qf_lib_tests')),
-    provides=[
-        'qf_lib'
-    ],
+    packages=['qf_lib'],
     include_package_data=True,
     install_requires=[
         "pandas==1.2.4",

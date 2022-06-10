@@ -174,9 +174,7 @@ class GeneralPriceProvider(DataProvider):
 
         tickers, got_single_ticker = convert_to_list(tickers, Ticker)
         fields, got_single_field = convert_to_list(fields, type_of_field)
-        got_single_date = start_date is not None and (
-            (start_date == end_date) if frequency <= Frequency.DAILY else False
-        )
+        got_single_date = self._got_single_date(start_date, end_date, frequency)
         partial_results = []
 
         for ticker_class, ticker_group in groupby(tickers, lambda t: type(t)):

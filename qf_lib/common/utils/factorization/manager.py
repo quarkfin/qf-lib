@@ -27,7 +27,7 @@ from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
 
 
-class FactorizationManager(object):
+class FactorizationManager:
     """
     Facade class for factorization.
 

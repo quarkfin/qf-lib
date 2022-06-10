@@ -20,7 +20,7 @@ from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 from qf_lib.data_providers.data_provider import DataProvider
-from qf_lib.interactive_brokers.ib_contract import IBContract
+from qf_lib.brokers.ib_broker.ib_contract import IBContract
 
 
 class IBContractTickerMapper(ContractTickerMapper):

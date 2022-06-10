@@ -14,7 +14,7 @@
 import pandas as pd
 
 
-class TimeIndexedContainer(object):
+class TimeIndexedContainer:
 
     def infer_interval(self) -> (pd.Timedelta, float):
         """

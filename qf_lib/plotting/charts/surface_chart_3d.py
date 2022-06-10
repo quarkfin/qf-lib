@@ -23,7 +23,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-class SurfaceChart3D(object):
+class SurfaceChart3D:
     """
      Creates a 3D surface chart
 

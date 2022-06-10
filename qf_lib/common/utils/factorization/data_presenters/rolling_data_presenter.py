@@ -24,7 +24,7 @@ from qf_lib.plotting.decorators.legend_decorator import LegendDecorator
 from qf_lib.plotting.decorators.title_decorator import TitleDecorator
 
 
-class RollingDataPresenter(object):
+class RollingDataPresenter:
     """
     Class used for presenting the data stored in the RollingFactorizationDataModel.
     """

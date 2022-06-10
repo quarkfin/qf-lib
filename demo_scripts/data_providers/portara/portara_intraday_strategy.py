@@ -26,22 +26,20 @@ from os import path
 import matplotlib.pyplot as plt
 
 from demo_scripts.demo_configuration.demo_ioc import container
-from demo_scripts.strategies.intraday_strategy import OnNewBarEvent, OnNewBarSignalGeneration, IntradayMAStrategy
-
-from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
-from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
-from qf_lib.common.tickers.tickers import PortaraTicker
-from qf_lib.common.utils.dateutils.date_format import DateFormat
-from qf_lib.containers.futures.future_tickers.portara_future_ticker import PortaraFutureTicker
-from qf_lib.data_providers.portara.portara_data_provider import PortaraDataProvider
-from qf_lib.common.utils.logging.logging_config import setup_logging
-
-plt.ion()  # required for dynamic chart, good to keep this at the beginning of imports
-
+from demo_scripts.strategies.intraday_strategy import IntradayMAStrategy
+from qf_lib.backtesting.events.time_event.periodic_event.calculate_and_place_orders_event import \
+    CalculateAndPlaceOrdersPeriodicEvent
 from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
+from qf_lib.common.tickers.tickers import PortaraTicker
+from qf_lib.common.utils.dateutils.date_format import DateFormat
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
+from qf_lib.common.utils.logging.logging_config import setup_logging
+from qf_lib.containers.futures.future_tickers.portara_future_ticker import PortaraFutureTicker
+from qf_lib.data_providers.portara.portara_data_provider import PortaraDataProvider
+
+plt.ion()  # required for dynamic chart, good to keep this at the beginning of imports
 
 
 def main(path_to_data_files: str, ticker: PortaraTicker):
@@ -73,15 +71,12 @@ def main(path_to_data_files: str, ticker: PortaraTicker):
         raise ValueError(f"Check if correct Ticker is set and corresponding Portara file is placed in "
                          f"{path_to_data_files}")
 
-    # Set up proper MarketOpenEvent and MarketCloseEvent inside BacktestTradingSessionBuilder
-    MarketOpenEvent.set_trigger_time({"hour": 9, "minute": 15, "second": 0, "microsecond": 0})
-    MarketCloseEvent.set_trigger_time({"hour": 13, "minute": 15, "second": 0, "microsecond": 0})
-
     data_provider = PortaraDataProvider(path_to_data_files, ticker, PriceField.ohlcv(), data_start_date, end_date,
                                         Frequency.MIN_1)
 
     session_builder = container.resolve(BacktestTradingSessionBuilder)  # type: BacktestTradingSessionBuilder
     session_builder.set_frequency(Frequency.MIN_1)
+    session_builder.set_market_open_and_close_time({"hour": 9, "minute": 15}, {"hour": 13, "minute": 15})
     session_builder.set_backtest_name(backtest_name)
     session_builder.set_data_provider(data_provider)
 
@@ -94,11 +89,11 @@ def main(path_to_data_files: str, ticker: PortaraTicker):
     strategy = IntradayMAStrategy(ts, ticker)
 
     # Compute the signals and place orders every 15 minutes between 10 and 13
-    OnNewBarEvent.set_frequency(Frequency.MIN_15)
-    OnNewBarEvent.set_start_and_end_time({"hour": 10, "minute": 0, "second": 0, "microsecond": 0},
-                                         {"hour": 13, "minute": 0, "second": 0, "microsecond": 0})
-
-    OnNewBarSignalGeneration(strategy)
+    CalculateAndPlaceOrdersPeriodicEvent.set_frequency(Frequency.MIN_15)
+    CalculateAndPlaceOrdersPeriodicEvent.set_start_and_end_time(
+        {"hour": 10, "minute": 0},
+        {"hour": 13, "minute": 0})
+    strategy.subscribe(CalculateAndPlaceOrdersPeriodicEvent)
 
     ts.start_trading()
 

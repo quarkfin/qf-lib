@@ -16,7 +16,7 @@ from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
 
 
-class RollingAnalysisFactory(object):
+class RollingAnalysisFactory:
     @classmethod
     def calculate_analysis(cls, strategy_tms: QFSeries, benchmark_tms: QFSeries):
         """
@@ -63,7 +63,7 @@ class RollingAnalysisFactory(object):
         return rows
 
 
-class RollingAnalysisDTO(object):
+class RollingAnalysisDTO:
     def __init__(self, period, strategy_average, strategy_worst, strategy_best, benchmark_average, benchmark_worst,
                  benchmark_best, percentage_difference):
         self.period = period

@@ -140,11 +140,11 @@ class AssetPerfAndDrawdownSheet(AbstractDocument):
             return ticker
 
         transactions_df = pd.read_csv(path_to_transactions_file)
-        transactions = [Transaction(time=pd.to_datetime(row.loc["Timestamp"]),
-                                    ticker=get_matching_ticker(row),
-                                    quantity=row.loc["Quantity"],
-                                    price=row.loc["Price"],
-                                    commission=row.loc["Commission"]) for _, row in transactions_df.iterrows()]
+        transactions = [Transaction(pd.to_datetime(row.loc["Timestamp"]),
+                                    get_matching_ticker(row),
+                                    row.loc["Quantity"],
+                                    row.loc["Price"],
+                                    row.loc["Commission"]) for _, row in transactions_df.iterrows()]
         transactions = [t for t in transactions if t.ticker is not None]
         return transactions
 

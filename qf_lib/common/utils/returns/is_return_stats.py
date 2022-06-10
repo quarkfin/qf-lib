@@ -15,7 +15,7 @@
 from qf_lib.containers.series.qf_series import QFSeries
 
 
-class InSampleReturnStats(object):
+class InSampleReturnStats:
     """
     Stores values of stats used to build confidence interval (Cone Chart)
 

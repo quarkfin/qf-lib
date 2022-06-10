@@ -19,11 +19,9 @@ from typing import Optional, Dict
 from joblib import Memory
 from pandas import to_datetime
 
+from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
 from qf_lib.backtesting.signals.signal import Signal
-
-from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
-from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
@@ -74,14 +72,14 @@ class FuturesModel(AlphaModel, metaclass=abc.ABCMeta):
         self.ticker_name_to_ticker = {}
         self.num_of_bars_needed = num_of_bars_needed
         self.num_of_bars_atr = num_of_bars_needed
+        self.supported_frequency = Frequency.DAILY
 
-    def get_signal(self, ticker: Ticker, current_exposure: Exposure, current_time: Optional[datetime] = None,
-                   frequency: Frequency = Frequency.DAILY) -> Signal:
-
-        current_time = current_time or datetime.now()
+    def get_signal(self, ticker: Ticker, current_exposure: Exposure, current_time: datetime, frequency: Frequency)\
+            -> Signal:
+        assert self.supported_frequency == frequency, "Only frequency.DAILY is supported for the moment"
         self.ticker_name_to_ticker[ticker.name] = ticker
-        suggested_exposure = self.calculate_exposure(ticker, current_exposure)
-        fraction_at_risk = self.calculate_fraction_at_risk(ticker)
+        suggested_exposure = self.calculate_exposure(ticker, current_exposure, current_time, frequency)
+        fraction_at_risk = self.calculate_fraction_at_risk(ticker, current_time, frequency)
 
         specific_ticker = ticker.get_current_specific_ticker() if isinstance(ticker, FutureTicker) else ticker
         last_available_price = self.data_provider.get_last_available_price(specific_ticker, frequency, current_time)
@@ -90,7 +88,7 @@ class FuturesModel(AlphaModel, metaclass=abc.ABCMeta):
                         alpha_model=self)
         return signal
 
-    def get_data(self, ticker_str: str, end_date: datetime, aggregate_volume: bool = False):
+    def get_data(self, ticker_str: str, end_date: datetime, frequency: Frequency, aggregate_volume: bool = False):
         """
         Downloads the OHCLV Prices data frame for the given ticker. In case of a FutureTicker, the function downloads
         the Futures Chain and applies backward adjustment to the prices.
@@ -101,6 +99,8 @@ class FuturesModel(AlphaModel, metaclass=abc.ABCMeta):
             string representing the ticker for which the data should be downloaded
         end_date: datetime
             last date for the data to be fetched
+        frequency: Frequency
+            frequency of the data
         aggregate_volume: bool
             used only in case of future tickers - if set to True, the volume data would not be the volume for the
             given contract, but the volume aggregated across all contracts (for each day the volume will be simply
@@ -111,26 +111,24 @@ class FuturesModel(AlphaModel, metaclass=abc.ABCMeta):
         ticker = self.ticker_name_to_ticker[ticker_str]
         if isinstance(ticker, FutureTicker):
             try:
-                data_frame = self.futures_data[ticker].get_price(PriceField.ohlcv(), start_date, end_date,
-                                                                 Frequency.DAILY)
+                data_frame = self.futures_data[ticker].get_price(PriceField.ohlcv(), start_date, end_date, frequency)
             except KeyError:
                 # Ticker was not preloaded or the FutureChain has expired
                 self.futures_data[ticker] = FuturesChain(ticker, self.data_provider,
                                                          FuturesAdjustmentMethod.BACK_ADJUSTED)
 
-                data_frame = self.futures_data[ticker].get_price(PriceField.ohlcv(), start_date, end_date,
-                                                                 Frequency.DAILY)
+                data_frame = self.futures_data[ticker].get_price(PriceField.ohlcv(), start_date, end_date, frequency)
             if aggregate_volume:
-                data_frame[PriceField.Volume] = self._compute_aggregated_volume(ticker, start_date, end_date)
+                data_frame[PriceField.Volume] = self._compute_aggregated_volume(ticker, start_date, end_date, frequency)
 
         else:
-            data_frame = self.data_provider.get_price(ticker, PriceField.ohlcv(), start_date, end_date, Frequency.DAILY)
+            data_frame = self.data_provider.get_price(ticker, PriceField.ohlcv(), start_date, end_date, frequency)
 
         data_frame = data_frame.dropna(how="all")
         return data_frame
 
-    def _compute_aggregated_volume(self, ticker: FutureTicker, start_date: datetime, end_date: datetime) \
-            -> Optional[QFSeries]:
+    def _compute_aggregated_volume(self, ticker: FutureTicker, start_date: datetime, end_date: datetime,
+                                   frequency: Frequency) -> Optional[QFSeries]:
         # Compute the TOTAL VOLUME (aggregated across contracts)
         futures_chain_tickers_df = self.data_provider.get_futures_chain_tickers(ticker,
                                                                                 ExpirationDateField.all_dates())[ticker]
@@ -143,7 +141,7 @@ class FuturesModel(AlphaModel, metaclass=abc.ABCMeta):
         futures_chain_tickers = futures_chain_tickers.loc[start_date:end_date + RelativeDelta(months=6)]
         all_specific_tickers = futures_chain_tickers.values.tolist()
         volume_df = self.data_provider.get_price(all_specific_tickers, PriceField.Volume, start_date, end_date,
-                                                 Frequency.DAILY).dropna(axis=1, how="all").fillna(0)
+                                                 frequency).dropna(axis=1, how="all").fillna(0)
 
         return volume_df.sum(axis=1) if not volume_df.empty else None
 
@@ -158,11 +156,9 @@ class FuturesModel(AlphaModel, metaclass=abc.ABCMeta):
 
         return atr_values
 
-    def _atr_fraction_at_risk(self, ticker: Ticker, time_period):
+    def _atr_fraction_at_risk(self, ticker: Ticker, time_period, current_time, frequency):
         try:
-            current_time = self.data_provider.timer.now() if isinstance(self.data_provider, DataHandler) \
-                else datetime.now()
-            data_frame = self.get_data(ticker.name, current_time)
+            data_frame = self.get_data(ticker.name, current_time, frequency)
             atr_value = self.compute_atr(data_frame)
             return atr_value * self.risk_estimation_factor if is_finite_number(atr_value) else None
         except NotEnoughDataException:

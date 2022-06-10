@@ -71,8 +71,12 @@ class PeriodicEvent(TimeEvent, metaclass=ABCMeta):
 
     @classmethod
     def set_start_and_end_time(cls, start_time: Dict[str, int], end_time: Dict[str, int]):
-        cls.start_time = start_time
-        cls.end_time = end_time
+        zeroed_seconds_dict = {"second": 0, "microsecond": 0}
+        cls.start_time = start_time.copy()
+        cls.start_time.update(zeroed_seconds_dict)
+
+        cls.end_time = end_time.copy()
+        cls.end_time.update(zeroed_seconds_dict)
 
     @classmethod
     def set_frequency(cls, frequency: Frequency):
@@ -126,12 +130,6 @@ class PeriodicEvent(TimeEvent, metaclass=ABCMeta):
                 # current time to the next start_time date.
                 if not _within_time_frame(_next_trigger_time):
                     _next_trigger_time = _start_time_rule.next_trigger_time(_next_trigger_time)
-
-            # Check if the next trigger time points to Saturday or Sunday and if so, shift it to Monday
-            if _next_trigger_time.weekday() in (5, 6):
-                _next_trigger_time_shifted = _next_trigger_time + RelativeDelta(weekday=0)
-                assert _next_trigger_time_shifted >= _next_trigger_time
-                _next_trigger_time = _next_trigger_time_shifted
 
             return _next_trigger_time
 

@@ -73,8 +73,7 @@ In order to run the strategy with the Alpha Model we just created we will need t
 and `AlphaModelStrategy`.
 
 AlphaModelStrategy is a predefined strategy which puts together alpha models and all settings around it and generates
-necessary orders. Let's create a script to run the strategy before the market opens, using the `OnBeforeMarketOpenSignalGeneration`
-signals generator.
+necessary orders. Let's create a script to run the strategy at 1:00 a.m. every day.
 
 .. code-block::
     :caption: Run Alpha Model strategy for AAA and BBB tickers between 01/01/2010 and 01/03/2015
@@ -110,7 +109,12 @@ signals generator.
         model_tickers = [DummyTicker('AAA')]
         model_tickers_dict = {model: model_tickers}
 
-        OnBeforeMarketOpenSignalGeneration(AlphaModelStrategy(ts, model_tickers_dict))
+        strategy = AlphaModelStrategy(ts, model_tickers_dict)
+
+        CalculateAndPlaceOrdersRegularEvent.set_daily_default_trigger_time()
+        CalculateAndPlaceOrdersRegularEvent.exclude_weekends()
+        strategy.subscribe(CalculateAndPlaceOrdersRegularEvent)
+
         ts.start_trading()
 
 
@@ -159,7 +163,12 @@ You can try out other position sizers to see which one will fit your needs.
         model_tickers = [DummyTicker('AAA')]
         model_tickers_dict = {model: model_tickers}
 
-        OnBeforeMarketOpenSignalGeneration(AlphaModelStrategy(ts, model_tickers_dict))
+        strategy = AlphaModelStrategy(ts, model_tickers_dict)
+
+        CalculateAndPlaceOrdersRegularEvent.set_daily_default_trigger_time()
+        CalculateAndPlaceOrdersRegularEvent.exclude_weekends()
+        strategy.subscribe(CalculateAndPlaceOrdersRegularEvent)
+
         ts.start_trading()
 
 .. code-block::
@@ -182,7 +191,12 @@ You can try out other position sizers to see which one will fit your needs.
         model_tickers = [DummyTicker('AAA'), DummyTicker('BBB')]
         model_tickers_dict = {model: model_tickers}
 
-        OnBeforeMarketOpenSignalGeneration(AlphaModelStrategy(ts, model_tickers_dict))
+        strategy = AlphaModelStrategy(ts, model_tickers_dict)
+
+        CalculateAndPlaceOrdersRegularEvent.set_daily_default_trigger_time()
+        CalculateAndPlaceOrdersRegularEvent.exclude_weekends()
+        strategy.subscribe(CalculateAndPlaceOrdersRegularEvent)
+
         ts.start_trading()
 
 Final thoughts
@@ -199,15 +213,17 @@ To create the document with the chart you can use the following code sample:
 
 .. code-block::
 
-    from demo_scripts.common.utils.dummy_ticker import DummyTicker
     from demo_scripts.backtester.moving_average_alpha_model import MovingAverageAlphaModel
-
+    from demo_scripts.common.utils.dummy_ticker import DummyTicker
     from demo_scripts.demo_configuration.demo_data_provider import daily_data_provider
     from demo_scripts.demo_configuration.demo_ioc import container
     from qf_lib.analysis.signals_analysis.signals_plotter import SignalsPlotter
-    from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
+    from qf_lib.backtesting.data_handler.daily_data_handler import DailyDataHandler
+    from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
+    from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
     from qf_lib.common.enums.frequency import Frequency
     from qf_lib.common.utils.dateutils.string_to_date import str_to_date
+    from qf_lib.common.utils.dateutils.timer import SettableTimer
     from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
     from qf_lib.settings import Settings
 
@@ -215,21 +231,25 @@ To create the document with the chart you can use the following code sample:
     def main():
         start_date = str_to_date("2010-01-01")
         end_date = str_to_date("2010-03-01")
+        signal_frequency = Frequency.DAILY
+        title = "Signals Plotter Demo"
 
-        session_builder = container.resolve(BacktestTradingSessionBuilder)
-        session_builder.set_frequency(Frequency.DAILY)
-        session_builder.set_data_provider(daily_data_provider)
+        # set market open and close time. Does not matter much for a backtest
+        # signals will be calculated at midnight for daily frequency
+        MarketOpenEvent.set_trigger_time({"hour": 8, "minute": 30, "second": 0, "microsecond": 0})
+        MarketCloseEvent.set_trigger_time({"hour": 13, "minute": 0, "second": 0, "microsecond": 0})
 
-        ts = session_builder.build(start_date, end_date)
+        data_handler = DailyDataHandler(daily_data_provider, SettableTimer(start_date))
 
         model = MovingAverageAlphaModel(fast_time_period=5, slow_time_period=20,
                                         risk_estimation_factor=1.25,
-                                        data_provider=ts.data_handler)
+                                        data_provider=data_handler)
 
         pdf_exporter = container.resolve(PDFExporter)
         settings = container.resolve(Settings)
 
-        plotter = SignalsPlotter([DummyTicker("AAA")], start_date, end_date, ts.data_handler, model, settings, pdf_exporter)
+        plotter = SignalsPlotter([DummyTicker("AAA")], start_date, end_date, data_handler,
+                                 model, settings, pdf_exporter, title, signal_frequency, data_frequency=signal_frequency)
         plotter.build_document()
         plotter.save()
 

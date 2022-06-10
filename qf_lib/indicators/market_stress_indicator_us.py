@@ -23,7 +23,7 @@ from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.data_provider import DataProvider
 
 
-class MarketStressIndicator(object):
+class MarketStressIndicator:
     """Calculates market stress indicator.
 
     Parameters

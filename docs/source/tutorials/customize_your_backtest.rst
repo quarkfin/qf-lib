@@ -85,7 +85,12 @@ For example the configuration below will always use 2pbs of the value of the tra
 
         ts = session_builder.build(start_date, end_date)
 
-        OnBeforeMarketOpenSignalGeneration(SimpleMAStrategy(ts, ticker))
+        strategy = SimpleMAStrategy(ts, ticker)
+
+        CalculateAndPlaceOrdersRegularEvent.set_daily_default_trigger_time()
+        CalculateAndPlaceOrdersRegularEvent.exclude_weekends()
+        strategy.subscribe(CalculateAndPlaceOrdersRegularEvent)
+
         ts.start_trading()
 
 Interactive Brokers commission model
@@ -118,7 +123,12 @@ If you would like to see the pricing details, they are available `here`_.
 
         ts = session_builder.build(start_date, end_date)
 
-        OnBeforeMarketOpenSignalGeneration(SimpleMAStrategy(ts, ticker))
+        strategy = SimpleMAStrategy(ts, ticker)
+
+        CalculateAndPlaceOrdersRegularEvent.set_daily_default_trigger_time()
+        CalculateAndPlaceOrdersRegularEvent.exclude_weekends()
+        strategy.subscribe(CalculateAndPlaceOrdersRegularEvent)
+
         ts.start_trading()
 
 ********************
@@ -163,7 +173,12 @@ change our script to include the following:
 
         ts = session_builder.build(start_date, end_date)
 
-        OnBeforeMarketOpenSignalGeneration(SimpleMAStrategy(ts, ticker))
+        strategy = SimpleMAStrategy(ts, ticker)
+
+        CalculateAndPlaceOrdersRegularEvent.set_daily_default_trigger_time()
+        CalculateAndPlaceOrdersRegularEvent.exclude_weekends()
+        strategy.subscribe(CalculateAndPlaceOrdersRegularEvent)
+
         ts.start_trading()
 
 If you will run the Simple Moving Average Strategy with the Fixed Slippage, you can see in the Transactions file, that
@@ -210,7 +225,12 @@ fixed fraction of the current securities' price (e.g. always 0.1%).
 
         ts = session_builder.build(start_date, end_date)
 
-        OnBeforeMarketOpenSignalGeneration(SimpleMAStrategy(ts, ticker))
+        strategy = SimpleMAStrategy(ts, ticker)
+
+        CalculateAndPlaceOrdersRegularEvent.set_daily_default_trigger_time()
+        CalculateAndPlaceOrdersRegularEvent.exclude_weekends()
+        strategy.subscribe(CalculateAndPlaceOrdersRegularEvent)
+
         ts.start_trading()
 
 Square Root Market Impact Slippage
@@ -246,7 +266,12 @@ buying and decreases when selling).
 
         ts = session_builder.build(start_date, end_date)
 
-        OnBeforeMarketOpenSignalGeneration(SimpleMAStrategy(ts, ticker))
+        strategy = SimpleMAStrategy(ts, ticker)
+
+        CalculateAndPlaceOrdersRegularEvent.set_daily_default_trigger_time()
+        CalculateAndPlaceOrdersRegularEvent.exclude_weekends()
+        strategy.subscribe(CalculateAndPlaceOrdersRegularEvent)
+
         ts.start_trading()
 
 
@@ -289,7 +314,12 @@ Let's see how the Simple Moving Average strategy would perform in case of 0.1% p
 
         ts = session_builder.build(start_date, end_date)
 
-        OnBeforeMarketOpenSignalGeneration(SimpleMAStrategy(ts, ticker))
+        strategy = SimpleMAStrategy(ts, ticker)
+
+        CalculateAndPlaceOrdersRegularEvent.set_daily_default_trigger_time()
+        CalculateAndPlaceOrdersRegularEvent.exclude_weekends()
+        strategy.subscribe(CalculateAndPlaceOrdersRegularEvent)
+
         ts.start_trading()
 
 Let's run the backtest and compare the results with the initial strategy performance!

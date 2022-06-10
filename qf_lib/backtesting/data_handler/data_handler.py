@@ -15,10 +15,8 @@ from abc import abstractmethod
 from datetime import datetime
 from typing import Union, Sequence, Optional, Dict
 
-from numpy import nan
+from pandas import date_range
 
-from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
-from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
 from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
@@ -32,6 +30,7 @@ from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.data_provider import DataProvider
+from qf_lib.data_providers.helpers import normalize_data_array
 from qf_lib.data_providers.prefetching_data_provider import PrefetchingDataProvider
 
 
@@ -102,7 +101,7 @@ class DataHandler(DataProvider):
             Union[PricesSeries, PricesDataFrame, QFDataArray]:
 
         frequency = frequency or self.default_frequency
-        end_date = self._get_end_date_without_look_ahead(end_date)
+        end_date = self._get_end_date_without_look_ahead(end_date, frequency)
         return self.data_provider.historical_price(tickers, fields, nr_of_bars, end_date, frequency)
 
     def get_price(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
@@ -110,10 +109,8 @@ class DataHandler(DataProvider):
             Union[PricesSeries, PricesDataFrame, QFDataArray]:
         """
         Runs DataProvider.get_price(...) but before makes sure that the query doesn't concern data from
-        the future.
-
-        In contrast to the DataHandler.get_history(...), it will return a valid Open price in the time between the
-        Market Open and Market Close.
+        the future. It always returns the fully available bars (e.g. it will return a full bar for a day only after
+        the market close).
 
         Parameters
         ----------
@@ -136,37 +133,22 @@ class DataHandler(DataProvider):
         frequency = frequency or self.default_frequency
         assert frequency is not None, "Frequency cannot be equal to None"
 
-        current_datetime = self.timer.now()
-        end_date = end_date or current_datetime
         start_date = self._adjust_start_date(start_date, frequency)
+        end_date = end_date or self.timer.now()
+        got_single_date = self._got_single_date(start_date, end_date, frequency)
 
-        # end_date_without_look_ahead points to the latest market close in order to not return prices from the future
-        # However, when the end_date falls between the market open and market close, the open price could also be
-        # returned by the get_price function, therefore it is necessary to adjust the end_date_without_look_ahead
-        end_date_without_look_ahead = self._get_end_date_without_look_ahead(end_date)
+        end_date_without_look_ahead = self._get_end_date_without_look_ahead(end_date, frequency)
+        got_single_date_without_look_ahead = self._got_single_date(start_date, end_date_without_look_ahead, frequency)
 
-        open_prices_included = PriceField.Open == fields if isinstance(fields, PriceField) else \
-            PriceField.Open in fields
-        today_market_open = current_datetime + MarketOpenEvent.trigger_time()
-        today_market_close = current_datetime + MarketCloseEvent.trigger_time()
-        consider_additional_open_price = (frequency == Frequency.DAILY and
-                                          open_prices_included and
-                                          today_market_open <= end_date < today_market_close)
-
-        if consider_additional_open_price:
-            end_date_without_look_ahead = datetime(today_market_open.year, today_market_open.month,
-                                                   today_market_open.day)
-
-        prices_data = self.data_provider.get_price(tickers, fields, start_date, end_date_without_look_ahead, frequency)
-
-        # In case if the additional open price should be added, clean up the prices container to remove all data from
-        # the future
-        single_price_field = fields is not None and isinstance(fields, PriceField)
-        if consider_additional_open_price and not single_price_field:
-            single_ticker = tickers is not None and isinstance(tickers, Ticker)
-            single_date = start_date.date() == end_date.date()
-            prices_data = self._remove_data_from_the_future(prices_data, single_date, single_ticker,
-                                                            end_date_without_look_ahead)
+        if start_date > end_date_without_look_ahead:
+            prices_data = self._empty_container(tickers, fields, start_date, end_date, frequency)
+        elif got_single_date != got_single_date_without_look_ahead:
+            prices_data = self.data_provider.get_price(tickers, fields, start_date,
+                                                       end_date_without_look_ahead + frequency.time_delta(), frequency)
+            prices_data = prices_data.loc[start_date:end_date_without_look_ahead]
+        else:
+            prices_data = self.data_provider.get_price(tickers, fields, start_date, end_date_without_look_ahead,
+                                                       frequency)
 
         return prices_data
 
@@ -177,41 +159,46 @@ class DataHandler(DataProvider):
         Runs DataProvider.get_history(...) but before makes sure that the query doesn't concern data from the future.
 
         It accesses the latest fully available bar as of "today", that is: if a bar wasn't closed for today yet,
-        then all the PriceFields (e.g. OPEN) will concern data from yesterday. This behaviour is different than the
-        behaviour of get_price function of DataHandler.
-        The reason for that is, that it is impossible to infer which of the fields are available before the market
-        closes (in case of get_price, it is well known that PriceField.Open is available after market opens, but the
-        DataHandler does not have a valid mapping between PriceField.Open and the string pointing to the open price
-        field).
+        then all the PriceFields (e.g. OPEN) will concern data from yesterday.
 
         See Also
         --------
         DataProvider.get_history
         """
         frequency = frequency or self.default_frequency
-
         assert frequency is not None, "Frequency cannot be equal to None"
-        end_date_without_look_ahead = self._get_end_date_without_look_ahead(end_date)
-        start_date = self._adjust_start_date(start_date, frequency)
 
-        return self.data_provider.get_history(tickers, fields, start_date, end_date_without_look_ahead, frequency)
+        start_date = self._adjust_start_date(start_date, frequency)
+        single_date = self._got_single_date(start_date, end_date, frequency)
+        end_date_without_look_ahead = self._get_end_date_without_look_ahead(end_date, frequency)
+
+        if start_date > end_date_without_look_ahead:
+            data = self._empty_container(tickers, fields, start_date, end_date, frequency)
+        elif start_date.date() == end_date_without_look_ahead.date() and not single_date:
+            data = self.data_provider.get_history(tickers, fields, start_date,
+                                                  end_date_without_look_ahead + frequency.time_delta(), frequency)
+            data = data.loc[start_date:end_date_without_look_ahead]
+        else:
+            data = self.data_provider.get_history(tickers, fields, start_date, end_date_without_look_ahead,
+                                                  frequency)
+
+        return data
 
     def get_futures_chain_tickers(self, tickers: Union[FutureTicker, Sequence[FutureTicker]],
                                   expiration_date_fields: Union[ExpirationDateField, Sequence[ExpirationDateField]]) \
             -> Dict[FutureTicker, Union[QFSeries, QFDataFrame]]:
         return self.data_provider.get_futures_chain_tickers(tickers, expiration_date_fields)
 
-    def get_last_available_price(self, tickers: Union[Ticker, Sequence[Ticker]], frequency: Frequency = None,
-                                 end_time: Optional[datetime] = None) -> Union[float, QFSeries]:
-        frequency = frequency or self.default_frequency
-
-        return super().get_last_available_price(tickers, frequency, self.timer.now())
-
     def supported_ticker_types(self):
         return self.data_provider.supported_ticker_types()
 
     @abstractmethod
-    def _get_end_date_without_look_ahead(self, end_date: datetime = None):
+    def get_last_available_price(self, tickers: Union[Ticker, Sequence[Ticker]], frequency: Frequency = None,
+                                 end_time: Optional[datetime] = None) -> Union[float, QFSeries]:
+        pass
+
+    @abstractmethod
+    def _get_end_date_without_look_ahead(self, end_date: datetime, frequency: Frequency):
         pass
 
     @abstractmethod
@@ -219,34 +206,12 @@ class DataHandler(DataProvider):
         """ Verify if the provided frequency is compliant with the type of Data Handler used. """
         pass
 
-    def _remove_data_from_the_future(self, prices_container: Union[QFDataArray, QFDataFrame, QFSeries],
-                                     got_single_date: bool, got_single_ticker: bool, current_date: datetime):
-        """
-        In case if current_date points to a time after the market open and before the market close, all
-        fields for the current date, which are different from PriceField Open, should be removed from the
-        prices_container, as they consider fields from the future.
-        """
-        if got_single_ticker:
-            if got_single_date:
-                # prices_container is a QFSeries, containing PriceField objects in the index
-                open_price = prices_container.loc[PriceField.Open].copy()
-                prices_container.loc[:] = nan
-                prices_container.loc[PriceField.Open] = open_price
-            else:
-                # prices_container is a QFDataFrame, indexed by dates and with PriceFields in columns
-                open_prices = prices_container.loc[current_date, PriceField.Open].copy()
-                prices_container.loc[current_date, :] = nan
-                prices_container.loc[current_date, PriceField.Open] = open_prices
+    def _empty_container(self, tickers, fields, start_date, end_date, frequency):
+        tickers, got_single_ticker = convert_to_list(tickers, Ticker)
+        fields, got_single_field = convert_to_list(fields, (str, PriceField))
+        got_single_date = self._got_single_date(start_date, end_date, frequency)
 
-        else:
-            if got_single_date:
-                # prices_container is a QFDataFrame with tickers in index and PriceFields in columns
-                open_prices = prices_container.loc[:, PriceField.Open].copy()
-                prices_container.loc[:, :] = nan
-                prices_container.loc[:, PriceField.Open] = open_prices
-            else:
-                # prices_container is a QFDataArray
-                open_prices_values = prices_container.loc[current_date, :, PriceField.Open].copy()
-                prices_container.loc[current_date, :, :] = nan
-                prices_container.loc[current_date, :, PriceField.Open] = open_prices_values
-        return prices_container
+        dates = date_range(start_date, end_date, freq=frequency.to_pandas_freq())
+        data_array = QFDataArray.create(dates, tickers, fields, data=None)
+        return normalize_data_array(data_array, tickers, fields, got_single_date, got_single_ticker,
+                                    got_single_field, True)

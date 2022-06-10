@@ -22,8 +22,6 @@ from qf_lib.backtesting.data_handler.daily_data_handler import DailyDataHandler
 from qf_lib.backtesting.data_handler.intraday_data_handler import IntradayDataHandler
 from qf_lib.backtesting.events.event_manager import EventManager
 from qf_lib.backtesting.events.notifiers import Notifiers
-from qf_lib.backtesting.events.time_event.regular_time_event.after_market_close_event import AfterMarketCloseEvent
-from qf_lib.backtesting.events.time_event.regular_time_event.before_market_open_event import BeforeMarketOpenEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
 from qf_lib.backtesting.events.time_flow_controller import BacktestTimeFlowController
@@ -34,13 +32,14 @@ from qf_lib.backtesting.execution_handler.slippage.base import Slippage
 from qf_lib.backtesting.execution_handler.slippage.price_based_slippage import PriceBasedSlippage
 from qf_lib.backtesting.monitoring.backtest_monitor import BacktestMonitorSettings, BacktestMonitor
 from qf_lib.backtesting.monitoring.backtest_result import BacktestResult
-from qf_lib.backtesting.signals.backtest_signals_register import BacktestSignalsRegister
-from qf_lib.backtesting.signals.signals_register import SignalsRegister
+from qf_lib.backtesting.order.order_rounder import OrderRounder
 from qf_lib.backtesting.order.order_factory import OrderFactory
 from qf_lib.backtesting.orders_filter.orders_filter import OrdersFilter
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.backtesting.position_sizer.position_sizer import PositionSizer
 from qf_lib.backtesting.position_sizer.simple_position_sizer import SimplePositionSizer
+from qf_lib.backtesting.signals.backtest_signals_register import BacktestSignalsRegister
+from qf_lib.backtesting.signals.signals_register import SignalsRegister
 from qf_lib.backtesting.trading_session.backtest_trading_session import BacktestTradingSession
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.utils.config_exporter import ConfigExporter
@@ -55,7 +54,7 @@ from qf_lib.documents_utils.excel.excel_exporter import ExcelExporter
 from qf_lib.settings import Settings
 
 
-class BacktestTradingSessionBuilder(object):
+class BacktestTradingSessionBuilder:
     """
     Class used to build a Trading Session with all necessary elements, connections and dependencies.
     By default it uses the following settings:
@@ -66,10 +65,7 @@ class BacktestTradingSessionBuilder(object):
     - no commissions are introduced (FixedCommissionModel(0.0))
     - no slippage is introduced (PriceBasedSlippage(0.0))
     - SimplePositionSizer is used
-    - BeforeMarketOpenEvent is triggered at 08:00
-    - MarketOpenEvent is triggered at 13:30
-    - MarketCloseEvent is triggered at 20:00
-    - AfterMarketCloseEvent is triggered at 23:00
+
 
     Parameters
     ------------
@@ -115,10 +111,12 @@ class BacktestTradingSessionBuilder(object):
         self._frequency = None
         self._scheduling_time_delay = RelativeDelta(minutes=1)
 
-        BeforeMarketOpenEvent.set_trigger_time({"hour": 8, "minute": 0, "second": 0, "microsecond": 0})
-        MarketOpenEvent.set_trigger_time({"hour": 13, "minute": 30, "second": 0, "microsecond": 0})
-        MarketCloseEvent.set_trigger_time({"hour": 20, "minute": 0, "second": 0, "microsecond": 0})
-        AfterMarketCloseEvent.set_trigger_time({"hour": 23, "minute": 00, "second": 0, "microsecond": 0})
+        self._default_daily_market_open_time = {"hour": 13, "minute": 30, "second": 0, "microsecond": 0}
+        self._default_daily_market_close_time = {"hour": 20, "minute": 0, "second": 0, "microsecond": 0}
+        "As long as the open is before the close, the precise value of market open and close time "
+        "for daily frequency does not matter."
+
+        OrderRounder.switch_off_rounding_for_backtest()
 
     @ConfigExporter.update_config
     def set_backtest_name(self, name: str):
@@ -134,15 +132,52 @@ class BacktestTradingSessionBuilder(object):
 
     @ConfigExporter.update_config
     def set_frequency(self, frequency: Frequency):
-        """Sets the frequency of the backtest. Based on this either DailyDataHandler or
-        IntradayDataHandler is chosen.
+        """Sets the frequency of the backtest data and event processing (not the frequency of signal generation)
 
         Parameters
         -----------
         frequency: Frequency
             frequency of the data and prices
         """
+        if frequency not in [Frequency.MIN_1, Frequency.DAILY]:
+            raise ValueError("Invalid frequency value. "
+                             "The only frequencies supported frequencies are: Frequency.DAILY and Frequency.MIN_1")
+
         self._frequency = frequency
+
+        if self._frequency == Frequency.DAILY:
+            # set default market open and close time for daily trading. For intraday it has to be set in the runconfig
+            MarketOpenEvent.set_trigger_time(self._default_daily_market_open_time)
+            MarketCloseEvent.set_trigger_time(self._default_daily_market_close_time)
+            self._logger.warning("MarketOpenEvent was set by default to 13:30 and MarketCloseEvent to 20:00. "
+                                 "If you want to change the default market open or close time use the "
+                                 "set_market_open_and_close_time function of the BacktestTradingSessionBuilder.")
+
+    @ConfigExporter.update_config
+    def set_market_open_and_close_time(self, market_open_time: Dict[str, int], market_close_time: Dict[str, int]):
+        """
+        Sets the time of market opening and closing for intraday backtests, by providing hour and minute of the
+        market open and market close. This setting will not affect daily backtests and will only be used in case of
+        intraday. Seconds nad microseconds are always disregarded (set to 0 by default).
+
+        Parameters
+        -----------
+        market_open_time: Dict[str, int]
+            Dictionary with hour and minute keys of the market open time. Example: {"hour": 9, "minute": 30}
+        market_close_time: Dict[str, int]
+            Dictionary with hour and minute keys of the market close time. Example: {"hour": 16, "minute": 30}
+        """
+        try:
+            market_open_hour, market_open_minutes = market_open_time["hour"], market_open_time["minute"]
+            market_close_hour, market_close_minutes = market_close_time["hour"], market_close_time["minute"]
+
+            MarketOpenEvent.set_trigger_time({"hour": market_open_hour, "minute": market_open_minutes,
+                                              "second": 0, "microsecond": 0})
+            MarketCloseEvent.set_trigger_time({"hour": market_close_hour, "minute": market_close_minutes,
+                                               "second": 0, "microsecond": 0})
+        except KeyError:
+            raise ValueError("In order to set market open and close time you need to pass dictionaries, which contain "
+                             "the 'hour' abd 'minute' keys. Any other parameter will be disregarded.") from None
 
     @ConfigExporter.update_config
     def set_scheduling_time_delay(self, time_delay: RelativeDelta):
@@ -423,6 +458,15 @@ class BacktestTradingSessionBuilder(object):
                 "\tBroker: {:s}".format(self._broker.__class__.__name__),
             ])
         )
+
+        try:
+            # check if trigger time was set. This will raise ValueError if trigger time was not set before
+            MarketOpenEvent.trigger_time()
+            MarketCloseEvent.trigger_time()
+        except ValueError as ex:
+            self._logger.error("MarketOpenEvent and MarketCloseEvent trigger time has to be set for intraday trading. "
+                               "Call set_market_open_and_close_time(...) before building the session")
+            raise ex
 
         ts = BacktestTradingSession(
             contract_ticker_mapper=self._contract_ticker_mapper,

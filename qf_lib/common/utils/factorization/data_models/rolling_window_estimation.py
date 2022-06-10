@@ -18,7 +18,7 @@ from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
 
 
-class RollingWindowsEstimator(object):
+class RollingWindowsEstimator:
     """
     Class for estimating parameters of rolling windows.
     """

@@ -16,7 +16,7 @@ import abc
 from datetime import datetime
 
 
-class Timer(object):
+class Timer:
     """
     Timer object which is a component in IOC. Used for getting information about time.
     """

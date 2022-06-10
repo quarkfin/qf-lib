@@ -13,6 +13,7 @@
 #     limitations under the License.
 from datetime import datetime
 import pprint
+from typing import Dict
 from urllib.parse import urljoin
 import requests
 from qf_lib.common.enums.frequency import Frequency
@@ -136,7 +137,7 @@ class BloombergBeapHapiRequestsProvider:
         self.logger.info('Request history component payload:\n%s', pprint.pformat(request_payload))
         self._create_request_common(request_id, request_payload)
 
-    def _create_request_common(self, request_id: str, request_payload: dict):
+    def _create_request_common(self, request_id: str, request_payload: Dict):
         request_url = urljoin(self.account_url, 'requests/{}/'.format(request_id))
 
         # check if already exists, if not then post

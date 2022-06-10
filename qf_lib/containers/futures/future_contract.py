@@ -17,7 +17,7 @@ from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 
 
-class FutureContract(object):
+class FutureContract:
     """ Class representing a single future contract.
 
     The FutureContract is a simple class representing one futures contract. The FutureContract objects are used by the

@@ -22,7 +22,7 @@ from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
 
 
-class BlackLitterman(object):
+class BlackLitterman:
     """
     Creates an object allowing calculation of the distribution of the returns using Black Litterman model
 

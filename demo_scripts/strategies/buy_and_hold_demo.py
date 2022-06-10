@@ -11,18 +11,19 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-from qf_lib.backtesting.strategies.abstract_strategy import AbstractStrategy
-from qf_lib.backtesting.strategies.signal_generators import OnBeforeMarketOpenSignalGeneration
-from qf_lib.backtesting.trading_session.trading_session import TradingSession
-from qf_lib.common.utils.dateutils.string_to_date import str_to_date
-from qf_lib.common.tickers.tickers import BloombergTicker
-from qf_lib.backtesting.order.execution_style import MarketOrder
-from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
-from demo_scripts.demo_configuration.demo_ioc import container
 import matplotlib.pyplot as plt
 
+from demo_scripts.demo_configuration.demo_ioc import container
+from qf_lib.backtesting.events.time_event.regular_time_event.calculate_and_place_orders_event import \
+    CalculateAndPlaceOrdersRegularEvent
+from qf_lib.backtesting.order.execution_style import MarketOrder
 from qf_lib.backtesting.order.time_in_force import TimeInForce
+from qf_lib.backtesting.strategies.abstract_strategy import AbstractStrategy
+from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
+from qf_lib.backtesting.trading_session.trading_session import TradingSession
 from qf_lib.common.enums.frequency import Frequency
+from qf_lib.common.tickers.tickers import BloombergTicker
+from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 
 plt.ion()  # required for dynamic chart, keep before other imports
 
@@ -59,7 +60,11 @@ def main():
     ts = session_builder.build(start_date, end_date)
     ts.use_data_preloading(BuyAndHoldStrategy.TICKER)
 
-    OnBeforeMarketOpenSignalGeneration(BuyAndHoldStrategy(ts))
+    strategy = BuyAndHoldStrategy(ts)
+    CalculateAndPlaceOrdersRegularEvent.set_daily_default_trigger_time()
+    CalculateAndPlaceOrdersRegularEvent.exclude_weekends()
+    strategy.subscribe(CalculateAndPlaceOrdersRegularEvent)
+
     ts.start_trading()
 
 

@@ -14,15 +14,15 @@
 import logging
 
 import matplotlib.pyplot as plt
-from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
-
-from qf_lib.backtesting.events.time_event.periodic_event.periodic_event import PeriodicEvent
-from qf_lib.backtesting.strategies.abstract_strategy import AbstractStrategy
-from qf_lib.common.utils.logging.logging_config import setup_logging
-from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 
 plt.ion()  # required for dynamic chart, good to keep this at the beginning of imports
 
+from qf_lib.backtesting.events.time_event.periodic_event.calculate_and_place_orders_event import \
+    CalculateAndPlaceOrdersPeriodicEvent
+from qf_lib.backtesting.strategies.abstract_strategy import AbstractStrategy
+from qf_lib.common.utils.logging.logging_config import setup_logging
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
+from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 from demo_scripts.common.utils.dummy_ticker import DummyTicker
 from demo_scripts.demo_configuration.demo_data_provider import intraday_data_provider
 from demo_scripts.demo_configuration.demo_ioc import container
@@ -34,23 +34,6 @@ from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
-
-
-class OnNewBarEvent(PeriodicEvent):
-    def notify(self, listener) -> None:
-        listener.on_new_bar(self)
-
-
-class OnNewBarSignalGeneration:
-    """ Wrapper, which facilitates the subscription process of the Strategy to the OnNewBarEvent. """
-    def __init__(self, strategy: AbstractStrategy):
-        self.strategy = strategy
-        self.timer = strategy.timer
-        strategy.notifiers.scheduler.subscribe(OnNewBarEvent, listener=self)
-
-    def on_new_bar(self, _: OnNewBarEvent):
-        if self.timer.now().weekday() not in (5, 6):  # Skip saturdays and sundays
-            self.strategy.calculate_and_place_orders()
 
 
 class IntradayMAStrategy(AbstractStrategy):
@@ -107,19 +90,23 @@ def main():
 
     setup_logging(logging.INFO, console_logging=True)
 
-    OnNewBarEvent.set_frequency(Frequency.MIN_1)
-    OnNewBarEvent.set_start_and_end_time({"hour": 10, "minute": 0, "second": 0, "microsecond": 0},
-                                         {"hour": 13, "minute": 0, "second": 0, "microsecond": 0})
+    CalculateAndPlaceOrdersPeriodicEvent.set_frequency(Frequency.MIN_1)
+    CalculateAndPlaceOrdersPeriodicEvent.set_start_and_end_time(
+        {"hour": 10, "minute": 0},
+        {"hour": 13, "minute": 0})
 
     # configuration
     session_builder = container.resolve(BacktestTradingSessionBuilder)  # type: BacktestTradingSessionBuilder
     session_builder.set_frequency(Frequency.MIN_1)
+    session_builder.set_market_open_and_close_time({"hour": 9, "minute": 15}, {"hour": 13, "minute": 15})
     session_builder.set_backtest_name(backtest_name)
     session_builder.set_data_provider(intraday_data_provider)
 
     ts = session_builder.build(start_date, end_date)
 
-    OnNewBarSignalGeneration(IntradayMAStrategy(ts, ticker))
+    strategy = IntradayMAStrategy(ts, ticker)
+    strategy.subscribe(CalculateAndPlaceOrdersPeriodicEvent)
+
     ts.start_trading()
 
 

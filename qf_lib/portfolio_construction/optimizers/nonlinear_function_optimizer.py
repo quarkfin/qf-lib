@@ -20,7 +20,7 @@ import scipy.optimize
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 
 
-class NonlinearFunctionOptimizer(object):
+class NonlinearFunctionOptimizer:
     """
     Class used for optimizing nonlinear problems.
     """

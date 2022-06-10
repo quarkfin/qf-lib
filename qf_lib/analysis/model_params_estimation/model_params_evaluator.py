@@ -238,7 +238,7 @@ class ModelParamsEvaluationDocument:
             self.document.add_element(grid)
 
     def _create_single_heat_map(self, title, result_df, min_v, max_v):
-        chart = HeatMapChart(data=result_df, color_map=plt.get_cmap("coolwarm"), min_value=min_v, max_value=max_v)
+        chart = HeatMapChart(data=result_df, color_map=plt.get_cmap("coolwarm"))
         chart.add_decorator(AxisTickLabelsDecorator(labels=list(result_df.columns), axis=Axis.X))
         chart.add_decorator(AxisTickLabelsDecorator(labels=list(reversed(result_df.index)), axis=Axis.Y))
         chart.add_decorator(ValuesAnnotations())

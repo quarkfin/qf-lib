@@ -20,7 +20,7 @@ from qf_lib.containers.series.cast_series import cast_series
 from qf_lib.containers.series.qf_series import QFSeries
 
 
-class ReturnAttributionAnalysis(object):
+class ReturnAttributionAnalysis:
     """
     Class used for calculating metrics of performance attribution.
     """

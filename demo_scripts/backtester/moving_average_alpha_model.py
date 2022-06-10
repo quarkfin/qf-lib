@@ -11,9 +11,11 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
+from datetime import datetime
 
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
+from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.data_providers.data_provider import DataProvider
@@ -37,9 +39,11 @@ class MovingAverageAlphaModel(AlphaModel):
         if slow_time_period <= fast_time_period:
             raise ValueError('slow MA time period should be longer than fast MA time period')
 
-    def calculate_exposure(self, ticker: Ticker, current_exposure: Exposure) -> Exposure:
+    def calculate_exposure(self, ticker: Ticker, current_exposure: Exposure, current_time: datetime,
+                           frequency: Frequency) -> Exposure:
         num_of_bars_needed = self.slow_time_period
-        close_tms = self.data_provider.historical_price(ticker, PriceField.Close, num_of_bars_needed)
+        close_tms = self.data_provider.historical_price(ticker, PriceField.Close, num_of_bars_needed,
+                                                        current_time, frequency)
 
         fast_ma = close_tms.ewm(span=self.fast_time_period, adjust=False).mean()  # fast exponential moving average
         slow_ma = close_tms.ewm(span=self.slow_time_period, adjust=False).mean()  # slow exponential moving average

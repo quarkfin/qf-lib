@@ -142,7 +142,7 @@ class BacktestPosition(Position, metaclass=ABCMeta):
         assert transaction.price > 0.0, "Transaction.price must be positive. For short sales use a negative quantity"
 
         if self.start_time is None:
-            self.start_time = transaction.time
+            self.start_time = transaction.transaction_fill_time
 
         if self._direction == 0:
             self._direction = sign(transaction.quantity)
@@ -160,7 +160,7 @@ class BacktestPosition(Position, metaclass=ABCMeta):
                                         transaction.quantity) / (self._quantity + transaction.quantity)
 
         if self._quantity + transaction.quantity == 0:  # close the position if the number of shares drops to zero
-            self._close_position(transaction.time)
+            self._close_position(transaction.transaction_fill_time)
 
         self._quantity += transaction.quantity
         self._commission += transaction.commission

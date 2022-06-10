@@ -59,6 +59,8 @@ commission or slippage model. To make the configuration easier we use the precon
         session_builder = container.resolve(BacktestTradingSessionBuilder)
         session_builder.set_frequency(Frequency.MIN_1)
         session_builder.set_data_provider(intraday_data_provider)
+        session_builder.set_market_open_and_close_time(
+            {"hour": 0, "minute": 0}, {"hour": 23, "minute": 59})
 
         ts = session_builder.build(start_date, end_date)
 
@@ -163,23 +165,26 @@ is used by the Backtest Trading Session to execute our trading strategy, so it's
 Schedule strategy execution
 **********************************
 
-At this point, what is left is subscribing our strategy to a certain event (e.g. `BeforeMarketOpenEvent`, `MarketCloseEvent` etc).
+At this point, what is left is subscribing our strategy to a certain event (e.g. `CalculateAndPlaceOrdersRegularEventt` etc).
 Every time this event will occur, the `calculate_and_place_orders` of our strategy will be invoked.
 
-In our demo  we will use a predefined signal generation event  - `OnBeforeMarketOpenSignalGeneration`. The default time of the
-`BeforeMarketOpenEvent` is defined as 08:00. For a daily backtest, the exact hours
+In our demo  we will use a predefined signal generation event  - `CalculateAndPlaceOrdersRegularEvent`. The default time of the
+`CalculateAndPlaceOrdersRegularEvent` is defined as 01:00 a.m. For a daily backtest, the exact hours
 are not important, so we can leave the default value.
 
 After the creation of a strategy object, in order to proceed with the signal generation and orders placement
-every day at the `BeforeMarketOpenEvent`, we will need to encapsulate the strategy in the following way:
+every day at the `CalculateAndPlaceOrdersRegularEvent` event time, we will need to subscribe the strategy to the event
+in the following way:
 
 .. code::
 
     strategy = ExampleStrategy(trading_session)
-    OnBeforeMarketOpenSignalGeneration(strategy)
+    CalculateAndPlaceOrdersRegularEvent.set_daily_default_trigger_time()
+    CalculateAndPlaceOrdersRegularEvent.exclude_weekends()
+    strategy.subscribe(CalculateAndPlaceOrdersRegularEvent)
 
-If we will add these two lines into our script, every day - before the market will open - we will compute and place market orders
-for the AAA ticker.
+If we will add these two lines into our script, every day - at the chosen time (1 a.m. in our case) - we will compute
+and place market orders for the AAA ticker.
 
 **********************************
 Let's start the backtest!
@@ -254,7 +259,11 @@ the `start_trading()` on the Backtest Trading Session!
 
         ts = session_builder.build(start_date, end_date)
 
-        OnBeforeMarketOpenSignalGeneration(SimpleMAStrategy(ts, ticker))
+        strategy = SimpleMAStrategy(ts, ticker)
+        CalculateAndPlaceOrdersRegularEvent.set_daily_default_trigger_time()
+        CalculateAndPlaceOrdersRegularEvent.exclude_weekends()
+        strategy.subscribe(CalculateAndPlaceOrdersRegularEvent)
+
         ts.start_trading()
 
 **********************************

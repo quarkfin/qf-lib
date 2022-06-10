@@ -15,7 +15,7 @@
 import matplotlib.transforms as mtransform
 
 
-class Coordinate(object):
+class Coordinate:
     """
     Base class for coordinates.
     """

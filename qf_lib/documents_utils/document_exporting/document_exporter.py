@@ -24,7 +24,7 @@ from qf_lib.settings import Settings
 from qf_lib.starting_dir import get_starting_dir_abs_path
 
 
-class DocumentExporter(object):
+class DocumentExporter:
     """
     Abstract class for document_exporting of documents.
     """

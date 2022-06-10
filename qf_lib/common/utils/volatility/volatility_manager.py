@@ -18,7 +18,7 @@ from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
 
 
-class VolatilityManager(object):
+class VolatilityManager:
     """
     VolatilityManager uses rolling window to asses the historical volatility of a series.
     It is then using the results to find appropriate weights to be held in time

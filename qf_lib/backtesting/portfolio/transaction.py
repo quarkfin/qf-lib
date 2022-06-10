@@ -22,10 +22,9 @@ class Transaction:
     """
     Encapsulates the notion of a filled Order, as returned from a Brokerage. Stores the quantity of an instrument
     actually filled and at what price. In addition, stores the commission of the trade from the Brokerage.
-
     Parameters
     ----------
-    time: datetime
+    transaction_fill_time: datetime
         time when the order was filled
     ticker: Ticker
         ticker identifying the asset
@@ -37,21 +36,59 @@ class Transaction:
         brokerage commission for carrying out the trade. It is always a positive number
     """
 
-    def __init__(self, time: datetime, ticker: Ticker, quantity: float, price: float, commission: float):
+    def __init__(self, transaction_fill_time: datetime, ticker: Ticker, quantity: float, price: float,
+                 commission: float, trade_id=None, account=None, strategy=None, broker=None, currency=None):
+
         assert commission >= 0.0
 
-        self.time = time
+        self.transaction_fill_time = transaction_fill_time
         self.ticker = ticker
         self.quantity = quantity
         self.price = price
         self.commission = commission
 
+        # additional fields
+        self.net_amount = quantity * price - commission
+        self.trade_id = trade_id
+        self.account = account
+        self.strategy = strategy
+        self.broker = broker
+        self.currency = currency
+
+    @staticmethod
+    def get_header():
+        return ["Transaction_fill_time", "Asset_name", "Contract_symbol", "Security_type", "Contract_size", "Quantity",
+                "Price", "Commission", "Net_amount", "Trade_ID", "Account", "Strategy", "Broker", "Currency"]
+
+    def get_row(self):
+        row = [self.transaction_fill_time,
+               self.ticker.name,
+               self.ticker.ticker,
+               self.ticker.security_type.value,
+               self.ticker.point_value,
+               self.quantity,
+               self.price,
+               self.commission,
+               self.net_amount,
+               self.trade_id,
+               self.account,
+               self.strategy,
+               self.broker,
+               self.currency]
+        return row
+
     def __str__(self):
-        return f"{self.__class__.__name__} ({date_to_str(self.time)}) -> " \
+        return f"{self.__class__.__name__} ({date_to_str(self.transaction_fill_time)}) -> " \
                f"Quantity: {self.quantity:>8}, " \
                f"Price: {self.price:>10.2f}, " \
-               f"Commission: {self.commission:>7.2f}, " \
-               f"Ticker: {str(self.ticker):}"
+               f"Commission: {self.commission:>12.8f}, " \
+               f"Net Amount: {self.net_amount:>20.8f}, " \
+               f"Ticker: {self.ticker}, " \
+               f"Trade_id: {self.trade_id}, " \
+               f"Account: {self.account}, " \
+               f"Strategy: {self.strategy}, " \
+               f"Broker: {self.broker}, " \
+               f"Currency: {self.currency}"
 
     def __eq__(self, other):
         if self is other:
@@ -60,5 +97,5 @@ class Transaction:
         if not isinstance(other, Transaction):
             return False
 
-        return (self.time, self.ticker, self.quantity, self.price, self.commission) == \
-               (other.time, other.ticker, other.quantity, other.price, other.commission)
+        return (self.transaction_fill_time, self.ticker, self.quantity, self.price, self.commission) == \
+               (other.transaction_fill_time, other.ticker, other.quantity, other.price, other.commission)

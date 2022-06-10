@@ -11,6 +11,8 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
+from typing import List
+
 from matplotlib.rcsetup import cycler
 import pandas as pd
 from qf_lib.analysis.common.abstract_document import AbstractDocument
@@ -55,7 +57,7 @@ class FactorComparisonSheet(AbstractDocument):
     dpi: int
         Determines the DPI (Dots per Inch) of the chart (can be used to control the resolution)
     """
-    def __init__(self, settings: Settings, pdf_exporter: PDFExporter, factors_series: list[QFSeries],
+    def __init__(self, settings: Settings, pdf_exporter: PDFExporter, factors_series: List[QFSeries],
                  benchmark_series: QFSeries, title: str = "Factor Comparison", dpi: int = 400):
         super().__init__(settings, pdf_exporter)
         self.factors_series = factors_series
@@ -130,7 +132,7 @@ class FactorComparisonSheet(AbstractDocument):
 
         return self.pdf_exporter.generate([self.document], report_dir, file_name)
 
-    def _add_perf_chart_for_factor(self, series_list: list[QFSeries], title: str = "Factor Index Performance",
+    def _add_perf_chart_for_factor(self, series_list: List[QFSeries], title: str = "Factor Index Performance",
                                    force_log_scale: bool = False):
         """ Add performance chart for factor
 

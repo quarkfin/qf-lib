@@ -24,7 +24,7 @@ from qf_lib.settings import Settings
 from qf_lib.starting_dir import get_starting_dir_abs_path
 
 
-class EmailPublisher(object):
+class EmailPublisher:
     """Used to create and send an e-mail from given templates.
     """
     def __init__(self, settings: Settings):

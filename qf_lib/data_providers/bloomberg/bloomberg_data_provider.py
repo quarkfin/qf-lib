@@ -253,11 +253,7 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
         end_date = end_date + RelativeDelta(second=0, microsecond=0)
         start_date = self._adjust_start_date(start_date, frequency)
 
-        got_single_date = (
-            (start_date == end_date) if frequency <= Frequency.DAILY else
-            (start_date + frequency.time_delta() > end_date)
-        )
-
+        got_single_date = self._got_single_date(start_date, end_date, frequency)
         tickers, got_single_ticker = convert_to_list(tickers, BloombergTicker)
         fields, got_single_field = convert_to_list(fields, (PriceField, str))
 

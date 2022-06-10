@@ -19,7 +19,7 @@ from qf_lib.containers.series.cast_series import cast_series
 from qf_lib.containers.series.qf_series import QFSeries
 
 
-class DataCleaner(object):
+class DataCleaner:
     """
     Cleans data which is partially incomplete, e.g. has gaps
 

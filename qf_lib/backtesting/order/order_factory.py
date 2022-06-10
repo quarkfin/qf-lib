@@ -18,6 +18,7 @@ from typing import Mapping, Dict, List, Sequence
 from qf_lib.backtesting.broker.broker import Broker
 from qf_lib.backtesting.order.execution_style import ExecutionStyle
 from qf_lib.backtesting.order.order import Order
+from qf_lib.backtesting.order.order_rounder import OrderRounder
 from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.security_type import SecurityType
@@ -127,8 +128,19 @@ class OrderFactory:
             tolerance_quantity = tolerance_quantities.get(ticker, 0)
 
             if ticker.security_type == SecurityType.CRYPTO:
-                if abs(quantity) > tolerance_quantity and not math.isclose(quantity, 0, rel_tol=ISCLOSE_REL_TOL, abs_tol=ISCLOSE_ABS_TOL):
-                    quantities[ticker]: float = quantity
+                try:
+                    # round to the tolerance accepted by given asset (currency)
+                    rounded_quantity = OrderRounder.round_down(quantity, ticker.rounding_precision)
+                    is_close_to_zero = math.isclose(rounded_quantity, 0,
+                                                    rel_tol=ISCLOSE_REL_TOL, abs_tol=ISCLOSE_ABS_TOL)
+                    if abs(rounded_quantity) > tolerance_quantity and not is_close_to_zero:
+                        quantities[ticker]: float = rounded_quantity
+
+                except AttributeError:
+                    self.logger.error("Crypto tickers have to define float rounding precision "
+                                      "(property: rounding_precision)")
+                    raise AttributeError(f"Missing rounding_precision inside the ticker {type(ticker)}")
+
             elif abs(quantity) > tolerance_quantity and quantity != 0:  # tolerance_quantity can be 0
                 quantities[ticker]: float = float(math.floor(quantity))
 
@@ -196,7 +208,7 @@ class OrderFactory:
         return self.value_orders(values, execution_style, time_in_force, frequency)
 
     def target_value_orders(self, target_values: Mapping[Ticker, float], execution_style: ExecutionStyle,
-                            time_in_force: TimeInForce, tolerance_percentage: float = 0.0, frequency: Frequency = None) \
+                            time_in_force: TimeInForce, tolerance_percentage: float = 0.0, frequency: Frequency = None)\
             -> List[Order]:
         """
         Creates a list of Orders by specifying how much should be allocated in each asset after the Orders

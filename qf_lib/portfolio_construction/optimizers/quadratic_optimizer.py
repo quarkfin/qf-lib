@@ -21,7 +21,7 @@ from cvxopt import solvers
 import qf_lib.portfolio_construction.optimizers.helpers.quadratic_constraints_helpers as constr
 
 
-class QuadraticOptimizer(object):
+class QuadraticOptimizer:
     """
     Class used for optimizing quadratic problems.
     """

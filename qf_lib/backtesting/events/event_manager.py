@@ -26,7 +26,7 @@ from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 _EventType = Type[Event]
 
 
-class EventManager(object):
+class EventManager:
     """
     Class which takes the event and passes it to all handlers which are "interested" in this type of event.
     Handlers can subscribe for the given event type, so that they will be notified each time when the event

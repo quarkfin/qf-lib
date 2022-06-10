@@ -15,7 +15,7 @@
 from qf_lib.documents_utils.document_exporting import templates
 
 
-class Document(object):
+class Document:
     """
     Represents a single PDF document. It is paired with the PDF builder which uses it to determine the PDF to
     create.

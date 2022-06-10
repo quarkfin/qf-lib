@@ -119,7 +119,7 @@ class DFTable(Element):
         self.model.remove_cells_classes(columns, rows, css_classes)
 
 
-class ModelController(object):
+class ModelController:
     def __init__(self, data=None, index=None, columns=None, dtype=None, copy=False):
 
         self.logger = qf_logger.getChild(self.__class__.__name__)
@@ -293,7 +293,7 @@ class ModelController(object):
 
         return self._rows_styles
 
-    class Style(object):
+    class Style:
         def __init__(self, style: Dict[str, str] = None, css_class: str = None):
             self.style = style if style is not None else dict()
             self.css_class = css_class.split() if css_class is not None else []
