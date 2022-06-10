@@ -45,7 +45,7 @@ from qf_lib.settings import Settings
 from qf_lib.starting_dir import get_starting_dir_abs_path
 
 
-class TrendStrengthSheet(object):
+class TrendStrengthSheet:
     """
     Creates a PDF containing main statistics of strength of a day trend.
 

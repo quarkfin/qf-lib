@@ -47,7 +47,7 @@ class BacktestCryptoPosition(BacktestPosition):
         assert transaction.price > 0.0, "Transaction.price must be positive. For short sales use a negative quantity"
 
         if self.start_time is None:
-            self.start_time = transaction.time
+            self.start_time = transaction.transaction_fill_time
 
         if self._direction == 0:
             self._direction = sign(transaction.quantity)
@@ -65,7 +65,7 @@ class BacktestCryptoPosition(BacktestPosition):
                                         transaction.quantity) / (self._quantity + transaction.quantity)
 
         if isclose(self._quantity + transaction.quantity, 0, rel_tol=ISCLOSE_REL_TOL, abs_tol=ISCLOSE_ABS_TOL):  # close the position if the number of shares drops to zero
-            self._close_position(transaction.time)
+            self._close_position(transaction.transaction_fill_time)
 
         self._quantity += transaction.quantity
         self._commission += transaction.commission

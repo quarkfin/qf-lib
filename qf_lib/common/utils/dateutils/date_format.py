@@ -21,12 +21,22 @@ class DateFormat(Enum):
     """
     ISO = "%Y-%m-%d"
     """YYYY-MM-DD"""
+
     YEAR_DOT_MONTH = "%Y.%m"
     """YYYY.MM"""
+
     YEAR_DOT_MONTH_DOT_DAY = "%Y.%m.%d"
     """YYYY.MM.DD"""
+
+    ISO_MINUTES = "%Y-%m-%d %H_%M"
+    """YYYY-MM-DD HH_MM"""
+
+    ISO_SECONDS = "%Y-%m-%d %H_%M_%S"
+    """YYYY-MM-DD HH_MM_SS"""
+
     FULL_ISO = "%Y-%m-%d %H:%M:%S.%f"
     """YYYY-MM-DD HH:MM:SS.ffffff (ffffff - microseconds)"""
+
     LONG_DATE = "%d %B %Y"
     """DD Mmmm YYYY (e.g. 03 March 2017)"""
 

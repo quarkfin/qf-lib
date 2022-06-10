@@ -19,7 +19,7 @@ from qf_lib.common.utils.volatility.volatility_forecast import VolatilityForecas
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 
 
-class RobustCovariance(object):
+class RobustCovariance:
     """
     Creates a class used for vol forecasting and covariance matrix estimation
     NOTE: this method has a tendency to make decrease the volatility

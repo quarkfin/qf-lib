@@ -163,28 +163,44 @@ class BinanceTicker(Ticker):
 
     Parameters
     --------------
-    ticker: str
-        identifier of the security, e.g. 'BTCBUSD'
-    security_type: SecurityType
+    currency:
+        identifier of the security, e.g. 'BTC'
+    quote_ccy:
+        the quote currency of the asset.
+        For example to trade BTC using USDT use:
+            BTC as currency
+            USDT as quote_ccy
+        quote currency here should be the same as quote_ccy set in BinanceContractTickerMapper
+    security_type:
         denotes the type of the security, that the ticker is representing e.g. SecurityType.STOCK for a stock,
         SecurityType.FUTURE for a futures contract etc. By default equals SecurityType.CRYPTO.
-    point_value: int
+    point_value:
         size of the contract as given by the ticker's Data Provider. Used mostly by tickers of security_type FUTURE and
         by default equals 1.
     """
-    def __init__(self, ticker: str, security_type: SecurityType = SecurityType.CRYPTO, point_value: int = 1):
-        super().__init__(ticker, security_type, point_value)
+    def __init__(self, currency: str, quote_ccy: str, security_type: SecurityType = SecurityType.CRYPTO,
+                 point_value: int = 1, rounding_precision: int = 5):
+        ticker_str = currency + quote_ccy if currency != quote_ccy and quote_ccy is not None else currency
+        super().__init__(ticker_str, security_type, point_value)
+        self._currency = currency
+        self._quote_ccy = quote_ccy
+        self._rounding_precision = rounding_precision
 
     @classmethod
-    def from_string(cls, ticker_str: Union[str, Sequence[str]], security_type: SecurityType = SecurityType.CRYPTO,
-                    point_value: int = 1) -> Union["BinanceTicker", Sequence["BinanceTicker"]]:
-        """
-        Example: BinanceTicker.from_string('BTCBUSD')
-        """
-        if isinstance(ticker_str, str):
-            return BinanceTicker(ticker_str, security_type, point_value)
-        else:
-            return [BinanceTicker(t, security_type, point_value) for t in ticker_str]
+    def from_string(self, ticker_str: Union[str, Sequence[str]]) -> Union['Ticker', Sequence['Ticker']]:
+        raise NotImplementedError('Binance from_string method is not implemented. Please use init function.')
+
+    @property
+    def currency(self) -> str:
+        return self._currency
+
+    @property
+    def quote_ccy(self) -> str:
+        return self._quote_ccy
+
+    @property
+    def rounding_precision(self) -> int:
+        return self._rounding_precision
 
 
 class HaverTicker(Ticker):

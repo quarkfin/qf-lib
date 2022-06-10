@@ -33,7 +33,7 @@ from qf_lib.plotting.decorators.data_element_decorator import DataElementDecorat
 from qf_lib.plotting.decorators.legend_decorator import ChartDecorator
 
 
-class Chart(object):
+class Chart:
     """
     Abstract class for all the charts.
 

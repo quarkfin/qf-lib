@@ -13,7 +13,7 @@
 #     limitations under the License.
 
 
-class ExecutionStyle(object):
+class ExecutionStyle:
 
     def __str__(self):
         return self.__class__.__name__

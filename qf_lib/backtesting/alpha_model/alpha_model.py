@@ -14,7 +14,6 @@
 
 from abc import abstractmethod, ABCMeta
 from datetime import datetime
-from typing import Optional
 
 from numpy import nan
 
@@ -47,8 +46,8 @@ class AlphaModel(metaclass=ABCMeta):
         self.data_provider = data_provider
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
-    def get_signal(self, ticker: Ticker, current_exposure: Exposure, current_time: Optional[datetime] = None,
-                   frequency: Frequency = Frequency.DAILY) -> Signal:
+    def get_signal(self, ticker: Ticker, current_exposure: Exposure, current_time: datetime, frequency: Frequency) \
+            -> Signal:
         """
         Returns the Signal calculated for a specific AlphaModel and a set of data for a specified Ticker
 
@@ -59,21 +58,19 @@ class AlphaModel(metaclass=ABCMeta):
         current_exposure: Exposure
             The actual exposure, based on which the AlphaModel should return its Signal. Can be different from previous
             Signal suggestions, but it should correspond with the current trading position
-        current_time: Optional[datetime]
+        current_time: datetime
             current time, which is afterwards recorded inside each of the Signals. The parameter is optional and if not
             provided, defaults to the current user time.
-        frequency: Optional[Frequency]
-            frequency of trading. Optional parameter, with the default value being equal to daily frequency. Used to
-            obtain the last available price.
+        frequency: Frequency
+            frequency of data obtained by the data provider for signal calculation
 
         Returns
         -------
         Signal
             Signal being the suggestion for the next trading period
         """
-        current_time = current_time or datetime.now()
-        suggested_exposure = self.calculate_exposure(ticker, current_exposure)
-        fraction_at_risk = self.calculate_fraction_at_risk(ticker)
+        suggested_exposure = self.calculate_exposure(ticker, current_exposure, current_time, frequency)
+        fraction_at_risk = self.calculate_fraction_at_risk(ticker, current_time, frequency)
         last_available_price = self.data_provider.get_last_available_price(ticker, frequency, current_time)
 
         signal = Signal(ticker, suggested_exposure, fraction_at_risk, last_available_price, current_time,
@@ -81,7 +78,8 @@ class AlphaModel(metaclass=ABCMeta):
         return signal
 
     @abstractmethod
-    def calculate_exposure(self, ticker: Ticker, current_exposure: Exposure) -> Exposure:
+    def calculate_exposure(self, ticker: Ticker, current_exposure: Exposure, current_time: datetime,
+                           frequency: Frequency) -> Exposure:
         """
         Returns the expected Exposure, which is the key part of a generated Signal. Exposure suggests the trend
         direction for managing the trading position.
@@ -95,11 +93,14 @@ class AlphaModel(metaclass=ABCMeta):
         current_exposure: Exposure
             The actual exposure, based on which the AlphaModel should return its Signal. Can be different from previous
             Signal suggestions, but it should correspond with the current trading position
-
+        current_time: datetime
+            The time of the exposure calculation
+        frequency: Frequency
+            frequency of data obtained by the data provider for signal calculation
         """
         pass
 
-    def calculate_fraction_at_risk(self, ticker: Ticker) -> float:
+    def calculate_fraction_at_risk(self, ticker: Ticker, current_time: datetime, frequency: Frequency) -> float:
         """
         Returns the float value which determines the risk factor for an AlphaModel and a specified Ticker,
         may be used to calculate the position size.
@@ -111,6 +112,10 @@ class AlphaModel(metaclass=ABCMeta):
         ----------
         ticker: Ticker
             Ticker for which the calculation should be made
+        current_time: datetime
+            The time of the fraction at risk calculation
+        frequency: Frequency
+            frequency of data obtained by the data provider for calculation
 
         Returns
         -------
@@ -120,10 +125,10 @@ class AlphaModel(metaclass=ABCMeta):
             fraction_at_risk = ATR / last_close * risk_estimation_factor
 
         """
-        time_period = 5
-        return self._atr_fraction_at_risk(ticker, time_period)
+        time_period = 20
+        return self._atr_fraction_at_risk(ticker, time_period, current_time, frequency)
 
-    def _atr_fraction_at_risk(self, ticker, time_period):
+    def _atr_fraction_at_risk(self, ticker, time_period, current_time, frequency):
         """
         Parameters
         ----------
@@ -131,6 +136,10 @@ class AlphaModel(metaclass=ABCMeta):
             Ticker for which the calculation should be made
         time_period
             time period in days for which the ATR is calculated
+        current_time: datetime
+            The time of the ART calculation
+        frequency: Frequency
+            frequency of data obtained by the data provider for calculation
 
         Returns
         -------
@@ -142,7 +151,7 @@ class AlphaModel(metaclass=ABCMeta):
         num_of_bars_needed = time_period + 1
         fields = [PriceField.High, PriceField.Low, PriceField.Close]
         try:
-            prices_df = self.data_provider.historical_price(ticker, fields, num_of_bars_needed)
+            prices_df = self.data_provider.historical_price(ticker, fields, num_of_bars_needed, current_time, frequency)
             fraction_at_risk = average_true_range(prices_df, normalized=True) * self.risk_estimation_factor
             return fraction_at_risk
         except ValueError:

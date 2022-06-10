@@ -49,7 +49,7 @@ from qf_lib.plotting.decorators.vertical_span_decorator import VerticalSpanDecor
 from qf_lib.plotting.helpers.index_translator import IndexTranslator
 
 
-class DataPresenter(object):
+class DataPresenter:
     """
     Class used for presenting the data stored in the FactorizationDataModel.
     Parameters

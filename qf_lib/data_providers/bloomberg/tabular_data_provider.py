@@ -19,7 +19,7 @@ from qf_lib.data_providers.bloomberg.helpers import get_response_events, check_e
     check_security_data_for_errors, set_tickers, set_fields
 
 
-class TabularDataProvider(object):
+class TabularDataProvider:
     """
     Used for providing current tabular data from Bloomberg.
     Handles requests containing only one ticker and one field.

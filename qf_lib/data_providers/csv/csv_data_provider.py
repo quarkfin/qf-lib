@@ -32,14 +32,8 @@ class CSVDataProvider(PresetDataProvider):
     """
     Generic Data Provider that loads csv files. All the files should have a certain naming convention (see Notes).
     Additionally, the data provider requires providing mapping between header names in the file and corresponding
-    price fields in the form of dictionary where the key is a column name from the file, and the value is
-    a corresponding Price field. Please note that this is required to use get_price method. For example:
-
-    Time,Open price,Close Price, ...
-    ...
-
-    Should me mapped as following: {'Open Price': PriceField.Open, 'Close Price': PriceField.Close, ...} in order to
-    have correctly working get_price method that requires PriceFields as the fields.
+    price fields in the form of dictionary where the key is a column name in the csv file, and the value is
+    a corresponding PriceField. Please note that this is required to use get_price method
 
     Parameters
     -----------
@@ -49,15 +43,17 @@ class CSVDataProvider(PresetDataProvider):
     tickers: Ticker, Sequence[Ticker]
         one or a list of tickers, used further to download the prices data
     index_col: str
-        Label of the dates / timestamps column, which will be later on used to index the data
+        Label of the dates / timestamps column, which will be later on used to index the data.
+        No need to repeat it in the fields.
     field_to_price_field_dict: Optional[Dict[str, PriceField]]
-        mapping of header to fields. The key is a column name, and the value is a corresponding field. It is requried
-        if we want to map str fields to PriceFields and use get_price method. Please note that mappedd fields will be
-        still available in get_history method using initial str values. All str fields specified as the keys
-        should also be specified in the fields
+        mapping of header names to PriceField. It is required to call get_price method which uses PriceField enum.
+        In the mapping, the key is a column name, and the value is a corresponding PriceField.
+        for example if header for open price is called 'Open price' put mapping  {'Open price': Pricefield:Open}
+        Preferably map all: open, high, low, close to corresponding price fields.
     fields: Optional[str, List[str]]
-        fields that should be downloaded. By default all fields (columns) are downloaded. Based on field_to_price_field_dict
-        additional columns will be created and available in the get_price method thanks to PriceFields mapping.
+        all columns that will be loaded to the CSVDataProvider from given file.
+        these fields will be available in get_history method.
+        By default all fields (columns) are loaded.
     start_date: Optional[datetime]
         first date to be downloaded
     end_date: Optional[datetime]
@@ -72,23 +68,42 @@ class CSVDataProvider(PresetDataProvider):
 
     Notes
     -----
-
         - FutureTickers are not supported by this data provider.
         - By default, data for each ticker should be in a separate file named after this tickers' string representation
         (in most cases it is simply its name, to check what is the string representation of a given ticker use
         Ticker.as_string() function). However, you can also load one file containing all data with specified tickers in
         one column row by row as it is specified in demo example file daily_data.csv or intraday_data.csv.
-        In order to do so you need to specify the name of the ticker column in ticker_col and specify the path to the file.
+        In order to do so you need to specify the name of the ticker column in ticker_col and specify the path to the
+        file.
         - Please note that when using ticker_col it is required to provide the path to specific file (loading is not
         based on ticker names as it is in the default approach)
         - By providing mapping field_to_price_field_dict you are able to use get_price method which allows you to
         aggregate intraday data (currently, get_history does not allow using intraday data aggregation)
 
+    Example
+    -----
+        start_date = str_to_date("2018-01-01")
+        end_date = str_to_date("2022-01-01")
+
+        index_column = 'Open time'
+        field_to_price_field_dict = {
+            'Open': PriceField.Open,
+            'High': PriceField.High,
+            'Low': PriceField.Low,
+            'Close': PriceField.Close,
+            'Volume': PriceField.Volume,
+        }
+
+        tickers = #create your ticker here. ticker.as_string() should match file name, unless you specify ticker_col
+        path = "C:\\data_dir"
+        data_provider = CSVDataProvider(path, tickers, index_column, field_to_price_field_dict, start_date,
+                                        end_date, Frequency.MIN_1)
     """
     def __init__(self, path: str, tickers: Union[Ticker, Sequence[Ticker]], index_col: str,
-                 field_to_price_field_dict: Optional[Dict[str, PriceField]] = None, fields: Optional[Union[str, List[str]]] = None,
-                 start_date: Optional[datetime] = None, end_date: Optional[datetime] = None,
-                 frequency: Optional[Frequency] = Frequency.DAILY, dateformat: Optional[str] = None, ticker_col: Optional[str] = None):
+                 field_to_price_field_dict: Optional[Dict[str, PriceField]] = None,
+                 fields: Optional[Union[str, List[str]]] = None, start_date: Optional[datetime] = None,
+                 end_date: Optional[datetime] = None, frequency: Optional[Frequency] = Frequency.DAILY,
+                 dateformat: Optional[str] = None, ticker_col: Optional[str] = None):
 
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
@@ -101,7 +116,8 @@ class CSVDataProvider(PresetDataProvider):
         assert len([t for t in tickers if isinstance(t, FutureTicker)]) == 0, "FutureTickers are not supported by " \
                                                                               "this data provider"
 
-        data_array, start_date, end_date, available_fields = self._get_data(path, tickers, fields, start_date, end_date, frequency, field_to_price_field_dict,
+        data_array, start_date, end_date, available_fields = self._get_data(path, tickers, fields, start_date, end_date,
+                                                                            frequency, field_to_price_field_dict,
                                                                             index_col, dateformat, ticker_col)
 
         normalized_data_array = normalize_data_array(data_array, tickers, available_fields, False, False, False)
@@ -121,6 +137,7 @@ class CSVDataProvider(PresetDataProvider):
 
         def _process_df(df, ticker_str):
             df.index = pd.to_datetime(df[index_col], format=dateformat)
+            df = df[~df.index.duplicated(keep='first')]
             df = df.drop(index_col, axis=1)
             if Frequency.infer_freq(df.index) != frequency:
                 self.logger.info(f"Inferred frequency for the file {path} is different than requested. "
@@ -150,7 +167,7 @@ class CSVDataProvider(PresetDataProvider):
 
         if ticker_col:
             df = QFDataFrame(pd.read_csv(path, dtype={index_col: str}))
-            available_tickers = df[ticker_col].unique().tolist()
+            available_tickers = df[ticker_col].dropna().unique().tolist()
 
             for ticker_str in available_tickers:
                 sliced_df = df[df[ticker_col] == ticker_str]
@@ -182,4 +199,6 @@ class CSVDataProvider(PresetDataProvider):
         if not end_date:
             end_date = max(list(df.index.max() for df in tickers_prices_dict.values()))
 
-        return tickers_dict_to_data_array(tickers_prices_dict, list(tickers_prices_dict.keys()), available_fields), start_date, end_date, available_fields
+        result = tickers_dict_to_data_array(tickers_prices_dict, list(tickers_prices_dict.keys()), available_fields), \
+            start_date, end_date, available_fields
+        return result

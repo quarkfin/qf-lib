@@ -17,7 +17,7 @@ from datetime import datetime
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 
 
-class RegularDateTimeRule(object):
+class RegularDateTimeRule:
     """
     RegularDateTimeRule is a helper class for TimeEvents. It has a convenience method for calculating
     next trigger time for events which occur on certain date/time on regular basis (e.g. each day at 9:30,

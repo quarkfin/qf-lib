@@ -23,7 +23,7 @@ from qf_lib.documents_utils.document_exporting.element import Element
 
 
 class Table(Element):
-    class Cell(object):
+    class Cell:
         def __init__(self, value: Any, format_string: str = "{}", css_class: str = "", escape_html: bool = True):
             """
             Creates a new cell. The class specifies how to format each cell in the table.

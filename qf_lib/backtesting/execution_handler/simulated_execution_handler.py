@@ -16,11 +16,8 @@ from collections import defaultdict
 from itertools import count, groupby
 from typing import List, Sequence, Dict
 
-import numpy as np
-
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.events.time_event.periodic_event.intraday_bar_event import IntradayBarEvent
-from qf_lib.backtesting.events.time_event.regular_time_event.after_market_close_event import AfterMarketCloseEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
 from qf_lib.backtesting.events.time_event.scheduler import Scheduler
@@ -41,6 +38,7 @@ from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.backtesting.portfolio.transaction import Transaction
 from qf_lib.common.enums.frequency import Frequency
+from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.exceptions.broker_exceptions import OrderCancellingException
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.utils.dateutils.timer import Timer
@@ -67,7 +65,6 @@ class SimulatedExecutionHandler(ExecutionHandler):
         # Subscribe to events
         scheduler.subscribe(MarketOpenEvent, self)
         scheduler.subscribe(MarketCloseEvent, self)
-        scheduler.subscribe(AfterMarketCloseEvent, self)
         scheduler.subscribe(ScheduleOrderExecutionEvent, self)
         # In case of minutely frequency, subscribe to IntradayBarEvents
         if self.intraday_trading:
@@ -96,16 +93,16 @@ class SimulatedExecutionHandler(ExecutionHandler):
                                                                           order_id_generator, commission_model,
                                                                           slippage_model, frequency)
 
-    def on_after_market_close(self, _: AfterMarketCloseEvent):
-        # Update the portfolio and record its state, current assets and positions
-        self._remove_acquired_or_not_active_positions()
-        self.portfolio.update(record=True)
-        self.monitor.end_of_day_update(self.timer.now())
-
     def on_market_close(self, _: MarketCloseEvent):
         self._stop_orders_executor.execute_orders(market_close=True)
         self._market_orders_executor.execute_orders(market_close=True)
         self._market_on_close_orders_executor.execute_orders(market_close=True)
+
+        # Update the portfolio and record its state, current assets and positions
+        # this was in the past done after market close
+        self._remove_acquired_or_not_active_positions()
+        self.portfolio.update(record=True)
+        self.monitor.end_of_day_update(self.timer.now())
 
     def on_market_open(self, _: MarketOpenEvent):
         self._market_orders_executor.execute_orders(market_open=True)
@@ -199,14 +196,16 @@ class SimulatedExecutionHandler(ExecutionHandler):
         last price of the asset recorded by the portfolio and the commission is set to 0, as no real order is created.
         """
         all_tickers_in_portfolio = list(self.portfolio.open_positions_dict.keys())
-        current_prices_series = self.data_handler.get_last_available_price(tickers=all_tickers_in_portfolio)
-        positions_to_be_removed = [p for p in self.portfolio.open_positions_dict.values()
-                                   if np.isnan(current_prices_series[p.ticker()])]
+        start_date = self.timer.now() - RelativeDelta(days=7)
 
-        for position in positions_to_be_removed:
-            closing_transaction = Transaction(self.timer.now(), position.ticker(), -position.quantity(),
-                                              position.current_price, 0)
-            self.monitor.record_transaction(closing_transaction)
-            self.portfolio.transact_transaction(closing_transaction)
-            self.logger.warning(f"{self.timer.now()}: position assigned to Ticker {position.ticker()} removed due to "
-                                f"incomplete price data.")
+        for ticker in all_tickers_in_portfolio:
+            # Double check if there was no price for the past 7 days for the given ticker
+            prices = self.data_handler.get_price(ticker, PriceField.ohlc(), start_date).dropna(how="all", axis=1)
+            if prices.empty:
+                position = self.portfolio.open_positions_dict[ticker]
+                closing_transaction = Transaction(self.timer.now(), ticker, -position.quantity(),
+                                                  position.current_price, 0)
+                self.monitor.record_transaction(closing_transaction)
+                self.portfolio.transact_transaction(closing_transaction)
+                self.logger.warning(f"{self.timer.now()}: position assigned to Ticker {position.ticker()} "
+                                    f"removed due to incomplete price data.")

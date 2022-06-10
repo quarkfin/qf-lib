@@ -17,7 +17,7 @@ from qf_lib.containers.dataframe.simple_returns_dataframe import SimpleReturnsDa
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
 
 
-class DataModelInput(object):
+class DataModelInput:
     """ Class storing an input data from which FactorizationDataModel is built.
     Parameters
     ----------

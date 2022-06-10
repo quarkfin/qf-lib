@@ -71,7 +71,7 @@ class StopOrdersExecutor(SimulatedExecutor):
 
         unique_tickers = list(set(tickers))
         # index=tickers, columns=fields
-        current_bars_df = self._get_current_bars(unique_tickers)  # type: QFDataFrame
+        current_bars_df = self._get_latest_available_bars(unique_tickers)  # type: QFDataFrame
 
         # Check at first if at this moment of time, expiry checks should be made or not (optimization reasons)
         if market_close:
@@ -97,30 +97,29 @@ class StopOrdersExecutor(SimulatedExecutor):
 
         return no_slippage_fill_prices_list, to_be_executed_orders, expired_stop_orders
 
-    def _get_current_bars(self, tickers: Sequence[Ticker]) -> QFDataFrame:
+    def _get_latest_available_bars(self, tickers: Sequence[Ticker]) -> QFDataFrame:
         """
-        Gets the current bars for given Tickers. If the bars are not available yet, NaNs are returned.
-        The result is a QFDataFrame with Tickers as an index and PriceFields as columns.
+        Gets the latest available bars for given Tickers. The result is a QFDataFrame with Tickers as an index and
+        PriceFields as columns.
 
-        In case of daily trading, the current bar is returned only at the Market Close Event time, as the get_price
-        function will not return data for the current date until the market closes.
+        In case of daily trading, the bar without NaN values is returned only at the Market Close Event time, as the
+        stop orders are executed only on the market close in that case.
 
-        In case of intraday trading (for N minutes frequency) the current bar can be returned in the time between
-        (inclusive) N minutes after MarketOpenEvent and the MarketCloseEvent. Important: If current time ("now")
-        contains non-zero seconds or microseconds, NaNs will be returned.
+        In case of intraday trading (for N minutes frequency) the latest bar can be returned in the time between
+        MarketOpenEvent and the MarketCloseEvent.
 
         """
         if not tickers:
-            return QFDataFrame()
+            return QFDataFrame(columns=PriceField.ohlcv())
 
         assert self._frequency >= Frequency.DAILY, "Lower than daily frequency is not supported by the simulated " \
                                                    "executor"
         current_datetime = self._timer.now()
-
         market_close_time = current_datetime + MarketCloseEvent.trigger_time() == current_datetime
 
         if self._frequency == Frequency.DAILY:
-            # In case of daily trading, the current bar can be returned only at the Market Close
+            # In case of daily trading we want the Stop Orders to be "executed" on the market close, so before that
+            # no data should be returned
             if not market_close_time:
                 return QFDataFrame(index=tickers, columns=PriceField.ohlcv())
             else:
@@ -130,11 +129,7 @@ class StopOrdersExecutor(SimulatedExecutor):
             # In case of intraday trading the current full bar is always indexed by the left side of the time range
             start_date = current_datetime - self._frequency.time_delta()
 
-        current_bars = self._data_handler.get_price(tickers=tickers, fields=PriceField.ohlcv(),
-                                                    start_date=start_date, end_date=current_datetime,
-                                                    frequency=self._frequency)
-
-        return current_bars
+        return self._data_handler.get_price(tickers, PriceField.ohlcv(), start_date, start_date, self._frequency)
 
     def _calculate_no_slippage_fill_price(self, current_bar, order):
         """

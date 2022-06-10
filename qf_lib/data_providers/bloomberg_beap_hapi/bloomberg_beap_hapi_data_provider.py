@@ -140,10 +140,7 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider):
         end_date = end_date + RelativeDelta(second=0, microsecond=0)
         start_date = self._adjust_start_date(start_date, frequency)
 
-        got_single_date = (
-            (start_date == end_date) if frequency <= Frequency.DAILY else
-            (start_date + frequency.time_delta() > end_date)
-        )
+        got_single_date = self._got_single_date(start_date, end_date, frequency)
 
         tickers, got_single_ticker = convert_to_list(tickers, BloombergTicker)
         fields, got_single_field = convert_to_list(fields, str)
@@ -459,7 +456,7 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider):
             self.logger.warning('Reply NOT delivered, try to increase waiter loop timeout')
 
     def _download_distribution(self, url: str, out_path: str, chunk_size: int = 2048, stream: bool = True,
-                               headers: dict = None):
+                               headers: Dict = None):
         """
         Function to download the data to an output directory.
 

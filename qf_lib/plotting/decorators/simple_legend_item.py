@@ -13,7 +13,7 @@
 #     limitations under the License.
 
 
-class SimpleLegendItem(object):
+class SimpleLegendItem:
     """
     An item which can be added to a Legend in a simple way: by using its handle property. Handle is a reference
     to the matplotlib.Artist object.

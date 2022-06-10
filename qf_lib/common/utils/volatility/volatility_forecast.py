@@ -21,7 +21,7 @@ from qf_lib.containers.series.log_returns_series import LogReturnsSeries
 from qf_lib.containers.series.qf_series import QFSeries
 
 
-class VolatilityForecast(object):
+class VolatilityForecast:
     """
     Creates class used for vol forecasting: describes the volatility forecast configuration as well as the input
     and output data (output is created and assigned by calling one of the class methods).

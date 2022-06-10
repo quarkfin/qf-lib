@@ -37,7 +37,7 @@ class ChangeDirection(Enum):
     """Failing"""
 
 
-class RiskParityBoxes(object):
+class RiskParityBoxes:
     def __init__(self, boxes_dict: Mapping[ChangeDirection, Mapping[ChangeDirection, SimpleReturnsSeries]]):
         self._boxes_dict = boxes_dict
 
@@ -83,7 +83,7 @@ class RiskParityBoxes(object):
         return RiskParityBoxes(growth_to_inflation_to_series)
 
 
-class RiskParityBoxesFactory(object):
+class RiskParityBoxesFactory:
     """
     Makes timeseries for risk parity boxes.
 

@@ -13,8 +13,10 @@
 #     limitations under the License.
 
 from datetime import datetime
-from typing import Union, Sequence, Set, Type, Dict, FrozenSet, Optional
+from typing import Union, Sequence, Set, Type, Dict, FrozenSet, Optional, Tuple
 import pandas as pd
+from numpy import nan, ceil
+from pandas._libs.tslibs import to_offset
 
 from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
@@ -108,28 +110,19 @@ class PresetDataProvider(DataProvider):
         # The passed desired data frequency should be at most equal to the frequency of the initially loaded data
         # (in case of downsampling the data may be aggregated, but no data upsampling is supported).
         assert frequency <= self._frequency, "The passed data frequency should be at most equal to the frequency of " \
-            "the initially loaded data"
+                                             "the initially loaded data"
         # The PresetDataProvider does not support data aggregation for frequency lower than daily frequency
         if frequency < self._frequency and frequency <= Frequency.DAILY:
-            raise NotImplementedError("Data aggregation for lower than or equal to daily frequency is not supported yet")
+            self.logger.warning("aggregating intraday data to frequency Daily or lower is based on the time of "
+                                "underlying intrady data and might not be identical to getting daily data form the "
+                                "data provider.")
 
         start_date = self._adjust_start_date(start_date, frequency)
-        end_date = self._adjust_end_date(end_date, frequency)
+        end_date = self._adjust_end_date(end_date)
 
-        # Prearrange all the necessary parameters
-
-        # In order to be able to return data for FutureTickers create a mapping between tickers and corresponding
-        # specific tickers (in case of non FutureTickers it will be an identity mapping)
-        tickers, got_single_ticker = convert_to_list(tickers, Ticker)
-        tickers_mapping = {(t.get_current_specific_ticker() if isinstance(t, FutureTicker) else t): t for t in tickers}
-        specific_tickers = list(tickers_mapping.keys())
-
+        tickers, specific_tickers, tickers_mapping, got_single_ticker = self._tickers_mapping(tickers)
         fields, got_single_field = convert_to_list(fields, PriceField)
-
-        got_single_date = (
-            (start_date == end_date) if frequency <= Frequency.DAILY else
-            (start_date + frequency.time_delta() > end_date)
-        )
+        got_single_date = self._got_single_date(start_date, end_date, frequency)
 
         self._check_if_cached_data_available(specific_tickers, fields, start_date, end_date)
         data_array = self._data_bundle.loc[start_date:end_date, specific_tickers, fields]
@@ -143,18 +136,121 @@ class PresetDataProvider(DataProvider):
             use_prices_types=True
         )
 
-        # Map the specific tickers onto the tickers given by the tickers_mapping array
-        if isinstance(normalized_result, QFDataArray):
-            normalized_result = normalized_result.assign_coords(
-                tickers=[tickers_mapping[t] for t in normalized_result.tickers.values])
-        elif isinstance(normalized_result, PricesDataFrame):
-            normalized_result = normalized_result.rename(columns=tickers_mapping)
-        elif isinstance(normalized_result, PricesSeries):
-            # Name of the PricesSeries can only contain strings
-            ticker = tickers[0]
-            normalized_result = normalized_result.rename(ticker.ticker)
+        normalized_result = self._map_normalized_result(normalized_result, tickers_mapping, tickers)
 
         return normalized_result
+
+    def historical_price(self, tickers: Union[Ticker, Sequence[Ticker]],
+                         fields: Union[PriceField, Sequence[PriceField]],
+                         nr_of_bars: int, end_date: Optional[datetime] = None,
+                         frequency: Frequency = None) -> Union[PricesSeries, PricesDataFrame, QFDataArray]:
+
+        assert frequency >= Frequency.DAILY, "Frequency lower than daily is not supported by the Data Provider"
+        assert nr_of_bars > 0, "Numbers of data samples should be a positive integer"
+        end_date = datetime.now() if end_date is None else end_date
+
+        tickers, specific_tickers, tickers_mapping, got_single_ticker = self._tickers_mapping(tickers)
+        fields, got_single_field = convert_to_list(fields, PriceField)
+        got_single_date = nr_of_bars == 1
+
+        data_bundle = self._data_bundle
+
+        # Data aggregation (allowed only for the Intraday Data and in case if more then 1 data point is found)
+        if frequency < self._frequency and len(data_bundle[DATES]) > 0:
+            data_bundle = self._aggregate_intraday_data_helper(data_bundle, frequency, fields)
+
+        if frequency == Frequency.DAILY:
+            start_date = self._compute_start_date(nr_of_bars, end_date, frequency)
+        else:
+            start_date = end_date - RelativeDelta(days=14)  # to optimize running time for intraday data
+
+        data_array = data_bundle.loc[start_date:end_date, specific_tickers, fields].dropna(DATES, how='all')
+        data_array = data_array.isel(dates=slice(-nr_of_bars, None))
+
+        missing_bars = nr_of_bars - data_array.shape[0]
+
+        if missing_bars > 0:
+            start_date = self._compute_start_date(missing_bars, start_date, frequency)
+            data_array = data_bundle.loc[start_date:end_date, specific_tickers, fields].dropna(DATES, how='all')
+            data_array = data_array.isel(dates=slice(-nr_of_bars, None))
+
+        normalized_result = normalize_data_array(
+            data_array, specific_tickers, fields, got_single_date, got_single_ticker, got_single_field,
+            use_prices_types=True
+        )
+
+        normalized_result = self._map_normalized_result(normalized_result, tickers_mapping, tickers)
+
+        num_of_dates_available = normalized_result.shape[0]
+        if num_of_dates_available < nr_of_bars:
+            if isinstance(tickers, Ticker):
+                tickers_as_strings = tickers.as_string()
+            else:
+                tickers_as_strings = ", ".join(ticker.as_string() for ticker in tickers)
+            raise ValueError(f"Not enough data points for \ntickers: {tickers_as_strings} \ndate: {end_date}."
+                             f"\n{nr_of_bars} Data points requested, \n{num_of_dates_available} Data points available.")
+
+        return normalized_result
+
+    def get_last_available_price(self, tickers: Union[Ticker, Sequence[Ticker]], frequency: Frequency,
+                                 end_time: Optional[datetime] = None) -> Union[float, PricesSeries]:
+        end_time = datetime.now() if end_time is None else end_time
+        end_time += RelativeDelta(second=0, microsecond=0)
+
+        assert frequency >= Frequency.DAILY, "Frequency lower then daily is not supported by the " \
+                                             "get_last_available_price function"
+
+        tickers, specific_tickers, tickers_mapping, got_single_ticker = self._tickers_mapping(tickers)
+
+        if not tickers:
+            return nan if got_single_ticker else PricesSeries()
+
+        start_time = end_time - RelativeDelta(days=7)  # 7 days to know if an asset disappears
+        data_array = self._data_bundle.loc[start_time:end_time, specific_tickers, [PriceField.Open, PriceField.Close]]
+
+        # Data aggregation (allowed only for the Intraday Data and in case if more then 1 data point is found)
+        if frequency < self._frequency and len(data_array[DATES]) > 0:
+            data_array = self._aggregate_intraday_data_helper(data_array, frequency,
+                                                              [PriceField.Open, PriceField.Close])
+
+        # Get the Close price of latest bar if available for all the tickers
+        last_close = data_array.isel(dates=slice(-1, None)).loc[:, :, [PriceField.Close]]
+        if not last_close.isnull().any():
+            normalized_result = normalize_data_array(last_close, specific_tickers, [PriceField.Close],
+                                                     got_single_date=True, got_single_ticker=got_single_ticker,
+                                                     got_single_field=True, use_prices_types=True)
+            normalized_result = self._map_normalized_result(normalized_result, tickers_mapping, tickers)
+            return normalized_result
+
+        open_data_array = data_array.loc[:, :, [PriceField.Open]]
+        open_prices = normalize_data_array(open_data_array, specific_tickers, [PriceField.Open], got_single_date=False,
+                                           got_single_ticker=False, got_single_field=True, use_prices_types=True)
+
+        close_data_array = data_array.loc[:, :, [PriceField.Close]]
+        close_prices = normalize_data_array(close_data_array, specific_tickers, [PriceField.Close],
+                                            got_single_date=False,
+                                            got_single_ticker=False, got_single_field=True, use_prices_types=True)
+
+        first_indices = [df.first_valid_index().to_pydatetime() for df in [open_prices, close_prices] if
+                         df.first_valid_index() is not None]
+        if not first_indices:
+            return nan if got_single_ticker else PricesSeries(index=tickers)
+
+        start_date = min(first_indices)
+        latest_available_prices_series = self._get_valid_latest_available_prices(start_date, specific_tickers,
+                                                                                 open_prices, close_prices)
+
+        latest_available_prices_series = self._map_normalized_result(latest_available_prices_series, tickers_mapping, tickers)
+        return latest_available_prices_series.iloc[0] if got_single_ticker else latest_available_prices_series
+
+    def _tickers_mapping(self, tickers: Union[Ticker, Sequence[Ticker]]) -> \
+            Tuple[Sequence[Ticker], Sequence[Ticker], Dict, bool]:
+        """ In order to be able to return data for FutureTickers create a mapping between tickers and corresponding
+        specific tickers (in case of non FutureTickers it will be an identity mapping) """
+        tickers, got_single_ticker = convert_to_list(tickers, Ticker)
+        tickers_mapping = {(t.get_current_specific_ticker() if isinstance(t, FutureTicker) else t): t for t in tickers}
+        specific_tickers = list(tickers_mapping.keys())
+        return tickers, specific_tickers, tickers_mapping, got_single_ticker
 
     def _check_if_cached_data_available(self, tickers, fields, start_date, end_date):
         uncached_tickers = set(tickers) - self._tickers_cached_set
@@ -165,7 +261,7 @@ class PresetDataProvider(DataProvider):
         # fields which are not cached but were requested
         uncached_fields = set(fields) - self._fields_cached_set
         if uncached_fields:
-            raise ValueError("Fields: {} are not available in the Data Bundle".format(fields))
+            raise ValueError("Fields: {} are not available in the Data Bundle".format(uncached_fields))
 
         def remove_time_part(date: datetime):
             return datetime(date.year, date.month, date.day)
@@ -191,7 +287,7 @@ class PresetDataProvider(DataProvider):
         assert frequency == self._frequency, "Currently, for the get history does not support data sampling"
 
         start_date = self._adjust_start_date(start_date, frequency)
-        end_date = self._adjust_end_date(end_date, frequency)
+        end_date = self._adjust_end_date(end_date)
 
         # In order to be able to return data for FutureTickers create a mapping between tickers and corresponding
         # specific tickers (in case of non FutureTickers it will be an identity mapping)
@@ -202,11 +298,7 @@ class PresetDataProvider(DataProvider):
         specific_tickers = list(tickers_mapping.keys())
 
         fields, got_single_field = convert_to_list(fields, str)
-
-        got_single_date = (
-            (start_date == end_date) if frequency <= Frequency.DAILY else
-            (start_date + frequency.time_delta() > end_date)
-        )
+        got_single_date = self._got_single_date(start_date, end_date, frequency)
 
         self._check_if_cached_data_available(specific_tickers, fields, start_date, end_date)
         data_array = self._data_bundle.loc[start_date:end_date, specific_tickers, fields]
@@ -215,17 +307,7 @@ class PresetDataProvider(DataProvider):
                                                  got_single_ticker,
                                                  got_single_field, use_prices_types=False)
 
-        # Map the specific tickers onto the tickers given by the tickers_mapping array
-        if isinstance(normalized_result, QFDataArray):
-            normalized_result = normalized_result.assign_coords(
-                tickers=[tickers_mapping[t] for t in normalized_result.tickers.values])
-        elif isinstance(normalized_result, PricesDataFrame):
-            normalized_result = normalized_result.rename(columns=tickers_mapping)
-        elif isinstance(normalized_result, PricesSeries):
-            # Name of the PricesSeries can only contain strings
-            ticker = tickers[0]
-            normalized_result = normalized_result.rename(ticker.name)
-
+        normalized_result = self._map_normalized_result(normalized_result, tickers_mapping, tickers)
         return normalized_result
 
     def get_futures_chain_tickers(self, tickers: Union[FutureTicker, Sequence[FutureTicker]],
@@ -246,7 +328,34 @@ class PresetDataProvider(DataProvider):
 
         return future_chain_tickers
 
-    def _aggregate_intraday_data(self, data_array, start_date: datetime, end_date: datetime, fields, frequency: Frequency):
+    def _map_normalized_result(self, normalized_result, tickers_mapping, tickers):
+        # Map the specific tickers onto the tickers given by the tickers_mapping array
+        if isinstance(normalized_result, QFDataArray):
+            normalized_result = normalized_result.assign_coords(
+                tickers=[tickers_mapping[t] for t in normalized_result.tickers.values])
+        elif isinstance(normalized_result, PricesDataFrame):
+            normalized_result = normalized_result.rename(columns=tickers_mapping)
+        elif isinstance(normalized_result, PricesSeries):
+            # Name of the PricesSeries can only contain strings
+            if len(tickers) == 1:
+                ticker = tickers[0]
+                normalized_result = normalized_result.rename(ticker.name)
+            else:
+                normalized_result = normalized_result.rename(tickers_mapping)
+        return normalized_result
+
+    def _aggregate_intraday_data_helper(self, data_array, frequency: Frequency, fields: Sequence[PriceField]):
+        # Data aggregation (allowed only for the Intraday Data and in case if more then 1 data point is found)
+        expected_nr_of_bars = int(ceil(
+            to_offset(frequency.to_pandas_freq()) / to_offset(self._frequency.to_pandas_freq())))
+        data_array = data_array.isel(dates=slice(-expected_nr_of_bars, None))
+        start_date = data_array[DATES][0].values
+        end_date = data_array[DATES][-1].values
+        data_array = self._aggregate_intraday_data(data_array, start_date, end_date, fields, frequency)
+        return data_array
+
+    def _aggregate_intraday_data(self, data_array, start_date: datetime, end_date: datetime, fields,
+                                 frequency: Frequency):
         """
         Function, which aggregates the intraday data array for various dates and returns a new data array with data
         sampled with the given frequency.
@@ -273,16 +382,11 @@ class PresetDataProvider(DataProvider):
             prices = pd.concat({field: prices}, names=[FIELDS])
             prices_list.append(prices)
 
-        data_array = QFDataArray.from_xr_data_array(pd.concat(prices_list).reorder_levels([DATES, TICKERS, FIELDS]).to_xarray())
+        data_array = QFDataArray.from_xr_data_array(
+            pd.concat(prices_list).reorder_levels([DATES, TICKERS, FIELDS]).to_xarray())
         return data_array
 
     @staticmethod
-    def _adjust_end_date(end_date: Optional[datetime], frequency: Frequency) -> datetime:
+    def _adjust_end_date(end_date: Optional[datetime]) -> datetime:
         end_date = end_date or datetime.now()
-        end_date = end_date + RelativeDelta(second=0, microsecond=0)
-        if frequency > Frequency.DAILY:
-            # In case of high frequency - the data array should not include the end_date. The data range is
-            # labeled with the beginning index time and excludes the end of the time range, therefore a new
-            # end date is computed.
-            end_date = end_date - Frequency.MIN_1.time_delta()
-        return end_date
+        return end_date + RelativeDelta(second=0, microsecond=0)

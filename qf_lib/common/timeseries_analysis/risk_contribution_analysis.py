@@ -20,7 +20,7 @@ from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
 
 
-class RiskContributionAnalysis(object):
+class RiskContributionAnalysis:
     """ Calculates risk contribution metrics. """
 
     @classmethod

@@ -67,14 +67,14 @@ class QFDataArray(xr.DataArray):
 
         Parameters
         ----------
-        data
-            data that should be put in the array (it's dimensions must be in the proper order: dates, tickers, fields).
         dates
             dates index (labels)
         tickers
             tickers index (labels)
         fields
             fields index (labels)
+        data
+            data that should be put in the array (it's dimensions must be in the proper order: dates, tickers, fields).
         name
             name of the QFDataArray
 

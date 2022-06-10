@@ -12,8 +12,13 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 import abc
+from typing import TypeVar, Type
 
+from qf_lib.backtesting.events.time_event.time_event import TimeEvent
 from qf_lib.backtesting.trading_session.trading_session import TradingSession
+
+ConcreteTimeEvent = TypeVar('TimeEventType', bound=TimeEvent)
+TypeOfEvent = Type[ConcreteTimeEvent]
 
 
 class AbstractStrategy(metaclass=abc.ABCMeta):
@@ -30,3 +35,11 @@ class AbstractStrategy(metaclass=abc.ABCMeta):
         corresponding orders and afterwards sending them to the broker.
         """
         raise NotImplementedError()
+
+    def subscribe(self, event: TypeOfEvent):
+        """
+        Subscribes the strategy to a given Time event.
+        Most commonly this will be CalculateAndPlaceOrdersPeriodicEvent or CalculateAndPlaceOrdersRegularEvent
+        that calls calculate_and_place_orders method
+        """
+        self.notifiers.scheduler.subscribe(event, listener=self)

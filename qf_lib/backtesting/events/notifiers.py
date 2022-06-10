@@ -19,7 +19,7 @@ from qf_lib.backtesting.events.time_event.scheduler import Scheduler
 from qf_lib.common.utils.dateutils.timer import Timer
 
 
-class Notifiers(object):
+class Notifiers:
     """
     Convenience class grouping all notifiers together.
     """

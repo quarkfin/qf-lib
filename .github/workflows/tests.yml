@@ -33,12 +33,12 @@ jobs:
       env:
         QUANTFIN_SECRET: ${{ secrets.QUANTFIN_SECRET }}
       run: |
-        coverage run -m pytest qf_lib_tests/unit_tests
+        coverage run -m pytest qf_lib/tests/unit_tests
     - name: Integration tests
       env:
         QUANTFIN_SECRET: ${{ secrets.QUANTFIN_SECRET }}
       run: |
-        coverage run -a -m pytest qf_lib_tests/integration_tests
+        coverage run -a -m pytest qf_lib/tests/integration_tests
         coverage xml
     - name: Upload to Codecov
       uses: codecov/codecov-action@v2

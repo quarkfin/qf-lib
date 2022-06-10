@@ -15,17 +15,17 @@
 from time import time
 from typing import List
 
-
 from demo_scripts.backtester.moving_average_alpha_model import MovingAverageAlphaModel
 from demo_scripts.demo_configuration.demo_ioc import container
 from qf_lib.analysis.trade_analysis.trades_generator import TradesGenerator
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
-from qf_lib.backtesting.strategies.signal_generators import OnBeforeMarketOpenSignalGeneration
-from qf_lib.backtesting.strategies.alpha_model_strategy import AlphaModelStrategy
+from qf_lib.backtesting.events.time_event.regular_time_event.calculate_and_place_orders_event import \
+    CalculateAndPlaceOrdersRegularEvent
 from qf_lib.backtesting.fast_alpha_model_tester.initial_risk_stats import InitialRiskStatsFactory
 from qf_lib.backtesting.fast_alpha_model_tester.scenarios_generator import ScenariosGenerator
 from qf_lib.backtesting.monitoring.backtest_monitor import BacktestMonitorSettings
 from qf_lib.backtesting.position_sizer.initial_risk_position_sizer import InitialRiskPositionSizer
+from qf_lib.backtesting.strategies.alpha_model_strategy import AlphaModelStrategy
 from qf_lib.backtesting.trading_session.backtest_trading_session import BacktestTradingSession
 from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
 from qf_lib.common.enums.frequency import Frequency
@@ -50,7 +50,10 @@ def get_trade_rets_values(ts: BacktestTradingSession, model: AlphaModel) -> List
     model_tickers_dict = {model: [BloombergTicker('SVXY US Equity')]}
 
     strategy = AlphaModelStrategy(ts, model_tickers_dict, use_stop_losses=True)
-    OnBeforeMarketOpenSignalGeneration(strategy)
+
+    CalculateAndPlaceOrdersRegularEvent.set_daily_default_trigger_time()
+    strategy.subscribe(CalculateAndPlaceOrdersRegularEvent)
+
     ts.use_data_preloading([BloombergTicker('SVXY US Equity')])
     ts.start_trading()
 

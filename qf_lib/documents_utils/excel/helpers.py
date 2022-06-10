@@ -16,7 +16,7 @@ from openpyxl.utils import column_index_from_string
 from openpyxl.utils.cell import coordinate_from_string
 
 
-class BoundingBox(object):
+class BoundingBox:
     def __init__(self, starting_row: int, starting_column: int, ending_row: int, ending_column: int):
         self.starting_row = starting_row
         self.starting_column = starting_column

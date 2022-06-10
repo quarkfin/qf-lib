@@ -193,7 +193,7 @@ class BacktestMonitor(AbstractMonitor):
         """
         if self._monitor_settings.issue_transaction_log and self._csv_writer is not None:
             self._csv_writer.writerow([
-                transaction.time,
+                transaction.transaction_fill_time,
                 transaction.ticker.name,
                 transaction.ticker.ticker,
                 transaction.ticker.security_type.value,

@@ -28,7 +28,7 @@ ConcreteTimeEvent = TypeVar('TimeEventType', bound=TimeEvent)
 TypeOfEvent = Type[ConcreteTimeEvent]
 
 
-class Scheduler(object):
+class Scheduler:
     """
     Class responsible for generating TimeEvents. Using this class listeners can subscribe to concrete TimeEvents
     (e.g. MarketOpenEvent) and they will be notified whenever this event is generated.

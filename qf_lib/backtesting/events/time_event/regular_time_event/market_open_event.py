@@ -12,10 +12,10 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 #
-from qf_lib.backtesting.events.time_event.regular_time_event.daily_market_event import DailyMarketEvent
+from qf_lib.backtesting.events.time_event.regular_time_event.regular_market_event import RegularMarketEvent
 
 
-class MarketOpenEvent(DailyMarketEvent):
+class MarketOpenEvent(RegularMarketEvent):
     """
     Rule which is triggered every day when the market opens.
     For example in order to set up (9:30 AM for NASDAQ and NYSE) call before using the event:

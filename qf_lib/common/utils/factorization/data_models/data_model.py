@@ -33,7 +33,7 @@ from qf_lib.containers.series.cast_series import cast_series
 from qf_lib.containers.series.qf_series import QFSeries
 
 
-class DataModel(object):
+class DataModel:
     """
     Class grouping the results of factorization.
 

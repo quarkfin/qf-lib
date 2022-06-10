@@ -12,16 +12,15 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 import matplotlib.pyplot as plt
-
-from qf_lib.backtesting.strategies.signal_generators import OnBeforeMarketOpenSignalGeneration
-
 plt.ion()  # required for dynamic chart, good to keep this at the beginning of imports
 
 from demo_scripts.backtester.moving_average_alpha_model import MovingAverageAlphaModel
 from demo_scripts.demo_configuration.demo_ioc import container
-from qf_lib.backtesting.strategies.alpha_model_strategy import AlphaModelStrategy
+from qf_lib.backtesting.events.time_event.regular_time_event.calculate_and_place_orders_event import \
+    CalculateAndPlaceOrdersRegularEvent
 from qf_lib.backtesting.execution_handler.commission_models.ib_commission_model import IBCommissionModel
 from qf_lib.backtesting.position_sizer.initial_risk_position_sizer import InitialRiskPositionSizer
+from qf_lib.backtesting.strategies.alpha_model_strategy import AlphaModelStrategy
 from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.tickers.tickers import QuandlTicker
@@ -51,8 +50,12 @@ def main():
     # ----- preload price data ----- #
     ts.use_data_preloading(model_tickers)
 
+    # ----- set up strategy and signal calculation ----- #
+    strategy = AlphaModelStrategy(ts, model_tickers_dict, use_stop_losses=True)
+    CalculateAndPlaceOrdersRegularEvent.set_daily_default_trigger_time()
+    strategy.subscribe(CalculateAndPlaceOrdersRegularEvent)
+
     # ----- start trading ----- #
-    OnBeforeMarketOpenSignalGeneration(AlphaModelStrategy(ts, model_tickers_dict, use_stop_losses=True))
     ts.start_trading()
 
     # ----- use results ----- #

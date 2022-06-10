@@ -88,7 +88,7 @@ class TradesGenerator:
             List containing trades information, sorted by the time of their creation
         """
         transactions_df = QFDataFrame.from_records(
-            [(t, t.time, t.ticker, t.quantity) for t in transactions],
+            [(t, t.transaction_fill_time, t.ticker, t.quantity) for t in transactions],
             columns=["transaction", "time", "ticker", "quantity"])
 
         # Position size after transacting the transaction, where position is identified by "ticker" variable

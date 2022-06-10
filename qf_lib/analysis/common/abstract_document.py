@@ -230,8 +230,8 @@ class AbstractDocument(metaclass=ABCMeta):
     def _add_relative_performance_chart(self, strategy_tms: QFSeries, benchmark_tms: QFSeries,
                                         chart_title: str = "Relative Performance",
                                         legend_subtitle: str = "Strategy - Benchmark"):
-        diff = strategy_tms.to_simple_returns().subtract(benchmark_tms.to_simple_returns(), fill_value=0)
-        diff = diff.to_prices(1) - 1
+        diff = strategy_tms.to_prices(1).subtract(benchmark_tms.to_prices(1))
+        diff = diff.ffill()
 
         chart = LineChart(start_x=diff.index[0], end_x=diff.index[-1], log_scale=False)
         position_decorator = AxesPositionDecorator(*self.full_image_axis_position)

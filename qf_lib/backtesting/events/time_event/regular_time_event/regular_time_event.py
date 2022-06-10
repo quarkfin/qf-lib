@@ -26,6 +26,6 @@ class RegularTimeEvent(TimeEvent, metaclass=ABCMeta):
     def trigger_time(cls) -> RelativeDelta:
         """
         Returns the RelativeDelta which describes at what time the RegularTimeEvent occurs
-        (e.g. RelativeDelta(hour=16, minute=0, second=0, milisecond=0) for an event which occurs every day at 16:00).
+        (e.g. RelativeDelta(hour=16, minute=0, second=0, microsecond=0) for an event which occurs every day at 16:00).
         """
         pass

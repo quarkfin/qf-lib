@@ -22,7 +22,7 @@ from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.containers.futures.future_tickers.bloomberg_future_ticker import BloombergFutureTicker
 from qf_lib.data_providers.bloomberg import BloombergDataProvider
-from qf_lib.interactive_brokers.ib_contract import IBContract
+from qf_lib.brokers.ib_broker.ib_contract import IBContract
 
 
 def map_future_ticker_to_contract():

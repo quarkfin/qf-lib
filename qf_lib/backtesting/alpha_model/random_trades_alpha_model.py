@@ -69,10 +69,11 @@ class RandomTradesAlphaModel(AlphaModel):
             for i, ticker in enumerate(tickers)
         })
 
-    def calculate_exposure(self, ticker: Ticker, current_exposure: Exposure) -> Exposure:
+    def calculate_exposure(self, ticker: Ticker, current_exposure: Exposure, current_time: datetime,
+                           frequency: Frequency) -> Exposure:
         try:
-            current_time = self.timer.now() + RelativeDelta(hour=0, minute=0, second=0) \
-                if self.frequency <= Frequency.DAILY else self.timer.now()
+            current_time = current_time + RelativeDelta(hour=0, minute=0, second=0) \
+                if frequency <= Frequency.DAILY else current_time
             return Exposure(self.trading_scenarios.loc[current_time, ticker])
         except KeyError:
             return current_exposure
@@ -124,10 +125,11 @@ class RandomTradesFuturesAlphaModel(FuturesModel):
             for i, ticker in enumerate(tickers)
         })
 
-    def calculate_exposure(self, ticker: Ticker, current_exposure: Exposure) -> Exposure:
+    def calculate_exposure(self, ticker: Ticker, current_exposure: Exposure, current_time: datetime,
+                           frequency: Frequency) -> Exposure:
         try:
-            current_time = self.timer.now() + RelativeDelta(hour=0, minute=0, second=0) \
-                if self.frequency <= Frequency.DAILY else self.timer.now()
+            current_time = current_time + RelativeDelta(hour=0, minute=0, second=0) \
+                if frequency <= Frequency.DAILY else current_time
             return Exposure(self.trading_scenarios.loc[current_time, ticker])
         except KeyError:
             return current_exposure

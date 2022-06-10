@@ -13,7 +13,7 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-class TimeseriesAnalysisDTO(object):
+class TimeseriesAnalysisDTO:
     def __init__(self):
         self.frequency = None
         self.start_date = None

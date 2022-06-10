@@ -15,10 +15,11 @@ from demo_scripts.backtester.moving_average_alpha_model import MovingAverageAlph
 from demo_scripts.common.utils.dummy_ticker import DummyTicker
 from demo_scripts.demo_configuration.demo_data_provider import daily_data_provider
 from demo_scripts.demo_configuration.demo_ioc import container
-from qf_lib.backtesting.strategies.signal_generators import OnBeforeMarketOpenSignalGeneration
-from qf_lib.backtesting.strategies.alpha_model_strategy import AlphaModelStrategy
+from qf_lib.backtesting.events.time_event.regular_time_event.calculate_and_place_orders_event import \
+    CalculateAndPlaceOrdersRegularEvent
 from qf_lib.backtesting.execution_handler.commission_models.ib_commission_model import IBCommissionModel
 from qf_lib.backtesting.position_sizer.initial_risk_position_sizer import InitialRiskPositionSizer
+from qf_lib.backtesting.strategies.alpha_model_strategy import AlphaModelStrategy
 from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
@@ -35,7 +36,7 @@ def main():
 
     # ----- build trading session ----- #
     session_builder = container.resolve(BacktestTradingSessionBuilder)  # type: BacktestTradingSessionBuilder
-    session_builder.set_backtest_name('Moving Average Alpha Model Backtest')
+    session_builder.set_backtest_name('Moving Average Alpha Model Backtest no weekends')
     session_builder.set_position_sizer(InitialRiskPositionSizer, initial_risk=initial_risk)
     session_builder.set_commission_model(IBCommissionModel)
     session_builder.set_data_provider(data_provider)
@@ -55,12 +56,14 @@ def main():
     # Verify the checksum of preloaded data with the precomputed value
     ts.verify_preloaded_data("778bbaac65cb0a5a848167999b88cf29a1cd8467")
 
-    # ----- start trading ----- #
+    # ----- set up strategy and signal calculation ----- #
     strategy = AlphaModelStrategy(ts, model_tickers_dict, use_stop_losses=True)
 
-    # Set the signal generation and orders placement to be performed at the OnBeforeMarketOpen event
-    OnBeforeMarketOpenSignalGeneration(strategy)
+    CalculateAndPlaceOrdersRegularEvent.set_daily_default_trigger_time()
+    CalculateAndPlaceOrdersRegularEvent.exclude_weekends()
+    strategy.subscribe(CalculateAndPlaceOrdersRegularEvent)
 
+    # ----- start_trading ----- #
     ts.start_trading()
 
 

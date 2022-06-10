@@ -15,7 +15,7 @@
 import uuid
 
 
-class ChartDecorator(object):
+class ChartDecorator:
     """
     Abstract class for Chart decorators. Decorators are objects which add something to the chart (e.g. to Axes object)
     after the main chart has been plotted. To use a decorator you need to create it first and then add it to the chart

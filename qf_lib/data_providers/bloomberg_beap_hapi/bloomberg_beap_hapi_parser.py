@@ -63,7 +63,7 @@ class BloombergBeapHapiParser:
 
         Returns
         -------
-        data: dict
+        data: Dict
             Dictionary with data, in the format [str] -> List[str]
             where the key - active future ticker (str), values - tickers from chain
         """

@@ -25,7 +25,7 @@ from qf_lib.portfolio_construction.optimizers.quadratic_optimizer import Quadrat
 from qf_lib.portfolio_construction.portfolio_models.portfolio import Portfolio
 
 
-class PortfolioParameters(object):
+class PortfolioParameters:
     def __init__(self, scale, variance_weight, mean_weight, max_dd_weight, skewness_weight):
         self.scale = scale
         self.variance_weight = variance_weight
@@ -80,7 +80,7 @@ class MultiFactorPortfolio(Portfolio):
         return QFSeries(data=weights, index=self.covariance_matrix.columns)
 
 
-class PortfolioParameters_new(object):
+class PortfolioParameters_new:
     def __init__(self, min_port_vol_weight, max_mean_ret_weight, min_max_dd_weight, max_skewness_weight,
                  max_up_vol_weight):
         self.min_port_vol_weight = min_port_vol_weight

@@ -27,7 +27,7 @@ from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.documents_utils.excel.helpers import get_bounding_box
 
 
-class ExcelImporter(object):
+class ExcelImporter:
     """
     Class used for importing Series and DataFrames from the Excel files.
     """

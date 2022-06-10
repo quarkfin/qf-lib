@@ -163,7 +163,7 @@ class PortfolioAnalysisSheet(AbstractDocument):
 
     def _add_number_of_transactions_chart(self, pandas_freq: str, title: str):
         transactions = self.backtest_result.transactions
-        transactions_series = QFSeries(data=transactions, index=(t.time for t in transactions))
+        transactions_series = QFSeries(data=transactions, index=(t.transaction_fill_time for t in transactions))
         if transactions_series.empty:
             raise ValueError("Transactions series is empty")
 
@@ -188,7 +188,7 @@ class PortfolioAnalysisSheet(AbstractDocument):
 
     def _add_volume_traded(self):
         transactions = self.backtest_result.transactions
-        transactions_series = QFSeries(data=transactions, index=(t.time for t in transactions))
+        transactions_series = QFSeries(data=transactions, index=(t.transaction_fill_time for t in transactions))
         if transactions_series.empty:
             raise ValueError("Transactions series is empty")
 

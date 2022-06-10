@@ -18,19 +18,20 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
+from qf_lib.common.utils.dateutils.date_format import DateFormat
 from qf_lib.common.utils.helpers import get_formatted_filename
-from qf_lib.common.utils.logging.qf_parent_logger import qf_logger, ib_logger
+from qf_lib.common.utils.logging.qf_parent_logger import loggers
 from qf_lib.starting_dir import get_starting_dir_abs_path
 
 
-def setup_logging(level, console_logging=True, log_dir=None, log_file_base_name="", only_qf=True):
-    _inner_setup_logging(qf_logger, level, console_logging, log_dir, "QF_" + log_file_base_name)
-    if not only_qf:
-        _inner_setup_logging(ib_logger, level, console_logging, log_dir, "IB_" + log_file_base_name)
+def setup_logging(level, console_logging=True, log_dir=None, log_file_base_name="", logger_name: str = 'qf'):
+    if logger_name not in loggers.keys():
+        raise KeyError(f'{logger_name}_logger is not available. Please add it to loggers.')
+    _inner_setup_logging(loggers[logger_name], level, console_logging, log_dir, "QF_" + log_file_base_name)
 
 
 def _inner_setup_logging(logger, level, console_logging, log_dir, log_file_base_name):
-    logger.setLevel(level)
+    logging.basicConfig(level=level)
     if console_logging:
         add_console_output_handler(logger, level)
 
@@ -66,7 +67,7 @@ def add_file_handler(logger: logging.Logger, logging_level, log_dir: str, log_fi
 
     formatter = logging.Formatter(
         fmt='%(asctime)s %(levelname)s [%(name)s]: %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
+        datefmt=str(DateFormat.ISO_SECONDS)
     )
 
     # If not already exists a FileHandler, add one
@@ -94,7 +95,7 @@ def add_console_output_handler(logger: logging.Logger, logging_level):
     """
     formatter = logging.Formatter(
         fmt='%(asctime)s %(levelname)s [%(name)s]: %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
+        datefmt=str(DateFormat.ISO_SECONDS)
     )
 
     # If not already exists a streamhandler, add one

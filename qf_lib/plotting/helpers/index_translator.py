@@ -18,7 +18,7 @@ from typing import Mapping, List, Sequence, Union
 from qf_lib.common.enums.orientation import Orientation
 
 
-class IndexTranslator(object):
+class IndexTranslator:
     """
     Object which automatically translates label-indexed data into number-indexed data.
 

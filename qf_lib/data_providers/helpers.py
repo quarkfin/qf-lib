@@ -15,6 +15,7 @@ import warnings
 from datetime import datetime
 from typing import Union, Dict, Sequence
 import pandas as pd
+from pandas import DatetimeIndex
 from xarray import DataArray
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
@@ -38,7 +39,7 @@ def normalize_data_array(
     from DataProviders. Expected format rules should cover the following:
     - proper return type (QFSeries/PricesSeries, QFDataFrame/PricesDataFrame, QFDataArray),
     - proper shape of the result (squeezed dimensions for which a single non-list value was provided, e.g. "OPEN"),
-    - dimensions: "tickers" and "fields" contain all required labels and the labels are in required order.
+    - dimensions: TICKERS and FIELDS contain all required labels and the labels are in required order.
 
     Parameters
     ----------
@@ -68,9 +69,11 @@ def normalize_data_array(
     if data_array.fields.values.tolist() != fields:
         data_array = data_array.reindex(fields=fields)
 
-    data_array = data_array.dropna(DATES, how='all')  # Delete rows, which contain only Nan values
-
-    squeezed_and_casted_result = squeeze_data_array_and_cast_to_proper_type(data_array, got_single_date, got_single_ticker, got_single_field, use_prices_types)
+    data_array = data_array.dropna(DATES, how='all')
+    squeezed_and_casted_result = squeeze_data_array_and_cast_to_proper_type(data_array, got_single_date,
+                                                                            got_single_ticker,
+                                                                            got_single_field,
+                                                                            use_prices_types)
 
     return squeezed_and_casted_result
 
@@ -96,26 +99,34 @@ def squeeze_data_array_and_cast_to_proper_type(original_data_array: QFDataArray,
         if original_data_array.size == 0:  # empty
             container = QFDataFrame(index=original_data_array[TICKERS].values,
                                     columns=original_data_array[FIELDS].values)
+            container.index.name = TICKERS
+            container.columns.name = FIELDS
+
             if use_prices_types:
                 container = PricesDataFrame(container)
             if got_single_field:
                 container = container.squeeze(axis=1)
+                container.name = original_data_array[FIELDS].values[0]
             if got_single_ticker:
                 container = container.squeeze(axis=0)
             if not got_single_date:
-                dates = original_data_array[DATES].values
+                dates = DatetimeIndex([], name=DATES)
                 if got_single_ticker and got_single_field:
-                    container = QFSeries(index=dates)
+                    container = QFSeries(index=DatetimeIndex([], name=DATES))
                 if use_prices_types:
                     container = PricesSeries(container)
                 if not got_single_ticker or not got_single_field:
                     container = container.to_frame().T.reindex(dates)
+                    container.index.name = DATES
         else:
             container = original_data_array.squeeze(dimensions_to_squeeze)
 
-    if got_single_ticker and got_single_field:
-        ticker = original_data_array.tickers[0].item()
-        container.name = ticker.as_string()
+    if len(dimensions_to_squeeze) < 3:
+        if got_single_ticker:
+            ticker = original_data_array.tickers[0].item()
+            container.name = ticker.as_string()
+        elif got_single_field:
+            container.name = original_data_array.fields[0].item()
 
     if isinstance(container, QFDataArray):
         container = cast_data_array_to_proper_type(container, use_prices_types)

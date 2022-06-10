@@ -31,7 +31,7 @@ class ValuesAnnotations(HeatMapChartDecorator):
         additional keyword arguments passed to the matplotlib's Axes.text() method
     """
 
-    def __init__(self, format_str='.2g', key=None, **plot_settings):
+    def __init__(self, format_str='.2f', key=None, **plot_settings):
         super().__init__(key)
         self._plot_settings = plot_settings
         self._format_str = format_str
