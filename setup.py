@@ -29,7 +29,6 @@ setup(
     project_urls={
         'Documentation': 'https://qf-lib.readthedocs.io',
         'Source': 'https://github.com/quarkfin/qf-lib',
-        'Tutorials': 'https://quarkfin.github.io/qf-lib-info'
     },
     classifiers=[
         'Development Status :: 5 - Production/Stable',
@@ -43,7 +42,7 @@ setup(
         'Topic :: Office/Business :: Financial',
         'Topic :: Scientific/Engineering :: Information Analysis',
     ],
-    url='https://quarkfin.github.io/qf-lib/',
+    url='https://quarkfin.github.io/qf-lib-info',
     packages=['qf_lib'],
     include_package_data=True,
     install_requires=[
