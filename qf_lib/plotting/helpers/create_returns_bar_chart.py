@@ -11,12 +11,14 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
+import numpy as np
 
 from qf_lib.common.enums.axis import Axis
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.orientation import Orientation
 from qf_lib.common.utils.returns.get_aggregate_returns import get_aggregate_returns
 from qf_lib.containers.series.qf_series import QFSeries
+from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
 from qf_lib.plotting.charts.bar_chart import BarChart
 from qf_lib.plotting.charts.chart import Chart
 from qf_lib.plotting.decorators.axes_formatter_decorator import AxesFormatterDecorator, PercentageFormatter
@@ -49,8 +51,8 @@ def create_returns_bar_chart(returns: QFSeries, frequency: Frequency = Frequency
     """
     colors = Chart.get_axes_colors()
     # Calculate data.
-    aggregate_returns = get_aggregate_returns(returns, frequency, multi_index=True)
-    data_series = QFSeries(aggregate_returns.sort_index(ascending=True))
+    aggregate_returns = get_aggregate_returns(returns, frequency, multi_index=False)
+    data_series = QFSeries(convert_date(aggregate_returns, frequency).sort_index(ascending=True))
 
     chart = BarChart(Orientation.Horizontal, align="center")
     chart.add_decorator(DataElementDecorator(data_series, key="data_element"))
@@ -61,7 +63,9 @@ def create_returns_bar_chart(returns: QFSeries, frequency: Frequency = Frequency
 
     # Format Y axis to make sure we have a tick for each year or 2 years
     if len(data_series) > 10:
-        y_labels = data_series[data_series.index % 2 == 1].index
+        while len(data_series) > 10:
+            data_series = data_series[np.arange(len(data_series)) % 2 == 1]
+        y_labels = data_series.index
     else:
         y_labels = data_series.index
     chart.add_decorator(AxisTickLabelsDecorator(labels=y_labels, axis=Axis.Y, tick_values=y_labels))
@@ -82,5 +86,25 @@ def create_returns_bar_chart(returns: QFSeries, frequency: Frequency = Frequency
     title = TitleDecorator(title, key="title_decorator")
     chart.add_decorator(title)
     chart.add_decorator(AxesLabelDecorator("Returns", "Year"))
-
     return chart
+
+def convert_date(data_series, convert_to):
+    if convert_to == Frequency.DAILY:
+        # it is a day
+        index = [date.strftime("%Y %m %d") for date in data_series.index]
+    elif convert_to == Frequency.WEEKLY:
+        # it is always Friday
+        index = [date.strftime("%Y %w") for date in data_series.index]
+    elif convert_to == Frequency.MONTHLY:
+        # it is the end of the month
+        index = [date.strftime("%Y %m") for date in data_series.index]
+    elif convert_to == Frequency.YEARLY:
+        # it is the end of the year
+        index = [date.strftime("%Y") for date in data_series.index]
+    else:
+        data_series
+
+    aggregated_series = SimpleReturnsSeries(data=data_series.values, index=index)
+    aggregated_series.sort_index(inplace=True)
+
+    return aggregated_series
