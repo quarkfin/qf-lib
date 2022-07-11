@@ -88,6 +88,7 @@ def create_returns_bar_chart(returns: QFSeries, frequency: Frequency = Frequency
     chart.add_decorator(AxesLabelDecorator("Returns", "Year"))
     return chart
 
+
 def convert_date(data_series, convert_to):
     if convert_to == Frequency.DAILY:
         # it is a day
@@ -101,8 +102,6 @@ def convert_date(data_series, convert_to):
     elif convert_to == Frequency.YEARLY:
         # it is the end of the year
         index = [date.strftime("%Y") for date in data_series.index]
-    else:
-        data_series
 
     aggregated_series = SimpleReturnsSeries(data=data_series.values, index=index)
     aggregated_series.sort_index(inplace=True)
