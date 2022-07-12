@@ -12,6 +12,8 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 import numpy as np
+import time
+import math
 
 from qf_lib.common.enums.axis import Axis
 from qf_lib.common.enums.frequency import Frequency
@@ -52,7 +54,7 @@ def create_returns_bar_chart(returns: QFSeries, frequency: Frequency = Frequency
     colors = Chart.get_axes_colors()
     # Calculate data.
     aggregate_returns = get_aggregate_returns(returns, frequency, multi_index=False)
-    data_series = QFSeries(convert_date(aggregate_returns, frequency).sort_index(ascending=True))
+    data_series = QFSeries(_convert_date(aggregate_returns, frequency).sort_index(ascending=True))
 
     chart = BarChart(Orientation.Horizontal, align="center")
     chart.add_decorator(DataElementDecorator(data_series, key="data_element"))
@@ -62,12 +64,11 @@ def create_returns_bar_chart(returns: QFSeries, frequency: Frequency = Frequency
     chart.add_decorator(AxesFormatterDecorator(x_major=PercentageFormatter()))
 
     # Format Y axis to make sure we have a tick for each year or 2 years
-    if len(data_series) > 10:
-        while len(data_series) > 10:
-            data_series = data_series[np.arange(len(data_series)) % 2 == 1]
-        y_labels = data_series.index
-    else:
-        y_labels = data_series.index
+    data_series_length = len(data_series)
+    if data_series_length > 10:
+        data_series = data_series[np.arange(data_series_length) % math.ceil(data_series_length/10) == 0]
+
+    y_labels = data_series.index
     chart.add_decorator(AxisTickLabelsDecorator(labels=y_labels, axis=Axis.Y, tick_values=y_labels))
 
     # Add an average line.
@@ -89,21 +90,13 @@ def create_returns_bar_chart(returns: QFSeries, frequency: Frequency = Frequency
     return chart
 
 
-def convert_date(data_series, convert_to):
-    if convert_to == Frequency.DAILY:
-        # it is a day
-        index = [date.strftime("%Y %m %d") for date in data_series.index]
-    elif convert_to == Frequency.WEEKLY:
-        # it is always Friday
-        index = [date.strftime("%Y %w") for date in data_series.index]
-    elif convert_to == Frequency.MONTHLY:
-        # it is the end of the month
-        index = [date.strftime("%Y %m") for date in data_series.index]
-    elif convert_to == Frequency.YEARLY:
-        # it is the end of the year
-        index = [date.strftime("%Y") for date in data_series.index]
+def _convert_date(data_series, frequency: Frequency):
+    format_frequency = {
+        Frequency.YEARLY: "%Y",
+        Frequency.MONTHLY: "%Y %m",
+        Frequency.WEEKLY: "%Y %V",
+        Frequency.DAILY: "%Y %m %d"
+    }
 
-    aggregated_series = SimpleReturnsSeries(data=data_series.values, index=index)
-    aggregated_series.sort_index(inplace=True)
+    return data_series.rename(index=lambda x: x.strftime(format_frequency[frequency]))
 
-    return aggregated_series
