@@ -11,16 +11,14 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-import numpy as np
-import time
 import math
+import numpy as np
 
 from qf_lib.common.enums.axis import Axis
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.orientation import Orientation
 from qf_lib.common.utils.returns.get_aggregate_returns import get_aggregate_returns
 from qf_lib.containers.series.qf_series import QFSeries
-from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
 from qf_lib.plotting.charts.bar_chart import BarChart
 from qf_lib.plotting.charts.chart import Chart
 from qf_lib.plotting.decorators.axes_formatter_decorator import AxesFormatterDecorator, PercentageFormatter
@@ -35,7 +33,7 @@ from qf_lib.plotting.decorators.title_decorator import TitleDecorator
 
 def create_returns_bar_chart(returns: QFSeries, frequency: Frequency = Frequency.YEARLY, title: str = None) -> BarChart:
     """
-    Constructs a new returns bar chart based on the returns specified. By default a new annual returns bar chart will
+    Constructs a new returns bar chart based on the returns specified. By default, a new annual returns bar chart will
     be created.
 
     Parameters
@@ -43,7 +41,8 @@ def create_returns_bar_chart(returns: QFSeries, frequency: Frequency = Frequency
     returns: QFSeries
         The returns series to use in the chart.
     frequency: Frequency
-        frequency of the returns after aggregation
+        Frequency of the returns after aggregation
+        It accepts YEARLY, MONTHLY, WEEKLY and DAILY frequencies
     title:
         optional title for the chart
 
@@ -66,7 +65,7 @@ def create_returns_bar_chart(returns: QFSeries, frequency: Frequency = Frequency
     # Format Y axis to make sure we have a tick for each year or 2 years
     data_series_length = len(data_series)
     if data_series_length > 10:
-        data_series = data_series[np.arange(data_series_length) % math.ceil(data_series_length/10) == 0]
+        data_series = data_series[np.arange(data_series_length) % math.ceil(data_series_length / 10) == 0]
 
     y_labels = data_series.index
     chart.add_decorator(AxisTickLabelsDecorator(labels=y_labels, axis=Axis.Y, tick_values=y_labels))
@@ -99,4 +98,3 @@ def _convert_date(data_series, frequency: Frequency):
     }
 
     return data_series.rename(index=lambda x: x.strftime(format_frequency[frequency]))
-
