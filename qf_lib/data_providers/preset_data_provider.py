@@ -14,7 +14,6 @@
 
 from datetime import datetime
 from typing import Union, Sequence, Any, Set, Type, Dict, FrozenSet, Optional, Tuple
-from collections import defaultdict
 import pandas as pd
 from numpy import nan, ceil
 from pandas._libs.tslibs import to_offset
