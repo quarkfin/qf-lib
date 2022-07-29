@@ -13,7 +13,7 @@
 #     limitations under the License.
 
 from datetime import datetime
-from typing import Union, Sequence, Set, Type, Dict, FrozenSet, Optional, Tuple
+from typing import Union, Sequence, Any, Set, Type, Dict, FrozenSet, Optional, Tuple
 import pandas as pd
 from numpy import nan, ceil
 from pandas._libs.tslibs import to_offset
@@ -279,7 +279,7 @@ class PresetDataProvider(DataProvider):
                              format(end_date, self._end_date))
 
     def get_history(self, tickers: Union[Ticker, Sequence[Ticker]],
-                    fields: Union[str, Sequence[str]],
+                    fields: Union[Any, Sequence[Any]],
                     start_date: datetime, end_date: datetime = None, frequency: Frequency = Frequency.DAILY, **kwargs
                     ) -> Union[QFSeries, QFDataFrame, QFDataArray]:
 
@@ -297,7 +297,7 @@ class PresetDataProvider(DataProvider):
         }
         specific_tickers = list(tickers_mapping.keys())
 
-        fields, got_single_field = convert_to_list(fields, str)
+        fields, got_single_field = convert_to_list(fields, type(fields) if not isinstance(fields, Sequence) else str)
         got_single_date = self._got_single_date(start_date, end_date, frequency)
 
         self._check_if_cached_data_available(specific_tickers, fields, start_date, end_date)
