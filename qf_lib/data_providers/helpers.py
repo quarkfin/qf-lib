@@ -13,10 +13,11 @@
 #     limitations under the License.
 import warnings
 from datetime import datetime
-from typing import Union, Dict, Sequence
+from typing import Union, Dict, Sequence, Any
 import pandas as pd
 from pandas import DatetimeIndex
 from xarray import DataArray
+
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
@@ -169,23 +170,28 @@ def cast_dataframe_to_proper_type(result):
 
 
 def tickers_dict_to_data_array(tickers_data_dict: Dict[Ticker, QFDataFrame],
-                               requested_tickers: Union[Ticker, Sequence[Ticker]], requested_fields) -> QFDataArray:
+                               requested_tickers: Union[Ticker, Sequence[Ticker]],
+                               requested_fields: Union[Any, Sequence[Any]]) -> QFDataArray:
     """
-    Converts a dictionary mapping tickers to DateFrame onto a QFDataArray.
+    Converts a dictionary mapping tickers to DateFrame onto a QFDataArray,
+    by applying a filter on the tickers and fields that are needed
 
     Parameters
     ----------
     tickers_data_dict:  Dict[Ticker, QFDataFrame]
         Ticker -> QFDataFrame[dates, fields]
     requested_tickers: Sequence[Ticker]
+        Filter the data dict based on a list of tickers
     requested_fields
-
+        Filter the data dict based on a list of fields
     Returns
     -------
     QFDataArray
     """
     # return empty xr.DataArray if there is no data to be converted
     requested_tickers, _ = convert_to_list(requested_tickers, Ticker)
+    requested_fields, _ = convert_to_list(requested_fields,
+                                          type(requested_fields) if not isinstance(requested_fields, Sequence) else str)
 
     if not tickers_data_dict:
         return QFDataArray.create(dates=[], tickers=requested_tickers, fields=requested_fields)
@@ -204,13 +210,12 @@ def tickers_dict_to_data_array(tickers_data_dict: Dict[Ticker, QFDataFrame],
         tickers.append(ticker)
         data_arrays.append(data_array)
 
-    tickers_index = pd.Index(tickers, name=TICKERS)
     if not data_arrays:
         return QFDataArray.create(dates=[], tickers=requested_tickers, fields=requested_fields)
-    result = QFDataArray.concat(data_arrays, dim=tickers_index)
 
-    if len(tickers) < len(requested_tickers):
-        result = result.reindex(tickers=requested_tickers, fields=requested_fields)
+    tickers_index = pd.Index(tickers, name=TICKERS)
+    result = QFDataArray.concat(data_arrays, dim=tickers_index)
+    result = result.reindex(tickers=requested_tickers, fields=requested_fields)
 
     # the DataArray gets a name after the first ticker in the tickers_data_dict.keys() which is incorrect;
     # it should have no name

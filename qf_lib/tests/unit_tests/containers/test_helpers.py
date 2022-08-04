@@ -81,7 +81,7 @@ class TestSeries(TestCase):
         }, [ticker_1, ticker_2], [PriceField.Open, PriceField.Close])
 
         self.assertEqual(compute_container_hash(data_array_1), compute_container_hash(data_array_2))
-        self.assertNotEqual(compute_container_hash(data_array_1), compute_container_hash(data_array_3))
+        self.assertEqual(compute_container_hash(data_array_1), compute_container_hash(data_array_3))
 
     def test_tickers_dict_to_data_array(self):
         ticker_1 = BloombergTicker("Example 1")
@@ -103,6 +103,52 @@ class TestSeries(TestCase):
         self.assertEqual(dtype("float64"), data_array.dtype)
 
         expected_data_array = QFDataArray.create(index, [ticker_1, ticker_2], fields, data)
+        assert_equal(data_array, expected_data_array)
+
+    def test_tickers_dict_to_data_array_single_field(self):
+        ticker_1 = BloombergTicker("Example 1")
+        ticker_2 = BloombergTicker("Example 2")
+        fields = PriceField.Open
+        index = self.index[:3]
+
+        prices_df_1 = QFDataFrame(data={PriceField.Close: [1., 2., 3.], PriceField.Open: [4., 5., 6.]}, index=index)
+        prices_df_2 = QFDataFrame(data={PriceField.Close: [5., 7., 8.], PriceField.Low: [5., 5., 5.]}, index=index)
+
+        data_array = tickers_dict_to_data_array({
+            ticker_1: prices_df_1,
+            ticker_2: prices_df_2
+        }, [ticker_1, ticker_2], fields)
+
+        self.assertEqual(dtype("float64"), data_array.dtype)
+
+        data = [[[4.], [nan]],
+                [[5.], [nan]],
+                [[6.], [nan]]]
+
+        expected_data_array = QFDataArray.create(index, [ticker_1, ticker_2], [fields], data)
+        assert_equal(data_array, expected_data_array)
+
+    def test_tickers_dict_to_data_array_single_field_single_ticker(self):
+        ticker_1 = BloombergTicker("Example 1")
+        ticker_2 = BloombergTicker("Example 2")
+        fields = "PX_LAST"
+        index = self.index[:3]
+
+        prices_df_1 = QFDataFrame(data={PriceField.Close: [1., 2., 3.], "PX_LAST": [4., 5., 6.]}, index=index)
+        prices_df_2 = QFDataFrame(data={PriceField.Close: [5., 7., 8.], PriceField.Low: [5., 5., 5.]}, index=index)
+
+        data_array = tickers_dict_to_data_array({
+            ticker_1: prices_df_1,
+            ticker_2: prices_df_2
+        }, ticker_1, fields)
+
+        self.assertEqual(dtype("float64"), data_array.dtype)
+
+        data = [[[4.]],
+                [[5.]],
+                [[6.]]]
+
+        expected_data_array = QFDataArray.create(index, [ticker_1], [fields], data)
         assert_equal(data_array, expected_data_array)
 
 
