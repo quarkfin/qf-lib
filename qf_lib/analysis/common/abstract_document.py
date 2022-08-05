@@ -230,8 +230,9 @@ class AbstractDocument(metaclass=ABCMeta):
     def _add_relative_performance_chart(self, strategy_tms: QFSeries, benchmark_tms: QFSeries,
                                         chart_title: str = "Relative Performance",
                                         legend_subtitle: str = "Strategy - Benchmark"):
-        diff = strategy_tms.to_prices(1).subtract(benchmark_tms.to_prices(1))
-        diff = diff.ffill()
+        diff = strategy_tms.to_simple_returns().subtract(benchmark_tms.to_simple_returns())
+        diff = diff.fillna(0)
+        diff = diff.to_prices(1) - 1
 
         chart = LineChart(start_x=diff.index[0], end_x=diff.index[-1], log_scale=False)
         position_decorator = AxesPositionDecorator(*self.full_image_axis_position)
@@ -243,14 +244,20 @@ class AbstractDocument(metaclass=ABCMeta):
 
         series_elem = DataElementDecorator(diff)
         chart.add_decorator(series_elem)
-        legend.add_entry(series_elem, legend_subtitle)
+        legend.add_entry(series_elem, f"[{legend_subtitle}] % diff")
 
-        chart.add_decorator(legend)
         title_decorator = TitleDecorator(chart_title, key="title")
         chart.add_decorator(title_decorator)
 
         chart.add_decorator(AxesFormatterDecorator(y_major=PercentageFormatter(".0f")))
 
-        fill_decorator = FillBetweenDecorator(diff)
+        diff_simple = strategy_tms.to_prices(1).subtract(benchmark_tms.to_prices(1))
+        diff_simple = diff_simple.ffill()
+
+        fill_decorator = FillBetweenDecorator(diff_simple)
         chart.add_decorator(fill_decorator)
+        legend.add_entry(fill_decorator, f"[{legend_subtitle}] $ diff")
+
+        chart.add_decorator(legend)
+
         self.document.add_element(ChartElement(chart, figsize=self.full_image_size, dpi=self.dpi))
