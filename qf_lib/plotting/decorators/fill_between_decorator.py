@@ -17,9 +17,10 @@ from typing import Union
 from qf_lib.containers.series.prices_series import QFSeries
 from qf_lib.plotting.charts.chart import Chart
 from qf_lib.plotting.decorators.chart_decorator import ChartDecorator
+from qf_lib.plotting.decorators.simple_legend_item import SimpleLegendItem
 
 
-class FillBetweenDecorator(ChartDecorator):
+class FillBetweenDecorator(ChartDecorator, SimpleLegendItem):
     """
     Fills the area between two lines
 
@@ -38,7 +39,8 @@ class FillBetweenDecorator(ChartDecorator):
     """
     def __init__(self, upper_bound: QFSeries, lower_bound: Union[QFSeries, float] = 0.0, colors_alpha: float = 0.25,
                  key: str = None, **plot_settings):
-        super().__init__(key)
+        ChartDecorator.__init__(self, key)
+        SimpleLegendItem.__init__(self)
         self._upper_bound = upper_bound
         self._lower_bound = lower_bound
         self._colors_alpha = colors_alpha
@@ -46,5 +48,6 @@ class FillBetweenDecorator(ChartDecorator):
 
     def decorate(self, chart: "Chart") -> None:
         ax = chart.axes
-        ax.fill_between(self._upper_bound.index, self._upper_bound, self._lower_bound, alpha=self._colors_alpha,
-                        **self._plot_settings)
+        handle = ax.fill_between(self._upper_bound.index, self._upper_bound, self._lower_bound,
+                                 alpha=self._colors_alpha, **self._plot_settings)
+        self.legend_artist = handle
