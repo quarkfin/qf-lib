@@ -1,8 +1,5 @@
 from enum import Enum
-from typing import Union, List
 from openpyxl.styles import Font
-
-from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 
 
 class ExcelFontMode(Enum):
@@ -35,4 +32,4 @@ def change_cell_font_style(cell, font_style: ExcelFontMode, font_size: int = Non
         outline = True
 
     return Font(color=cell.font.color, name=cell.font.name,
-                     bold=bold, italic=italic, outline=outline, size=font_size)
+                bold=bold, italic=italic, outline=outline, size=font_size)
