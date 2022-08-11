@@ -28,6 +28,7 @@ from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.documents_utils.excel.helpers import row_and_column
 from qf_lib.documents_utils.excel.write_mode import WriteMode
+from qf_lib.documents_utils.excel.excel_font_formatting import ExcelFontMode, change_cell_font_style
 from qf_lib.settings import Settings
 from qf_lib.starting_dir import get_starting_dir_abs_path
 
@@ -82,6 +83,58 @@ class ExcelExporter:
             container, work_sheet, starting_row, starting_column, include_index, include_column_names)
         work_book.save(file_path)
         return file_path
+
+    def apply_font_style_to_area(self, file_path: str, specified_area: str, new_style: ExcelFontMode = ExcelFontMode.NORMAL, write_mode: WriteMode = WriteMode.CREATE_IF_DOESNT_EXIST, sheet_name: str = None):
+        """
+        Apply a font style to a certain area in excel
+
+        Parameters
+        ----------
+        file_path
+            path to the xlsl file where the cell should be written in
+        specified_area: str
+            the specified area where the formatting should take place in the following format: 'A1:Z12'
+        new_style: ExcelFontMode
+            mode in which the font should be stylized
+        write_mode
+            mode in which the file should be opened
+        sheet_name
+            the name of the sheet where the cell should be written. If a sheet of this name doesn't exist
+            it will be created. If it does: it will be edited (but not cleared). If no sheet_name is specified,
+            then the currently active one will be picked
+        """
+
+        work_book = self.get_workbook(file_path, write_mode)
+        work_sheet = self.get_worksheet(work_book, sheet_name)
+
+        for cell in work_sheet[specified_area][0]:
+            cell.font = change_cell_font_style(cell, new_style)
+
+        work_book.save(file_path)
+
+    def write_blank_row_at_line(self, file_path: str, line_number: int, write_mode: WriteMode = WriteMode.CREATE_IF_DOESNT_EXIST, sheet_name: str = None):
+        """
+        Adds a blank line in excel at a specified line number
+
+        Parameters
+        ----------
+        file_path
+            path to the xlsl file where the cell should be written in
+        line_number: int
+            the number of the line where the blank row needs to be added
+        write_mode
+            mode in which the file should be opened
+        sheet_name
+            the name of the sheet where the cell should be written. If a sheet of this name doesn't exist
+            it will be created. If it does: it will be edited (but not cleared). If no sheet_name is specified,
+            then the currently active one will be picked
+        """
+        work_book = self.get_workbook(file_path, write_mode)
+        work_sheet = self.get_worksheet(work_book, sheet_name)
+
+        work_sheet.insert_rows(line_number)
+
+        work_book.save(file_path)
 
     def write_cell(self, file_path: str, cell_reference: str, value: Any,
                    write_mode: WriteMode = WriteMode.CREATE_IF_DOESNT_EXIST, sheet_name: str = None):
