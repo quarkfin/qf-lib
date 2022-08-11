@@ -19,6 +19,7 @@ from typing import Any, Union, Optional
 
 import numpy
 from openpyxl import Workbook, load_workbook
+from openpyxl.styles import Font
 from openpyxl.worksheet.worksheet import Worksheet
 from pandas import Series, DataFrame
 
@@ -28,7 +29,6 @@ from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.documents_utils.excel.helpers import row_and_column
 from qf_lib.documents_utils.excel.write_mode import WriteMode
-from qf_lib.documents_utils.excel.excel_font_formatting import ExcelFontMode, change_cell_font_style
 from qf_lib.settings import Settings
 from qf_lib.starting_dir import get_starting_dir_abs_path
 
@@ -84,7 +84,7 @@ class ExcelExporter:
         work_book.save(file_path)
         return file_path
 
-    def apply_font_style_to_area(self, file_path: str, specified_area: str, new_style: ExcelFontMode = ExcelFontMode.NORMAL, write_mode: WriteMode = WriteMode.CREATE_IF_DOESNT_EXIST, sheet_name: str = None):
+    def apply_font_style_to_area(self, file_path: str, specified_area: str, write_mode: WriteMode = WriteMode.CREATE_IF_DOESNT_EXIST, sheet_name: str = None, **font_setting):
         """
         Apply a font style to a certain area in excel
 
@@ -108,7 +108,7 @@ class ExcelExporter:
         work_sheet = self.get_worksheet(work_book, sheet_name)
 
         for cell in work_sheet[specified_area][0]:
-            cell.font = change_cell_font_style(cell, new_style)
+            cell.font = Font(**font_setting)
 
         work_book.save(file_path)
 
