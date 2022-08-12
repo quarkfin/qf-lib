@@ -101,7 +101,7 @@ class ExcelExporter:
             it will be created. If it does: it will be edited (but not cleared). If no sheet_name is specified,
             then the currently active one will be picked
         font_setting
-            additional fond settings for the cell fonts
+            additional font settings for the cell fonts
         """
 
         work_book = self.get_workbook(file_path, write_mode)
