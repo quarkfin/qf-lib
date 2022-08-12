@@ -112,30 +112,6 @@ class ExcelExporter:
 
         work_book.save(file_path)
 
-    def write_blank_row_at_line(self, file_path: str, line_number: int, write_mode: WriteMode = WriteMode.CREATE_IF_DOESNT_EXIST, sheet_name: str = None):
-        """
-        Adds a blank line in excel at a specified line number
-
-        Parameters
-        ----------
-        file_path
-            path to the xlsl file where the cell should be written in
-        line_number: int
-            the number of the line where the blank row needs to be added
-        write_mode
-            mode in which the file should be opened
-        sheet_name
-            the name of the sheet where the cell should be written. If a sheet of this name doesn't exist
-            it will be created. If it does: it will be edited (but not cleared). If no sheet_name is specified,
-            then the currently active one will be picked
-        """
-        work_book = self.get_workbook(file_path, write_mode)
-        work_sheet = self.get_worksheet(work_book, sheet_name)
-
-        work_sheet.insert_rows(line_number)
-
-        work_book.save(file_path)
-
     def write_cell(self, file_path: str, cell_reference: str, value: Any,
                    write_mode: WriteMode = WriteMode.CREATE_IF_DOESNT_EXIST, sheet_name: str = None):
         """
