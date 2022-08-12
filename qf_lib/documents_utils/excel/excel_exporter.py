@@ -94,14 +94,14 @@ class ExcelExporter:
             path to the xlsl file where the cell should be written in
         specified_area: str
             the specified area where the formatting should take place in the following format: 'A1:Z12'
-        new_style: ExcelFontMode
-            mode in which the font should be stylized
         write_mode
             mode in which the file should be opened
-        sheet_name
+        sheet_name: str
             the name of the sheet where the cell should be written. If a sheet of this name doesn't exist
             it will be created. If it does: it will be edited (but not cleared). If no sheet_name is specified,
             then the currently active one will be picked
+        font_setting
+            additional fond settings for the cell fonts
         """
 
         work_book = self.get_workbook(file_path, write_mode)
