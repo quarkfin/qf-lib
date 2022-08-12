@@ -19,6 +19,7 @@ from typing import Any, Union, Optional
 
 import numpy
 from openpyxl import Workbook, load_workbook
+from openpyxl.styles import Font
 from openpyxl.worksheet.worksheet import Worksheet
 from pandas import Series, DataFrame
 
@@ -82,6 +83,34 @@ class ExcelExporter:
             container, work_sheet, starting_row, starting_column, include_index, include_column_names)
         work_book.save(file_path)
         return file_path
+
+    def apply_font_style_to_area(self, file_path: str, specified_area: str, write_mode: WriteMode = WriteMode.CREATE_IF_DOESNT_EXIST, sheet_name: str = None, **font_setting):
+        """
+        Apply a font style to a certain area in excel
+
+        Parameters
+        ----------
+        file_path
+            path to the xlsl file where the cell should be written in
+        specified_area: str
+            the specified area where the formatting should take place in the following format: 'A1:Z12'
+        write_mode
+            mode in which the file should be opened
+        sheet_name: str
+            the name of the sheet where the cell should be written. If a sheet of this name doesn't exist
+            it will be created. If it does: it will be edited (but not cleared). If no sheet_name is specified,
+            then the currently active one will be picked
+        font_setting
+            additional font settings for the cell fonts
+        """
+
+        work_book = self.get_workbook(file_path, write_mode)
+        work_sheet = self.get_worksheet(work_book, sheet_name)
+
+        for cell in work_sheet[specified_area][0]:
+            cell.font = Font(**font_setting)
+
+        work_book.save(file_path)
 
     def write_cell(self, file_path: str, cell_reference: str, value: Any,
                    write_mode: WriteMode = WriteMode.CREATE_IF_DOESNT_EXIST, sheet_name: str = None):
