@@ -3,6 +3,9 @@ on: push
 
 steps:
 - uses: actions/checkout@master
+- name: Exit if not on master branch
+  if: endsWith(github.ref, 'master') == false
+  run: exit -1
 - name: Set up Python 3.9
   uses: actions/setup-python@v3
   with:
