@@ -13,3 +13,6 @@ recursive-exclude demo_scripts/output *
 
 # Exclude all *.pyc and *.pyo files
 global-exclude *.py[co]
+
+include versioneer.py
+include qf_lib/_version.py

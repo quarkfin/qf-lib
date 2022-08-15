@@ -13,13 +13,17 @@
 #     limitations under the License.
 
 from setuptools import setup
+import versioneer
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
+with open("requirements.txt", "r") as fh:
+    requirements = [line.strip() for line in fh]
 
 setup(
     name='qf-lib',
-    version='2.2',
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass(),
     author='Jacek Witkowski, Marcin Borratynski, Thomas Ruxton, Dominik Picheta, Olga Kalinowska, Karolina Cynk, '
            'Jakub Czerski, Bartlomiej Czajewski',
     description='Quantitative Finance Library',
@@ -45,32 +49,12 @@ setup(
     url='https://quarkfin.github.io/qf-lib-info',
     packages=['qf_lib'],
     include_package_data=True,
-    install_requires=[
-        "pandas==1.2.4",
-        "numpy>=1.19.3,<1.21.0",
-        "scipy>=1.6.3,<1.8.0",
-        "Pillow>=9.0.0,<=9.0.1",
-        "markupsafe==2.0.1",
-        "matplotlib>=3.4.0,<=3.5.0",
-        "joblib>=1.0.1,<1.1.0",
-        "scikit-learn>=0.24.2,<1.0.0",
-        "cvxopt==1.2.7",
-        "openpyxl>=3.0.7,<=3.0.9",
-        "seaborn>=0.11.1",
-        "WeasyPrint==52.5",
-        "emails==0.6",
-        "dic==1.5.2b1",
-        "Jinja2==2.11.3",
-        "arch==4.19",
-        "requests==2.25.1",
-        "statsmodels==0.12.2",
-        "xarray==0.18.0",
-        "quandl>=3.6.1,<=3.7.0",
-    ],
+    install_requires=requirements,
     extras_require={
         "documentation": ["autodocsumm==0.1.13", "sphinx_rtd_theme==0.5.0", "Sphinx==3.1.1"],
         "interactive brokers": ["ibapi"],
-        "bloomberg_beap_hapi": ["PyJWT>=0.2.3,<2.0.0", "retrying==1.3.3"]
+        "bloomberg_beap_hapi": ["PyJWT>=0.2.3,<2.0.0", "retrying==1.3.3"],
+        "blpapi": ["blpapi>=3.16.2,<3.18.0"]
     },
     keywords='quantitative finance backtester',
     python_requires='>=3.7.1'

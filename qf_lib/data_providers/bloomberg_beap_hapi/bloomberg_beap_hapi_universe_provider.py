@@ -21,7 +21,6 @@ from datetime import datetime
 
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.data_providers.bloomberg.exceptions import BloombergError
-from qf_lib.data_providers.bloomberg.helpers import convert_to_bloomberg_date
 
 
 class BloombergBeapHapiUniverseProvider:
@@ -69,7 +68,7 @@ class BloombergBeapHapiUniverseProvider:
                 {
                     '@type': 'FieldOverride',
                     'mnemonic': "CHAIN_DATE",
-                    'override': convert_to_bloomberg_date(datetime.now())
+                    'override': datetime.now().strftime('%Y%m%d')
                 },
                 {
                     '@type': 'FieldOverride',
