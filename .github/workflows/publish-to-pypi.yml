@@ -1,0 +1,28 @@
+name: Publish Python distribution to PyPI
+on: push
+
+steps:
+- uses: actions/checkout@master
+- name: Set up Python 3.9
+  uses: actions/setup-python@v3
+  with:
+    python-version: "3.9"
+- name: Install pypa/build
+  run: >-
+    python -m
+    pip install
+    build
+    --user
+- name: Build a binary wheel and a source tarball
+  run: >-
+    python -m
+    build
+    --sdist
+    --wheel
+    --outdir dist/
+    .
+- name: Publish distribution to PyPI
+  if: startsWith(github.ref, 'refs/tags')
+  uses: pypa/gh-action-pypi-publish@release/v1
+  with:
+    password: ${{ secrets.PYPI_API_TOKEN }}
