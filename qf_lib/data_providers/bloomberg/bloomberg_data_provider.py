@@ -191,7 +191,8 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
         tickers, got_single_ticker = convert_to_list(tickers, BloombergTicker)
         fields, got_single_field = convert_to_list(fields, (PriceField, str))
 
-        data_frame = self._reference_data_provider.get(tickers, fields, override_name, override_value)
+        intermediate_dataframes = [self._reference_data_provider.get(tickers, [field], override_name, override_value) for field in fields]
+        data_frame = pd.concat(intermediate_dataframes, axis=1)
 
         # to keep the order of tickers and fields we reindex the data frame
         data_frame = data_frame.reindex(index=tickers, columns=fields)
