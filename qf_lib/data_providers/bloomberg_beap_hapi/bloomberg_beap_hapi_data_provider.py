@@ -98,12 +98,14 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider):
 
             self.logger.info("Scheduled catalog URL: %s", account_url)
             self.logger.info("Scheduled trigger URL: %s", trigger_url)
+            self.connected = True
 
         else:
             self.catalog_id = None
             self.universe_hapi_provider = None
             self.fields_hapi_provider = None
             self.request_hapi_provider = None
+            self.connected = False
 
             self.logger.warning("Couldn't import the Data License API (beap_lib). Check if all the necessary "
                                 "dependencies are installed.")
@@ -116,6 +118,11 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider):
         except requests.exceptions.HTTPError as err:
             self.logger.error(err)
             raise ConnectionError("Something went wrong connecting to the API. Try again later.")
+
+    def _assert_is_connected(self):
+        if not self.connected:
+            raise BloombergError("Connection to the Bloomberg Data License service was not successful. Check if "
+                                 "the library and all necessary dependencies are installed.")
 
     def get_history(self, tickers: Union[BloombergTicker, Sequence[BloombergTicker]], fields: Union[str, Sequence[str]],
                     start_date: datetime, end_date: datetime = None, frequency: Frequency = Frequency.DAILY,
@@ -154,6 +161,7 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider):
         BloombergError
             When unexpected response from Bloomberg HAPI happened
         """
+        self._assert_is_connected()
 
         if fields is None:
             raise ValueError("Fields being None is not supported by {}".format(self.__class__.__name__))
@@ -250,6 +258,7 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider):
         BloombergError
             When unexpected response from Bloomberg HAPI happened
         """
+        self._assert_is_connected()
 
         tickers, got_single_ticker = convert_to_list(tickers, BloombergFutureTicker)
         expiration_date_fields, _ = convert_to_list(expiration_date_fields, ExpirationDateField)
@@ -260,10 +269,12 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider):
         future_ticker_to_chain_tickers_list = self._get_list_of_tickers_in_the_future_chain(
             tickers, universe_creation_time)  # type: Dict[BloombergFutureTicker, List[BloombergTicker]]
 
-        future_ticker_to_chain_tickers_list = self._get_list_of_tickers_in_the_future_chain(tickers, universe_creation_time)
+        future_ticker_to_chain_tickers_list = self._get_list_of_tickers_in_the_future_chain(tickers,
+                                                                                            universe_creation_time)
         all_specific_tickers = [ticker for specific_tickers_list in future_ticker_to_chain_tickers_list.values()
                                 for ticker in specific_tickers_list]
-        futures_expiration_dates = self.get_current_values(all_specific_tickers, expiration_date_fields).dropna(how="all")
+        futures_expiration_dates = self.get_current_values(all_specific_tickers, expiration_date_fields).dropna(
+            how="all")
 
         def specific_futures_index(future_ticker) -> pd.Index:
             """
@@ -306,6 +317,7 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider):
         BloombergError
             When unexpected response from Bloomberg HAPI happened
         """
+        self._assert_is_connected()
         tickers, got_single_ticker = convert_to_list(tickers, BloombergTicker)
         fields, got_single_field = convert_to_list(fields, str)
 

@@ -53,7 +53,7 @@ setup(
     extras_require={
         "documentation": ["autodocsumm==0.1.13", "sphinx_rtd_theme==0.5.0", "Sphinx==3.1.1"],
         "interactive brokers": ["ibapi"],
-        "bloomberg_beap_hapi": ["PyJWT>=0.2.3,<2.0.0", "retrying==1.3.3"],
+        "bloomberg_beap_hapi": ["PyJWT>=0.2.3,<2.0.0", "retrying>=1.3.3", "beap-lib==0.0.1"],
         "blpapi": ["blpapi>=3.16.2,<3.18.0"]
     },
     keywords='quantitative finance backtester',
