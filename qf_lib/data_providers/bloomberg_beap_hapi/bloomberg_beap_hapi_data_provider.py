@@ -292,8 +292,8 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider):
         return ticker_to_future_expiration_dates
 
     def get_current_values(self, tickers: Union[BloombergTicker, Sequence[BloombergTicker]],
-                           fields: Union[str, Sequence[str]], universe_creation_time: datetime = None) -> Union[
-        None, float, QFSeries, QFDataFrame]:
+                           fields: Union[str, Sequence[str]], universe_creation_time: datetime = None) -> \
+            Union[None, float, QFSeries, QFDataFrame]:
         """
         Gets from the Bloomberg HAPI the current values of fields for given tickers.
 
