@@ -14,7 +14,7 @@
 import gzip
 import re
 from io import StringIO
-from typing import Tuple, List, Optional, Dict
+from typing import Tuple, List, Optional, Dict, Any
 from pandas import to_datetime
 from pandas._libs.tslibs.nattype import NaT
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
@@ -184,5 +184,18 @@ class BloombergBeapHapiParser:
         lines = csv.reader(StringIO(content), delimiter=delimiter)
         records = list(lines) if not replace_header else list(lines)[1:]
         records = [line for line in records if len(line) == len(column_names)]
+        records = [tuple(self._infer_type(s) for s in line) for line in records]
         df = QFDataFrame.from_records(records, columns=column_names)
         return df
+
+    @staticmethod
+    def _infer_type(value: Any):
+        """ In case if value is a number, it would be converted to a float or integer. """
+
+        def map_to_type(type, val):
+            try:
+                return type(val)
+            except ValueError:
+                return None
+
+        return map_to_type(int, value) or map_to_type(float, value) or value

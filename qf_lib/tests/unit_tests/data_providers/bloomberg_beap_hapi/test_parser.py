@@ -17,7 +17,7 @@ from io import BytesIO
 from textwrap import dedent
 from unittest.mock import patch, Mock
 
-from numpy import datetime64, datetime_as_string
+from numpy import datetime64, datetime_as_string, float64
 
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.qf_data_array import QFDataArray
@@ -126,8 +126,53 @@ class TestBloombergBeapHapiParser(unittest.TestCase):
         self.assertEqual(type(actual_data_array), QFDataArray)
         self.assertEqual(actual_data_array.shape, (5, 2, 5))
         self.assertTrue(len(actual_data_array))
+        self.assertEqual(actual_data_array.dtype, float64)
 
         expected_tickers_str_list = ['RTYM1 Index', 'CTA Comdty']
+        self.assertCountEqual(actual_data_array.tickers.values, expected_tickers_str_list)
+
+        expected_fields_str_list = ['PX_OPEN', 'PX_HIGH', 'PX_LOW', 'PX_LAST', 'PX_VOLUME']
+        self.assertCountEqual(actual_data_array.fields.values, expected_fields_str_list)
+
+        # Compare string values of dates (to simplify the numpy.datetime64 comparison)
+        expected_datetime_strings = ['2021-07-01', '2021-07-02', '2021-07-06', '2021-07-07', '2021-07-08']
+        actual_datetime_strings = [datetime_as_string(datetime64(dt), unit='D') for dt in actual_data_array.dates.values]
+        self.assertCountEqual(actual_datetime_strings, expected_datetime_strings)
+
+    @patch('qf_lib.data_providers.bloomberg_beap_hapi.bloomberg_beap_hapi_parser.gzip')
+    def test_get_history_single_ticker_multiple_fields_multiple_dates(self, mock):
+        mock.open.return_value = BytesIO(str.encode(dedent(
+            """
+            START-OF-FILE
+            ...
+            START-OF-FIELDS
+            PX_OPEN
+            PX_HIGH
+            PX_LOW
+            PX_LAST
+            PX_VOLUME
+            END-OF-FIELDS
+            ...
+            START-OF-DATA
+            CTA Comdty|0|5|EX|20210701|0.8505|0.8685|0.8492|0.859|19881|
+            CTA Comdty|0|5|EX|20210702|0.86|0.8715|0.8587|0.8697|15106|
+            CTA Comdty|0|5|EX|20210706|0.876|0.8889|0.8608|0.874|24926|
+            CTA Comdty|0|5|EX|20210707|0.874|0.8795|0.8657|0.8763|12451|
+            CTA Comdty|0|5|EX|20210708|0.8757|0.8763|0.863|0.8688|13261|
+            END-OF-DATA
+            ...
+            END-OF-FILE
+            """
+        )))
+        parser = BloombergBeapHapiParser()
+        actual_data_array = parser.get_history(Mock())
+
+        self.assertEqual(type(actual_data_array), QFDataArray)
+        self.assertEqual(actual_data_array.shape, (5, 1, 5))
+        self.assertTrue(len(actual_data_array))
+        self.assertEqual(actual_data_array.dtype, float64)
+
+        expected_tickers_str_list = ['CTA Comdty']
         self.assertCountEqual(actual_data_array.tickers.values, expected_tickers_str_list)
 
         expected_fields_str_list = ['PX_OPEN', 'PX_HIGH', 'PX_LOW', 'PX_LAST', 'PX_VOLUME']
@@ -172,7 +217,7 @@ class TestBloombergBeapHapiParser(unittest.TestCase):
         self.assertCountEqual(*data_dict.values(), expected_tickers_str_list)
 
     @patch('qf_lib.data_providers.bloomberg_beap_hapi.bloomberg_beap_hapi_parser.gzip')
-    def test_get_chain_mutiple_tickers_single_field_multiple_tickers(self, mock):
+    def test_get_chain_multiple_tickers_single_field_multiple_tickers(self, mock):
         mock.open.return_value = BytesIO(str.encode(dedent(
             """
             START-OF-FILE
@@ -209,7 +254,7 @@ class TestBloombergBeapHapiParser(unittest.TestCase):
         self.assertCountEqual(list(data_dict.values()), expected_tickers_str_list)
 
     @patch('qf_lib.data_providers.bloomberg_beap_hapi.bloomberg_beap_hapi_parser.gzip')
-    def test_get_dates_mutiple_tickers_single_field(self, mock):
+    def test_get_dates_multiple_tickers_single_field(self, mock):
         mock.open.return_value = BytesIO(str.encode(dedent(
             """
             START-OF-FILE
@@ -249,7 +294,7 @@ class TestBloombergBeapHapiParser(unittest.TestCase):
         self.assertCountEqual(actual_datetime_strings, expected_datetime_strings)
 
     @patch('qf_lib.data_providers.bloomberg_beap_hapi.bloomberg_beap_hapi_parser.gzip')
-    def test_get_dates_mutiple_tickers_multiple_fields(self, mock):
+    def test_get_dates_multiple_tickers_multiple_fields(self, mock):
         mock.open.return_value = BytesIO(str.encode(dedent(
             """
             START-OF-FILE
