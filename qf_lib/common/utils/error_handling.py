@@ -57,18 +57,20 @@ class ErrorHandling:
     def get_error_messages(cls):
         """
         Method used to get the error messages
+        Returns
+        -------
+        current messages that are stored in the class
         """
         return cls._error_messages
 
     @classmethod
-    def reset_error_messages(cls, show_old_messages: bool = False):
+    def reset_error_messages(cls):
         """
-        Method used to reset the error messages to their initial value
-        @param show_old_messages:bool
-            Show the old messages stored in _error_messages before resetting them
+        Method used to reset the error messages to their initial value and return old messages
+        Returns
+        -------
+        old messages that were stored in class
         """
-        if show_old_messages:
-            logger = qf_logger.getChild(__class__.__name__)
-            logger.error("Old messages")
-            logger.error(cls.get_error_messages())
+        old_messages = cls._error_messages
         cls._error_messages = []
+        return old_messages
