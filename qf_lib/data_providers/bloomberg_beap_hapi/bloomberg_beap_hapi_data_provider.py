@@ -361,15 +361,16 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider):
             Dict[BloombergFutureTicker, List[BloombergTicker]]:
         fields = ["FUT_CHAIN"]
         active_ticker_string_to_future_ticker = {
-            future_ticker.get_active_ticker(): future_ticker for future_ticker in tickers
+            future_ticker.get_active_ticker().as_string(): future_ticker for future_ticker in tickers
         }
 
         # Define mapping functions from strings into BloombergFutureTickers and BloombergTickers
         def future_ticker_from_string(active_ticker_string: str) -> BloombergFutureTicker:
             return active_ticker_string_to_future_ticker[active_ticker_string]
 
-        active_tickers_str = [ticker.as_string() for ticker in active_ticker_string_to_future_ticker.keys()]
-        universe_id = self._get_universe_id(list(active_ticker_string_to_future_ticker.keys()), universe_creation_time)
+        active_tickers = [future_ticker.get_active_ticker() for future_ticker in tickers]
+        active_tickers_str = list(active_ticker_string_to_future_ticker.keys())
+        universe_id = self._get_universe_id(active_tickers, universe_creation_time)
         universe_url = self.universe_hapi_provider.get_universe_url(universe_id, active_tickers_str, True)
 
         fields_list_id = self._get_fields_id(fields)
