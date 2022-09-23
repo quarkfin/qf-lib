@@ -57,9 +57,11 @@ class ErrorHandling:
     def get_error_messages(cls):
         """
         Method used to get the error messages
+
         Returns
         -------
-        current messages that are stored in the class
+        List
+            current messages that are stored in the class
         """
         return cls._error_messages
 
@@ -67,9 +69,11 @@ class ErrorHandling:
     def reset_error_messages(cls):
         """
         Method used to reset the error messages to their initial value and return old messages
+
         Returns
         -------
-        old messages that were stored in class
+        List
+            old messages that were stored in class
         """
         old_messages = cls._error_messages
         cls._error_messages = []
