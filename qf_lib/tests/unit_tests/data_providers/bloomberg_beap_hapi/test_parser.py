@@ -20,7 +20,6 @@ from unittest.mock import patch, Mock
 from numpy import datetime64, datetime_as_string, float64, nan
 from pandas._testing import assert_frame_equal
 
-from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.data_providers.bloomberg_beap_hapi.bloomberg_beap_hapi_parser import BloombergBeapHapiParser
@@ -402,7 +401,6 @@ class TestBloombergBeapHapiParser(unittest.TestCase):
             NAME
             PX_LAST
             END-OF-FIELDS
-            
             ...
             START-OF-DATA
             SECURITIES|ERROR CODE|NUM FLDS|NAME|PX_LAST|

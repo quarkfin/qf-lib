@@ -86,7 +86,7 @@ class BloombergBeapHapiFieldsProvider:
         -------
         Tuple[str, Dict]
             URL address of created fields
-            dictionary mapping requested, correct fields into their corresponding types 
+            dictionary mapping requested, correct fields into their corresponding types
         """
         fields, got_single_field = convert_to_list(fields, str)
         cont = [{'mnemonic': field} for field in fields]
@@ -120,7 +120,7 @@ class BloombergBeapHapiFieldsProvider:
 
             response = self.session.get(fields_list_url)
             if response.status_code != 200:
-                raise BloombergError(f'Could not retrieve the fields list url')
+                raise BloombergError('Could not retrieve the fields list url')
 
         field_to_type = {
             fields_data['mnemonic']: fields_data['type']
@@ -128,4 +128,3 @@ class BloombergBeapHapiFieldsProvider:
         }
 
         return fields_list_url, field_to_type
-
