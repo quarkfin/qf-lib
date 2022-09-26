@@ -12,7 +12,7 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-from unittest.mock import Mock
+from unittest.mock import Mock, PropertyMock
 import unittest
 
 from qf_lib.data_providers.bloomberg.exceptions import BloombergError
@@ -36,16 +36,23 @@ class TestBloombergBeapHapiFieldsProvider(unittest.TestCase):
 
     def test_get_fields_url__get_response(self):
         self.session_mock.get.return_value.status_code = 200
+        self.session_mock.get.return_value.json.return_value.get.return_value = [{'mnemonic': 'PX_LAST', 'type': 'Price'}]
         provider = BloombergBeapHapiFieldsProvider(self.host, self.session_mock, self.account_url)
-        url = provider.get_fields_url(self.fieldlist_id, self.fields)
+        url, field_list_to_type = provider.get_fields_url(self.fieldlist_id, self.fields)
         self.assertEqual(url, urljoin(self.host, self.location))
+        self.assertEqual(field_list_to_type, {'PX_LAST': 'Price'})
 
     def test_get_fields_url__post_response(self):
-        self.session_mock.get.return_value.status_code = 404
+        response = Mock()
+        type(response).status_code = PropertyMock(side_effect=[404, 200])
+        self.session_mock.get.return_value = response
         self.post_response.status_code = 201
+        self.post_response.json.return_value.get.return_value = [{'mnemonic': 'PX_LAST', 'type': 'Price'}]
+        self.session_mock.get.return_value.json.return_value.get.return_value = [{'mnemonic': 'PX_LAST', 'type': 'Price'}]
         provider = BloombergBeapHapiFieldsProvider(self.host, self.session_mock, self.account_url)
-        url = provider.get_fields_url(self.fieldlist_id, self.fields)
+        url, field_list_to_type = provider.get_fields_url(self.fieldlist_id, self.fields)
         self.assertEqual(url, urljoin(self.host, self.location))
+        self.assertEqual(field_list_to_type, {'PX_LAST': 'Price'})
 
     def test_get_fields_url__unknown_get_response(self):
         self.session_mock.get.return_value.status_code = 404
