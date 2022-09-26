@@ -351,7 +351,6 @@ class TestBloombergBeapHapiParser(unittest.TestCase):
             START-OF-FIELDS
             NAME
             END-OF-FIELDS
-            
             START-OF-DATA
             SECURITIES|ERROR CODE|NUM FLDS|NAME|
             SPY US Equity|0|1|SPDR S&P 500 ETF TRUST|
