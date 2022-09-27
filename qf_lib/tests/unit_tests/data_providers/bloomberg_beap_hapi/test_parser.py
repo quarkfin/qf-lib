@@ -199,27 +199,24 @@ class TestBloombergBeapHapiParser(unittest.TestCase):
             END-OF-FIELDS
             ...
             START-OF-DATA
-            RTYA Index                                        |RTYU17 Index
-            RTYA Index                                        |RTYZ17 Index
-            RTYA Index                                        |RTYH18 Index
-            RTYA Index                                        |RTYM18 Index
-            RTYA Index                                        |RTYU18 Index
+            SECURITIES|ERROR CODE|NUM FLDS|FUT_CHAIN|
+            RTYA Index|0|1|;2;5;1;4;RTYU17 Index;4;RTYZ17 Index;4;RTYH18 Index;4;RTYM18 Index;4;RTYU18 Index;|
             END-OF-DATA
             ...
             END-OF-FILE
             """
         )))
         parser = BloombergBeapHapiParser()
-        data_dict = parser.get_chain(Mock(), {"FUT_CHAIN": "String"})
+        df = parser.get_current_values(Mock(), {'FUT_CHAIN': "Bulk Format"})
 
-        self.assertEqual(type(data_dict), dict)
-        self.assertEqual(len(data_dict.keys()), 1)
+        self.assertEqual(type(df), QFDataFrame)
+        self.assertEqual(df.shape, (1, 1))
 
-        expected_active_ticker_str = 'RTYA Index'
-        self.assertEqual(*data_dict.keys(), expected_active_ticker_str)
+        expected_active_tickers_str_list = ['RTYA Index']
+        self.assertCountEqual(df.index.tolist(), expected_active_tickers_str_list)
 
         expected_tickers_str_list = ['RTYU17 Index', 'RTYZ17 Index', 'RTYH18 Index', 'RTYM18 Index', 'RTYU18 Index']
-        self.assertCountEqual(*data_dict.values(), expected_tickers_str_list)
+        self.assertCountEqual(df.loc['RTYA Index', 'FUT_CHAIN'], expected_tickers_str_list)
 
     @patch('qf_lib.data_providers.bloomberg_beap_hapi.bloomberg_beap_hapi_parser.gzip')
     def test_get_chain_multiple_tickers_single_field_multiple_tickers(self, mock):
@@ -232,32 +229,60 @@ class TestBloombergBeapHapiParser(unittest.TestCase):
             END-OF-FIELDS
             ...
             START-OF-DATA
-            CTA Comdty                                        |CTV1 Comdty
-            CTA Comdty                                        |CTZ1 Comdty
-            CTA Comdty                                        |CTH2 Comdty
-            CTA Comdty                                        |CTK2 Comdty
-            RTYA Index                                        |RTYU1 Index
-            RTYA Index                                        |RTYZ1 Index
-            RTYA Index                                        |RTYH2 Index
-            RTYA Index                                        |RTYM2 Index
-            RTYA Index                                        |RTYU2 Index
+            SECURITIES|ERROR CODE|NUM FLDS|FUT_CHAIN|
+            CTA Index|0|1|;2;2;1;4;CTU17 Index;4;CTZ17 Index;|
+            RTYA Index|0|1|;2;5;1;4;RTYU17 Index;4;RTYZ17 Index;4;RTYH18 Index;4;RTYM18 Index;4;RTYU18 Index;|
             END-OF-DATA
             ...
             END-OF-FILE
             """
         )))
         parser = BloombergBeapHapiParser()
-        data_dict = parser.get_chain(Mock(), {'FUT_CHAIN': "String"})
+        df = parser.get_current_values(Mock(), {'FUT_CHAIN': "Bulk Format"})
 
-        self.assertEqual(type(data_dict), dict)
-        self.assertEqual(len(data_dict.keys()), 2)
+        self.assertEqual(type(df), QFDataFrame)
+        self.assertEqual(df.shape, (2, 1))
 
-        expected_active_tickers_str_list = ['CTA Comdty', 'RTYA Index']
-        self.assertCountEqual(list(data_dict.keys()), expected_active_tickers_str_list)
+        expected_active_tickers_str_list = ['CTA Index', 'RTYA Index']
+        self.assertCountEqual(df.index.tolist(), expected_active_tickers_str_list)
 
-        expected_tickers_str_list = [['CTV1 Comdty', 'CTZ1 Comdty', 'CTH2 Comdty', 'CTK2 Comdty'],
-                                     ['RTYU1 Index', 'RTYZ1 Index', 'RTYH2 Index', 'RTYM2 Index', 'RTYU2 Index']]
-        self.assertCountEqual(list(data_dict.values()), expected_tickers_str_list)
+        expected_tickers_str_list = ['RTYU17 Index', 'RTYZ17 Index', 'RTYH18 Index', 'RTYM18 Index', 'RTYU18 Index']
+        self.assertCountEqual(df.loc['RTYA Index', 'FUT_CHAIN'], expected_tickers_str_list)
+
+        expected_tickers_str_list = ['CTU17 Index', 'CTZ17 Index']
+        self.assertCountEqual(df.loc['CTA Index', 'FUT_CHAIN'], expected_tickers_str_list)
+
+    @patch('qf_lib.data_providers.bloomberg_beap_hapi.bloomberg_beap_hapi_parser.gzip')
+    def test_get_chain_multiple_tickers_single_field__correct_and_incorrect_ticker(self, mock):
+        mock.open.return_value = BytesIO(str.encode(dedent(
+            """
+            START-OF-FILE
+            ...
+            START-OF-FIELDS
+            FUT_CHAIN
+            END-OF-FIELDS
+            ...
+            START-OF-DATA
+            SECURITIES|ERROR CODE|NUM FLDS|FUT_CHAIN|
+            RTYA Index|0|1|;2;5;1;4;RTYU17 Index;4;RTYZ17 Index;4;RTYH18 Index;4;RTYM18 Index;4;RTYU18 Index;|
+            RTASYA Index|10|1| |
+            END-OF-DATA
+            ...
+            END-OF-FILE
+            """
+        )))
+        parser = BloombergBeapHapiParser()
+        df = parser.get_current_values(Mock(), {'FUT_CHAIN': "Bulk Format"})
+
+        self.assertEqual(type(df), QFDataFrame)
+        self.assertEqual(df.shape, (2, 1))
+
+        expected_active_tickers_str_list = ['RTASYA Index', 'RTYA Index']
+        self.assertCountEqual(df.index.tolist(), expected_active_tickers_str_list)
+
+        expected_tickers_str_list = ['RTYU17 Index', 'RTYZ17 Index', 'RTYH18 Index', 'RTYM18 Index', 'RTYU18 Index']
+        self.assertCountEqual(df.loc['RTYA Index', 'FUT_CHAIN'], expected_tickers_str_list)
+        self.assertCountEqual(df.loc['RTASYA Index', 'FUT_CHAIN'], [])
 
     @patch('qf_lib.data_providers.bloomberg_beap_hapi.bloomberg_beap_hapi_parser.gzip')
     def test_get_dates_multiple_tickers_single_field(self, mock):

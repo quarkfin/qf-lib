@@ -181,7 +181,8 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider):
 
         # for requests - always create a new request with current time
         request_id = f'hReq{datetime.now():%m%d%H%M%S%f}'
-        self.request_hapi_provider.create_request_history(request_id, universe_url, fields_list_url, start_date, end_date,
+        self.request_hapi_provider.create_request_history(request_id, universe_url, fields_list_url, start_date,
+                                                          end_date,
                                                           frequency)
         self.logger.info(f'universe_id: {universe_id} fields_list_id: {fields_list_id} request_id: {request_id}')
 
@@ -271,10 +272,12 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider):
         tickers, got_single_ticker = convert_to_list(tickers, BloombergFutureTicker)
         expiration_date_fields, _ = convert_to_list(expiration_date_fields, ExpirationDateField)
 
-        future_ticker_to_chain_tickers_list = self._get_list_of_tickers_in_the_future_chain(tickers, universe_creation_time)
+        future_ticker_to_chain_tickers_list = self._get_list_of_tickers_in_the_future_chain(tickers,
+                                                                                            universe_creation_time)
         all_specific_tickers = [ticker for specific_tickers_list in future_ticker_to_chain_tickers_list.values()
                                 for ticker in specific_tickers_list]
-        futures_expiration_dates = self.get_current_values(all_specific_tickers, expiration_date_fields).dropna(how="all")
+        futures_expiration_dates = self.get_current_values(all_specific_tickers, expiration_date_fields).dropna(
+            how="all")
 
         def specific_futures_index(future_ticker) -> pd.Index:
             """
@@ -331,7 +334,7 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider):
         request_id = f'cReq{datetime.now():%m%d%H%M%S%f}'
 
         # bulk format is ignored, but it gives response without column description - easier to parse
-        self.request_hapi_provider.create_request(request_id, universe_url, fields_list_url, bulk_format_type=False)
+        self.request_hapi_provider.create_request(request_id, universe_url, fields_list_url)
         self.logger.info(f'universe_id: {universe_id} fields_list_id: {fields_list_id} request_id: {request_id}')
 
         out_path = self._download_response(request_id)
@@ -373,12 +376,13 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider):
 
         # for requests - always create a new request with current time
         request_id = f'fcReq{datetime.now():%m%d%H%M%S%f}'
-        self.request_hapi_provider.create_request(request_id, universe_url, fields_list_url, bulk_format_type=True)
+        self.request_hapi_provider.create_request(request_id, universe_url, fields_list_url)
 
         self.logger.info(f'universe_id: {universe_id} fields_list_id: {fields_list_id} request_id: {request_id}')
 
         out_path = self._download_response(request_id)
-        future_ticker_str_to_chain_tickers_str_list = self.parser.get_chain(out_path, field_to_type)
+        fut_chain_df = self.parser.get_current_values(out_path, field_to_type)
+        future_ticker_str_to_chain_tickers_str_list = fut_chain_df['FUT_CHAIN'].to_dict()
 
         future_ticker_to_chain_tickers_str_list = {
             future_ticker_from_string(future_ticker_str): specific_tickers_strings_list

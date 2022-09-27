@@ -52,27 +52,6 @@ class BloombergBeapHapiParser:
         self.logger = qf_logger.getChild(self.__class__.__name__)
         self.type_converter = BloombergDataLicenseTypeConverter()
 
-    def get_chain(self, filepath: str, field_to_type: Dict[str, str]) -> Dict[str, List[str]]:
-        """
-        Method to parse hapi response and extract future chain tickers
-
-        Parameters
-        ----------
-        filepath: str
-            The full filepath with downloaded response
-        field_to_type: Dict[str, str]
-            dictionary mapping requested, correct fields into their corresponding types
-
-        Returns
-        -------
-        data: Dict
-            Dictionary with data, in the format [str] -> List[str]
-            where the key - active future ticker (str), values - tickers from chain
-        """
-        field_to_type = {**field_to_type, "Ticker": "String"}
-        _, content = self._get_fields_and_data_content(filepath, field_to_type, ["Ticker"])
-        return content.groupby("Ticker")['FUT_CHAIN'].apply(list).to_dict()
-
     def get_current_values(self, filepath: str, field_to_type: Dict[str, str]) -> QFDataFrame:
         """
         Method to parse hapi response and extract dates (e.g. FUT_NOTICE_FIRST, LAST_TRADEABLE_DT) for tickers
@@ -93,10 +72,9 @@ class BloombergBeapHapiParser:
         field_to_type = {**field_to_type, "Ticker": "String"}
         fields, content = self._get_fields_and_data_content(filepath, field_to_type, column_names, header_row=True)
 
-        content = content.set_index("Ticker")
-        return content[fields]
+        return content.set_index("Ticker")[fields]
 
-    def get_history(self, filepath: str,  field_to_type: Dict[str, str]) -> QFDataArray:
+    def get_history(self, filepath: str, field_to_type: Dict[str, str]) -> QFDataArray:
         """
         Method to parse hapi response and get history data
 
