@@ -54,7 +54,7 @@ class BloombergDataLicenseTypeConverter:
 
     @staticmethod
     def _bulk_conversion(series: QFSeries) -> QFSeries:
-        def _split_bulk_list(l: List):
+        def _split_bulk_list(_l: List):
             _char = ';4;'  # String representing new bulk element
-            return l[l.find(_char) + len(_char):].rstrip(';').split(_char) if len(l) > 0 else []
+            return _l[_l.find(_char) + len(_char):].rstrip(';').split(_char) if len(_l) > 0 else []
         return series.fillna("").apply(_split_bulk_list)
