@@ -111,8 +111,13 @@ class BloombergBeapHapiParser:
         ----------
         filepath: str
             The full filepath with downloaded response
+        field_to_type: Dict[str, str]
+            dictionary mapping requested, correct fields into their corresponding types
         column_names: List[str]
             list of names to be used as column names of the dataframe
+        header_row: bool
+            indicated whether header is present in the response file (current values response) or not (historical
+            data response)
 
         Returns
         -------
