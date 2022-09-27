@@ -102,12 +102,9 @@ class TestBloombergBeapHapiParser(unittest.TestCase):
             """
             START-OF-FILE
             ...
-            
             START-OF-FIELDS
             PX_LAST
             END-OF-FIELDS
-            
-            ...
             START-OF-DATA
             ASDVCXZASD Index|10|1| | | |
             ASDBVCX ComSADFdty|10|1| | | |
