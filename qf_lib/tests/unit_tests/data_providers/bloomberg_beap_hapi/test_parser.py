@@ -97,6 +97,39 @@ class TestBloombergBeapHapiParser(unittest.TestCase):
         self.assertCountEqual(actual_data_array.fields.values, expected_fields_str_list)
 
     @patch('qf_lib.data_providers.bloomberg_beap_hapi.bloomberg_beap_hapi_parser.gzip')
+    def test_get_history_multiple_invalid_tickers_single_field(self, mock):
+        mock.open.return_value = BytesIO(str.encode(dedent(
+            """
+            START-OF-FILE
+            ...
+            
+            START-OF-FIELDS
+            PX_LAST
+            END-OF-FIELDS
+            
+            ...
+            START-OF-DATA
+            ASDVCXZASD Index|10|1| | | |
+            ASDBVCX ComSADFdty|10|1| | | |
+            END-OF-DATA
+            ...
+            END-OF-FILE
+            """
+        )))
+        parser = BloombergBeapHapiParser()
+        actual_data_array = parser.get_history(Mock(), {"PX_LAST": "Price"})
+
+        self.assertEqual(type(actual_data_array), QFDataArray)
+        self.assertEqual(actual_data_array.shape, (0, 2, 1))
+        self.assertFalse(len(actual_data_array))  # empty df
+
+        expected_tickers_str_list = ['ASDVCXZASD Index', 'ASDBVCX ComSADFdty']
+        self.assertCountEqual(actual_data_array.tickers.values, expected_tickers_str_list)
+
+        expected_fields_str_list = ['PX_LAST']
+        self.assertCountEqual(actual_data_array.fields.values, expected_fields_str_list)
+
+    @patch('qf_lib.data_providers.bloomberg_beap_hapi.bloomberg_beap_hapi_parser.gzip')
     def test_get_history_multiple_tickers_multiple_fields_multiple_dates(self, mock):
         mock.open.return_value = BytesIO(str.encode(dedent(
             """
@@ -436,7 +469,7 @@ class TestBloombergBeapHapiParser(unittest.TestCase):
             """
         )))
         expected_df = QFDataFrame.from_dict({
-            'NAME': {'SPY US Equity': 'SPDR S&P 500 ETF TRUST', 'Incorrect Equity': nan},
+            'NAME': {'SPY US Equity': 'SPDR S&P 500 ETF TRUST', 'Incorrect Equity': None},
             'PX_LAST': {'SPY US Equity': 68.32, 'Incorrect Equity': nan}
         })
         expected_df['PX_LAST'] = expected_df['PX_LAST'].astype(float64)

@@ -14,7 +14,7 @@
 from typing import List
 
 from numpy import float64
-from pandas import to_datetime
+from pandas import to_datetime, notna
 from pandas._libs.tslibs.nattype import NaT
 
 from qf_lib.containers.series.qf_series import QFSeries
@@ -46,7 +46,7 @@ class BloombergDataLicenseTypeConverter:
 
     @staticmethod
     def _string_conversion(series: QFSeries) -> QFSeries:
-        return series.str.strip()
+        return series.apply(lambda s: s.strip() if notna(s) else None)
 
     @staticmethod
     def _float_conversion(series: QFSeries) -> QFSeries:
