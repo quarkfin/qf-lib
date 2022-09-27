@@ -64,3 +64,34 @@ class TestBloombergBeapHapiFieldsProvider(unittest.TestCase):
         self.post_response.status_code = 200
         provider = BloombergBeapHapiFieldsProvider(self.host, self.session_mock, self.account_url)
         self.assertRaises(BloombergError, provider.get_fields_url, self.fieldlist_id, self.fields)
+
+    def test_get_fields_history_url__get_response(self):
+        self.session_mock.get.return_value.status_code = 200
+        self.session_mock.get.return_value.json.return_value.get.return_value = [{'mnemonic': 'PX_LAST', 'type': 'Price'}]
+        provider = BloombergBeapHapiFieldsProvider(self.host, self.session_mock, self.account_url)
+        url, field_list_to_type = provider.get_fields_history_url(self.fieldlist_id, self.fields)
+        self.assertEqual(url, urljoin(self.host, self.location))
+        self.assertEqual(field_list_to_type, {'PX_LAST': 'Price'})
+
+    def test_get_fields_history_url__post_response(self):
+        response = Mock()
+        type(response).status_code = PropertyMock(side_effect=[404, 200])
+        self.session_mock.get.return_value = response
+        self.post_response.status_code = 201
+        self.post_response.json.return_value.get.return_value = [{'mnemonic': 'PX_LAST', 'type': 'Price'}]
+        self.session_mock.get.return_value.json.return_value.get.return_value = [{'mnemonic': 'PX_LAST', 'type': 'Price'}]
+        provider = BloombergBeapHapiFieldsProvider(self.host, self.session_mock, self.account_url)
+        url, field_list_to_type = provider.get_fields_history_url(self.fieldlist_id, self.fields)
+        self.assertEqual(url, urljoin(self.host, self.location))
+        self.assertEqual(field_list_to_type, {'PX_LAST': 'Price'})
+
+    def test_get_fields_history_url__unknown_get_response(self):
+        self.session_mock.get.return_value.status_code = 404
+        provider = BloombergBeapHapiFieldsProvider(self.host, self.session_mock, self.account_url)
+        self.assertRaises(BloombergError, provider.get_fields_history_url, self.fieldlist_id, self.fields)
+
+    def test_get_fields_history_url__unknown_post_response(self):
+        self.session_mock.get.return_value.status_code = 404
+        self.post_response.status_code = 200
+        provider = BloombergBeapHapiFieldsProvider(self.host, self.session_mock, self.account_url)
+        self.assertRaises(BloombergError, provider.get_fields_history_url, self.fieldlist_id, self.fields)
