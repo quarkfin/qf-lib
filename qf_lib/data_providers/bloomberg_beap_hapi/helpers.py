@@ -46,11 +46,11 @@ class BloombergDataLicenseTypeConverter:
 
     @staticmethod
     def _string_conversion(series: QFSeries) -> QFSeries:
-        return series.apply(lambda s: s.strip() if notna(s) else None)
+        return series.apply(lambda s: s.strip() if notna(s) else None).replace({"N.A.": None})
 
     @staticmethod
     def _float_conversion(series: QFSeries) -> QFSeries:
-        return series.astype(float64)
+        return series.replace({"N.A.": None}).astype(float64)
 
     @staticmethod
     def _bulk_conversion(series: QFSeries) -> QFSeries:

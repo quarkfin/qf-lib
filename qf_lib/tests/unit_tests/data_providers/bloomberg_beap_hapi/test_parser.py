@@ -127,6 +127,58 @@ class TestBloombergBeapHapiParser(unittest.TestCase):
         self.assertCountEqual(actual_data_array.fields.values, expected_fields_str_list)
 
     @patch('qf_lib.data_providers.bloomberg_beap_hapi.bloomberg_beap_hapi_parser.gzip')
+    def test_get_history_single_ticker_na_field(self, mock):
+        mock.open.return_value = BytesIO(str.encode(dedent(
+            """
+            START-OF-FILE
+            ...
+            START-OF-FIELDS
+            RTG_SP_LT_FC_ISSUER_CREDIT
+            END-OF-FIELDS
+            START-OF-DATA
+            SECURITIES|ERROR CODE|NUM FLDS|RTG_SP_LT_FC_ISSUER_CREDIT|
+            STT US Equity|0|1|N.A.|
+            END-OF-DATA
+            ...
+            END-OF-FILE
+            """
+        )))
+        parser = BloombergBeapHapiParser()
+        df = parser.get_current_values(Mock(), {"RTG_SP_LT_FC_ISSUER_CREDIT": "Character"})
+
+        self.assertEqual(df.shape, (1, 1))
+
+        expected_active_tickers_str_list = ['STT US Equity']
+        self.assertCountEqual(df.index.tolist(), expected_active_tickers_str_list)
+        self.assertEqual(df.loc['STT US Equity', 'RTG_SP_LT_FC_ISSUER_CREDIT'], "N.A.")
+
+    @patch('qf_lib.data_providers.bloomberg_beap_hapi.bloomberg_beap_hapi_parser.gzip')
+    def test_get_history_single_ticker_na_real_field(self, mock):
+        mock.open.return_value = BytesIO(str.encode(dedent(
+            """
+            START-OF-FILE
+            ...
+            START-OF-FIELDS
+            VOLATILITY_90D
+            END-OF-FIELDS
+            START-OF-DATA
+            SECURITIES|ERROR CODE|NUM FLDS|VOLATILITY_90D|
+            SOME SW Equity|0|1|N.A.|
+            END-OF-DATA
+            ...
+            END-OF-FILE
+            """
+        )))
+        parser = BloombergBeapHapiParser()
+        df = parser.get_current_values(Mock(), {"VOLATILITY_90D": "Real"})
+
+        self.assertEqual(df.shape, (1, 1))
+
+        expected_active_tickers_str_list = ['SOME SW Equity']
+        self.assertCountEqual(df.index.tolist(), expected_active_tickers_str_list)
+        self.assertEqual(df.loc['SOME SW Equity', 'RTG_SP_LT_FC_ISSUER_CREDIT'], "N.A.")
+
+    @patch('qf_lib.data_providers.bloomberg_beap_hapi.bloomberg_beap_hapi_parser.gzip')
     def test_get_history_multiple_tickers_multiple_fields_multiple_dates(self, mock):
         mock.open.return_value = BytesIO(str.encode(dedent(
             """
