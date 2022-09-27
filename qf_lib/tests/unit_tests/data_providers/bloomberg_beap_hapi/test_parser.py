@@ -18,6 +18,7 @@ from textwrap import dedent
 from unittest.mock import patch, Mock
 
 from numpy import datetime64, datetime_as_string, float64, nan
+from pandas import isna
 from pandas._testing import assert_frame_equal
 
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
@@ -150,7 +151,7 @@ class TestBloombergBeapHapiParser(unittest.TestCase):
 
         expected_active_tickers_str_list = ['STT US Equity']
         self.assertCountEqual(df.index.tolist(), expected_active_tickers_str_list)
-        self.assertEqual(df.loc['STT US Equity', 'RTG_SP_LT_FC_ISSUER_CREDIT'], "N.A.")
+        self.assertEqual(df.loc['STT US Equity', 'RTG_SP_LT_FC_ISSUER_CREDIT'], None)
 
     @patch('qf_lib.data_providers.bloomberg_beap_hapi.bloomberg_beap_hapi_parser.gzip')
     def test_get_history_single_ticker_na_real_field(self, mock):
@@ -176,7 +177,7 @@ class TestBloombergBeapHapiParser(unittest.TestCase):
 
         expected_active_tickers_str_list = ['SOME SW Equity']
         self.assertCountEqual(df.index.tolist(), expected_active_tickers_str_list)
-        self.assertEqual(df.loc['SOME SW Equity', 'RTG_SP_LT_FC_ISSUER_CREDIT'], "N.A.")
+        self.assertTrue(isna(df.loc['SOME SW Equity', 'VOLATILITY_90D']))
 
     @patch('qf_lib.data_providers.bloomberg_beap_hapi.bloomberg_beap_hapi_parser.gzip')
     def test_get_history_multiple_tickers_multiple_fields_multiple_dates(self, mock):
