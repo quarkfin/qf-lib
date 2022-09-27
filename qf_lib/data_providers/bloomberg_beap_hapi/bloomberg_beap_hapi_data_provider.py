@@ -17,7 +17,7 @@ import os
 import warnings
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Union, Sequence, Dict, List
+from typing import Union, Sequence, Dict, List, Optional
 from urllib.parse import urljoin
 
 import pandas as pd
@@ -126,7 +126,7 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider):
 
     def get_history(self, tickers: Union[BloombergTicker, Sequence[BloombergTicker]], fields: Union[str, Sequence[str]],
                     start_date: datetime, end_date: datetime = None, frequency: Frequency = Frequency.DAILY,
-                    universe_creation_time: datetime = None) -> Union[QFSeries, QFDataFrame, QFDataArray]:
+                    universe_creation_time: Optional[datetime] = None) -> Union[QFSeries, QFDataFrame, QFDataArray]:
         """
         Gets historical data from Bloomberg HAPI from the (start_date - end_date) time range.
 
@@ -163,9 +163,6 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider):
         """
         self._assert_is_connected()
 
-        if fields is None:
-            raise ValueError("Fields being None is not supported by {}".format(self.__class__.__name__))
-
         end_date = end_date or datetime.now()
         end_date = end_date + RelativeDelta(second=0, microsecond=0)
         start_date = self._adjust_start_date(start_date, frequency)
@@ -176,27 +173,21 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider):
         fields, got_single_field = convert_to_list(fields, str)
 
         tickers_str = [t.as_string() for t in tickers]
+        universe_id = self._get_universe_id(tickers, universe_creation_time)
+        universe_url = self.universe_hapi_provider.get_universe_url(universe_id, tickers_str, False)
 
-        universe_creation_time = universe_creation_time or datetime.now()
-        universe_id = f'hUni{universe_creation_time:%m%d%H%M%S%f}'
-        universe_url = self.universe_hapi_provider.get_universe_url(universe_id, tickers_str, fieldsOverrides=False)
-
-        # in most cases we will use only ohlcv fields - we can reuse fields
-        if fields == ['PX_OPEN', 'PX_HIGH', 'PX_LOW', 'PX_LAST', 'PX_VOLUME']:
-            fieldlist_id = 'ohlcv'
-        else:
-            fieldlist_id = f'hFlds{datetime.now():%m%d%H%M%S%f}'
-
-        fieldlist_url = self.fields_hapi_provider.get_fields_history_url(fieldlist_id, fields)
+        fields_list_id = self._get_fields_id(fields)
+        fields_list_url, field_to_type = self.fields_hapi_provider.get_fields_history_url(fields_list_id, fields)
 
         # for requests - always create a new request with current time
         request_id = f'hReq{datetime.now():%m%d%H%M%S%f}'
-        self.request_hapi_provider.create_request_history(request_id, universe_url, fieldlist_url, start_date, end_date,
+        self.request_hapi_provider.create_request_history(request_id, universe_url, fields_list_url, start_date,
+                                                          end_date,
                                                           frequency)
-        self.logger.info(f'universe_id: {universe_id} fieldlist_id: {fieldlist_id} request_id: {request_id}')
+        self.logger.info(f'universe_id: {universe_id} fields_list_id: {fields_list_id} request_id: {request_id}')
 
         out_path = self._download_response(request_id)
-        data_array = self.parser.get_history(out_path)
+        data_array = self.parser.get_history(out_path, field_to_type)
 
         def current_ticker(t: BloombergTicker):
             return t.get_current_specific_ticker() if isinstance(t, BloombergFutureTicker) else t
@@ -211,27 +202,45 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider):
 
         return normalized_result
 
+    def _get_universe_id(self, tickers: Sequence[BloombergTicker], creation_time: Optional[datetime] = None):
+        if len(tickers) == 1:
+            ticker_str = tickers[0].as_string()
+            universe_id = ticker_str.lower().replace(" ", "")
+        else:
+            universe_creation_time = creation_time or datetime.now()
+            universe_id = f'uni{universe_creation_time:%m%d%H%M%S%f}'
+        return universe_id
+
+    def _get_fields_id(self, fields: Sequence[str]):
+        if len(fields) == 1:
+            fields_list_id = fields[0].replace("_", "")
+        elif fields == list(self.price_field_to_str_map().values()):
+            fields_list_id = 'ohlcv'
+        elif fields == list(self.expiration_date_field_str_map().values()):
+            fields_list_id = 'futNoticeFirstLastTradeableDt'
+        else:
+            fields_list_id = f'flds{datetime.now():%m%d%H%M%S%f}'
+        return fields_list_id
+
     def price_field_to_str_map(self, ticker: BloombergTicker = None) -> Dict[PriceField, str]:
-        price_field_dict = {
+        return {
             PriceField.Open: 'PX_OPEN',
             PriceField.High: 'PX_HIGH',
             PriceField.Low: 'PX_LOW',
             PriceField.Close: 'PX_LAST',
             PriceField.Volume: 'PX_VOLUME'
         }
-        return price_field_dict
 
     def expiration_date_field_str_map(self, ticker: BloombergTicker = None) -> Dict[ExpirationDateField, str]:
-        expiration_date_field_dict = {
+        return {
             ExpirationDateField.FirstNotice: "FUT_NOTICE_FIRST",
             ExpirationDateField.LastTradeableDate: "LAST_TRADEABLE_DT"
         }
-        return expiration_date_field_dict
 
     def supported_ticker_types(self):
         return {BloombergTicker, BloombergFutureTicker}
 
-    def _get_futures_chain_dict(self, tickers: Union[FutureTicker, Sequence[FutureTicker]],
+    def _get_futures_chain_dict(self, tickers: Union[BloombergFutureTicker, Sequence[BloombergFutureTicker]],
                                 expiration_date_fields: Union[str, Sequence[str]],
                                 universe_creation_time: datetime = None) -> Dict[FutureTicker, QFDataFrame]:
         """
@@ -262,12 +271,6 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider):
 
         tickers, got_single_ticker = convert_to_list(tickers, BloombergFutureTicker)
         expiration_date_fields, _ = convert_to_list(expiration_date_fields, ExpirationDateField)
-
-        universe_creation_time = universe_creation_time or datetime.now()
-        universe_creation_time = universe_creation_time.strftime("%m%d%H%M%S")
-
-        future_ticker_to_chain_tickers_list = self._get_list_of_tickers_in_the_future_chain(
-            tickers, universe_creation_time)  # type: Dict[BloombergFutureTicker, List[BloombergTicker]]
 
         future_ticker_to_chain_tickers_list = self._get_list_of_tickers_in_the_future_chain(tickers,
                                                                                             universe_creation_time)
@@ -308,7 +311,7 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider):
 
         Returns
         -------
-        QFDataFrame/QFSeries
+        float, QFSeries, QFDataFrame
             Either QFDataFrame with 2 dimensions: ticker, field or QFSeries with 1 dimensions: ticker of field
             (depending if many tickers or fields were provided) is returned.
 
@@ -322,29 +325,20 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider):
         fields, got_single_field = convert_to_list(fields, str)
 
         tickers_str_to_obj = {t.as_string(): t for t in tickers}
+        universe_id = self._get_universe_id(tickers, universe_creation_time)
+        universe_url = self.universe_hapi_provider.get_universe_url(universe_id, list(tickers_str_to_obj.keys()), False)
 
-        universe_creation_time = universe_creation_time or datetime.now()
-        universe_id = f'cUni{universe_creation_time:%m%d%H%M%S%f}'
-
-        universe_url = self.universe_hapi_provider.get_universe_url(universe_id, list(tickers_str_to_obj.keys()),
-                                                                    fieldsOverrides=False)
-
-        # in most cases we will use only two fields: 'FUT_NOTICE_FIRST', 'LAST_TRADEABLE_DT' - we can reuse fields
-        if fields == ['FUT_NOTICE_FIRST', 'LAST_TRADEABLE_DT']:
-            fieldlist_id = 'futNoticeFirstLastTradeableDt'
-        else:
-            fieldlist_id = f'cFlds{datetime.now():%m%d%H%M%S%f}'
-
-        fieldlist_url = self.fields_hapi_provider.get_fields_url(fieldlist_id, fields)
+        fields_list_id = self._get_fields_id(fields)
+        fields_list_url, field_to_type = self.fields_hapi_provider.get_fields_url(fields_list_id, fields)
         # for requests - always create a new request with current time
         request_id = f'cReq{datetime.now():%m%d%H%M%S%f}'
 
         # bulk format is ignored, but it gives response without column description - easier to parse
-        self.request_hapi_provider.create_request(request_id, universe_url, fieldlist_url, bulk_format_type=False)
-        self.logger.info(f'universe_id: {universe_id} fieldlist_id: {fieldlist_id} request_id: {request_id}')
+        self.request_hapi_provider.create_request(request_id, universe_url, fields_list_url)
+        self.logger.info(f'universe_id: {universe_id} fields_list_id: {fields_list_id} request_id: {request_id}')
 
         out_path = self._download_response(request_id)
-        data_frame = self.parser.get_current_values_dates_fields_format(out_path)
+        data_frame = self.parser.get_current_values(out_path, field_to_type)
 
         # to keep the order of tickers and fields we reindex the data frame
         data_frame.index = [tickers_str_to_obj.get(x, BloombergTicker.from_string(x)) for x in data_frame.index]
@@ -360,33 +354,35 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider):
 
         return casted_result
 
-    def _get_list_of_tickers_in_the_future_chain(self,
-                                                 tickers: Union[BloombergFutureTicker, Sequence[BloombergFutureTicker]],
-                                                 universe_creation_time: str):
-        tickers, _ = convert_to_list(tickers, BloombergFutureTicker)
+    def _get_list_of_tickers_in_the_future_chain(self, tickers: Sequence[BloombergFutureTicker],
+                                                 universe_creation_time: Optional[datetime] = None) -> \
+            Dict[BloombergFutureTicker, List[BloombergTicker]]:
+        fields = ["FUT_CHAIN"]
         active_ticker_string_to_future_ticker = {
-            future_ticker.get_active_ticker().ticker: future_ticker for future_ticker in tickers
+            future_ticker.get_active_ticker().as_string(): future_ticker for future_ticker in tickers
         }
 
         # Define mapping functions from strings into BloombergFutureTickers and BloombergTickers
         def future_ticker_from_string(active_ticker_string: str) -> BloombergFutureTicker:
             return active_ticker_string_to_future_ticker[active_ticker_string]
 
-        universe_id = 'u' + universe_creation_time
-        universe_url = self.universe_hapi_provider.get_universe_url(universe_id, active_ticker_string_to_future_ticker,
-                                                                    fieldsOverrides=True)
+        active_tickers = [future_ticker.get_active_ticker() for future_ticker in tickers]
+        active_tickers_str = list(active_ticker_string_to_future_ticker.keys())
+        universe_id = self._get_universe_id(active_tickers, universe_creation_time)
+        universe_url = self.universe_hapi_provider.get_universe_url(universe_id, active_tickers_str, True)
 
-        fieldlist_id = 'fieldsFutChain'
-        fieldlist_url = self.fields_hapi_provider.get_fields_url(fieldlist_id, "FUT_CHAIN")
+        fields_list_id = self._get_fields_id(fields)
+        fields_list_url, field_to_type = self.fields_hapi_provider.get_fields_url(fields_list_id, fields)
 
         # for requests - always create a new request with current time
         request_id = f'fcReq{datetime.now():%m%d%H%M%S%f}'
-        self.request_hapi_provider.create_request(request_id, universe_url, fieldlist_url, bulk_format_type=True)
+        self.request_hapi_provider.create_request(request_id, universe_url, fields_list_url)
 
-        self.logger.info(f'universe_id: {universe_id} fieldlist_id: {fieldlist_id} request_id: {request_id}')
+        self.logger.info(f'universe_id: {universe_id} fields_list_id: {fields_list_id} request_id: {request_id}')
 
         out_path = self._download_response(request_id)
-        future_ticker_str_to_chain_tickers_str_list = self.parser.get_chain(out_path)
+        fut_chain_df = self.parser.get_current_values(out_path, field_to_type)
+        future_ticker_str_to_chain_tickers_str_list = fut_chain_df['FUT_CHAIN'].to_dict()
 
         future_ticker_to_chain_tickers_str_list = {
             future_ticker_from_string(future_ticker_str): specific_tickers_strings_list
@@ -445,7 +441,6 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider):
                     continue
 
                 output_file_path = os.path.join(self.downloads_path, distribution_id)
-
                 out_path = self._download_distribution(reply_url, output_file_path)
 
                 self.logger.info('Reply was downloaded, exit now')

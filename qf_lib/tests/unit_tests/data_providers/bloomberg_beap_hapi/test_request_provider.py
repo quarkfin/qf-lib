@@ -35,10 +35,10 @@ class TestBloombergBeapHapiRequestProvider(unittest.TestCase):
     def test_create_request__unknown_get_response(self):
         self.session_mock.get.return_value.status_code = 404
         provider = BloombergBeapHapiRequestsProvider(self.host, self.session_mock, self.account_url, self.trigger_url)
-        self.assertRaises(BloombergError, provider.create_request, self.request_id, 'some_universe_url', 'some_field_list_url', True)
+        self.assertRaises(BloombergError, provider.create_request, self.request_id, 'some_universe_url', 'some_field_list_url')
 
     def test_create_request__unknown_post_response(self):
         self.session_mock.get.return_value.status_code = 404
         self.post_response.status_code = 200
         provider = BloombergBeapHapiRequestsProvider(self.host, self.session_mock, self.account_url, self.trigger_url)
-        self.assertRaises(BloombergError, provider.create_request, self.request_id, 'some_universe_url', 'some_field_list_url', True)
+        self.assertRaises(BloombergError, provider.create_request, self.request_id, 'some_universe_url', 'some_field_list_url')

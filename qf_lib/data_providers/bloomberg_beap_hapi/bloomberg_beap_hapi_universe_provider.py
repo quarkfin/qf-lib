@@ -42,7 +42,7 @@ class BloombergBeapHapiUniverseProvider:
         self.account_url = account_url
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
-    def get_universe_url(self, universe_id: str, tickers: Union[dict, str, Sequence[str]], fieldsOverrides: bool) -> str:
+    def get_universe_url(self, universe_id: str, tickers: Union[str, Sequence[str]], fields_overrides: bool) -> str:
         """
         Method to create hapi universe and get universe address URL
 
@@ -50,19 +50,18 @@ class BloombergBeapHapiUniverseProvider:
         ----------
         universe_id: str
             ID of the hapi universe
-        tickers: Union[dict, str, Sequence[str]]
-            Ticker str, list of tickers str or dict
-        fieldsOverrides: bool
+        tickers: Union[str, Sequence[str]]
+            Ticker str, list of tickers str
+        fields_overrides: bool
             If True, it uses fieldsOvverides
         Returns
         -------
         universe_url
             URL address of created hapi universe
         """
-        if not isinstance(tickers, dict):
-            tickers, got_single_field = convert_to_list(tickers, str)
+        tickers, got_single_field = convert_to_list(tickers, str)
         contains = [{'@type': 'Identifier', 'identifierType': 'TICKER', 'identifierValue': ticker} for ticker in tickers]
-        if fieldsOverrides:
+        if fields_overrides:
             # noinspection PyTypeChecker
             contains[0]['fieldOverrides'] = [
                 {
