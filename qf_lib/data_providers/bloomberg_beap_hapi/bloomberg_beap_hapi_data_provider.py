@@ -42,7 +42,7 @@ from qf_lib.data_providers.bloomberg.exceptions import BloombergError
 from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
-from qf_lib.common.tickers.tickers import BloombergTicker, Ticker
+from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.futures.future_tickers.bloomberg_future_ticker import BloombergFutureTicker
@@ -134,7 +134,7 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
 
         Parameters
         ----------
-        tickers: Ticker, Sequence[Ticker]
+        tickers: BloombergTicker, Sequence[BloombergTicker]
             tickers for securities which should be retrieved
         fields: str, Sequence[str]
             fields of securities which should be retrieved
@@ -240,7 +240,7 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
         tickers = [BloombergTicker(f"{t} Equity", SecurityType.STOCK, 1) for t in tickers]
         return tickers
 
-    def get_unique_tickers(self, universe_ticker: Ticker) -> List[Ticker]:
+    def get_unique_tickers(self, universe_ticker: BloombergTicker) -> List[BloombergTicker]:
         raise ValueError(f"{self.__class__.__name__} does not provide historical tickers_universe data")
 
     def _get_futures_chain_dict(self, tickers: Union[BloombergFutureTicker, Sequence[BloombergFutureTicker]],
