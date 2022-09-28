@@ -11,7 +11,7 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-
+from datetime import datetime
 from unittest.mock import Mock
 import unittest
 from urllib.parse import urljoin
@@ -37,23 +37,27 @@ class TestBloombergBeapHapiUniverseProvider(unittest.TestCase):
     def test_get_fields_url__get_response(self):
         self.session_mock.get.return_value.status_code = 200
         provider = BloombergBeapHapiUniverseProvider(self.host, self.session_mock, self.account_url)
-        url = provider.get_universe_url(self.fieldlist_id, self.tickers, True)
+        field_overrides = [("CHAIN_DATE", datetime.now().strftime('%Y%m%d')), ('INCLUDE_EXPIRED_CONTRACTS', 'Y')]
+        url = provider.get_universe_url(self.fieldlist_id, self.tickers, field_overrides)
         self.assertEqual(url, urljoin(self.host, self.location))
 
     def test_get_fields_url__post_response(self):
         self.session_mock.get.return_value.status_code = 404
         self.post_response.status_code = 201
         provider = BloombergBeapHapiUniverseProvider(self.host, self.session_mock, self.account_url)
-        url = provider.get_universe_url(self.fieldlist_id, self.tickers, True)
+        field_overrides = [("CHAIN_DATE", datetime.now().strftime('%Y%m%d')), ('INCLUDE_EXPIRED_CONTRACTS', 'Y')]
+        url = provider.get_universe_url(self.fieldlist_id, self.tickers, field_overrides)
         self.assertEqual(url, urljoin(self.host, self.location))
 
     def test_get_fields_url__unknown_get_response(self):
         self.session_mock.get.return_value.status_code = 404
         provider = BloombergBeapHapiUniverseProvider(self.host, self.session_mock, self.account_url)
-        self.assertRaises(BloombergError, provider.get_universe_url, self.fieldlist_id, self.tickers, True)
+        field_overrides = [("CHAIN_DATE", datetime.now().strftime('%Y%m%d')), ('INCLUDE_EXPIRED_CONTRACTS', 'Y')]
+        self.assertRaises(BloombergError, provider.get_universe_url, self.fieldlist_id, self.tickers, field_overrides)
 
     def test_get_fields_url__unknown_post_response(self):
         self.session_mock.get.return_value.status_code = 404
         self.post_response.status_code = 200
         provider = BloombergBeapHapiUniverseProvider(self.host, self.session_mock, self.account_url)
-        self.assertRaises(BloombergError, provider.get_universe_url, self.fieldlist_id, self.tickers, True)
+        field_overrides = [("CHAIN_DATE", datetime.now().strftime('%Y%m%d')), ('INCLUDE_EXPIRED_CONTRACTS', 'Y')]
+        self.assertRaises(BloombergError, provider.get_universe_url, self.fieldlist_id, self.tickers, field_overrides)
