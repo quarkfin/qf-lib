@@ -73,6 +73,11 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
 
         host = 'https://api.bloomberg.com'
         self.reply_timeout = timedelta(minutes=reply_timeout)  # reply_timeout - time in minutes
+
+        output_folder = "hapi_responses"
+        self.downloads_path = Path(get_starting_dir_abs_path()) / settings.output_directory / output_folder
+        self.downloads_path.mkdir(parents=True, exist_ok=True)
+
         self.session = requests.Session()
 
         if is_beap_lib_installed:
@@ -95,9 +100,6 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
 
             self.logger.info("Scheduled catalog URL: %s", account_url)
             self.logger.info("Scheduled trigger URL: %s", trigger_url)
-
-            self.downloads_path = Path(get_starting_dir_abs_path()) / settings.output_directory / "hapi_responses"
-            self.downloads_path.mkdir(parents=True, exist_ok=True)
             self.connected = True
 
         else:
@@ -105,8 +107,6 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
             self.universe_hapi_provider = None
             self.fields_hapi_provider = None
             self.request_hapi_provider = None
-            self.downloads_path = None
-
             self.connected = False
 
             self.logger.warning("Couldn't import the Data License API (beap_lib). Check if all the necessary "
