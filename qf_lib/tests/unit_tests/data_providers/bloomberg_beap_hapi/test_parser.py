@@ -368,6 +368,34 @@ class TestBloombergBeapHapiParser(unittest.TestCase):
         self.assertCountEqual(df.loc['RTASYA Index', 'FUT_CHAIN'], [])
 
     @patch('qf_lib.data_providers.bloomberg_beap_hapi.bloomberg_beap_hapi_parser.gzip')
+    def test_get_chain_single_ticker_single_field__incorrect_ticker(self, mock):
+        mock.open.return_value = BytesIO(str.encode(dedent(
+            """
+            START-OF-FILE
+            ...
+            START-OF-FIELDS
+            FUT_CHAIN
+            END-OF-FIELDS
+            ...
+            START-OF-DATA
+            SECURITIES|ERROR CODE|NUM FLDS|FUT_CHAIN|
+            RTASYA Index|10|1| |
+            END-OF-DATA
+            ...
+            END-OF-FILE
+            """
+        )))
+        parser = BloombergBeapHapiParser()
+        df = parser.get_current_values(Mock(), {'FUT_CHAIN': "Bulk Format"})
+
+        self.assertEqual(type(df), QFDataFrame)
+        self.assertEqual(df.shape, (1, 1))
+
+        expected_active_tickers_str_list = ['RTASYA Index']
+        self.assertCountEqual(df.index.tolist(), expected_active_tickers_str_list)
+        self.assertCountEqual(df.loc['RTASYA Index', 'FUT_CHAIN'], [])
+
+    @patch('qf_lib.data_providers.bloomberg_beap_hapi.bloomberg_beap_hapi_parser.gzip')
     def test_get_dates_multiple_tickers_single_field(self, mock):
         mock.open.return_value = BytesIO(str.encode(dedent(
             """
