@@ -163,7 +163,7 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
 
     def get_current_values(self, tickers: Union[BloombergTicker, Sequence[BloombergTicker]],
                            fields: Union[str, Sequence[str]], override_name: str = None, override_value: str = None
-                           ) -> Union[None, float, QFSeries, QFDataFrame]:
+                           ) -> Union[None, float, str, QFSeries, QFDataFrame]:
         """
         Gets the current values of fields for given tickers.
 
@@ -290,8 +290,9 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
         }
         return price_field_dict
 
-    def get_tickers_universe(self, universe_ticker: BloombergTicker, date: datetime = None) -> List[BloombergTicker]:
-        if date and date.date() != datetime.today().date():
+    def get_tickers_universe(self, universe_ticker: BloombergTicker, date: Optional[datetime] = None) -> List[BloombergTicker]:
+        date = date or datetime.now()
+        if date.date() != datetime.today().date():
             raise ValueError("BloombergDataProvider does not provide historical tickers_universe data")
         field = 'INDX_MEMBERS'
         ticker_data = self.get_tabular_data(universe_ticker, field)

@@ -23,8 +23,10 @@ from urllib.parse import urljoin
 import pandas as pd
 import requests
 
+from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
+from qf_lib.data_providers.tickers_universe_provider import TickersUniverseProvider
 
 try:
     from beap_lib.beap_auth import Credentials, BEAPAdapter
@@ -59,7 +61,7 @@ from qf_lib.settings import Settings
 from qf_lib.starting_dir import get_starting_dir_abs_path
 
 
-class BloombergBeapHapiDataProvider(AbstractPriceDataProvider):
+class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
     """
     Data Provider which provides financial data from Bloomberg BEAP HAPI.
     """
@@ -132,7 +134,7 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider):
 
         Parameters
         ----------
-        tickers: Ticker, Sequence[Ticker]
+        tickers: BloombergTicker, Sequence[BloombergTicker]
             tickers for securities which should be retrieved
         fields: str, Sequence[str]
             fields of securities which should be retrieved
@@ -220,6 +222,27 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider):
     def supported_ticker_types(self):
         return {BloombergTicker, BloombergFutureTicker}
 
+    def get_tickers_universe(self, universe_ticker: BloombergTicker, date: Optional[datetime] = None) -> List[BloombergTicker]:
+        """
+        Parameters
+        ----------
+        universe_ticker: BloombergTicker
+            ticker that describes a specific universe, which members will be returned
+        date: datetime
+            date for which current universe members' tickers will be returned
+        """
+        date = date or datetime.now()
+        if date.date() != datetime.today().date():
+            raise ValueError(f"{self.__class__.__name__} does not provide historical tickers_universe data")
+
+        field = 'INDX_MEMBERS'
+        tickers: List[str] = self.get_current_values(universe_ticker, field)
+        tickers = [BloombergTicker(f"{t} Equity", SecurityType.STOCK, 1) for t in tickers]
+        return tickers
+
+    def get_unique_tickers(self, universe_ticker: BloombergTicker) -> List[BloombergTicker]:
+        raise ValueError(f"{self.__class__.__name__} does not provide historical tickers_universe data")
+
     def _get_futures_chain_dict(self, tickers: Union[BloombergFutureTicker, Sequence[BloombergFutureTicker]],
                                 expiration_date_fields: Union[str, Sequence[str]],
                                 universe_creation_time: datetime = None) -> Dict[FutureTicker, QFDataFrame]:
@@ -293,7 +316,7 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider):
     def get_current_values(self, tickers: Union[BloombergTicker, Sequence[BloombergTicker]],
                            fields: Union[str, Sequence[str]], universe_creation_time: datetime = None,
                            fields_overrides: Optional[List[Tuple]] = None) -> \
-            Union[None, float, QFSeries, QFDataFrame]:
+            Union[None, float, str, List, QFSeries, QFDataFrame]:
         """
         Gets from the Bloomberg HAPI the current values of fields for given tickers.
 
