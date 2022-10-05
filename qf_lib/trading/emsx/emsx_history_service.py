@@ -95,8 +95,7 @@ class EMSXHistoryService:
         return self._receive_fills_response()
 
     def _receive_fills_response(self):
-        response_events = get_response_events(self.session)
-        for event in response_events:
+        for event in get_response_events(self.session):
             for msg in event:
                 if msg.messageType() == blpapi.Name("ErrorResponse"):
                     error_code = msg.getElementAsString("ErrorCode")
@@ -104,43 +103,43 @@ class EMSXHistoryService:
                     self.logger.error(f"Error {error_code}: {error_message}")
                     raise BloombergError(f"Error {error_code}: {error_message}")
                 elif msg.messageType() == GET_FILLS_RESPONSE:
-                    transactions = []  # TODO refactor
-                    for fill in msg.getElement("Fills").values():
-                        try:
-                            transaction = self._parse_transaction(fill)
-                            transactions.append(transaction)
-                        except Exception as e:
-                            self.logger.error(e)
-                    return transactions
+                    return [self._parse_transaction(fill) for fill in msg.getElement("Fills").values()]
 
     def _parse_transaction(self, fill: blpapi.Element):
-        order_reference_id = self._parse_order_reference_id(fill)
-        order_id = fill.getElementAsInteger("OrderId")
-        fill_id = fill.getElementAsInteger("FillId")
-        price = fill.getElementAsFloat("FillPrice")
-        commission = fill.getElementAsFloat("UserFees")
+        try:
+            order_reference_id = self._parse_order_reference_id(fill)
+            order_id = fill.getElementAsInteger("OrderId")
+            fill_id = fill.getElementAsInteger("FillId")
+            price = fill.getElementAsFloat("FillPrice")
+            commission = fill.getElementAsFloat("UserFees")
+            currency = fill.getElementAsString("Currency")
 
-        date_time_of_fill = fill.getElementAsDatetime("DateTimeOfFill")
-        # Convert into UTC in order to avoid problems in case if no time zone is returned
-        if date_time_of_fill.tzinfo is None:
-            date_time_of_fill = pytz.utc.localize(date_time_of_fill)
-        local_time_of_fill = date_time_of_fill.astimezone(self._local_timezone).replace(tzinfo=None)
+            ticker = self._parse_ticker(fill)
 
-        quantity = fill.getElementAsInteger("FillShares")
-        emsx_side = fill.getElementAsString("Side")
-        side = self._map_emsx_side(emsx_side)
+            date_time_of_fill = fill.getElementAsDatetime("DateTimeOfFill")
+            # Convert into UTC in order to avoid problems in case if no time zone is returned
+            if date_time_of_fill.tzinfo is None:
+                date_time_of_fill = pytz.utc.localize(date_time_of_fill)
+            local_time_of_fill = date_time_of_fill.astimezone(self._local_timezone).replace(tzinfo=None)
 
-        transaction = EMSXTransaction(
-            int_order_id=order_reference_id,
-            ext_order_id=order_id,
-            fill_id=fill_id,
-            price=price,
-            time_value=local_time_of_fill,
-            quantity=quantity,
-            side=side,
-            commission=commission
-        )
-        return transaction
+            quantity = fill.getElementAsInteger("FillShares")
+            emsx_side = fill.getElementAsString("Side")
+            side = self._map_emsx_side(emsx_side)
+
+            return EMSXTransaction(
+                order_ref_id=order_reference_id,
+                emsx_seq=order_id,
+                fill_id=fill_id,
+                price=price,
+                time_value=local_time_of_fill,
+                quantity=quantity,
+                side=side,
+                commission=commission,
+                bbg_ticker=ticker,
+                currency=currency
+            )
+        except Exception as e:
+            self.logger.error(e)
 
     @staticmethod
     def _parse_order_reference_id(fill: blpapi.Element) -> Optional[int]:
@@ -164,3 +163,11 @@ class EMSXHistoryService:
             return emsx_side_mapping[emsx_side]
         except KeyError:
             raise AttributeError(f"Unknown side detected: '{emsx_side}'") from None
+
+    @staticmethod
+    def _parse_ticker(fill: blpapi.Element) -> str:
+        ticker = fill.getElementAsString("Ticker")
+        exchange = fill.getElementAsString("Exchange")
+        yellow_key = fill.getElementAsString("YellowKey")
+
+        return f"{ticker} {exchange} {yellow_key}"

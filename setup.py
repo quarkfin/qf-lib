@@ -55,7 +55,7 @@ setup(
         "interactive brokers": ["ibapi"],
         "bloomberg_beap_hapi": ["PyJWT>=0.2.3,<2.0.0", "retrying>=1.3.3", "beap-lib==0.0.1"],
         "blpapi": ["blpapi>=3.16.2,<3.18.0"],
-        "emsx": ["sqlalchemy>=1.4"]
+        "emsx": ["sqlalchemy>=1.4", "pytz"]
     },
     keywords='quantitative finance backtester',
     python_requires='>=3.7.1'

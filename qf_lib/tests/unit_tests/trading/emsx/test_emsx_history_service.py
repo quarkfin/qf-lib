@@ -26,7 +26,7 @@ from qf_lib.trading.emsx.utils.data_objects import EMSXTransaction
 
 class TestEMSXHistoryService(TestCase):
 
-    @patch("brokers.emsx.helpers.blpapi")
+    @patch("qf_lib.trading.emsx.helpers.blpapi")
     def setUp(self, _) -> None:
         self.service = blpapi.test.deserializeService(EMSX_HISTORY_SERVICE)
         self.request_name = blpapi.Name("GetFills")
@@ -56,6 +56,9 @@ class TestEMSXHistoryService(TestCase):
                     "FillShares": 5,
                     "Side": "B",
                     "UserFees": 1.5,
+                    "Ticker": "IBM",
+                    "Exchange": "US",
+                    "YellowKey": "Equity",
                 }
             ]
         }]
@@ -64,14 +67,16 @@ class TestEMSXHistoryService(TestCase):
         self.assertEqual(len(transactions), 1)
 
         expected_transaction = EMSXTransaction(
-            int_order_id=12345,
-            ext_order_id=1,
+            order_ref_id=12345,
+            emsx_seq=1,
             fill_id=3,
             price=138.53,
             time_value=datetime(2021, 12, 1, 11, 0),
             quantity=5,
             side="BUY",
             commission=1.5,
+            bbg_ticker="IBM US Equity",
+            currency="USD"
         )
         self.assertEqual(transactions[0], expected_transaction)
 
@@ -88,6 +93,10 @@ class TestEMSXHistoryService(TestCase):
                     "FillShares": 5,
                     "Side": "B",
                     "UserFees": 1.5,
+                    "Ticker": "IBM",
+                    "Exchange": "US",
+                    "YellowKey": "Equity",
+                    "Currency": "USD"
                 }, {
                     "OrderReferenceId": "12346",
                     "OrderId": 2,
@@ -97,6 +106,10 @@ class TestEMSXHistoryService(TestCase):
                     "FillShares": 3,
                     "Side": "S",
                     "UserFees": 1.5,
+                    "Ticker": "IBM",
+                    "Exchange": "US",
+                    "YellowKey": "Equity",
+                    "Currency": "USD"
                 }
             ]
         }]
@@ -106,23 +119,27 @@ class TestEMSXHistoryService(TestCase):
 
         expected_transactions = [
             EMSXTransaction(
-                int_order_id=12345,
-                ext_order_id=1,
+                order_ref_id=12345,
+                emsx_seq=1,
                 fill_id=3,
                 price=138.53,
                 time_value=datetime(2021, 12, 1, 11, 0),
                 quantity=5,
                 side="BUY",
-                commission=1.5
+                commission=1.5,
+                bbg_ticker="IBM US Equity",
+                currency="USD"
             ), EMSXTransaction(
-                int_order_id=12346,
-                ext_order_id=2,
+                order_ref_id=12346,
+                emsx_seq=2,
                 fill_id=3,
                 price=137.53,
                 time_value=datetime(2021, 12, 1, 11, 10),
                 quantity=3,
                 side="SELL",
-                commission=1.5
+                commission=1.5,
+                bbg_ticker="IBM US Equity",
+                currency="USD"
             )]
         self.assertCountEqual(transactions, expected_transactions)
 
@@ -138,6 +155,10 @@ class TestEMSXHistoryService(TestCase):
                     "FillShares": 5,
                     "Side": "B",
                     "UserFees": 1.5,
+                    "Ticker": "IBM",
+                    "Exchange": "US",
+                    "YellowKey": "Equity",
+                    "Currency": "USD"
                 }, {
                     "OrderReferenceId": "12346",
                     "OrderId": 2,
@@ -147,6 +168,10 @@ class TestEMSXHistoryService(TestCase):
                     "FillShares": 3,
                     "Side": "X",
                     "UserFees": 1.5,
+                    "Ticker": "IBM",
+                    "Exchange": "US",
+                    "YellowKey": "Equity",
+                    "Currency": "USD"
                 }
             ]
         }]
@@ -166,6 +191,10 @@ class TestEMSXHistoryService(TestCase):
                     "FillShares": 5,
                     "Side": "B",
                     "UserFees": 1.5,
+                    "Ticker": "IBM",
+                    "Exchange": "US",
+                    "YellowKey": "Equity",
+                    "Currency": "USD"
                 },
             ]
         }]

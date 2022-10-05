@@ -17,6 +17,7 @@ from blpapi import Session, Identity
 from qf_lib.backtesting.order.execution_style import ExecutionStyle, MarketOrder, MarketOnCloseOrder
 from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.data_providers.bloomberg.helpers import get_response_events
+from qf_lib.trading.emsx.names import AUTHORIZATION_SERVICE, AUTHORIZATION_SUCCESS, AUTHORIZATION_FAILURE
 
 
 def initialize_session(host: str, port: int):

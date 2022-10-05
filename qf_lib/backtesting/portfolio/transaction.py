@@ -34,6 +34,8 @@ class Transaction:
         price at which the trade was filled
     commission: float
         brokerage commission for carrying out the trade. It is always a positive number
+    currency: str
+        code identyfiying the currency of the transaction
     """
 
     def __init__(self, transaction_fill_time: datetime, ticker: Ticker, quantity: float, price: float,
