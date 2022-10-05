@@ -105,7 +105,8 @@ class EMSXHistoryService:
                     self.logger.error(f"Error {error_code}: {error_message}")
                     raise BloombergError(f"Error {error_code}: {error_message}")
                 elif msg.messageType() == GET_FILLS_RESPONSE:
-                    return [self._parse_transaction(fill) for fill in msg.getElement("Fills").values()]
+                    transactions = [self._parse_transaction(fill) for fill in msg.getElement("Fills").values()]
+                    return [t for t in transactions if t is not None]
 
     def _parse_transaction(self, fill: blpapi.Element):
         try:
