@@ -60,6 +60,8 @@ class PeriodicEvent(TimeEvent, metaclass=ABCMeta):
     frequency = None  # type: Frequency
     _events_list = None  # List[RegularTimeEvent]
 
+    _run_over_weekends: bool = True
+
     def __init__(self):
         if None in (self.start_time, self.end_time):
             raise ValueError("set up the start and end time by calling set_start_and_end_time() before using the event")
@@ -95,17 +97,23 @@ class PeriodicEvent(TimeEvent, metaclass=ABCMeta):
 
         for _trigger_time in _trigger_time_list:
             # Define a custom regular time event
-            self._events_list.append(self._PeriodicRegularEvent(_trigger_time, self.start_time, self.end_time))
+            self._events_list.append(self._PeriodicRegularEvent(
+                trigger_time=_trigger_time,
+                start_time=self.start_time,
+                end_time=self.end_time,
+                run_on_weekends=self._run_over_weekends
+            ))
 
     class _PeriodicRegularEvent(RegularTimeEvent):
 
         _trigger_time = None
 
-        def __init__(self, trigger_time, start_time, end_time):
+        def __init__(self, trigger_time, start_time, end_time, run_on_weekends: bool):
             self._trigger_time = trigger_time
             self._start_time = start_time
             self._end_time = end_time
             self._trigger_time_rule = RegularDateTimeRule(**trigger_time)
+            self._run_on_weekends = run_on_weekends
 
         @classmethod
         def trigger_time(cls) -> RelativeDelta:
@@ -130,6 +138,9 @@ class PeriodicEvent(TimeEvent, metaclass=ABCMeta):
                 # current time to the next start_time date.
                 if not _within_time_frame(_next_trigger_time):
                     _next_trigger_time = _start_time_rule.next_trigger_time(_next_trigger_time)
+
+            if not self._run_on_weekends and _next_trigger_time.weekday() in (5, 6):
+                _next_trigger_time = self.next_trigger_time(_next_trigger_time)
 
             return _next_trigger_time
 
@@ -256,3 +267,8 @@ class PeriodicEvent(TimeEvent, metaclass=ABCMeta):
         # Create a list of time dictionaries for each field and its value, given by the freq_range
         time_dictionaries = [_generate_time_dict(field, field_value, self.start_time) for field_value in freq_range]
         return time_dictionaries
+
+    @classmethod
+    def exclude_weekends(cls):
+        """ If called, the periodic event will not be notified over the weekends. """
+        cls._run_over_weekends = False
