@@ -69,6 +69,8 @@ class EMSXHistoryService:
     def disconnect(self):
         if self.connected and not self.session.stop():
             self.logger.error("Cannot stop the session")
+        else:
+            self.connected = False
 
     def get_fills(self, start_date: datetime, end_date: Optional[datetime] = None) -> \
             List[EMSXTransaction]:
