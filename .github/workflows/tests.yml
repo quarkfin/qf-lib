@@ -10,6 +10,7 @@ on:
   pull_request:
     branches:
     - master
+    - 'feature/**'
 
 jobs:
   build:
