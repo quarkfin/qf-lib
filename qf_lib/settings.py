@@ -54,8 +54,9 @@ class Settings:
             secret_settings = json.loads(os.environ['QUANTFIN_SECRET'])
             self.logger.info("Using QUANTFIN_SECRET")
         else:
-            raise AttributeError("No secret settings were defined. Either set the QUANTFIN_SECRET environment"
-                                 " variable or get the secret_settings.json file.")
+            secret_settings = {}
+            self.logger.info("No secret settings were defined. Using empty secret settings by default. If needed, "
+                             "set the QUANTFIN_SECRET environment variable or get the secret_settings.json file.")
 
         return self._merge(public_settings, secret_settings)
 
