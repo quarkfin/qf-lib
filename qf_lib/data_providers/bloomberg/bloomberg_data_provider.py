@@ -30,6 +30,7 @@ from qf_lib.containers.futures.future_tickers.bloomberg_future_ticker import Blo
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
+from qf_lib.data_providers.bloomberg.helpers import convert_to_bloomberg_date
 from qf_lib.data_providers.helpers import normalize_data_array, cast_dataframe_to_proper_type
 from qf_lib.data_providers.tickers_universe_provider import TickersUniverseProvider
 from qf_lib.settings import Settings
@@ -292,13 +293,10 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
 
     def get_tickers_universe(self, universe_ticker: BloombergTicker, date: Optional[datetime] = None) -> List[BloombergTicker]:
         date = date or datetime.now()
-        if date.date() != datetime.today().date():
-            raise ValueError("BloombergDataProvider does not provide historical tickers_universe data")
-        field = 'INDX_MEMBERS'
-        ticker_data = self.get_tabular_data(universe_ticker, field)
-        tickers = [BloombergTicker(fields['Member Ticker and Exchange Code'] + " Equity", SecurityType.STOCK, 1)
-                   for fields in ticker_data]
-        return tickers
+        field = 'INDX_MWEIGHT_HIST'
+        ticker_data = self.get_tabular_data(universe_ticker, field, override_names="END_DT",
+                                            override_values=convert_to_bloomberg_date(date))
+        return [BloombergTicker(fields['Index Member'] + " Equity", SecurityType.STOCK, 1) for fields in ticker_data]
 
     def get_unique_tickers(self, universe_ticker: Ticker) -> List[Ticker]:
         raise ValueError("BloombergDataProvider does not provide historical tickers_universe data")
