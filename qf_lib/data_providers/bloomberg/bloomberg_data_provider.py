@@ -30,7 +30,6 @@ from qf_lib.containers.futures.future_tickers.bloomberg_future_ticker import Blo
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
-from qf_lib.data_providers.bloomberg.helpers import convert_to_bloomberg_date
 from qf_lib.data_providers.helpers import normalize_data_array, cast_dataframe_to_proper_type
 from qf_lib.data_providers.tickers_universe_provider import TickersUniverseProvider
 from qf_lib.settings import Settings
@@ -44,6 +43,7 @@ try:
     from qf_lib.data_providers.bloomberg.tabular_data_provider import TabularDataProvider
     from qf_lib.data_providers.bloomberg.exceptions import BloombergError
     from qf_lib.data_providers.bloomberg.bloomberg_names import REF_DATA_SERVICE_URI
+    from qf_lib.data_providers.bloomberg.helpers import convert_to_bloomberg_date
 
     is_blpapi_installed = True
 except ImportError:
