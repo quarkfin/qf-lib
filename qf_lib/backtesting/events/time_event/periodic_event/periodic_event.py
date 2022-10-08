@@ -140,6 +140,7 @@ class PeriodicEvent(TimeEvent, metaclass=ABCMeta):
                     _next_trigger_time = _start_time_rule.next_trigger_time(_next_trigger_time)
 
             if not self._run_on_weekends and _next_trigger_time.weekday() in (5, 6):
+                # recursive call to get the next valid trigger time
                 _next_trigger_time = self.next_trigger_time(_next_trigger_time)
 
             return _next_trigger_time
