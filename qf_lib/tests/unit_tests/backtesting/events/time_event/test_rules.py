@@ -147,6 +147,36 @@ class TestRules(TestCase):
         now = periodic_15_minutes_event.next_trigger_time(now)
         self.assertEqual(str_to_date("2018-01-02 9:45:00.000000", DateFormat.FULL_ISO), now)
 
+    def test_exclude_weekends__periodic_event(self):
+        class Periodic15MinutesEvent(PeriodicEvent):
+            frequency = Frequency.MIN_15
+            start_time = {"hour": 9, "minute": 45, "second": 0}
+            end_time = {"hour": 10, "minute": 0, "second": 0}
+
+            def notify(self, listener):
+                pass
+
+        Periodic15MinutesEvent.exclude_weekends()
+        periodic_event = Periodic15MinutesEvent()
+
+        # 11th of June 2022 is a Saturday
+        self.timer.set_current_time(str_to_date("2022-06-11 00:00:00.000000", DateFormat.FULL_ISO))
+        now = self.timer.now()
+        next_trigger_time = periodic_event.next_trigger_time(now)
+        self.assertEqual(str_to_date("2022-06-13 09:45:00.000000", DateFormat.FULL_ISO), next_trigger_time)
+
+        # 12th of June 2022 is a Sunday
+        self.timer.set_current_time(str_to_date("2022-06-12 00:00:00.000000", DateFormat.FULL_ISO))
+        now = self.timer.now()
+        next_trigger_time = periodic_event.next_trigger_time(now)
+        self.assertEqual(str_to_date("2022-06-13 09:45:00.000000", DateFormat.FULL_ISO), next_trigger_time)
+
+        # 13th of June 2022 is a Monday
+        self.timer.set_current_time(str_to_date("2022-06-13 00:00:00.000000", DateFormat.FULL_ISO))
+        now = self.timer.now()
+        next_trigger_time = periodic_event.next_trigger_time(now)
+        self.assertEqual(str_to_date("2022-06-13 09:45:00.000000", DateFormat.FULL_ISO), next_trigger_time)
+
     def test_single_time_events(self):
         self.timer.set_current_time(str_to_date("2018-01-01 13:00:00.000000", DateFormat.FULL_ISO))
         now = self.timer.now()
