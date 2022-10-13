@@ -23,7 +23,6 @@ from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.plotting.helpers.create_bar_chart import create_bar_chart
-from qf_lib.starting_dir import set_starting_dir_abs_path
 
 MAX_RECESSION_LENGTH = 6
 MAX_NON_RECESSION_LENGTH = 20
@@ -52,9 +51,6 @@ def rand_recession(series):
 
 
 def main():
-    # set the starting directory path below unless you set environment variable QF_STARTING_DIRECTORY to proper value
-    # set_starting_dir_abs_path(r"absolute/path/to/qf-lib")
-
     # add custom style
     plt.style.use(['seaborn-poster', 'macrostyle'])
 

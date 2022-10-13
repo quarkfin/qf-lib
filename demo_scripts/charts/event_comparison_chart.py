@@ -26,6 +26,7 @@ from qf_lib.plotting.helpers.create_event_comparison_chart import create_event_c
 start_date = str_to_date('2006-01-01')
 end_date = str_to_date('2018-12-31')
 
+
 def main():
     data_provider = daily_data_provider
     prices_tms = data_provider.get_price(DummyTicker('AAA'), PriceField.Close, start_date, end_date)

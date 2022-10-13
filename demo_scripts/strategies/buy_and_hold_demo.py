@@ -27,7 +27,6 @@ from qf_lib.backtesting.trading_session.backtest_trading_session_builder import 
 from qf_lib.backtesting.trading_session.trading_session import TradingSession
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
-from qf_lib.starting_dir import set_starting_dir_abs_path
 
 
 class BuyAndHoldStrategy(AbstractStrategy):

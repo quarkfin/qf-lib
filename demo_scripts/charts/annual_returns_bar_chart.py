@@ -19,7 +19,6 @@ from demo_scripts.demo_configuration.demo_data_provider import daily_data_provid
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.plotting.helpers.create_returns_bar_chart import create_returns_bar_chart
-from qf_lib.starting_dir import set_starting_dir_abs_path
 
 start_date = str_to_date('2006-01-01')
 end_date = str_to_date('2016-12-31')
@@ -28,9 +27,6 @@ ticker = DummyTicker('AAA')
 
 
 def main():
-    # set the starting directory path below unless you set environment variable QF_STARTING_DIRECTORY to proper value
-    # set_starting_dir_abs_path(r"absolute/path/to/qf-lib")
-
     data_provider = daily_data_provider
     series = data_provider.get_price(ticker, PriceField.Close, start_date=start_date, end_date=end_date)
 
