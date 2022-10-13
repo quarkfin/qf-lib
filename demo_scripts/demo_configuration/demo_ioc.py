@@ -33,10 +33,6 @@ def _get_ioc_container():
     from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
     from qf_lib.documents_utils.excel.excel_exporter import ExcelExporter
     from qf_lib.documents_utils.excel.excel_importer import ExcelImporter
-    from qf_lib.data_providers.bloomberg import BloombergDataProvider
-    from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
-    from qf_lib.data_providers.haver import HaverDataProvider
-    from qf_lib.data_providers.quandl.quandl_data_provider import QuandlDataProvider
     from qf_lib.documents_utils.email_publishing.email_publisher import EmailPublisher
     from qf_lib.settings import Settings
 
@@ -44,12 +40,6 @@ def _get_ioc_container():
 
     # PUBLISHERS
     builder.register_class(EmailPublisher, component_scope=SingleInstance)
-
-    # DATA PROVIDERS
-    builder.register_class(QuandlDataProvider, component_scope=SingleInstance)
-    builder.register_class(HaverDataProvider, component_scope=SingleInstance)
-    builder.register_class(BloombergDataProvider, component_scope=SingleInstance)
-    builder.register_class(GeneralPriceProvider, component_scope=SingleInstance)
 
     # MISCELLANEOUS COMPONENTS
     builder.register_class(BacktestTradingSessionBuilder, component_scope=SingleInstance)

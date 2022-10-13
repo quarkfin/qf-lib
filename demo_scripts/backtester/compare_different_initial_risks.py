@@ -16,6 +16,8 @@ from time import time
 from typing import List
 
 from demo_scripts.backtester.moving_average_alpha_model import MovingAverageAlphaModel
+from demo_scripts.common.utils.dummy_ticker import DummyTicker
+from demo_scripts.demo_configuration.demo_data_provider import daily_data_provider
 from demo_scripts.demo_configuration.demo_ioc import container
 from qf_lib.analysis.trade_analysis.trades_generator import TradesGenerator
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
@@ -29,15 +31,16 @@ from qf_lib.backtesting.strategies.alpha_model_strategy import AlphaModelStrateg
 from qf_lib.backtesting.trading_session.backtest_trading_session import BacktestTradingSession
 from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
 from qf_lib.common.enums.frequency import Frequency
-from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
+from qf_lib.starting_dir import set_starting_dir_abs_path
 
 
 def _create_trading_session(init_risk: float):
-    start_date = str_to_date('2013-01-01')
+    start_date = str_to_date('2015-01-01')
     end_date = str_to_date('2016-12-31')
 
     session_builder = container.resolve(BacktestTradingSessionBuilder)  # type: BacktestTradingSessionBuilder
+    session_builder.set_data_provider(daily_data_provider)
     session_builder.set_position_sizer(InitialRiskPositionSizer, initial_risk=init_risk)
     session_builder.set_monitor_settings(BacktestMonitorSettings.no_stats())
     session_builder.set_backtest_name("Initial Risk Testing - {}".format(init_risk))
@@ -47,14 +50,13 @@ def _create_trading_session(init_risk: float):
 
 
 def get_trade_rets_values(ts: BacktestTradingSession, model: AlphaModel) -> List[float]:
-    model_tickers_dict = {model: [BloombergTicker('SVXY US Equity')]}
+    model_tickers_dict = {model: [DummyTicker('AAA')]}
 
     strategy = AlphaModelStrategy(ts, model_tickers_dict, use_stop_losses=True)
 
     CalculateAndPlaceOrdersRegularEvent.set_daily_default_trigger_time()
     strategy.subscribe(CalculateAndPlaceOrdersRegularEvent)
 
-    ts.use_data_preloading([BloombergTicker('SVXY US Equity')])
     ts.start_trading()
 
     trades_generator = TradesGenerator()
@@ -64,7 +66,11 @@ def get_trade_rets_values(ts: BacktestTradingSession, model: AlphaModel) -> List
 
 
 def main():
-    stats_factory = InitialRiskStatsFactory(max_accepted_dd=0.1, target_return=0.02)
+    # set the starting directory path below unless you set environment variable QF_STARTING_DIRECTORY to proper value
+    # set_starting_dir_abs_path(r"absolute/path/to/qf-lib")
+    set_starting_dir_abs_path(r"C:\Development\qf-lib")
+
+    stats_factory = InitialRiskStatsFactory(max_accepted_dd=0.3, target_return=0.02)
     initial_risks_list = [0.001, 0.005, 0.01, 0.02, 0.03, 0.05, 0.1]
 
     scenarios_generator = ScenariosGenerator()
@@ -78,7 +84,7 @@ def main():
     for init_risk in initial_risks_list:
         start_time = time()
         ts = _create_trading_session(init_risk)
-        alpha_model = MovingAverageAlphaModel(5, 20, 1.25, ts.data_provider)  # Change to a different alpha model to test it
+        alpha_model = MovingAverageAlphaModel(5, 20, 1.25, ts.data_provider)  # Alpha model that is being tested
         trade_rets_values = get_trade_rets_values(ts, alpha_model)
         scenarios_df = scenarios_generator.make_scenarios(
             trade_rets_values, scenarios_length=100, num_of_scenarios=10000
