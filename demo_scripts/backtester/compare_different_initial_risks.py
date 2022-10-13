@@ -36,8 +36,8 @@ from qf_lib.starting_dir import set_starting_dir_abs_path
 
 
 def _create_trading_session(init_risk: float):
-    start_date = str_to_date('2015-01-01')
-    end_date = str_to_date('2016-12-31')
+    start_date = str_to_date('2016-01-01')
+    end_date = str_to_date('2017-12-31')
 
     session_builder = container.resolve(BacktestTradingSessionBuilder)  # type: BacktestTradingSessionBuilder
     session_builder.set_data_provider(daily_data_provider)
@@ -50,7 +50,7 @@ def _create_trading_session(init_risk: float):
 
 
 def get_trade_rets_values(ts: BacktestTradingSession, model: AlphaModel) -> List[float]:
-    model_tickers_dict = {model: [DummyTicker('AAA')]}
+    model_tickers_dict = {model: [DummyTicker('BBB')]}
 
     strategy = AlphaModelStrategy(ts, model_tickers_dict, use_stop_losses=True)
 
@@ -60,8 +60,10 @@ def get_trade_rets_values(ts: BacktestTradingSession, model: AlphaModel) -> List
     ts.start_trading()
 
     trades_generator = TradesGenerator()
-    trades = trades_generator.create_trades_from_backtest_positions(ts.portfolio.closed_positions())
-    returns_of_trades = [t.pnl for t in trades]
+    positions = ts.portfolio.closed_positions()
+    portfolio_values = ts.portfolio.portfolio_eod_series()
+    trades = trades_generator.create_trades_from_backtest_positions(positions, portfolio_values)
+    returns_of_trades = [t.percentage_pnl for t in trades]
     return returns_of_trades
 
 
@@ -70,8 +72,8 @@ def main():
     # set_starting_dir_abs_path(r"absolute/path/to/qf-lib")
     set_starting_dir_abs_path(r"C:\Development\qf-lib")
 
-    stats_factory = InitialRiskStatsFactory(max_accepted_dd=0.3, target_return=0.02)
-    initial_risks_list = [0.001, 0.005, 0.01, 0.02, 0.03, 0.05, 0.1]
+    stats_factory = InitialRiskStatsFactory(max_accepted_dd=0.3, target_return=0.1)
+    initial_risks_list = [0.001, 0.005, 0.01, 0.02, 0.05]
 
     scenarios_generator = ScenariosGenerator()
     scenarios_df_list = []
@@ -84,10 +86,10 @@ def main():
     for init_risk in initial_risks_list:
         start_time = time()
         ts = _create_trading_session(init_risk)
-        alpha_model = MovingAverageAlphaModel(5, 20, 1.25, ts.data_provider)  # Alpha model that is being tested
+        alpha_model = MovingAverageAlphaModel(10, 30, 2, ts.data_provider)  # Alpha model that is being tested
         trade_rets_values = get_trade_rets_values(ts, alpha_model)
         scenarios_df = scenarios_generator.make_scenarios(
-            trade_rets_values, scenarios_length=100, num_of_scenarios=10000
+            trade_rets_values, scenarios_length=100, num_of_scenarios=1000
         )
 
         end_time = time()
