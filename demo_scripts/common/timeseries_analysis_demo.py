@@ -14,14 +14,13 @@
 
 import pandas as pd
 
-from demo_scripts.demo_configuration.demo_ioc import container
+from demo_scripts.common.utils.dummy_ticker import DummyTicker
+from demo_scripts.demo_configuration.demo_data_provider import daily_data_provider
 from qf_lib.analysis.timeseries_analysis.timeseries_analysis import TimeseriesAnalysis
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
-from qf_lib.common.tickers.tickers import QuandlTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.documents_utils.document_exporting.element.table import Table
-from qf_lib.data_providers.quandl.quandl_data_provider import QuandlDataProvider
 
 start_date = str_to_date('2016-01-01')
 end_date = str_to_date('2017-12-31')
@@ -29,12 +28,12 @@ end_date = str_to_date('2017-12-31')
 pd.options.display.max_rows = 100000
 pd.options.display.max_columns = 100
 
-ticker = QuandlTicker('IBM', 'WIKI')
+ticker = DummyTicker('AAA')
 many_tickers = [
-    QuandlTicker('MSFT', 'WIKI'),
-    QuandlTicker('AAPL', 'WIKI'),
-    QuandlTicker('EA', 'WIKI'),
-    QuandlTicker('IBM', 'WIKI')]
+    DummyTicker('AAA'),
+    DummyTicker('BBB'),
+    DummyTicker('CCC'),
+    DummyTicker('DDD')]
 
 
 def _single_series_usage(data_provider):
@@ -64,7 +63,7 @@ def _pdf_usage(ta):
 
 
 def main():
-    data_provider = container.resolve(QuandlDataProvider)  # type: QuandlDataProvider
+    data_provider = daily_data_provider
 
     ta = _single_series_usage(data_provider)
     df = _dataframe_usage(data_provider)

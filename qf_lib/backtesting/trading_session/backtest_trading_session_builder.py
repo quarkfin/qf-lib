@@ -32,8 +32,8 @@ from qf_lib.backtesting.execution_handler.slippage.base import Slippage
 from qf_lib.backtesting.execution_handler.slippage.price_based_slippage import PriceBasedSlippage
 from qf_lib.backtesting.monitoring.backtest_monitor import BacktestMonitorSettings, BacktestMonitor
 from qf_lib.backtesting.monitoring.backtest_result import BacktestResult
-from qf_lib.backtesting.order.order_rounder import OrderRounder
 from qf_lib.backtesting.order.order_factory import OrderFactory
+from qf_lib.backtesting.order.order_rounder import OrderRounder
 from qf_lib.backtesting.orders_filter.orders_filter import OrdersFilter
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.backtesting.position_sizer.position_sizer import PositionSizer
@@ -48,7 +48,6 @@ from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.data_provider import DataProvider
-from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
 from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.documents_utils.excel.excel_exporter import ExcelExporter
 from qf_lib.settings import Settings
@@ -69,8 +68,6 @@ class BacktestTradingSessionBuilder:
 
     Parameters
     ------------
-    data_provider: DataProvider
-        data provider used to download all fields and prices used during trading
     settings: Settings
         object containing all necessary settings, used for example for connection purposes
     pdf_exporter: PDFExporter
@@ -79,8 +76,7 @@ class BacktestTradingSessionBuilder:
         used to export trading data to Excel
     """
 
-    def __init__(self, data_provider: GeneralPriceProvider, settings: Settings, pdf_exporter: PDFExporter,
-                 excel_exporter: ExcelExporter):
+    def __init__(self, settings: Settings, pdf_exporter: PDFExporter, excel_exporter: ExcelExporter):
         self._logger = qf_logger.getChild(self.__class__.__name__)
 
         self._backtest_name = "Backtest Results"
@@ -103,7 +99,7 @@ class BacktestTradingSessionBuilder:
         self._orders_filter_types_params = []  # type: List[Tuple[Type[OrdersFilter], Dict]]
 
         self._signals_register = None
-        self._data_provider = data_provider
+        self._data_provider = None
         self._settings = settings
         self._pdf_exporter = pdf_exporter
         self._excel_exporter = excel_exporter
@@ -376,6 +372,8 @@ class BacktestTradingSessionBuilder:
         return event_manager
 
     def _create_data_handler(self, data_provider, timer):
+        assert data_provider is not None, "Data provider is None. Set data_provider using set_data_provider() " \
+                                          "method before building BacktestTradingSession"
         if self._frequency == Frequency.MIN_1:
             data_handler = IntradayDataHandler(data_provider, timer)
         elif self._frequency == Frequency.DAILY:

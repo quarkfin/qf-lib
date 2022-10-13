@@ -14,21 +14,20 @@
 
 import matplotlib.pyplot as plt
 
-from demo_scripts.demo_configuration.demo_ioc import container
+from demo_scripts.common.utils.dummy_ticker import DummyTicker
+from demo_scripts.demo_configuration.demo_data_provider import daily_data_provider
 from qf_lib.common.enums.price_field import PriceField
-from qf_lib.common.tickers.tickers import QuandlTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
-from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
 from qf_lib.plotting.helpers.create_returns_bar_chart import create_returns_bar_chart
 
-start_date = str_to_date('2000-01-01')
-end_date = str_to_date('2016-05-29')
+start_date = str_to_date('2006-01-01')
+end_date = str_to_date('2016-12-31')
 
-ticker = QuandlTicker('AAPL', 'WIKI')
+ticker = DummyTicker('AAA')
 
 
 def main():
-    data_provider = container.resolve(GeneralPriceProvider)
+    data_provider = daily_data_provider
     series = data_provider.get_price(ticker, PriceField.Close, start_date=start_date, end_date=end_date)
 
     annual_rets_chart = create_returns_bar_chart(series)

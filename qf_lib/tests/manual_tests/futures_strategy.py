@@ -145,7 +145,7 @@ def run_strategy(data_provider: DataProvider) -> Tuple[float, str]:
 
     # ----- build trading session ----- #
     settings = get_test_settings()
-    session_builder = BacktestTradingSessionBuilder(data_provider, settings, PDFExporter(settings),
+    session_builder = BacktestTradingSessionBuilder(settings, PDFExporter(settings),
                                                     ExcelExporter(settings))
     session_builder.set_backtest_name('Simple Futures Strategy')
     session_builder.set_position_sizer(InitialRiskPositionSizer, initial_risk=initial_risk)
