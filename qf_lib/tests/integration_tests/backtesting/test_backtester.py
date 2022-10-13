@@ -17,8 +17,6 @@ from unittest import TestCase
 
 import matplotlib
 
-from demo_scripts.common.utils.dummy_ticker import DummyTicker
-from demo_scripts.demo_configuration.demo_data_provider import daily_data_provider
 from qf_lib.backtesting.events.time_event.regular_time_event.calculate_and_place_orders_event import \
     CalculateAndPlaceOrdersRegularEvent
 from qf_lib.backtesting.order.execution_style import MarketOrder
@@ -27,9 +25,12 @@ from qf_lib.backtesting.strategies.abstract_strategy import AbstractStrategy
 from qf_lib.backtesting.trading_session.trading_session import TradingSession
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
+from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
+from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
 from qf_lib.tests.helpers.testing_tools.containers_comparison import assert_series_equal
 from qf_lib.tests.integration_tests.backtesting.trading_session_for_tests import TradingSessionForTests
+from qf_lib.tests.integration_tests.connect_to_data_provider import get_data_provider
 
 matplotlib.use("Agg")
 
@@ -39,7 +40,7 @@ class BuyAndHoldStrategy(AbstractStrategy):
     A testing strategy that simply purchases (longs) an asset as soon as it starts and then holds until the completion
     of a backtest.
     """
-    AAA_TICKER = DummyTicker('AAA')
+    MICROSOFT_TICKER = BloombergTicker("MSFT US Equity")
 
     def __init__(self, ts: TradingSession):
         super().__init__(ts)
@@ -52,7 +53,8 @@ class BuyAndHoldStrategy(AbstractStrategy):
 
     def calculate_signals(self):
         if not self.invested:
-            orders = self.order_factory.percent_orders({self.AAA_TICKER: 1.0}, MarketOrder(), TimeInForce.GTC)
+            orders = self.order_factory.percent_orders({self.MICROSOFT_TICKER: 1.0}, MarketOrder(),
+                                                       TimeInForce.GTC)
             self.broker.place_orders(orders)
             self.invested = True
 
@@ -60,17 +62,17 @@ class BuyAndHoldStrategy(AbstractStrategy):
 class TestBacktester(TestCase):
     def setUp(self):
         try:
-            self.data_provider = daily_data_provider
+            self.data_provider = get_data_provider()
         except Exception as e:
             raise self.skipTest(e)
 
     def test_backtester_with_buy_and_hold_strategy(self):
-        start_date = str_to_date("2010-01-03")
+        start_date = str_to_date("2010-01-01")
         end_date = str_to_date("2010-02-01")
-        data_provider = daily_data_provider
+        data_provider = GeneralPriceProvider(self.data_provider, None, None)
 
         msft_prices = data_provider.get_price(
-            BuyAndHoldStrategy.AAA_TICKER, fields=[PriceField.Open, PriceField.Close],
+            BuyAndHoldStrategy.MICROSOFT_TICKER, fields=[PriceField.Open, PriceField.Close],
             start_date=str_to_date("2009-12-28"), end_date=str_to_date("2010-02-01")
         )
 
@@ -83,6 +85,7 @@ class TestBacktester(TestCase):
         CalculateAndPlaceOrdersRegularEvent.set_daily_default_trigger_time()
         CalculateAndPlaceOrdersRegularEvent.exclude_weekends()
         strategy.subscribe(CalculateAndPlaceOrdersRegularEvent)
+        strategy = BuyAndHoldStrategy(ts)
 
         # Set up the backtest
         ts.start_trading()
