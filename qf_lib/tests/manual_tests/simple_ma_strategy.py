@@ -81,7 +81,7 @@ def run_strategy(data_provider: DataProvider) -> Tuple[float, str]:
     end_date = str_to_date("2011-01-01")
 
     settings = get_test_settings()
-    session_builder = BacktestTradingSessionBuilder(data_provider, settings, PDFExporter(settings),
+    session_builder = BacktestTradingSessionBuilder(settings, PDFExporter(settings),
                                                     ExcelExporter(settings))
     session_builder.set_backtest_name('Simple_MA')
     session_builder.set_initial_cash(1000000)

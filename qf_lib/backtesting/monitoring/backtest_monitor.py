@@ -247,8 +247,13 @@ class BacktestMonitor(AbstractMonitor):
     @ErrorHandling.error_logging
     def _print_stats_to_console(self, portfolio_tms):
         if self._monitor_settings.print_stats_to_console:
-            ta = TimeseriesAnalysis(portfolio_tms, frequency=Frequency.DAILY)
-            print(TimeseriesAnalysis.values_in_table(ta))
+            if self.benchmark_tms is None:
+                ta = TimeseriesAnalysis(portfolio_tms, frequency=Frequency.DAILY)
+                print(TimeseriesAnalysis.values_in_table(ta))
+            else:
+                ta_portfolio = TimeseriesAnalysis(portfolio_tms, frequency=Frequency.DAILY)
+                ta_benchmark = TimeseriesAnalysis(self.benchmark_tms, frequency=Frequency.DAILY)
+                print(TimeseriesAnalysis.values_in_table([ta_portfolio, ta_benchmark]))
 
     @ErrorHandling.error_logging
     def _issue_trade_analysis_sheet(self):

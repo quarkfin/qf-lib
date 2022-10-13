@@ -304,11 +304,13 @@ class DataProvider(object, metaclass=ABCMeta):
             frequency_delta = to_offset(frequency.to_pandas_freq()).delta.value
             new_start_date = Timestamp(math.ceil(Timestamp(start_date).value / frequency_delta) * frequency_delta) \
                 .to_pydatetime()
+            if new_start_date != start_date:
+                self.logger.info(f"Adjusting the starting date to {new_start_date} from {start_date}.")
         else:
             new_start_date = start_date + RelativeDelta(hour=0, minute=0, second=0, microsecond=0)
+            if new_start_date.date() != start_date.date():
+                self.logger.info(f"Adjusting the starting date to {new_start_date} from {start_date}.")
 
-        if new_start_date != start_date:
-            self.logger.info(f"Adjusting the starting date to {new_start_date} from {start_date}.")
         return new_start_date
 
     @staticmethod

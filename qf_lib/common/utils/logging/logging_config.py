@@ -76,6 +76,7 @@ def add_file_handler(logger: logging.Logger, logging_level, log_dir: str, log_fi
         file_logger.setFormatter(formatter)
         file_logger.setLevel(logging_level)
         logger.addHandler(file_logger)
+        logger.propagate = False
 
 
 def add_console_output_handler(logger: logging.Logger, logging_level):
