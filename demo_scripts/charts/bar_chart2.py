@@ -17,13 +17,13 @@ import random
 
 from matplotlib import pyplot as plt
 
-from demo_scripts.demo_configuration.demo_ioc import container
+from demo_scripts.common.utils.dummy_ticker import DummyTicker
+from demo_scripts.demo_configuration.demo_data_provider import daily_data_provider
 from qf_lib.common.enums.price_field import PriceField
-from qf_lib.common.tickers.tickers import QuandlTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.containers.series.qf_series import QFSeries
-from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
 from qf_lib.plotting.helpers.create_bar_chart import create_bar_chart
+from qf_lib.starting_dir import set_starting_dir_abs_path
 
 MAX_RECESSION_LENGTH = 6
 MAX_NON_RECESSION_LENGTH = 20
@@ -52,22 +52,26 @@ def rand_recession(series):
 
 
 def main():
+    # set the starting directory path below unless you set environment variable QF_STARTING_DIRECTORY to proper value
+    # set_starting_dir_abs_path(r"absolute/path/to/qf-lib")
+
+    # add custom style
     plt.style.use(['seaborn-poster', 'macrostyle'])
 
-    data = container.resolve(GeneralPriceProvider)
+    # get data provider
+    data_provider = daily_data_provider
 
-    start_date = str_to_date('2016-01-01')
+    start_date = str_to_date('2015-01-01')
     end_date = str_to_date('2016-11-20')
 
-    spx_tms = data.get_price(QuandlTicker('AAPL', 'WIKI'), PriceField.Close, start_date, end_date)
-    spx_tms = spx_tms.pct_change()
+    dummy_tms = data_provider.get_price(DummyTicker('AAA'), PriceField.Close, start_date, end_date)
+    dummy_tms = dummy_tms.pct_change()
 
-    recession = rand_recession(spx_tms)
-    names = ["Quarter on quarter annualised,  (SA, Chained 2009, %)",
-             "Year on year  (SA, Chained 2009, %)", None]
+    recession = rand_recession(dummy_tms)
+    names = ["Quarter on quarter annualised", "Year on year", None]
 
-    chart = create_bar_chart([spx_tms], names,
-                             "US Real Gross Domestic Product Growth (%)", [spx_tms], recession, quarterly=False,
+    chart = create_bar_chart([dummy_tms], names,
+                             "Annual and Quarterly changes (%)", [dummy_tms], recession, quarterly=False,
                              start_x=datetime.datetime.strptime("2015", "%Y"))
     chart.plot()
     plt.show(block=True)

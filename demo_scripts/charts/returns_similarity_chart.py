@@ -12,24 +12,23 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-from datetime import datetime
-
 import matplotlib.pyplot as plt
 
-from demo_scripts.demo_configuration.demo_ioc import container
+from demo_scripts.common.utils.dummy_ticker import DummyTicker
+from demo_scripts.demo_configuration.demo_data_provider import daily_data_provider
 from qf_lib.common.enums.price_field import PriceField
-from qf_lib.common.tickers.tickers import QuandlTicker
-from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
+from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.plotting.helpers.create_returns_similarity import create_returns_similarity
 
-start_date = datetime(2016, 1, 1)
-end_date = datetime(2018, 1, 1)
-live_start_date = datetime(2017, 1, 1)
+start_date = str_to_date('2012-01-01')
+end_date = str_to_date('2018-12-31')
+live_start_date = str_to_date('2016-01-01')
 
 
 def main():
-    data_provider = container.resolve(GeneralPriceProvider)
-    spy_tms = data_provider.get_price(QuandlTicker('AAPL', 'WIKI'), PriceField.Close, start_date, end_date)
+    data_provider = daily_data_provider
+
+    spy_tms = data_provider.get_price(DummyTicker('AAA'), PriceField.Close, start_date, end_date)
 
     first_part = spy_tms.loc[spy_tms.index < live_start_date]
     first_part.name = 'first part of series'

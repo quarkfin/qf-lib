@@ -12,29 +12,29 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-from datetime import datetime
-
 import matplotlib.pyplot as plt
 
-from demo_scripts.demo_configuration.demo_ioc import container
+from demo_scripts.common.utils.dummy_ticker import DummyTicker
+from demo_scripts.demo_configuration.demo_data_provider import daily_data_provider
 from qf_lib.common.enums.frequency import Frequency
+from qf_lib.common.enums.matplotlib_location import Location
 from qf_lib.common.enums.price_field import PriceField
-from qf_lib.common.tickers.tickers import QuandlTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.volatility.drift_independent_volatility import DriftIndependentVolatility
 from qf_lib.common.utils.volatility.get_volatility import get_volatility
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.series.prices_series import PricesSeries
-from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
 from qf_lib.plotting.charts.line_chart import LineChart
 from qf_lib.plotting.decorators.data_element_decorator import DataElementDecorator
+from qf_lib.plotting.decorators.legend_decorator import LegendDecorator
 
 start_date = str_to_date('2016-01-01')
-end_date = datetime.now()
+end_date = str_to_date('2018-12-31')
+ticker = DummyTicker('AAA')
 
 
 def _calculate_single_values(data_provider):
-    ticker = QuandlTicker('AAPL', 'WIKI')
+
     fields = [PriceField.Open, PriceField.High, PriceField.Low, PriceField.Close]
     prices_df = data_provider.get_price(ticker, fields, start_date, end_date)
 
@@ -55,7 +55,6 @@ def _calculate_timeseries(data_provider):
     def di_vol(ohlc_df):
         return DriftIndependentVolatility.get_volatility(ohlc_df, Frequency.DAILY)
 
-    ticker = QuandlTicker('MSFT', 'WIKI')
     fields = [PriceField.Open, PriceField.High, PriceField.Low, PriceField.Close]
     prices_df = data_provider.get_price(ticker, fields, start_date, end_date)  # type: PricesDataFrame
 
@@ -71,15 +70,22 @@ def _calculate_timeseries(data_provider):
     line_chart = LineChart()
     sv_data = DataElementDecorator(simple_vols)
     line_chart.add_decorator(sv_data)
+
     div_data = DataElementDecorator(drift_independent_vols)
     line_chart.add_decorator(div_data)
+
+    legend = LegendDecorator(legend_placement=Location.BEST)
+    legend.add_entry(sv_data, 'Simple Volatility')
+    legend.add_entry(div_data, 'Drift independent Volatility')
+    line_chart.add_decorator(legend)
+
     line_chart.plot()
     print('\nPlot generated successfully.')
     plt.show(block=True)
 
 
 def main():
-    data_provider = container.resolve(GeneralPriceProvider)
+    data_provider = daily_data_provider
 
     _calculate_single_values(data_provider)
     _calculate_timeseries(data_provider)
