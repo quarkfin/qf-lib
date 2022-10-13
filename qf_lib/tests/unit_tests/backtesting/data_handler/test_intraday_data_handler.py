@@ -32,11 +32,10 @@ from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
-from qf_lib.containers.dimension_names import TICKERS, DATES
+from qf_lib.containers.dimension_names import TICKERS, DATES, FIELDS
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
-from qf_lib.data_providers.bloomberg.bloomberg_names import FIELDS
 from qf_lib.data_providers.data_provider import DataProvider
 from qf_lib.data_providers.helpers import normalize_data_array
 from qf_lib.tests.helpers.testing_tools.containers_comparison import assert_series_equal, assert_dataframes_equal, \

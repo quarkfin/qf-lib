@@ -37,6 +37,7 @@ class BloombergBeapHapiRequestsProvider:
     trigger_url: str
         The URL of hapi trigger
     """
+
     def __init__(self, host: str, session: requests.Session, account_url: str, trigger_url: str):
         self.host = host
         self.session = session
@@ -44,7 +45,7 @@ class BloombergBeapHapiRequestsProvider:
         self.trigger_url = trigger_url
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
-    def create_request(self, request_id: str, universe_url: str, fieldlist_url: str, bulk_format_type: bool):
+    def create_request(self, request_id: str, universe_url: str, fieldlist_url: str):
         """
         Method to create hapi request and get request address URL
 
@@ -56,8 +57,6 @@ class BloombergBeapHapiRequestsProvider:
             URL address of the universe
         fieldlist_url: str
             URL address of the fields
-        bulk_format_type: str
-            If True, bulkListOutputFormat is used
         """
         request_payload = {
             '@type': 'DataRequest',
@@ -73,7 +72,7 @@ class BloombergBeapHapiRequestsProvider:
                 'dateFormat': 'yyyymmdd',
                 'delimiter': '|',
                 'fileType': 'unixFileType',
-                'outputFormat': 'bulkListOutputFormat' if bulk_format_type else 'variableOutputFormat',
+                'outputFormat': 'variableOutputFormat',
             },
             'pricingSourceOptions': {
                 '@type': 'DataPricingSourceOptions',

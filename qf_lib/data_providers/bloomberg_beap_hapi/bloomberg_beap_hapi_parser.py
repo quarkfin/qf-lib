@@ -14,12 +14,11 @@
 import gzip
 import re
 from io import StringIO
-from typing import Tuple, List, Optional, Dict
-from pandas import to_datetime
-from pandas._libs.tslibs.nattype import NaT
+from typing import Tuple, List, Dict
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.qf_data_array import QFDataArray
+from qf_lib.data_providers.bloomberg_beap_hapi.helpers import BloombergDataLicenseTypeConverter
 from qf_lib.data_providers.helpers import tickers_dict_to_data_array
 import numpy as np
 import csv
@@ -51,35 +50,9 @@ class BloombergBeapHapiParser:
 
     def __init__(self):
         self.logger = qf_logger.getChild(self.__class__.__name__)
+        self.type_converter = BloombergDataLicenseTypeConverter()
 
-    def get_chain(self, filepath: str) -> Dict[str, List[str]]:
-        """
-        Method to parse hapi response and extract future chain tickers
-
-        Parameters
-        ----------
-        filepath: str
-            The full filepath with downloaded response
-
-        Returns
-        -------
-        data: Dict
-            Dictionary with data, in the format [str] -> List[str]
-            where the key - active future ticker (str), values - tickers from chain
-        """
-        _, content = self._get_fields_and_data_content(filepath, column_names=["Active ticker"])
-
-        content = content.set_index('Active ticker')
-        active_tickers = content.index.unique()
-        content = content.squeeze()
-
-        data = {
-            active_ticker: content.loc[active_ticker].values.tolist() for active_ticker in active_tickers
-        }
-
-        return data
-
-    def get_current_values_dates_fields_format(self, filepath: str) -> QFDataFrame:
+    def get_current_values(self, filepath: str, field_to_type: Dict[str, str]) -> QFDataFrame:
         """
         Method to parse hapi response and extract dates (e.g. FUT_NOTICE_FIRST, LAST_TRADEABLE_DT) for tickers
 
@@ -87,27 +60,21 @@ class BloombergBeapHapiParser:
         ----------
         filepath: str
             The full filepath with downloaded response
+        field_to_type: Dict[str, str]
+            dictionary mapping requested, correct fields into their corresponding types
 
         Returns
         -------
-        df: QFDataFrame
-            df with data
-            # e.g. index: C U59 Comdty, C Z59 Comdty, C H60 Comdty, C K60 Comdty
-            # e.g. columns: FUT_NOTICE_FIRST, LAST_TRADEABLE_DT
+        QFDataFrame
+            QFDataFrame with current values
         """
-        fields, content = self._get_fields_and_data_content(filepath, column_names=["Ticker", "Error code", "Num flds"],
-                                                            replace_header=True)
+        column_names = ["Ticker", "Error code", "Num flds"]
+        field_to_type = {**field_to_type, "Ticker": "String"}
+        fields, content = self._get_fields_and_data_content(filepath, field_to_type, column_names, header_row=True)
 
-        content = content.set_index("Ticker")
-        content = content.drop(columns=["Error code", "Num flds"])
-        for field in fields:
-            content[field] = to_datetime(content[field], format="%Y%m%d", errors="coerce")
+        return content.set_index("Ticker")[fields]
 
-        # Replace NaT with None
-        content = content.replace({NaT: None})
-        return content
-
-    def get_history(self, filepath: str) -> QFDataArray:
+    def get_history(self, filepath: str, field_to_type: Dict[str, str]) -> QFDataArray:
         """
         Method to parse hapi response and get history data
 
@@ -115,31 +82,26 @@ class BloombergBeapHapiParser:
         ----------
         filepath: str
             The full filepath with downloaded response
+        field_to_type: Dict[str, str]
+            dictionary mapping requested, correct fields into their corresponding types
 
         Returns
         -------
         QFDataArray
             QFDataArray with history data
         """
-        fields, content = self._get_fields_and_data_content(filepath, column_names=["Ticker", "Error code", "Num flds",
-                                                                                    "Pricing Source", "Dates"])
-        tickers = content["Ticker"].unique().tolist()
-        content["Dates"] = to_datetime(content["Dates"], format="%Y%m%d")
-        content = content.drop(columns=["Error code", "Num flds", "Pricing Source"])
-
-        def extract_tickers_df(data_array, ticker: str):
-            df = data_array[data_array["Ticker"] == ticker].drop(columns="Ticker")
-            df = df.dropna(subset=["Dates"]).set_index("Dates")
-            return df
+        column_names = ["Ticker", "Error code", "Num flds", "Pricing Source", "Dates"]
+        field_to_type = {**field_to_type, "Ticker": "String", "Error code": "String", "Num flds": "String",
+                         "Pricing Source": "String", "Dates": "Date"}
+        fields, content = self._get_fields_and_data_content(filepath, field_to_type, column_names)
 
         tickers_dict = {
-            t: extract_tickers_df(content, t) for t in tickers
+            ticker: df.set_index("Dates")[fields].dropna(how="all") for ticker, df in content.groupby(by="Ticker")
         }
+        return tickers_dict_to_data_array(tickers_dict, list(tickers_dict.keys()), fields)
 
-        return tickers_dict_to_data_array(tickers_dict, tickers, fields)
-
-    def _get_fields_and_data_content(self, filepath: str, column_names: Optional[List] = None,
-                                     replace_header: bool = False, expect_data_array: bool = False) -> Tuple:
+    def _get_fields_and_data_content(self, filepath: str, field_to_type: Dict, column_names: List,
+                                     header_row: bool = False) -> Tuple[List, QFDataFrame]:
         """
         Helper function to extract fields and content of the hapi response between following (including headers):
         fields: START-OF-FIELDS - END-OF-FIELDS
@@ -149,11 +111,13 @@ class BloombergBeapHapiParser:
         ----------
         filepath: str
             The full filepath with downloaded response
+        field_to_type: Dict[str, str]
+            dictionary mapping requested, correct fields into their corresponding types
         column_names: List[str]
             list of names to be used as column names of the dataframe
-        replace_header: bool
-            if True - the data already contains a header and it should be replaced with the given column names,
-            if False - it is assumed that data does not have any header
+        header_row: bool
+            indicated whether header is present in the response file (current values response) or not (historical
+            data response)
 
         Returns
         -------
@@ -167,22 +131,19 @@ class BloombergBeapHapiParser:
         # Without re.DOTALL, each line of the input text matches the pattern separately
         fields = re.search(r'START-OF-FIELDS\n(.*?)\nEND-OF-FIELDS', data, re.DOTALL).group(1).split('\n')
         content = re.search(r'START-OF-DATA\n(.*?)\nEND-OF-DATA', data, re.DOTALL).group(1)
+        content = self._read_csv(content, column_names + fields, header_row=header_row)
 
-        column_names = column_names + fields if column_names is not None else None
-        content = self._read_csv(content, column_names, replace_header)
-
-        content = content.replace(r'^\s+$', np.nan, regex=True)
-        str_columns = content.select_dtypes(['object']).columns
-        content.loc[:, str_columns] = content.loc[:, str_columns].apply(lambda x: x.str.strip())
-        content = QFDataFrame(content)
+        for col, _type in field_to_type.items():
+            content.loc[:, col] = self.type_converter.infer_type(content.loc[:, col], _type)
 
         return fields, content
 
-    def _read_csv(self, content: str, column_names: List[str], replace_header: bool, delimiter: str = "|"):
+    @staticmethod
+    def _read_csv(content: str, column_names: List[str], delimiter: str = "|", header_row: bool = False):
         # Remove trailing delimiters
         content = "\n".join(line.rstrip("|") for line in content.split("\n"))
         lines = csv.reader(StringIO(content), delimiter=delimiter)
-        records = list(lines) if not replace_header else list(lines)[1:]
+        records = list(lines) if not header_row else list(lines)[1:]
         records = [line for line in records if len(line) == len(column_names)]
         df = QFDataFrame.from_records(records, columns=column_names)
-        return df
+        return df.replace(r'^\s+$', np.nan, regex=True)

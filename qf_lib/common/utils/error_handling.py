@@ -18,7 +18,6 @@ from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 
 
 class ErrorHandling:
-
     _error_messages = []
 
     @classmethod
@@ -46,6 +45,7 @@ class ErrorHandling:
         Setup error logging for all the functions inside a certain class (including the functions inherited its parent
         classes).
         """
+
         def wrap(wrapped_cls):
             for function_name, function in inspect.getmembers(wrapped_cls, inspect.isfunction):
                 setattr(wrapped_cls, function_name, cls.error_logging(function))
@@ -55,4 +55,26 @@ class ErrorHandling:
 
     @classmethod
     def get_error_messages(cls):
+        """
+        Method used to get the error messages
+
+        Returns
+        -------
+        List
+            current messages that are stored in the class
+        """
         return cls._error_messages
+
+    @classmethod
+    def reset_error_messages(cls):
+        """
+        Method used to reset the error messages to their initial value and return old messages
+
+        Returns
+        -------
+        List
+            old messages that were stored in class
+        """
+        old_messages = cls._error_messages
+        cls._error_messages = []
+        return old_messages

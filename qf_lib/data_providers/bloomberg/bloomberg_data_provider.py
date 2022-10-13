@@ -43,6 +43,7 @@ try:
     from qf_lib.data_providers.bloomberg.tabular_data_provider import TabularDataProvider
     from qf_lib.data_providers.bloomberg.exceptions import BloombergError
     from qf_lib.data_providers.bloomberg.bloomberg_names import REF_DATA_SERVICE_URI
+    from qf_lib.data_providers.bloomberg.helpers import convert_to_bloomberg_date
 
     is_blpapi_installed = True
 except ImportError:
@@ -163,7 +164,7 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
 
     def get_current_values(self, tickers: Union[BloombergTicker, Sequence[BloombergTicker]],
                            fields: Union[str, Sequence[str]], override_name: str = None, override_value: str = None
-                           ) -> Union[None, float, QFSeries, QFDataFrame]:
+                           ) -> Union[None, float, str, QFSeries, QFDataFrame]:
         """
         Gets the current values of fields for given tickers.
 
@@ -290,14 +291,12 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
         }
         return price_field_dict
 
-    def get_tickers_universe(self, universe_ticker: BloombergTicker, date: datetime = None) -> List[BloombergTicker]:
-        if date and date.date() != datetime.today().date():
-            raise ValueError("BloombergDataProvider does not provide historical tickers_universe data")
-        field = 'INDX_MEMBERS'
-        ticker_data = self.get_tabular_data(universe_ticker, field)
-        tickers = [BloombergTicker(fields['Member Ticker and Exchange Code'] + " Equity", SecurityType.STOCK, 1)
-                   for fields in ticker_data]
-        return tickers
+    def get_tickers_universe(self, universe_ticker: BloombergTicker, date: Optional[datetime] = None) -> List[BloombergTicker]:
+        date = date or datetime.now()
+        field = 'INDX_MWEIGHT_HIST'
+        ticker_data = self.get_tabular_data(universe_ticker, field, override_names="END_DT",
+                                            override_values=convert_to_bloomberg_date(date))
+        return [BloombergTicker(fields['Index Member'] + " Equity", SecurityType.STOCK, 1) for fields in ticker_data]
 
     def get_unique_tickers(self, universe_ticker: Ticker) -> List[Ticker]:
         raise ValueError("BloombergDataProvider does not provide historical tickers_universe data")

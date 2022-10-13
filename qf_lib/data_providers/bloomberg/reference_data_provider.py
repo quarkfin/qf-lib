@@ -61,9 +61,7 @@ class ReferenceDataProvider:
 
                 for security_data in security_data_array.values():
                     try:
-                        check_security_data_for_errors(security_data)
                         field_data_array = security_data.getElement(FIELD_DATA)
-
                         security_name = security_data.getElementAsString(SECURITY) if \
                             security_data.hasElement(SECURITY, True) else None
 
