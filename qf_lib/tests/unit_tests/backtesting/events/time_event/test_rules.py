@@ -156,6 +156,7 @@ class TestRules(TestCase):
             def notify(self, listener):
                 pass
 
+        # initiation must be after setting the exclude_weekends because of the PeriodicEvnet _events_list attribute
         Periodic15MinutesEvent.exclude_weekends()
         periodic_event = Periodic15MinutesEvent()
 
