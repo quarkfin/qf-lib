@@ -119,7 +119,6 @@ class BloombergBeapHapiRequestsProvider:
             },
             'runtimeOptions': {
                 '@type': 'HistoryRuntimeOptions',
-                'historyPriceCurrency': 'USD',
                 'period': str(frequency).lower(),
                 'dateRange': {
                     '@type': 'IntervalDateRange',
