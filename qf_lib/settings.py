@@ -66,7 +66,7 @@ class Settings:
             try:
                 secret_settings = json.loads(os.environ['QUANTFIN_SECRET'])
             except JSONDecodeError:
-                self.logger.warning(f"QUANTFIN_SECRET is empty or cannot be read")
+                self.logger.warning("QUANTFIN_SECRET is empty or cannot be read")
                 secret_settings = {}
         else:
             secret_settings = {}
