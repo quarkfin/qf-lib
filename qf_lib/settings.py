@@ -58,7 +58,7 @@ class Settings:
             try:
                 with open(self.secret_path, 'r') as file:
                     secret_settings = json.load(file)
-            except JSONDecodeError:
+            except (JSONDecodeError, TypeError, FileNotFoundError):
                 self.logger.warning(f"The settings file {self.settings_path} is empty or cannot be read")
                 secret_settings = {}
         elif 'QUANTFIN_SECRET' in os.environ:
