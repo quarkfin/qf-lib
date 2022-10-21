@@ -15,13 +15,15 @@
 import json
 import os
 import os.path
+from json import JSONDecodeError
 from typing import Optional
 
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 
 
 class Settings:
-    def __init__(self, settings_path: Optional[str], secret_path: Optional[str] = None, init_properties: bool = True):
+    def __init__(self, settings_path: Optional[str] = None, secret_path: Optional[str] = None,
+                 init_properties: bool = True):
         self.settings_path = settings_path
         self.secret_path = secret_path
         self.init_properties = init_properties
@@ -43,16 +45,29 @@ class Settings:
             setattr(settings, key, items[key])
 
     def _load_config_dict(self):
-        with open(self.settings_path, 'r') as file:
-            public_settings = json.load(file)
+        try:
+            self.logger.info(f"Loading settings from file {self.settings_path}")
+            with open(self.settings_path, 'r') as file:
+                public_settings = json.load(file)
+        except (JSONDecodeError, TypeError, FileNotFoundError):
+            self.logger.warning(f"The settings file {self.settings_path} is empty or cannot be read")
+            public_settings = {}
 
         if self.secret_path is not None and os.path.isfile(self.secret_path):
-            with open(self.secret_path, 'r') as file:
-                secret_settings = json.load(file)
-            self.logger.info("Using secret_settings.json")
+            self.logger.info(f"Using secret settings file {self.settings_path}")
+            try:
+                with open(self.secret_path, 'r') as file:
+                    secret_settings = json.load(file)
+            except JSONDecodeError:
+                self.logger.warning(f"The settings file {self.settings_path} is empty or cannot be read")
+                secret_settings = {}
         elif 'QUANTFIN_SECRET' in os.environ:
-            secret_settings = json.loads(os.environ['QUANTFIN_SECRET'])
-            self.logger.info("Using QUANTFIN_SECRET")
+            self.logger.info("Using QUANTFIN_SECRET env variable")
+            try:
+                secret_settings = json.loads(os.environ['QUANTFIN_SECRET'])
+            except JSONDecodeError:
+                self.logger.warning(f"QUANTFIN_SECRET is empty or cannot be read")
+                secret_settings = {}
         else:
             secret_settings = {}
             self.logger.info("No secret settings were defined. Using empty secret settings by default. If needed, "
