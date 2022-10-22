@@ -72,6 +72,7 @@ class BinanceBroker(Broker):
         self.logger = qf_logger.getChild(self.__class__.__name__)
         self.logger.info(f"Created successfully {self.__class__.__name__}")
         self.blotter = blotter
+        self._portfolio_value_cache = {}
 
     def get_positions(self) -> List[Position]:
         self.logger.info("Calling get_positions")
@@ -176,9 +177,28 @@ class BinanceBroker(Broker):
             self.logger.info(f'Placing order: failed: {ex}')
             self.logger.error(traceback.format_exc())
 
-    def get_portfolio_value(self) -> float:
-        self.logger.info("Calling get_portfolio_value")
+    def get_portfolio_value(self, time: datetime = None) -> float:
+        """
+        time will be used to optimize number of requests.
+        if time is provided portfolio value will be cached and reused if the same time is provided
+        """
+        self.logger.info(f"Calling get_portfolio_value (time = {time})")
 
+        if time is None:
+            return self._request_portfolio_value()
+
+        value = self._portfolio_value_cache.get(time, None)
+
+        if value is not None:
+            self.logger.info(f'Returning cached portfolio value {time}, {value}')
+            return value
+        else:
+            value = self._request_portfolio_value()
+            self.logger.info(f'Caching portfolio value {time}, {value}')
+            self._portfolio_value_cache[time] = value
+            return value
+
+    def _request_portfolio_value(self):
         portfolio_value = 0
         positions = self.get_positions()
         for counter, position in enumerate(positions):
