@@ -32,7 +32,13 @@ from qf_lib.brokers.binance_broker.binance_position import BinancePosition
 from qf_lib.common.blotter.blotter import Blotter
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.miscellaneous.constants import ISCLOSE_REL_TOL, ISCLOSE_ABS_TOL
-from qf_lib.settings import Settings
+
+
+class BinanceAccountSettings:
+    def __init__(self, api_key: str, api_secret: str, account_name: str = ""):
+        self.api_key = api_key
+        self.api_secret = api_secret
+        self.account_name = account_name
 
 
 class BinanceBroker(Broker):
@@ -48,21 +54,20 @@ class BinanceBroker(Broker):
     blotter: Blotter
         instance of a blotter class to save all transactions.
         Most common implementation of blotters are with use of a CSV file, XLSX file or a database
-    settings: Settings
-        settings containing all necessary information (in particular API and API secret keys)
+    settings: BinanceAccountSettings
+        settings containing all necessary information (in particular API and API secret keys and optional account name)
     """
 
-    def __init__(self, contract_ticker_mapper: BinanceContractTickerMapper, blotter: Blotter, settings: Settings):
-        super().__init__(contract_ticker_mapper)
+    def __init__(self, contract_ticker_mapper: BinanceContractTickerMapper, blotter: Blotter,
+                 settings: BinanceAccountSettings):
+        super().__init__(contract_ticker_mapper, settings.account_name)
 
         self.settings = settings
 
         self.stable_coins = ['USDT', 'BUSD']
         self.time_in_force_to_string = {TimeInForce.GTC: 'GTC'}
 
-        api_key = settings.binance_api
-        api_secret = settings.binance_secret
-        self.client = Client(api_key, api_secret)
+        self.client = Client(settings.api_key, settings.api_secret)
 
         self.logger = qf_logger.getChild(self.__class__.__name__)
         self.logger.info(f"Created successfully {self.__class__.__name__}")
@@ -238,7 +243,7 @@ class BinanceBroker(Broker):
             price = get_fill_price(response['fills'])
             commission = get_total_commission(response['fills'])
             trade_id = response['orderId']
-            account = ""
+            account = self.account_name
             strategy = order.strategy
             broker = "Binance"
             currency = self.contract_ticker_mapper.quote_ccy
