@@ -75,7 +75,8 @@ class OrderFactory:
         order_list = [Order(ticker, quantity, execution_style, time_in_force)
                       for ticker, quantity in quantities.items() if quantity != 0]
 
-        # put the orders that sell first to raise cash for buy orders
+        # Put the orders that sell first to raise cash for buy orders.
+        # This will make a difference only for a synchronous broker
         order_list = sorted(order_list, key=lambda x: x.quantity)
 
         return order_list
