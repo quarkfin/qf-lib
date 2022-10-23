@@ -249,6 +249,7 @@ class PositionSizer(metaclass=ABCMeta):
             if len(signal_list) > 1:
                 raise ValueError(f"More than one signal for ticker {ticker.as_string()}. "
                                  f"Override _resolve_signal_duplicates() if you need to handle multiple signals")
+        return signals
 
     @staticmethod
     def _get_specific_ticker(ticker: Ticker):
