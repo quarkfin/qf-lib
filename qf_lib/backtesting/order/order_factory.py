@@ -72,8 +72,14 @@ class OrderFactory:
         self._log_function_call(vars())
         self._check_tickers_type(list(quantities.keys()))
 
-        return [Order(ticker, quantity, execution_style, time_in_force)
-                for ticker, quantity in quantities.items() if quantity != 0]
+        order_list = [Order(ticker, quantity, execution_style, time_in_force)
+                      for ticker, quantity in quantities.items() if quantity != 0]
+
+        # Put the orders that sell first to raise cash for buy orders.
+        # This will make a difference only for a synchronous broker
+        order_list = sorted(order_list, key=lambda x: x.quantity)
+
+        return order_list
 
     def target_orders(self, target_quantities: Mapping[Ticker, float], execution_style: ExecutionStyle,
                       time_in_force: TimeInForce, tolerance_quantities: Mapping[Ticker, float] = None) -> List[Order]:
