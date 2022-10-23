@@ -30,8 +30,10 @@ from qf_lib.backtesting.portfolio.transaction import Transaction
 from qf_lib.brokers.binance_broker.binance_contract_ticker_mapper import BinanceContractTickerMapper
 from qf_lib.brokers.binance_broker.binance_position import BinancePosition
 from qf_lib.common.blotter.blotter import Blotter
+from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.miscellaneous.constants import ISCLOSE_REL_TOL, ISCLOSE_ABS_TOL
+from qf_lib.common.utils.numberutils.is_finite_number import is_finite_number
 
 
 class BinanceAccountSettings:
@@ -56,10 +58,12 @@ class BinanceBroker(Broker):
         Most common implementation of blotters are with use of a CSV file, XLSX file or a database
     settings: BinanceAccountSettings
         settings containing all necessary information (in particular API and API secret keys and optional account name)
+    timer: Timer, optional
+        timer used to optimise queries and cache portfolio value. Portfolio value will be reused if time does not change
     """
 
     def __init__(self, contract_ticker_mapper: BinanceContractTickerMapper, blotter: Blotter,
-                 settings: BinanceAccountSettings):
+                 settings: BinanceAccountSettings, timer: Timer = None):
         super().__init__(contract_ticker_mapper, settings.account_name)
 
         self.settings = settings
@@ -72,7 +76,9 @@ class BinanceBroker(Broker):
         self.logger = qf_logger.getChild(self.__class__.__name__)
         self.logger.info(f"Created successfully {self.__class__.__name__}")
         self.blotter = blotter
+
         self._portfolio_value_cache = {}
+        self.timer = timer
 
     def get_positions(self) -> List[Position]:
         self.logger.info("Calling get_positions")
@@ -177,14 +183,15 @@ class BinanceBroker(Broker):
             self.logger.info(f'Placing order: failed: {ex}')
             self.logger.error(traceback.format_exc())
 
-    def get_portfolio_value(self, time: datetime = None) -> float:
+    def get_portfolio_value(self) -> float:
         """
         time will be used to optimize number of requests.
         if time is provided portfolio value will be cached and reused if the same time is provided
         """
-        self.logger.info(f"Calling get_portfolio_value (time = {time})")
-
-        if time is None:
+        if self.timer is not None:
+            time = self.timer.now()
+            self.logger.info(f"Calling get_portfolio_value (time = {time})")
+        else:
             return self._request_portfolio_value()
 
         value = self._portfolio_value_cache.get(time, None)
@@ -199,6 +206,7 @@ class BinanceBroker(Broker):
             return value
 
     def _request_portfolio_value(self):
+        self.logger.info(f"Requesting portfolio value from Binance")
         portfolio_value = 0
         positions = self.get_positions()
         for counter, position in enumerate(positions):
@@ -219,6 +227,10 @@ class BinanceBroker(Broker):
             portfolio_value += value
 
         self.logger.info(f'Total portfolio value: {portfolio_value} [{self.contract_ticker_mapper.quote_ccy}]')
+
+        if not is_finite_number(portfolio_value):
+            raise ValueError(f"Portfolio value is not a finite number. Portfolio_value={portfolio_value}")
+
         return portfolio_value
 
     def get_exchange_info(self):
