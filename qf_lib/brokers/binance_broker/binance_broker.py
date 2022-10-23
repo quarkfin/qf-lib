@@ -190,10 +190,10 @@ class BinanceBroker(Broker):
         """
         if self.timer is not None:
             time = self.timer.now()
-            self.logger.info(f"Calling get_portfolio_value (time = {time})")
         else:
             return self._request_portfolio_value()
 
+        self.logger.info(f"Calling get_portfolio_value (time = {time})")
         value = self._portfolio_value_cache.get(time, None)
 
         if value is not None:
