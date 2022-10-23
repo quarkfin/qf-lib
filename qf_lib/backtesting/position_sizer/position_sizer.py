@@ -240,8 +240,9 @@ class PositionSizer(metaclass=ABCMeta):
         It aims to prevent unintended behaviour of a strategy:
             for example if two alpha models give contradictory signals.
         In order to handle conflict resolution override _resolve_signal_duplicates() and implement your own logic.
+        There is no single way to resolve duplicates
         """
-        self.logger.info("Position Sizer - Resolving signal duplicates")
+        self.logger.info("Position Sizer - checking for signal duplicates")
         sorted_signals = sorted(signals, key=lambda signal: signal.ticker)
         for ticker, signal_group in groupby(sorted_signals, lambda signal: signal.ticker):
             signal_list = list(signal_group)
