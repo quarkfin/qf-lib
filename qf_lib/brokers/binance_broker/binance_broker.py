@@ -206,7 +206,7 @@ class BinanceBroker(Broker):
             return value
 
     def _request_portfolio_value(self):
-        self.logger.info(f"Requesting portfolio value from Binance")
+        self.logger.info("Requesting portfolio value from Binance")
         portfolio_value = 0
         positions = self.get_positions()
         for counter, position in enumerate(positions):
