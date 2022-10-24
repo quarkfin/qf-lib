@@ -66,9 +66,8 @@ class PositionSizer(metaclass=ABCMeta):
         the position for the ticker.
 
         """
-        self._check_for_duplicates(signals)
 
-        self.logger.info("Position Sizer - Removing redundant signals")
+        signals = self._resolve_signal_duplicates(signals)
         updated_signals = self._remove_redundant_signals(signals)
 
         market_orders = self._generate_market_orders(updated_signals, time_in_force, frequency)
@@ -120,6 +119,7 @@ class PositionSizer(metaclass=ABCMeta):
         Remove all these signals, which do not need to be passed into order factory as they obviously do not change the
         state of the portfolio (current exposure equals Exposure.OUT and suggested exposure is also Exposure.OUT).
         """
+        self.logger.info("Position Sizer - Removing redundant signals")
         specific_tickers_with_open_position = set(p.ticker() for p in self._broker.get_positions())
 
         def position_for_ticker_exists_in_portfolio(ticker: Ticker) -> bool:
@@ -233,12 +233,23 @@ class PositionSizer(metaclass=ABCMeta):
         quantity = next((position.quantity() for position in positions if position.ticker() == ticker), 0)
         return quantity
 
-    def _check_for_duplicates(self, signals: List[Signal]):
+    def _resolve_signal_duplicates(self, signals: List[Signal]):
+        """
+        This implementation only checks if there is one signal for given ticker.
+        If more than one signal is present for given ticker it raises exception.
+        It aims to prevent unintended behaviour of a strategy:
+            for example if two alpha models give contradictory signals.
+        In order to handle conflict resolution override _resolve_signal_duplicates() and implement your own logic.
+        There is no single way to resolve duplicates
+        """
+        self.logger.info("Position Sizer - checking for signal duplicates")
         sorted_signals = sorted(signals, key=lambda signal: signal.ticker)
         for ticker, signal_group in groupby(sorted_signals, lambda signal: signal.ticker):
             signal_list = list(signal_group)
             if len(signal_list) > 1:
-                raise ValueError("More than one signal for ticker {}".format(ticker.as_string()))
+                raise ValueError(f"More than one signal for ticker {ticker.as_string()}. "
+                                 f"Override _resolve_signal_duplicates() if you need to handle multiple signals")
+        return signals
 
     @staticmethod
     def _get_specific_ticker(ticker: Ticker):

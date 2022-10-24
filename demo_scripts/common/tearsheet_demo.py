@@ -49,12 +49,11 @@ def get_data():
 
 def main():
     # set the starting directory path below unless you set environment variable QF_STARTING_DIRECTORY to proper value
-    # set_starting_dir_abs_path(r"absolute/path/to/qf-lib")
-    set_starting_dir_abs_path(r"C:\Development\qf-lib")
+    set_starting_dir_abs_path(r"absolute/path/to/qf-lib")
 
     setup_logging(logging.INFO)
     this_dir_path = os.path.dirname(os.path.abspath(__file__))
-    strategy, benchmark, live_date = cached_value(get_data, os.path.join(this_dir_path, 'tearsheet2.cache'))
+    strategy, benchmark, live_date = cached_value(get_data, os.path.join(this_dir_path, 'tearsheet.cache'))
 
     settings = container.resolve(Settings)  # type: Settings
     pdf_exporter = container.resolve(PDFExporter)  # type: PDFExporter
