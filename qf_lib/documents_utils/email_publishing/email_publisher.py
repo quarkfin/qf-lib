@@ -20,6 +20,7 @@ import emails
 from emails.template import JinjaTemplate as T
 
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
+from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.settings import Settings
 from qf_lib.starting_dir import get_starting_dir_abs_path
 
@@ -116,14 +117,17 @@ class EmailPublisher:
                 log_info_strings.append("--> {}".format(attachment))
         if mail_to:
             log_info_strings.append("Mail receipents: ")
+            mail_to, _ = convert_to_list(mail_to, str)
             for receipent in list(mail_to):
                 log_info_strings.append("--> {}".format(receipent))
         if cc:
             log_info_strings.append("CC recepients: ")
+            cc, _ = convert_to_list(cc, str)
             for receipent in list(cc):
                 log_info_strings.append("--> {}".format(receipent))
         if bcc:
             log_info_strings.append("BCC recepients: ")
+            bcc, _ = convert_to_list(bcc, str)
             for receipent in list(bcc):
                 log_info_strings.append("--> {}".format(receipent))
 
