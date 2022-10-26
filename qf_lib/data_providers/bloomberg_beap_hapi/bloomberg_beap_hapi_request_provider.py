@@ -13,7 +13,7 @@
 #     limitations under the License.
 from datetime import datetime
 import pprint
-from typing import Dict
+from typing import Dict, Optional
 from urllib.parse import urljoin
 import requests
 from qf_lib.common.enums.frequency import Frequency
@@ -84,7 +84,7 @@ class BloombergBeapHapiRequestsProvider:
         self._create_request_common(request_id, request_payload)
 
     def create_request_history(self, request_id: str, universe_url: str, fieldlist_url: str, start_date: datetime,
-                               end_date: datetime, frequency: Frequency):
+                               end_date: datetime, frequency: Frequency, currency: Optional[str] = None):
         """
         Method to create hapi history request
 
@@ -102,6 +102,8 @@ class BloombergBeapHapiRequestsProvider:
             End of the history data
         frequency: Frequency
             Frequency of data
+        currency: Optional[str]
+            currency which should be used to make the requests
         """
         request_payload = {
             '@type': 'HistoryRequest',
@@ -131,6 +133,9 @@ class BloombergBeapHapiRequestsProvider:
                 'exclusive': True
             }
         }
+
+        if currency:
+            request_payload['runtimeOptions']['historyPriceCurrency'] = currency
 
         self.logger.info('Request history component payload:\n%s', pprint.pformat(request_payload))
         self._create_request_common(request_id, request_payload)
