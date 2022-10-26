@@ -32,13 +32,9 @@ class Broker(metaclass=ABCMeta):
         Interactive Brokers the mapper provides the functionality which allows to map a ticker from any data provider
         (BloombergTicker, PortaraTicker etc.) onto the contract object from the Interactive Brokers API. The parameters
         which are necessary depend on the Broker class.
-    account_name: Optional[str]
-        Name of the account to which the broker will be connected.
-        It is useful when more than one instance of Broker is running in order to differentiate transactions
     """
-    def __init__(self, contract_ticker_mapper: ContractTickerMapper, account_name: Optional[str] = ""):
+    def __init__(self, contract_ticker_mapper: ContractTickerMapper):
         self.contract_ticker_mapper = contract_ticker_mapper
-        self.account_name = account_name
 
     @abstractmethod
     def get_portfolio_value(self) -> float:

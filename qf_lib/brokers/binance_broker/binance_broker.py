@@ -37,7 +37,18 @@ from qf_lib.common.utils.numberutils.is_finite_number import is_finite_number
 
 
 class BinanceAccountSettings:
-    def __init__(self, api_key: str, api_secret: str, account_name: str = ""):
+    """
+    Parameters
+    -----------
+    api_key: str
+        The api key that is used to create the client's account
+    api_secret: str
+        The api secret that is used to create the client's account
+    account_name: Optional[str]
+        Name of the account to which the broker will be connected.
+        It is useful when more than one instance of Broker is running in order to differentiate transactions
+    """
+    def __init__(self, api_key: str, api_secret: str, account_name: Optional[str] = ""):
         self.api_key = api_key
         self.api_secret = api_secret
         self.account_name = account_name
@@ -64,7 +75,7 @@ class BinanceBroker(Broker):
 
     def __init__(self, contract_ticker_mapper: BinanceContractTickerMapper, blotter: Blotter,
                  settings: BinanceAccountSettings, timer: Timer = None):
-        super().__init__(contract_ticker_mapper, settings.account_name)
+        super().__init__(contract_ticker_mapper)
 
         self.settings = settings
 
@@ -72,6 +83,7 @@ class BinanceBroker(Broker):
         self.time_in_force_to_string = {TimeInForce.GTC: 'GTC'}
 
         self.client = Client(settings.api_key, settings.api_secret)
+        self.account_name = settings.account_name
 
         self.logger = qf_logger.getChild(self.__class__.__name__)
         self.logger.info(f"Created successfully {self.__class__.__name__}")
