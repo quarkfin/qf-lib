@@ -64,7 +64,7 @@ class BinanceBroker(Broker):
 
     def __init__(self, contract_ticker_mapper: BinanceContractTickerMapper, blotter: Blotter,
                  settings: BinanceAccountSettings, timer: Timer = None):
-        super().__init__(contract_ticker_mapper, settings.account_name)
+        super().__init__(contract_ticker_mapper)
 
         self.settings = settings
 
@@ -72,6 +72,7 @@ class BinanceBroker(Broker):
         self.time_in_force_to_string = {TimeInForce.GTC: 'GTC'}
 
         self.client = Client(settings.api_key, settings.api_secret)
+        self.account_name = settings.account_name
 
         self.logger = qf_logger.getChild(self.__class__.__name__)
         self.logger.info(f"Created successfully {self.__class__.__name__}")
