@@ -128,7 +128,8 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
 
     def get_history(self, tickers: Union[BloombergTicker, Sequence[BloombergTicker]], fields: Union[str, Sequence[str]],
                     start_date: datetime, end_date: datetime = None, frequency: Frequency = Frequency.DAILY,
-                    universe_creation_time: Optional[datetime] = None) -> Union[QFSeries, QFDataFrame, QFDataArray]:
+                    universe_creation_time: Optional[datetime] = None, currency: str = None) -> \
+            Union[QFSeries, QFDataFrame, QFDataArray]:
         """
         Gets historical data from Bloomberg HAPI from the (start_date - end_date) time range.
 
@@ -147,6 +148,8 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
             frequency of the data
         universe_creation_time: datetime
             Used only if we want to get previously created universe, fields universe or request
+        currency: Optional[str]
+            currency which should be used to obtain the historical data (by default local currency is used)
 
         Returns
         -------
@@ -184,8 +187,7 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
         # for requests - always create a new request with current time
         request_id = f'hReq{datetime.now():%m%d%H%M%S%f}'
         self.request_hapi_provider.create_request_history(request_id, universe_url, fields_list_url, start_date,
-                                                          end_date,
-                                                          frequency)
+                                                          end_date, frequency, currency)
         self.logger.info(f'universe_id: {universe_id} fields_list_id: {fields_list_id} request_id: {request_id}')
 
         out_path = self._download_response(request_id)
