@@ -128,7 +128,7 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
 
     def get_history(self, tickers: Union[BloombergTicker, Sequence[BloombergTicker]], fields: Union[str, Sequence[str]],
                     start_date: datetime, end_date: datetime = None, frequency: Frequency = Frequency.DAILY,
-                    universe_creation_time: Optional[datetime] = None, currency: str = None) -> \
+                    universe_creation_time: Optional[datetime] = None, currency: Optional[str] = None) -> \
             Union[QFSeries, QFDataFrame, QFDataArray]:
         """
         Gets historical data from Bloomberg HAPI from the (start_date - end_date) time range.
