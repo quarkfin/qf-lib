@@ -414,4 +414,3 @@ class TestPresetDataProvider(unittest.TestCase):
                          data_monthly.loc[datetime(2016, 12, 31), PriceField.Close])
         self.assertEqual(data.loc[datetime(2016, 12, 1):datetime(2016, 12, 30), PriceField.Volume].sum(),
                          data_monthly.loc[datetime(2016, 12, 31), PriceField.Volume])
-
