@@ -127,9 +127,9 @@ class PresetDataProvider(DataProvider):
         self._check_if_cached_data_available(specific_tickers, fields, start_date, end_date)
         data_array = self._data_bundle.loc[start_date:end_date, specific_tickers, fields]
 
-        # Data aggregation (allowed only for the Intraday Data and in case if more than 1 data point is found)
+        # Data aggregation
         if frequency < self._frequency and data_array.shape[0] > 0:
-            data_array = self._aggregate_intraday_data(data_array, fields, frequency)
+            data_array = self._aggregate_bars(data_array, fields, frequency)
 
         normalized_result = normalize_data_array(
             data_array, specific_tickers, fields, got_single_date, got_single_ticker, got_single_field,
@@ -145,7 +145,6 @@ class PresetDataProvider(DataProvider):
                          nr_of_bars: int, end_date: Optional[datetime] = None,
                          frequency: Frequency = None) -> Union[PricesSeries, PricesDataFrame, QFDataArray]:
 
-        assert frequency >= Frequency.DAILY, "Frequency lower than daily is not supported by the Data Provider"
         assert nr_of_bars > 0, "Numbers of data samples should be a positive integer"
         end_date = datetime.now() if end_date is None else end_date
 
@@ -153,28 +152,18 @@ class PresetDataProvider(DataProvider):
         fields, got_single_field = convert_to_list(fields, PriceField)
         got_single_date = nr_of_bars == 1
 
-        data_bundle = self._data_bundle.loc[:end_date, specific_tickers, fields].dropna(DATES, how='all')
+        start_date = self._compute_start_date(nr_of_bars, end_date, frequency)
+        data_bundle = self._data_bundle.loc[start_date:end_date, specific_tickers, fields].dropna(DATES, how='all')
 
-        if self._frequency == frequency:
-            self._check_data_availibility(data_bundle, end_date, nr_of_bars, tickers)
-            data_bundle = data_bundle.isel(dates=slice(-nr_of_bars, None))
-        elif frequency < self._frequency and data_bundle.shape[0] > 0:
-            # Data aggregation will happen only for the Intraday Data and in case if more than 1 data point is found
-            bars_len_multiplier = int(
-                ceil(to_offset(frequency.to_pandas_freq()) / to_offset(self._frequency.to_pandas_freq()))
-            )
-            # optimize by selecting only part of data_bundle to be aggregated as aggregation is slow
-            bars_before_aggregation = nr_of_bars * bars_len_multiplier * 1.2
-            self._check_data_availibility(data_bundle, end_date, bars_before_aggregation, tickers)
-            data_bundle = data_bundle.isel(dates=slice(-bars_before_aggregation, None)).dropna(DATES, how='all')
+        if frequency < self._frequency and data_bundle.shape[0] > 0:  # Aggregate bars to desired frequency
+            data_bundle = self._aggregate_bars(data_bundle, fields, frequency)
 
-            data_bundle = self._aggregate_intraday_data(data_bundle, fields, frequency)
-            data_bundle = data_bundle.isel(dates=slice(-nr_of_bars, None))
+        self._check_data_availibility(data_bundle, end_date, nr_of_bars, tickers)
+        data_bundle = data_bundle.isel(dates=slice(-nr_of_bars, None))
 
         normalized_result = normalize_data_array(
             data_bundle, specific_tickers, fields, got_single_date, got_single_ticker, got_single_field,
-            use_prices_types=True
-        )
+            use_prices_types=True)
 
         normalized_result = self._map_normalized_result(normalized_result, tickers_mapping, tickers)
         self._check_data_availibility(normalized_result, end_date, nr_of_bars, tickers)
@@ -328,15 +317,19 @@ class PresetDataProvider(DataProvider):
                              f"{nr_of_bars} Data points requested, {data_bundle.shape[0]} points available. "
                              f"Number of bars requested will increase data aggregation is needed.")
 
-    def _aggregate_intraday_data(self, data_array, fields, frequency: Frequency):
+    def _aggregate_bars(self, data_array, fields, frequency: Frequency):
         """
-        Function, which aggregates the intraday data array for various dates and returns a new data array with data
+        Function, which aggregates the data array for various dates and returns a new data array with data
         sampled with the given frequency.
         """
+
+        # label with beginning of the bar for intraday, with end of bar for daily and lower frequency
+        label = "right" if frequency <= Frequency.DAILY else "left"
+
         prices_list = []
         for field in fields:
             prices = data_array.loc[:, :, field].to_series().groupby(
-                [pd.Grouper(freq=frequency.to_pandas_freq(), level=0, label="left", origin="start_day"),
+                [pd.Grouper(freq=frequency.to_pandas_freq(), level=0, label=label, origin="start_day"),
                  pd.Grouper(level=1)])
 
             if field is PriceField.Open:
