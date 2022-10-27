@@ -14,9 +14,9 @@
 
 from datetime import datetime
 from typing import Union, Sequence, Any, Set, Type, Dict, FrozenSet, Optional, Tuple
+
 import pandas as pd
-from numpy import nan, ceil
-from pandas._libs.tslibs import to_offset
+from numpy import nan
 
 from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
@@ -31,8 +31,8 @@ from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
-from qf_lib.data_providers.helpers import normalize_data_array
 from qf_lib.data_providers.data_provider import DataProvider
+from qf_lib.data_providers.helpers import normalize_data_array
 
 
 class PresetDataProvider(DataProvider):
