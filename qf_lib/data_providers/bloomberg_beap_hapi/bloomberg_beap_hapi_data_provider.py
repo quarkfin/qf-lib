@@ -64,6 +64,18 @@ from qf_lib.starting_dir import get_starting_dir_abs_path
 class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
     """
     Data Provider which provides financial data from Bloomberg BEAP HAPI.
+
+    The settings file requires the following variables:
+    - hapi_credentials.client_id
+    - hapi_credentials.client_secret
+    - hapi_credentials.expiration_date
+    - output_directory
+
+    Other optional settings parameters:
+    - hapi_credentials.user (parameter to link the Data License to a Bloomberg Anywhere or Bloomberg Professional
+    account; the User value can be obtained by running IAM <GO> in the Bloomberg terminal)
+    - hapi_crenetials.sn (parameter to link the Data License to a Bloomberg Professional account;
+    the S/N value can be obtained by running IAM <GO> in the Bloomberg terminal)
     """
 
     def __init__(self, settings: Settings, reply_timeout: int = 5):
@@ -80,6 +92,7 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
 
         self.session = requests.Session()
 
+
         if is_beap_lib_installed:
             adapter = BEAPAdapter(Credentials.from_dict(
                 {'client_id': settings.hapi_credentials.client_id,
@@ -94,9 +107,13 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
             account_url = urljoin(host, f'/eap/catalogs/{self.catalog_id}/')
             trigger_url = urljoin(host, f"/eap/catalogs/{self.catalog_id}/triggers/prodDataStreamTrigger/")
 
+            terminal_identity_user = self._get_settings_attribute(settings.hapi_credentials, "user")
+            terminal_identity_sn = self._get_settings_attribute(settings.hapi_credentials, "sn")
+
             self.universe_hapi_provider = BloombergBeapHapiUniverseProvider(host, self.session, account_url)
             self.fields_hapi_provider = BloombergBeapHapiFieldsProvider(host, self.session, account_url)
-            self.request_hapi_provider = BloombergBeapHapiRequestsProvider(host, self.session, account_url, trigger_url)
+            self.request_hapi_provider = BloombergBeapHapiRequestsProvider(host, self.session, account_url, trigger_url,
+                                                                           terminal_identity_user, terminal_identity_sn)
 
             self.logger.info("Scheduled catalog URL: %s", account_url)
             self.logger.info("Scheduled trigger URL: %s", trigger_url)
@@ -111,6 +128,14 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
 
             self.logger.warning("Couldn't import the Data License API (beap_lib). Check if all the necessary "
                                 "dependencies are installed.")
+
+    def _get_settings_attribute(self, settings: Settings, attribute: str):
+        try:
+            return getattr(settings, attribute)
+        except AttributeError:
+            self.logger.info(f"No {attribute} value found in the settings file, default (empty) value will be"
+                             f" used instead. ")
+            return None
 
     def _get_sse_client(self, host: str, session: requests.Session):
         """ Creates the SSEClient instance. """
