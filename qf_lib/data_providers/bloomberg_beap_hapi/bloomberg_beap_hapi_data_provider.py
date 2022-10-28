@@ -380,23 +380,26 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
             else squeezed_result
 
     def _get_universe_id(self, tickers: Sequence[BloombergTicker], creation_time: Optional[datetime] = None):
+        universe_creation_time = creation_time or datetime.now()
+        universe_id = f'uni{universe_creation_time:%m%d%H%M%S%f}'
+
         if len(tickers) == 1:
-            ticker_str = tickers[0].as_string()
-            universe_id = ticker_str.lower().replace(" ", "")
-        else:
-            universe_creation_time = creation_time or datetime.now()
-            universe_id = f'uni{universe_creation_time:%m%d%H%M%S%f}'
+            ticker_str = tickers[0].as_string().lower().replace(" ", "")
+            universe_id = ticker_str if ticker_str.isalnum() else universe_id
+
         return universe_id
 
     def _get_fields_id(self, fields: Sequence[str]):
+        fields_list_id = f'flds{datetime.now():%m%d%H%M%S%f}'
+
         if len(fields) == 1:
-            fields_list_id = fields[0].replace("_", "")
+            field_str = fields[0].replace("_", "")
+            fields_list_id = field_str if field_str.isalnum() else fields_list_id
         elif fields == list(self.price_field_to_str_map().values()):
             fields_list_id = 'ohlcv'
         elif fields == list(self.expiration_date_field_str_map().values()):
             fields_list_id = 'futNoticeFirstLastTradeableDt'
-        else:
-            fields_list_id = f'flds{datetime.now():%m%d%H%M%S%f}'
+
         return fields_list_id
 
     def _download_response(self, request_id: str):
