@@ -20,6 +20,7 @@ import pandas as pd
 
 from qf_lib.analysis.timeseries_analysis.timeseries_analysis import TimeseriesAnalysis
 from qf_lib.common.enums.plotting_mode import PlottingMode
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.returns.drawdown_tms import drawdown_tms
 from qf_lib.common.utils.volatility.get_volatility import get_volatility
 from qf_lib.containers.series.prices_series import PricesSeries
@@ -69,6 +70,7 @@ class AbstractDocument(metaclass=ABCMeta):
 
         self.settings = settings
         self.pdf_exporter = pdf_exporter
+        self.logger = qf_logger.getChild(self.__class__.__name__)
 
     @abstractmethod
     def build_document(self):
@@ -84,8 +86,21 @@ class AbstractDocument(metaclass=ABCMeta):
         return GridElement(mode=PlottingMode.PDF, figsize=self.half_image_size, dpi=self.dpi)
 
     def _add_header(self):
-        logo_path = join(get_starting_dir_abs_path(), self.settings.logo_path)
-        company_name = self.settings.company_name
+        logo_path = join(get_starting_dir_abs_path(), self.settings.logo_path) if hasattr(self.settings, "logo_path") \
+            else None
+        company_name = getattr(self.settings, "company_name", lambda: "")()
+
+        if not logo_path:
+            self.logger.warning(
+                f"{self.__class__.__name__} will be generated without a logo in the header. If you would "
+                f"like to include your logo, add 'logo_path' variable to your JSON settings file. "
+            )
+
+        if not company_name:
+            self.logger.warning(
+                f"{self.__class__.__name__} will be generated without a company name in the header. If you would "
+                f"like to include your company name, add 'company_name' variable to your JSON settings file. "
+            )
 
         self.document.add_element(PageHeaderElement(logo_path, company_name, self.title))
 
