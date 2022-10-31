@@ -132,8 +132,8 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
         try:
             return getattr(settings, attribute)
         except AttributeError:
-            self.logger.info(f"No {attribute} value found in the settings file, default (empty) value will be"
-                             f" used instead. ")
+            self.logger.warning(f"No {attribute} value found in the settings file, default (empty) value will be"
+                                f" used instead. ")
             return None
 
     def _get_sse_client(self, host: str, session: requests.Session):
@@ -248,7 +248,8 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
     def supported_ticker_types(self):
         return {BloombergTicker, BloombergFutureTicker}
 
-    def get_tickers_universe(self, universe_ticker: BloombergTicker, date: Optional[datetime] = None) -> List[BloombergTicker]:
+    def get_tickers_universe(self, universe_ticker: BloombergTicker, date: Optional[datetime] = None) -> List[
+        BloombergTicker]:
         """
         Parameters
         ----------
