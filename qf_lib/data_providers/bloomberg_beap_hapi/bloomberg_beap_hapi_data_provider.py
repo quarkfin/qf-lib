@@ -92,7 +92,6 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
 
         self.session = requests.Session()
 
-
         if is_beap_lib_installed:
             adapter = BEAPAdapter(Credentials.from_dict(
                 {'client_id': settings.hapi_credentials.client_id,
