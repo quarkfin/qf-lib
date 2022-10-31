@@ -248,8 +248,7 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
     def supported_ticker_types(self):
         return {BloombergTicker, BloombergFutureTicker}
 
-    def get_tickers_universe(self, universe_ticker: BloombergTicker, date: Optional[datetime] = None) -> List[
-        BloombergTicker]:
+    def get_tickers_universe(self, universe_ticker: BloombergTicker, date: Optional[datetime] = None) -> List[BloombergTicker]:
         """
         Parameters
         ----------
