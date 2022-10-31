@@ -88,7 +88,7 @@ class AbstractDocument(metaclass=ABCMeta):
     def _add_header(self):
         logo_path = join(get_starting_dir_abs_path(), self.settings.logo_path) if hasattr(self.settings, "logo_path") \
             else None
-        company_name = getattr(self.settings, "company_name", lambda: "")()
+        company_name = getattr(self.settings, "company_name", "")
 
         if not logo_path:
             self.logger.warning(
