@@ -282,11 +282,8 @@ class DataProvider(object, metaclass=ABCMeta):
 
     @staticmethod
     def _compute_start_date(nr_of_bars_needed: int, end_date: datetime, frequency: Frequency):
-        calendar_to_business_day_factor = 365 / 252
-        frequency_multiplier = Frequency.DAILY.value / frequency.value
         margin = 10 if frequency <= Frequency.DAILY else 1
-        nr_of_days_to_go_back = math.ceil(
-            nr_of_bars_needed * frequency_multiplier * calendar_to_business_day_factor) + margin
+        nr_of_days_to_go_back = math.ceil(nr_of_bars_needed * 365 / frequency.value) + margin
 
         # In case if the end_date points to saturday, sunday or monday shift it to saturday midnight
         if end_date.weekday() in (0, 5, 6):
