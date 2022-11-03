@@ -348,3 +348,69 @@ class TestPresetDataProvider(unittest.TestCase):
                          data_60_min.loc[datetime(2017, 1, 2, 13), PriceField.Close])
         self.assertEqual(data.loc[datetime(2017, 1, 2, 13, 30):datetime(2017, 1, 2, 13, 55), PriceField.Volume].sum(),
                          data_60_min.loc[datetime(2017, 1, 2, 13), PriceField.Volume])
+
+    def test_get_historical_price_minute_data_aggregation(self):
+        no_of_bars = 3
+
+        data = self.data_provider_min_1.historical_price(
+            self.ticker, PriceField.ohlcv(), no_of_bars * 60, datetime(2017, 1, 2, 15), Frequency.MIN_1)
+
+        data_5_min = self.data_provider_min_1.historical_price(
+            self.ticker, PriceField.ohlcv(), no_of_bars, datetime(2017, 1, 2, 15), Frequency.MIN_5)
+        data_15_min = self.data_provider_min_1.historical_price(
+            self.ticker, PriceField.ohlcv(), no_of_bars, datetime(2017, 1, 2, 15), Frequency.MIN_15)
+        data_60_min = self.data_provider_min_1.historical_price(
+            self.ticker, PriceField.ohlcv(), no_of_bars, datetime(2017, 1, 2, 15), Frequency.MIN_60)
+
+        self.assertEqual(data_5_min.shape[0], no_of_bars)
+        self.assertEqual(data_15_min.shape[0], no_of_bars)
+        self.assertEqual(data_60_min.shape[0], no_of_bars)
+
+        self.assertEqual(data.loc[datetime(2017, 1, 2, 14, 55), PriceField.Open],
+                         data_5_min.loc[datetime(2017, 1, 2, 14, 55), PriceField.Open])
+        self.assertEqual(data.loc[datetime(2017, 1, 2, 14, 59), PriceField.Close],
+                         data_5_min.loc[datetime(2017, 1, 2, 14, 55), PriceField.Close])
+        self.assertEqual(data.loc[datetime(2017, 1, 2, 14, 55):datetime(2017, 1, 2, 14, 59), PriceField.Volume].sum(),
+                         data_5_min.loc[datetime(2017, 1, 2, 14, 55), PriceField.Volume])
+
+        self.assertEqual(data.loc[datetime(2017, 1, 2, 14, 45), PriceField.Open],
+                         data_15_min.loc[datetime(2017, 1, 2, 14, 45), PriceField.Open])
+        self.assertEqual(data.loc[datetime(2017, 1, 2, 14, 59), PriceField.Close],
+                         data_15_min.loc[datetime(2017, 1, 2, 14, 45), PriceField.Close])
+        self.assertEqual(data.loc[datetime(2017, 1, 2, 14, 45):datetime(2017, 1, 2, 14, 59), PriceField.Volume].sum(),
+                         data_15_min.loc[datetime(2017, 1, 2, 14, 45), PriceField.Volume])
+
+        self.assertEqual(data.loc[datetime(2017, 1, 2, 14, 0), PriceField.Open],
+                         data_60_min.loc[datetime(2017, 1, 2, 14, 0), PriceField.Open])
+        self.assertEqual(data.loc[datetime(2017, 1, 2, 14, 59), PriceField.Close],
+                         data_60_min.loc[datetime(2017, 1, 2, 14, 0), PriceField.Close])
+        self.assertEqual(data.loc[datetime(2017, 1, 2, 14, 0):datetime(2017, 1, 2, 14, 59), PriceField.Volume].sum(),
+                         data_60_min.loc[datetime(2017, 1, 2, 14, 0), PriceField.Volume])
+
+    def test_get_historical_price_days_data_aggregation(self):
+        no_of_bars = 3
+
+        data = self.data_provider_daily.historical_price(
+            self.ticker, PriceField.ohlcv(), no_of_bars * 31, datetime(2017, 1, 2), Frequency.DAILY)
+
+        data_weekly = self.data_provider_daily.historical_price(
+            self.ticker, PriceField.ohlcv(), no_of_bars, datetime(2017, 1, 2), Frequency.WEEKLY)
+        data_monthly = self.data_provider_daily.historical_price(
+            self.ticker, PriceField.ohlcv(), no_of_bars, datetime(2017, 1, 2), Frequency.MONTHLY)
+
+        self.assertEqual(data_weekly.shape[0], no_of_bars)
+        self.assertEqual(data_monthly.shape[0], no_of_bars)
+
+        self.assertEqual(data.loc[datetime(2016, 12, 26), PriceField.Open],
+                         data_weekly.loc[datetime(2017, 1, 1), PriceField.Open])
+        self.assertEqual(data.loc[datetime(2016, 12, 30), PriceField.Close],
+                         data_weekly.loc[datetime(2017, 1, 1), PriceField.Close])
+        self.assertEqual(data.loc[datetime(2016, 12, 26):datetime(2016, 12, 30), PriceField.Volume].sum(),
+                         data_weekly.loc[datetime(2017, 1, 1), PriceField.Volume])
+
+        self.assertEqual(data.loc[datetime(2016, 12, 1), PriceField.Open],
+                         data_monthly.loc[datetime(2016, 12, 31), PriceField.Open])
+        self.assertEqual(data.loc[datetime(2016, 12, 30), PriceField.Close],
+                         data_monthly.loc[datetime(2016, 12, 31), PriceField.Close])
+        self.assertEqual(data.loc[datetime(2016, 12, 1):datetime(2016, 12, 30), PriceField.Volume].sum(),
+                         data_monthly.loc[datetime(2016, 12, 31), PriceField.Volume])
