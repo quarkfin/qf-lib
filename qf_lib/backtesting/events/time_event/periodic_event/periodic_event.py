@@ -271,5 +271,9 @@ class PeriodicEvent(TimeEvent, metaclass=ABCMeta):
 
     @classmethod
     def exclude_weekends(cls):
-        """ If called, the periodic event will not be notified over the weekends. """
+        """
+        If called, the periodic event will not be notified over the weekends.
+        Initiation of PeriodicEvent must be after setting the exclude_weekends because of the
+        PeriodicEvnet _events_list attribute
+        """
         cls._run_over_weekends = False
