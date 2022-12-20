@@ -16,6 +16,7 @@ from datetime import datetime
 from typing import Any, Sequence, Dict
 
 import numpy as np
+import pandas as pd
 from pandas import to_datetime
 
 from qf_lib.common.enums.frequency import Frequency
@@ -185,7 +186,7 @@ class HistoricalDataProvider:
 
                 try:
                     ticker = ticker_str_to_ticker[security_name]
-                    tickers_data_dict[ticker] = tickers_data_dict[ticker].append(dates_fields_values)
+                    tickers_data_dict[ticker] = QFDataFrame(pd.concat([dates_fields_values, tickers_data_dict[ticker]]))
                 except KeyError:
                     self.logger.warning(f"Received data for a ticker which was not present in the request: "
                                         f"{security_name}. The data for that ticker will be excluded from parsing.")
