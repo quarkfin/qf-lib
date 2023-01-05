@@ -190,8 +190,8 @@ def tickers_dict_to_data_array(tickers_data_dict: Dict[Ticker, QFDataFrame],
     """
     # return empty xr.DataArray if there is no data to be converted
     requested_tickers, _ = convert_to_list(requested_tickers, Ticker)
-    requested_fields, _ = convert_to_list(requested_fields,
-                                          type(requested_fields) if not isinstance(requested_fields, Sequence) else str)
+    if not isinstance(requested_fields, Sequence) or isinstance(requested_fields, str):
+        requested_fields, _ = convert_to_list(requested_fields, type(requested_fields))
 
     if not tickers_data_dict:
         return QFDataArray.create(dates=[], tickers=requested_tickers, fields=requested_fields)

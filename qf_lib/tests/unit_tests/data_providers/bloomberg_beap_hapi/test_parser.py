@@ -21,6 +21,7 @@ from numpy import datetime64, datetime_as_string, float64, nan
 from pandas import isna
 from pandas._testing import assert_frame_equal
 
+from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.data_providers.bloomberg_beap_hapi.bloomberg_beap_hapi_parser import BloombergBeapHapiParser
@@ -49,13 +50,14 @@ class TestBloombergBeapHapiParser(unittest.TestCase):
             """
         )))
         parser = BloombergBeapHapiParser()
-        actual_data_array = parser.get_history(Mock(), {"PX_LAST": "Price"})
+        actual_data_array = parser.get_history(Mock(), {"PX_LAST": "Price"},
+                                               {"CTA Comdty": BloombergTicker("CTA Comdty")})
 
         self.assertEqual(type(actual_data_array), QFDataArray)
         self.assertEqual(actual_data_array.shape, (4, 1, 1))
         self.assertTrue(len(actual_data_array))  # not empty df
 
-        expected_tickers_str_list = ['CTA Comdty']
+        expected_tickers_str_list = [BloombergTicker('CTA Comdty')]
         self.assertCountEqual(actual_data_array.tickers.values, expected_tickers_str_list)
 
         expected_fields_str_list = ['PX_LAST']
@@ -85,13 +87,14 @@ class TestBloombergBeapHapiParser(unittest.TestCase):
             """
         )))
         parser = BloombergBeapHapiParser()
-        actual_data_array = parser.get_history(Mock(), {"PX_LAST": "Price"})
+        actual_data_array = parser.get_history(Mock(), {"PX_LAST": "Price"},
+                                               {"RTYM1 Index": BloombergTicker("RTYM1 Index")})
 
         self.assertEqual(type(actual_data_array), QFDataArray)
         self.assertEqual(actual_data_array.shape, (0, 1, 1))
         self.assertFalse(len(actual_data_array))  # empty df
 
-        expected_tickers_str_list = ['RTYM1 Index']
+        expected_tickers_str_list = [BloombergTicker('RTYM1 Index')]
         self.assertCountEqual(actual_data_array.tickers.values, expected_tickers_str_list)
 
         expected_fields_str_list = ['PX_LAST']
@@ -115,20 +118,22 @@ class TestBloombergBeapHapiParser(unittest.TestCase):
             """
         )))
         parser = BloombergBeapHapiParser()
-        actual_data_array = parser.get_history(Mock(), {"PX_LAST": "Price"})
+        actual_data_array = parser.get_history(Mock(), {"PX_LAST": "Price"},
+                                               {'ASDVCXZASD Index': BloombergTicker('ASDVCXZASD Index'),
+                                                'ASDBVCX ComSADFdty': BloombergTicker('ASDBVCX ComSADFdty')})
 
         self.assertEqual(type(actual_data_array), QFDataArray)
         self.assertEqual(actual_data_array.shape, (0, 2, 1))
         self.assertFalse(len(actual_data_array))  # empty df
 
         expected_tickers_str_list = ['ASDVCXZASD Index', 'ASDBVCX ComSADFdty']
-        self.assertCountEqual(actual_data_array.tickers.values, expected_tickers_str_list)
+        self.assertCountEqual(actual_data_array.tickers.values, BloombergTicker.from_string(expected_tickers_str_list))
 
         expected_fields_str_list = ['PX_LAST']
         self.assertCountEqual(actual_data_array.fields.values, expected_fields_str_list)
 
     @patch('qf_lib.data_providers.bloomberg_beap_hapi.bloomberg_beap_hapi_parser.gzip')
-    def test_get_history_single_ticker_na_field(self, mock):
+    def test_get_current_values_single_ticker_na_field(self, mock):
         mock.open.return_value = BytesIO(str.encode(dedent(
             """
             START-OF-FILE
@@ -154,7 +159,7 @@ class TestBloombergBeapHapiParser(unittest.TestCase):
         self.assertEqual(df.loc['STT US Equity', 'RTG_SP_LT_FC_ISSUER_CREDIT'], None)
 
     @patch('qf_lib.data_providers.bloomberg_beap_hapi.bloomberg_beap_hapi_parser.gzip')
-    def test_get_history_single_ticker_na_real_field(self, mock):
+    def test_get_current_values_single_ticker_na_real_field(self, mock):
         mock.open.return_value = BytesIO(str.encode(dedent(
             """
             START-OF-FILE
@@ -206,7 +211,9 @@ class TestBloombergBeapHapiParser(unittest.TestCase):
         )))
         parser = BloombergBeapHapiParser()
         actual_data_array = parser.get_history(Mock(), {'PX_OPEN': "Price", 'PX_HIGH': "Price", 'PX_LOW': "Price",
-                                                        'PX_LAST': "Price"})
+                                                        'PX_LAST': "Price"},
+                                               {'RTYM1 Index': BloombergTicker("RTYM1 Index"),
+                                                'CTA Comdty': BloombergTicker('CTA Comdty')})
 
         self.assertEqual(type(actual_data_array), QFDataArray)
         self.assertEqual(actual_data_array.shape, (5, 2, 4))
@@ -214,7 +221,7 @@ class TestBloombergBeapHapiParser(unittest.TestCase):
         self.assertEqual(actual_data_array.dtype, float64)
 
         expected_tickers_str_list = ['RTYM1 Index', 'CTA Comdty']
-        self.assertCountEqual(actual_data_array.tickers.values, expected_tickers_str_list)
+        self.assertCountEqual(actual_data_array.tickers.values, BloombergTicker.from_string(expected_tickers_str_list))
 
         expected_fields_str_list = ['PX_OPEN', 'PX_HIGH', 'PX_LOW', 'PX_LAST']
         self.assertCountEqual(actual_data_array.fields.values, expected_fields_str_list)
@@ -252,14 +259,15 @@ class TestBloombergBeapHapiParser(unittest.TestCase):
         )))
         parser = BloombergBeapHapiParser()
         actual_data_array = parser.get_history(Mock(), {'PX_OPEN': "Price", 'PX_HIGH': "Price", 'PX_LOW': "Price",
-                                                        'PX_LAST': "Price", "PX_VOLUME": "Integer"})
+                                                        'PX_LAST': "Price", "PX_VOLUME": "Integer"},
+                                               {"CTA Comdty": BloombergTicker("CTA Comdty")})
 
         self.assertEqual(type(actual_data_array), QFDataArray)
         self.assertEqual(actual_data_array.shape, (5, 1, 5))
         self.assertTrue(len(actual_data_array))
         self.assertEqual(actual_data_array.dtype, float64)
 
-        expected_tickers_str_list = ['CTA Comdty']
+        expected_tickers_str_list = [BloombergTicker('CTA Comdty')]
         self.assertCountEqual(actual_data_array.tickers.values, expected_tickers_str_list)
 
         expected_fields_str_list = ['PX_OPEN', 'PX_HIGH', 'PX_LOW', 'PX_LAST', 'PX_VOLUME']

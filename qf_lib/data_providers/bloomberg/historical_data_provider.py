@@ -18,6 +18,7 @@ from typing import Any, Sequence, Dict
 import numpy as np
 import pandas as pd
 from pandas import to_datetime
+import pandas as pd
 
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.tickers.tickers import BloombergTicker
