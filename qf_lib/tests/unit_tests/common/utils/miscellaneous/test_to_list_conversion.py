@@ -11,8 +11,6 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-from datetime import datetime
-from typing import Sequence
 from unittest import TestCase
 
 from pandas import Index
@@ -72,4 +70,3 @@ class TestToListConversion(TestCase):
         series = QFSeries(data=["hello", "bonjour"])
         with self.assertRaises(ValueError):
             convert_to_list(series, str)
-
