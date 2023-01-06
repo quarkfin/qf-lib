@@ -247,9 +247,17 @@ class PortfolioAnalysisSheet(AbstractDocument):
             columns=["Tickers name", "Start time", "End time", "Position direction"])
 
         def compute_duration(grouped_rows):
-            duration_in_minutes = pd.DatetimeIndex([]).union_many(
-                [pd.date_range(row["Start time"], row["End time"], freq='T', closed='left')
-                 for _, row in grouped_rows.iterrows()]).size
+            indexes = [pd.date_range(row["Start time"], row["End time"], freq='T', inclusive='left')
+                       for _, row in grouped_rows.iterrows()]
+
+            if len(indexes):
+                intervals = indexes[0]
+                for index in indexes[1:]:
+                    intervals = intervals.union(index)
+            else:
+                intervals = pd.DatetimeIndex([])
+
+            duration_in_minutes = intervals.size
             return duration_in_minutes / backtest_duration
 
         positions = positions.groupby(by=["Tickers name", "Position direction"]).apply(compute_duration) \

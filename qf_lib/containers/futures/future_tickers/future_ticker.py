@@ -164,7 +164,7 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
                 _exp_dates = _exp_dates.sort_index()
                 date_index = _exp_dates.index - pd.Timedelta(days=self._days_before_exp_date - 1)
                 date_index = pd.DatetimeIndex([dt + self._expiration_hour for dt in date_index])
-                date_index_loc = date_index.get_loc(self._timer.now(), method="pad")
+                date_index_loc = date_index.get_indexer([self._timer.now()], method="pad")[0]
                 return _exp_dates.iloc[date_index_loc:].iloc[self.N]
 
             def cached_ticker_still_valid(caching_time: datetime, current_time: datetime,
