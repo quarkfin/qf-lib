@@ -100,7 +100,7 @@ class AnalyticalCone(AnalyticalConeBase):
         nr_of_data_points = nr_of_days_to_evaluate + 1  # there is a point for 0 days at the beginning of the cone
 
         # if nr_of_days_to_evaluate is too large and goes into In-Sample, we need to reduce the value
-        is_end_date_int_index = self.series.index.get_loc(is_end_date, method='pad')
+        is_end_date_int_index = self.series.index.get_indexer([is_end_date], method='pad')[0]
         first_cone_index = len(self.log_returns_tms) - nr_of_data_points
         if first_cone_index < is_end_date_int_index:
             first_cone_index = is_end_date_int_index

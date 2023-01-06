@@ -69,7 +69,7 @@ def create_event_comparison_chart(
         event_closest_date = series.index.asof(event_date)
 
         if isinstance(event_closest_date, datetime):
-            event_date_int_index = series.index.get_loc(event_closest_date)
+            event_date_int_index = series.index.get_indexer([event_closest_date])[0]
             start_index = event_date_int_index - samples_before
             end_index = event_date_int_index + samples_after
             end_index = min(end_index, series.count())

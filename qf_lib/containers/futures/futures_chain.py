@@ -208,7 +208,7 @@ class FuturesChain(pd.Series):
 
         # We use the backfill search for locating the start time, because we will additionally consider the time range
         # between start_time and the found starting expiry date time
-        start_time_index_position = shifted_index.get_loc(start_time, method='backfill')
+        start_time_index_position = shifted_index.get_indexer([start_time], method='backfill')[0]
 
         shifted_index = shifted_index[start_time_index_position:]
         shifted_data = self.iloc[start_time_index_position:]
@@ -244,7 +244,7 @@ class FuturesChain(pd.Series):
             # Compute the differences between prices on the expiration days (shifted by the days_before_exp_date
             # number of days). In case if the shifted days in the index contain e.g. saturdays, sundays or other dates
             # that are not in the Future's prices data frame, the first older valid date is taken.
-            end_time_index_position = shifted_index.get_loc(end_time, method='pad')
+            end_time_index_position = shifted_index.get_indexer([end_time], method='pad')[0]
 
             # In the following slice, in case if end_time == expiry date, we also want to include it in the index
             first_days_of_next_contracts = shifted_index[:end_time_index_position + 1]
@@ -377,9 +377,9 @@ class FuturesChain(pd.Series):
         # Exclude contracts which will not be used while building the current futures chain. All of the newer contracts,
         # which will be used for later futures chains building will be downloaded later anyway, as
         # _initialize_futures_chain() is called after each expiration of a contract.
-        current_contract_index = pd.Index(future_tickers_exp_dates_series).get_loc(
-            self._future_ticker.get_current_specific_ticker()
-        )
+        current_contract_index = pd.Index(future_tickers_exp_dates_series).get_indexer(
+            [self._future_ticker.get_current_specific_ticker()]
+        )[0]
         last_ticker_position = min(future_tickers_exp_dates_series.size, current_contract_index + 1)
         future_tickers_exp_dates_series = future_tickers_exp_dates_series.iloc[0:last_ticker_position]
 
