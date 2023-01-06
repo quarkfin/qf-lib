@@ -154,7 +154,7 @@ class FuturesChain(pd.Series):
             return self._preload_data_and_generate_chain(fields, start_date, end_date, frequency).squeeze()
         else:
             # Append the new prices to the existing PricesDataFrame chain
-            self._chain = self._chain.append(prices_after_last_date_in_chain, sort=False)
+            self._chain = pd.concat([self._chain, prices_after_last_date_in_chain])
             self._specific_ticker = self._future_ticker.ticker
             return self._chain[fields_list].loc[start_date:end_date].squeeze()
 
