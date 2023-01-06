@@ -240,7 +240,7 @@ class PortfolioAnalysisSheet(AbstractDocument):
         end_time = self.backtest_result.portfolio.timer.now()
         backtest_duration = pd.Timedelta(end_time - start_time) / pd.Timedelta(minutes=1)  # backtest duration in min
         positions_list = self.backtest_result.portfolio.closed_positions() + \
-                         list(self.backtest_result.portfolio.open_positions_dict.values())
+            list(self.backtest_result.portfolio.open_positions_dict.values())
 
         positions = QFDataFrame(
             data=[(p.ticker().name, p.start_time, (p.end_time or end_time), p.direction()) for p in positions_list],
