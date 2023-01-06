@@ -263,7 +263,8 @@ class PresetDataProvider(DataProvider):
         }
         specific_tickers = list(tickers_mapping.keys())
 
-        fields, got_single_field = convert_to_list(fields, type(fields) if not isinstance(fields, Sequence) else str)
+        fields_type = {type(field) for field in fields} if isinstance(fields, Sequence) else {type(fields)}
+        fields, got_single_field = convert_to_list(fields, tuple(fields_type))
         got_single_date = self._got_single_date(start_date, end_date, frequency)
 
         self._check_if_cached_data_available(specific_tickers, fields, start_date, end_date)
