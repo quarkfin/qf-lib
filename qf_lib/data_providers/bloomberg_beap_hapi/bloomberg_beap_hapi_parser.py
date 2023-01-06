@@ -15,6 +15,8 @@ import gzip
 import re
 from io import StringIO
 from typing import Tuple, List, Dict
+
+from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.qf_data_array import QFDataArray
@@ -74,7 +76,8 @@ class BloombergBeapHapiParser:
 
         return content.set_index("Ticker")[fields]
 
-    def get_history(self, filepath: str, field_to_type: Dict[str, str]) -> QFDataArray:
+    def get_history(self, filepath: str, field_to_type: Dict[str, str], tickers_mapping: Dict[str, BloombergTicker]) \
+            -> QFDataArray:
         """
         Method to parse hapi response and get history data
 
@@ -84,6 +87,8 @@ class BloombergBeapHapiParser:
             The full filepath with downloaded response
         field_to_type: Dict[str, str]
             dictionary mapping requested, correct fields into their corresponding types
+        tickers_mapping: Dict[str, BloombergTicker]
+            dictionary mapping string representations of tickers onto corresponding ticker objects
 
         Returns
         -------
@@ -96,8 +101,10 @@ class BloombergBeapHapiParser:
         fields, content = self._get_fields_and_data_content(filepath, field_to_type, column_names)
 
         tickers_dict = {
-            ticker: df.set_index("Dates")[fields].dropna(how="all") for ticker, df in content.groupby(by="Ticker")
+            tickers_mapping[ticker]: df.set_index("Dates")[fields].dropna(how="all")
+            for ticker, df in content.groupby(by="Ticker")
         }
+
         return tickers_dict_to_data_array(tickers_dict, list(tickers_dict.keys()), fields)
 
     def _get_fields_and_data_content(self, filepath: str, field_to_type: Dict, column_names: List,

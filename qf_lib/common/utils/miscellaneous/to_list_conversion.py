@@ -34,15 +34,18 @@ def convert_to_list(
     Returns
     -------
     List, bool
-        a list of values and a bool value indicating whether the convertion was necessary (True) or not (False)
+        a list of values and a bool value indicating whether the conversion was necessary (True) or not (False)
     """
     if isinstance(value, type_of_single_value):
         list_of_values = [value]
-        was_convertion_necessary = True
+        was_conversion_necessary = True
     elif isinstance(value, Sequence):
         list_of_values = value
-        was_convertion_necessary = False
+        was_conversion_necessary = False
+        if not all(isinstance(value, type_of_single_value) for value in list_of_values):
+            raise ValueError(f"The given Sequence contains values of different type than provided {type_of_single_value}.")
     else:
-        raise ValueError("Incorrect type of an argument.")
+        raise ValueError(f"Incorrect type of the argument. Provided type {type_of_single_value} does not match "
+                         f"{type(value)}, neither is {type(value)} a Sequence.")
 
-    return list_of_values, was_convertion_necessary
+    return list_of_values, was_conversion_necessary

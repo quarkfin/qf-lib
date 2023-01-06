@@ -215,7 +215,6 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
         self.logger.info(f'universe_id: {universe_id} fields_list_id: {fields_list_id} request_id: {request_id}')
 
         out_path = self._download_response(request_id)
-        data_array = self.parser.get_history(out_path, field_to_type)
 
         def current_ticker(t: BloombergTicker):
             return t.get_current_specific_ticker() if isinstance(t, BloombergFutureTicker) else t
@@ -223,8 +222,7 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
         # Map each of the tickers in data array with corresponding ticker from tickers_mapping dictionary (in order
         # to support Future Tickers)
         tickers_mapping = {current_ticker(t).as_string(): t for t in tickers}
-        data_array = data_array.assign_coords(tickers=[tickers_mapping[t] for t in data_array.tickers.values])
-
+        data_array = self.parser.get_history(out_path, field_to_type, tickers_mapping)
         normalized_result = normalize_data_array(data_array, tickers, fields, got_single_date, got_single_ticker,
                                                  got_single_field)
 

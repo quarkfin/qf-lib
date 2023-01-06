@@ -135,7 +135,7 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
         self._assert_is_connected()
 
         tickers, got_single_ticker = convert_to_list(tickers, BloombergFutureTicker)
-        expiration_date_fields, _ = convert_to_list(expiration_date_fields, ExpirationDateField)
+        expiration_date_fields, _ = convert_to_list(expiration_date_fields, str)
 
         # Create a dictionary, which is mapping BloombergFutureTickers to lists of tickers related to specific future
         # contracts belonging to the chain, e.g. it will map Cotton Bloomberg future ticker into:
