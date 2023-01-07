@@ -44,6 +44,7 @@ class IBWrapper(EWrapper):
         self.nextValidOrderId = None
         self.position_list = []  # type: List[BrokerPosition]
         self.order_list = []  # type: List[Order]
+        self.historical_data = {}
         self.contract_details = None
         self._order_id_awaiting_submit = None  # type: int
         self._order_id_awaiting_cancel = None  # type: int
@@ -110,6 +111,23 @@ class IBWrapper(EWrapper):
 
     @iswrapper
     def positionEnd(self):
+        self.action_event_lock.set()
+
+    @iswrapper
+    def historicalData(self, reqId: int, bar):
+        if reqId in self.historical_data:
+            self.historical_data[reqId]['Dates'].append(bar.date)
+            self.historical_data[reqId]['Open'].append(bar.open)
+            self.historical_data[reqId]['High'].append(bar.high)
+            self.historical_data[reqId]['Low'].append(bar.low)
+            self.historical_data[reqId]['Close'].append(bar.close)
+            self.historical_data[reqId]['Volume'].append(bar.volume)
+        else:
+            self.historical_data[reqId] = {'Dates': [bar.date], 'Open': [bar.open], 'High': [bar.high], 'Low': [bar.low],
+                                           'Close': [bar.close], 'Volume': [bar.volume]}
+
+    @iswrapper
+    def historicalDataEnd(self, reqId:int, start:str, end:str):
         self.action_event_lock.set()
 
     @iswrapper
@@ -203,6 +221,9 @@ class IBWrapper(EWrapper):
 
     def reset_order_list(self):
         self.order_list = []
+
+    def reset_historical_data(self):
+        self.historical_data = {}
 
     def set_waiting_order_id(self, order_id: int):
         self._order_id_awaiting_submit = order_id

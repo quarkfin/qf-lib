@@ -71,7 +71,7 @@ class IBBroker(Broker):
         # - thread of the main program
         # - thread of the client
         # - thread of the wrapper
-        thread = Thread(target=self.client.run)
+        thread = Thread(target=self.client.run, daemon=True)
         thread.start()
 
         # This will be released after the client initialises and wrapper receives the nextValidOrderId
@@ -255,6 +255,9 @@ class IBBroker(Broker):
         time_in_force = order.time_in_force
         tif_str = self._map_to_tif_str(time_in_force)
         ib_order.tif = tif_str
+
+        ib_order.eTradeOnly = ''
+        ib_order.firmQuoteOnly = ''
 
         return ib_order
 
