@@ -256,6 +256,7 @@ class IBBroker(Broker):
         tif_str = self._map_to_tif_str(time_in_force)
         ib_order.tif = tif_str
 
+        # this is necessery to set because of desupport of ETradeOnly and FirmQuoteOnly from api 10.10
         ib_order.eTradeOnly = ''
         ib_order.firmQuoteOnly = ''
 
