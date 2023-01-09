@@ -127,7 +127,7 @@ class IBWrapper(EWrapper):
                                            'Close': [bar.close], 'Volume': [bar.volume]}
 
     @iswrapper
-    def historicalDataEnd(self, reqId:int, start:str, end:str):
+    def historicalDataEnd(self, reqId: int, start: str, end: str):
         self.action_event_lock.set()
 
     @iswrapper
