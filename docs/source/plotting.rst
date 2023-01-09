@@ -26,6 +26,7 @@ charts
 	regression_chart.RegressionChart
 	returns_heatmap_chart.ReturnsHeatmapChart
 	surface_chart_3d.SurfaceChart3D
+	pie_chart.PieChart
 
 decorators
 ===========
