@@ -29,7 +29,7 @@ class PieChart(Chart):
         The series to plot in the pie chart.
     slices_distance: float
         The distance between slices. Default is 0.01
-   plot_settings
+    plot_settings
         Options to pass to the ``pie`` function.
     """
 
@@ -46,14 +46,28 @@ class PieChart(Chart):
         self._setup_axes_if_necessary(figsize)
 
         plot_kwargs = self.plot_settings
-        separate = tuple(self.distance for i in range(0, len(self.data)))
+        separate = ((self.distance, ) * len(self.data))
         wedges, _ = self.axes.pie(self.data, startangle=90, counterclock=False, explode=separate, **plot_kwargs)
 
-        bbox_props = dict(boxstyle="square,pad=0.3", fc="w", ec="k", lw=0.72)
-        kw = dict(arrowprops=dict(arrowstyle="-", color='black'), bbox=bbox_props, zorder=0, va="center")
+        arrow_props = {
+            'arrowstyle': '-',
+            'color': 'black'
+        }
+        bbox_props = {
+            "boxstyle": "square,pad=0.3",
+            "fc": "w",
+            "ec": "k",
+            "lw": 0.72
+        }
+        kw = {
+            'arrowprops': arrow_props,
+            'bbox': bbox_props,
+            'zorder': 0,
+            'va': 'center'
+        }
 
         sum_series = self.data.sum()
-        labels = [f"{index}, {value/sum_series:.1%}" for index, value in self.data.iteritems()]
+        labels = [f"{index}, {value / sum_series:.1%}" for index, value in self.data.iteritems()]
 
         for i, p in enumerate(wedges):
             angle = (p.theta2 - p.theta1) / 2. + p.theta1
