@@ -20,8 +20,8 @@ from qf_lib.plotting.charts.pie_chart import PieChart
 
 def main():
     my_series = QFSeries([10, 20, 3, 8.6, 4], ["Example 1", "Example 2", "Example 3", "Example 4", "Example 5"])
-    histogram = PieChart(my_series)
-    histogram.plot()
+    pie_chart = PieChart(my_series)
+    pie_chart.plot()
 
     plt.show(block=True)
 
