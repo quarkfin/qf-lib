@@ -29,20 +29,12 @@ class PieChart(Chart):
         The series to plot in the pie chart.
     slices_distance: float
         The distance between slices. Default is 0.01
-    start_x: Any
-        if not set to None, the chart x-axis will begin at the specified ``start_x`` value
-    end_x: Any
-        if not set to None, the chart x-axis will end at the specified ``end_x`` value.
-    upper_y: Any
-       the upper bound of the y-axis.
-    lower_y: Any
-       the lower bound of the y-axis.
    plot_settings
         Options to pass to the ``pie`` function.
     """
 
-    def __init__(self, data: QFSeries, slices_distance: float = 0.01, start_x: any = None, end_x: any = None, upper_y: any = None, lower_y: any = None, **plot_settings):
-        super().__init__(start_x, end_x, upper_y, lower_y)
+    def __init__(self, data: QFSeries, slices_distance: float = 0.01, **plot_settings):
+        super().__init__()
         self.plot_settings = plot_settings
 
         self.distance = slices_distance
