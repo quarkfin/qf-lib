@@ -71,7 +71,7 @@ class IBBroker(Broker):
         # - thread of the main program
         # - thread of the client
         # - thread of the wrapper
-        thread = Thread(target=self.client.run, daemon=True)
+        thread = Thread(target=self.client.run)
         thread.start()
 
         # This will be released after the client initialises and wrapper receives the nextValidOrderId
