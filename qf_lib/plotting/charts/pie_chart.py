@@ -48,21 +48,24 @@ class PieChart(Chart):
         plot_kwargs = self.plot_settings
         separate = tuple(self.distance for i in range(0, len(self.data)))
         wedges, _ = self.axes.pie(self.data, startangle=90, counterclock=False, explode=separate, **plot_kwargs)
+
         bbox_props = dict(boxstyle="square,pad=0.3", fc="w", ec="k", lw=0.72)
-        kw = dict(arrowprops=dict(arrowstyle="-", color='black'),
-                  bbox=bbox_props, zorder=0, va="center")
+        kw = dict(arrowprops=dict(arrowstyle="-", color='black'), bbox=bbox_props, zorder=0, va="center")
 
         sum_series = self.data.sum()
         labels = [f"{index}, {value/sum_series:.1%}" for index, value in self.data.iteritems()]
 
         for i, p in enumerate(wedges):
-            ang = (p.theta2 - p.theta1) / 2. + p.theta1
-            y = np.sin(np.deg2rad(ang))
-            x = np.cos(np.deg2rad(ang))
-            horizontalalignment = {-1: "right", 1: "left"}[int(np.sign(x))]
-            connectionstyle = "angle,angleA=0,angleB={}".format(ang)
-            kw["arrowprops"].update({"connectionstyle": connectionstyle})
+            angle = (p.theta2 - p.theta1) / 2. + p.theta1
+            y = np.sin(np.deg2rad(angle))
+            x = np.cos(np.deg2rad(angle))
+            connection_style = f"angle,angleA=0,angleB={angle}"
+
+            kw["arrowprops"].update({"connectionstyle": connection_style})
+            horizontal_alignment = "right" if x <= 0 else "left"
+
             self.axes.annotate(labels[i], xy=(x, y), xytext=(1.2 * np.sign(x), 1.2 * y),
-                               horizontalalignment=horizontalalignment, **kw)
+                               horizontalalignment=horizontal_alignment, **kw)
+
         self._apply_decorators()
         self._adjust_style()
