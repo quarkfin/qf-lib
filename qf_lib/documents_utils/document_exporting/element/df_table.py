@@ -11,7 +11,7 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-
+from itertools import groupby
 from typing import Sequence, Optional, Union, Dict, Any
 
 from qf_lib.common.enums.grid_proportion import GridProportion
@@ -45,7 +45,15 @@ class DFTable(Element):
         """
         env = templates.environment
         template = env.get_template("df_table.html")
-        return template.render(css_class=self.model.table_styles.classes(), table=self)
+
+        # Support merging column cells using colspan in case of MultiIndex
+        flat_index = self.columns.to_flat_index() if self.columns.nlevels > 1 else [(el, ) for el in self.columns]
+        columns = [
+            [(x[level], len(list(y))) for x, y in groupby(flat_index, lambda tup: tup[:level+1])]
+            for level in range(self.columns.nlevels)
+        ]
+
+        return template.render(css_class=self.model.table_styles.classes(), table=self, columns=columns)
 
     @property
     def columns(self):
