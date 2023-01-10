@@ -17,13 +17,15 @@
 <table class="{{ css_class }}">
     <caption>{{ table.title }}</caption>
     <thead>
-        <tr>
-            {% for col in table.columns: %}
-                <th>
-                    {{ col }}
-                </th>
-            {% endfor %}
-        </tr>
+        {% for level in columns: %}
+            <tr>
+                {% for col, multiplier in level: %}
+                    <th colspan="{{multiplier}}">
+                        {{ col }}
+                    </th>
+                {% endfor %}
+            </tr>
+        {% endfor %}
     </thead>
     <tbody>
         {% for (index, row), (_, styles) in table.model.iterrows(): %}
