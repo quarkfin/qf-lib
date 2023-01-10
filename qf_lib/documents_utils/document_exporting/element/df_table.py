@@ -48,12 +48,18 @@ class DFTable(Element):
 
         # Support merging column cells using colspan in case of MultiIndex
         flat_index = self.columns.to_flat_index() if self.columns.nlevels > 1 else [(el, ) for el in self.columns]
-        columns = [
+
+        # The following list consist of a number of lists per each multi index level, each of which contains information
+        # about the number of occurrences of each column, e.g. MultiIndex([('A', 'X'), ('A', 'Y'), ('B', 'Y')]) would be
+        # mapped onto [[('A', 2), ('B', 1)], [('X', 1), ('Y', 1), ('Y', 1)]] as first level contains of A (colspan=2)
+        # and B (colspan=1) and the second one - X (colspan=1) and two times Y (colspan=1) (we don't merge those two
+        # cells as one belongs to 'A' and the other to 'B')
+        columns_to_occurrences = [
             [(x[level], len(list(y))) for x, y in groupby(flat_index, lambda tup: tup[:level+1])]
             for level in range(self.columns.nlevels)
         ]
 
-        return template.render(css_class=self.model.table_styles.classes(), table=self, columns=columns)
+        return template.render(css_class=self.model.table_styles.classes(), table=self, columns=columns_to_occurrences)
 
     @property
     def columns(self):
