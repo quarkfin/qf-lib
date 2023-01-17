@@ -11,6 +11,7 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
+from typing import Optional
 
 from qf_lib.common.enums.grid_proportion import GridProportion
 from qf_lib.documents_utils.document_exporting.document import Document
@@ -22,7 +23,7 @@ class Element:
     def __init__(self, grid_proportion=GridProportion.Eight):
         self.grid_proportion = grid_proportion
 
-    def generate_html(self, document: Document) -> str:
+    def generate_html(self, document: Optional[Document] = None) -> str:
         raise NotImplementedError()
 
     def get_grid_proportion_css_class(self) -> str:

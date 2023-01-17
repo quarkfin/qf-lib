@@ -11,6 +11,7 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
+from typing import Optional
 
 from qf_lib.common.enums.grid_proportion import GridProportion
 from qf_lib.documents_utils.document_exporting import templates
@@ -32,7 +33,7 @@ class IndexElement(Element):
         super().__init__(grid_proportion)
         self.max_level = max_level
 
-    def generate_html(self, document: Document) -> str:
+    def generate_html(self, document: Optional[Document] = None) -> str:
         """
         Generates the underlying HTML for this Index element. The generated index is based on the headings in the
         document that this ``IndexElement`` was added to.
