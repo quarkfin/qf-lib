@@ -39,7 +39,7 @@ class DFTable(Element):
 
         self.title = title
 
-    def generate_html(self, document: Optional[Document]) -> str:
+    def generate_html(self, document: Optional[Document] = None) -> str:
         """
         Generates the underlying table element as HTML.
         """

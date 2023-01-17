@@ -11,6 +11,7 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
+from typing import Optional
 
 from qf_lib.common.enums.grid_proportion import GridProportion
 from qf_lib.documents_utils.document_exporting.document import Document
@@ -25,7 +26,7 @@ class CustomElement(Element):
         super().__init__(grid_proportion)
         self.html = html
 
-    def generate_html(self, document: Document) -> str:
+    def generate_html(self, document: Optional[Document] = None) -> str:
         """
         Generates the HTML that represents the underlying element.
         """

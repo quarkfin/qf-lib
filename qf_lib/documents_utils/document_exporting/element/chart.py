@@ -13,7 +13,7 @@
 #     limitations under the License.
 import traceback
 import uuid
-from typing import Tuple
+from typing import Tuple, Optional
 
 from jinja2 import Template
 
@@ -85,7 +85,7 @@ class ChartElement(Element):
         self._chart.close()
         return result
 
-    def generate_html(self, document: Document) -> str:
+    def generate_html(self, document: Optional[Document] = None) -> str:
         """
         Generates the HTML necessary to display the underlying chart in a PDF document. The chart is rendered in
         memory, then encoded to base64 and embedded in the HTML

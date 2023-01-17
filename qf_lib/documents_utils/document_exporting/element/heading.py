@@ -13,6 +13,7 @@
 #     limitations under the License.
 
 import uuid
+from typing import Optional
 
 from qf_lib.common.enums.grid_proportion import GridProportion
 from qf_lib.documents_utils.document_exporting import templates
@@ -37,7 +38,7 @@ class HeadingElement(Element):
         self.text = text
         self.id = "heading_" + str(uuid.uuid4())
 
-    def generate_html(self, document: Document) -> str:
+    def generate_html(self, document: Optional[Document] = None) -> str:
         """
         Generates the HTML that represents the underlying heading.
         """

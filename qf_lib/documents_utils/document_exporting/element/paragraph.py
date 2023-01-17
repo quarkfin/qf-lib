@@ -11,7 +11,7 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-from typing import Union, Sequence
+from typing import Union, Sequence, Optional
 
 from jinja2 import Template
 
@@ -46,7 +46,7 @@ class ParagraphElement(Element):
         css_classes = merge_classes(css_classes)
         self._css_classes = css_classes
 
-    def generate_html(self, document: Document) -> str:
+    def generate_html(self, document: Optional[Document] = None) -> str:
         """
         Generates the underlying paragraph element's HTML.
         """

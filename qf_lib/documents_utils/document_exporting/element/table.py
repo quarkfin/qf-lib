@@ -243,7 +243,7 @@ class Table(Element):
         for row in self.rows:
             row.append(self.Cell(text, "{}"))
 
-    def generate_html(self, document: Optional[Document]) -> str:
+    def generate_html(self, document: Optional[Document] = None) -> str:
         """
         Generates the underlying table element as HTML.
         """

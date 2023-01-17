@@ -13,6 +13,7 @@
 #     limitations under the License.
 
 import datetime
+from typing import Optional
 
 from qf_lib.common.enums.grid_proportion import GridProportion
 from qf_lib.common.utils.dateutils.date_format import DateFormat
@@ -40,7 +41,7 @@ class PageHeaderElement(Element):
 
         self.date = date_to_str(date, DateFormat.LONG_DATE)
 
-    def generate_html(self, document: Document) -> str:
+    def generate_html(self, document: Optional[Document] = None) -> str:
         """
         Generates the HTML that represents the underlying header.
         """

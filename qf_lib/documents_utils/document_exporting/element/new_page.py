@@ -11,6 +11,7 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
+from typing import Optional
 
 from qf_lib.documents_utils.document_exporting import templates
 from qf_lib.documents_utils.document_exporting.document import Document
@@ -24,7 +25,7 @@ class NewPageElement(Element):
         """
         super().__init__()
 
-    def generate_html(self, document: Document) -> str:
+    def generate_html(self, document: Optional[Document] = None) -> str:
         """
         Generates the HTML that represents the jump to the new page.
         """
