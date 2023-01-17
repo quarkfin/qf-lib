@@ -58,7 +58,7 @@ class GridElement(Element):
         self.dpi = dpi
         self.optimise = optimise
 
-    def generate_html(self, document: Optional[Document]) -> str:
+    def generate_html(self, document: Optional[Document] = None) -> str:
         """
         Generates the HTML necessary to display the underlying grid of charts in a PDF. Each ``ChartElement``'s
         ``generate_html`` method is called, this means that charts will be saved during the execution of this
