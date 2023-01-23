@@ -212,7 +212,7 @@ class ExcelExporter:
             work_sheet.cell(row=row, column=column, value=self._to_supported_type(column_name))
             row += 1
 
-        for date, value in series.iteritems():
+        for date, value in series.items():
             work_sheet.cell(row=row, column=column, value=self._to_supported_type(value))
             row += 1
 
@@ -224,7 +224,7 @@ class ExcelExporter:
         else:
             column = starting_column
 
-        for series_name, series in dataframe.iteritems():
+        for series_name, series in dataframe.items():
             self._write_series_to_worksheet(series, work_sheet, starting_row, column, include_index=False,
                                             column_name=series_name if include_column_names else None)
             column += 1
