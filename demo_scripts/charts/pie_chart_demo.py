@@ -18,12 +18,28 @@ from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.plotting.charts.pie_chart import PieChart
 
 
-def main():
+def demo_with_5_data_points():
     my_series = QFSeries([10, 20, 3, 8.6, 4], ["Example 1", "Example 2", "Example 3", "Example 4", "Example 5"])
     pie_chart = PieChart(my_series)
     pie_chart.plot()
-
     plt.show(block=True)
+
+
+def demo_with_15_data_points():
+    my_series = QFSeries([10, 20, 3, 8.6, 4,
+                          10, 20, 3, 8.6, 4,
+                          10, 20, 3, 8.6, 4],
+                         ["Example 11", "Example 12", "Example 13", "Example 14", "Example 15",
+                          "Example 21", "Example 22", "Example 23", "Example 24", "Example 25",
+                          "Example 31", "Example 32", "Example 33", "Example 34", "Example 35"])
+    pie_chart = PieChart(my_series)
+    pie_chart.plot()
+    plt.show(block=True)
+
+
+def main():
+    demo_with_5_data_points()
+    demo_with_15_data_points()
 
 
 if __name__ == '__main__':
