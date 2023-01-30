@@ -73,12 +73,13 @@ class PieChart(Chart):
             angle = (p.theta2 - p.theta1) / 2. + p.theta1
             y = np.sin(np.deg2rad(angle))
             x = np.cos(np.deg2rad(angle))
+            yc = np.arcsin(y) / (np.pi / 2)
             connection_style = f"angle,angleA=0,angleB={angle}"
 
             kw["arrowprops"].update({"connectionstyle": connection_style})
             horizontal_alignment = "right" if x <= 0 else "left"
 
-            self.axes.annotate(labels[i], xy=(x, y), xytext=(1.2 * np.sign(x), 1.2 * y),
+            self.axes.annotate(labels[i], xy=(0.8 * x, 0.8 * y), xytext=((1.3 + (i % 2) * 0.4) * np.sign(x), 1.4 * yc),
                                horizontalalignment=horizontal_alignment, **kw)
 
         self._apply_decorators()
