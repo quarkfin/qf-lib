@@ -47,7 +47,7 @@ class TradingSession(metaclass=ABCMeta):
         self.contract_ticker_mapper = None  # type: ContractTickerMapper
         self.order_factory = None           # type: OrderFactory
         self.position_sizer = None          # type: PositionSizer
-        self.orders_filters = None          # type: Sequence[OrdersFilter]
+        self.orders_filters = []          # type: Sequence[OrdersFilter]
         self.event_manager = None           # type: EventManager
 
         self.notifiers = None               # type: Notifiers
