@@ -247,7 +247,7 @@ class PortfolioAnalysisSheet(AbstractDocument):
             columns=["Tickers name", "Start time", "End time", "Position direction"])
 
         def compute_duration(grouped_rows):
-            indexes = [pd.date_range(row["Start time"], row["End time"], freq='T', inclusive='left')
+            indexes = [pd.date_range(row["Start time"], row["End time"], freq='T', closed='left')
                        for _, row in grouped_rows.iterrows()]
 
             if len(indexes):
