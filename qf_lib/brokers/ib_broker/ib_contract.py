@@ -44,7 +44,7 @@ class IBContract(Contract):
         SecurityType.STOCK: "STK",
         SecurityType.INDEX: "IND",
         SecurityType.SPREAD: "BAG",
-        SecurityType.CONFUT: "CONFUT"
+        SecurityType.CONTFUT: "CONTFUT"
     }
 
     @iswrapper
