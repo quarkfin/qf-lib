@@ -34,5 +34,5 @@ class SecurityType(Enum):
     """Spread"""
     CRYPTO = "CRYPTO"
     """"Crypto"""
-    CONFUT = "CONFUT"
+    CONTFUT = "CONTFUT"
     """"Continuous future contract"""
