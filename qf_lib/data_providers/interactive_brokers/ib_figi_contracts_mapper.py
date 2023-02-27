@@ -54,7 +54,7 @@ class IBFIGItoContractMapper:
         self.waiting_time = 30  # expressed in seconds
         # Lock that informs us that wrapper received the response
         self.action_event_lock = Event()
-        self.wrapper = IBWrapper(self.action_event_lock, IBContractTickerMapper({}))
+        self.wrapper = IBWrapper(self.action_event_lock, IBContractTickerMapper({}))  # not necessary to have configured IBContractTickerMapper for FIGI contracts mapping
         self.client = EClient(wrapper=self.wrapper)
         self.clientId = clientId
         self.client.connect(host, port, self.clientId)
@@ -102,8 +102,7 @@ class IBFIGItoContractMapper:
         return new_ticker_to_contract_mapping
 
     def stop(self):
-        """ Stop the Broker client and disconnect from the interactive brokers. """
-        print('Stopping')
+        """ Stop the IBFIGItoContractMapper client and disconnect from the interactive brokers. """
         with self.lock:
             self.client.disconnect()
             self.logger.info("Disconnecting from the interactive brokers client")
