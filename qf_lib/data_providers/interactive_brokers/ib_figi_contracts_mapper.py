@@ -14,25 +14,27 @@
 from threading import Thread, Event, Lock
 from typing import Optional, Dict
 from ibapi.client import EClient
-from ibapi.contract import Contract
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.ib_contract_ticker_mapper import IBContractTickerMapper
-from qf_lib.common.tickers.tickers import Ticker
+from qf_lib.brokers.ib_broker.ib_contract import IBContract
+from qf_lib.common.enums.security_type import SecurityType
+from qf_lib.common.tickers.tickers import Ticker, PortaraTicker
 from qf_lib.common.utils.logging.qf_parent_logger import ib_logger
 from qf_lib.brokers.ib_broker.ib_wrapper import IBWrapper
 
 
-class IBFIGItoContractMapper:
+class IBFIGItoIBContractMapper:
     """
-    IB FIGItoContractMapper mapper that can be used to map FIGI defined IB contracts to the more specific ones.
+    IB IBFIGItoIBContractMapper mapper that can be used to map FIGI defined IB contracts to the more specific ones.
     It is possible to define contracts like in the example for AAPL:
 
-    contract = Contract()
-    contract.secIdType = "FIGI"
-    contract.secId = "BBG000B9XRY4"
-    contract.exchange = "SMART"
+    ib_contract = IBContract()
+    ib_contract.secIdType = "FIGI"
+    ib_contract.secId = "BBG000B9XRY4"
+    ib_contract.exchange = "SMART"
 
     However, some functionality like requesting historical data does not work with FIGI identifiers at this point.
-    Therefore mapping of FIGI contracts to the more general IB Contacts is required.
+    Therefore mapping of FIGI contracts to the more general IB Contacts is required. This class might be removed in
+    the future when IB will add support to use FIGI contracts for the rest purposes.
 
     Parameters
     ----------
@@ -69,9 +71,9 @@ class IBFIGItoContractMapper:
 
         # This will be released after the client initialises and wrapper receives the nextValidOrderId
         if not self._wait_for_results():
-            raise ConnectionError("IB FIGItoContractMapper was not initialized correctly")
+            raise ConnectionError("IB IBFIGItoIBContractMapper was not initialized correctly")
 
-    def get_ticker_to_contract_mapping_from_figi_contracts(self, ticker_to_contract: Dict[Ticker, Contract]) -> Dict[Ticker, Contract]:
+    def get_ticker_to_contract_mapping_from_figi_contracts(self, ticker_to_contract: Dict[Ticker, IBContract]) -> Dict[Ticker, IBContract]:
         """"
         Function to map dictionary:
             ticker -> ib_figi_contract
@@ -80,9 +82,9 @@ class IBFIGItoContractMapper:
 
         Parameters
         ----------
-        ticker_to_contract: Dict[Ticker, Contract]
+        ticker_to_contract: Dict[Ticker, IBContract]
             mapping between Tickers and parameters that should be used for these tickers, when transforming them into
-            Contracts (FIGI secIdType).
+            IBContracts (FIGI secIdType).
 
         Returns
         -------
@@ -94,7 +96,7 @@ class IBFIGItoContractMapper:
         for ticker, contract in ticker_to_contract.items():
             contract_details = self._get_contract_details(reqId, contract)
             if contract_details:
-                new_ticker_to_contract_mapping[ticker] = contract_details.contract
+                new_ticker_to_contract_mapping[ticker] = IBContract.from_string(str(contract_details.contract))
             else:
                 self.logger.info(f'Could not find corresponding contract details for the ticker {ticker} and contract '
                                  f'{contract}. Using FIGI contract instead')
@@ -102,7 +104,7 @@ class IBFIGItoContractMapper:
         return new_ticker_to_contract_mapping
 
     def stop(self):
-        """ Stop the IBFIGItoContractMapper client and disconnect from the interactive brokers. """
+        """ Stop the IBFIGItoIBContractMapper client and disconnect from the interactive brokers. """
         with self.lock:
             self.client.disconnect()
             self.logger.info("Disconnecting from the interactive brokers client")
@@ -118,7 +120,6 @@ class IBFIGItoContractMapper:
             else:
                 error_msg = f'Time out while getting positions for contract {contract}'
                 self.logger.error(error_msg)
-                return None
 
     def _wait_for_results(self, waiting_time: Optional[int] = None) -> bool:
         """ Wait for self.waiting_time """
