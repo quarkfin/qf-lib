@@ -16,8 +16,7 @@ from typing import Optional, Dict
 from ibapi.client import EClient
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.ib_contract_ticker_mapper import IBContractTickerMapper
 from qf_lib.brokers.ib_broker.ib_contract import IBContract
-from qf_lib.common.enums.security_type import SecurityType
-from qf_lib.common.tickers.tickers import Ticker, PortaraTicker
+from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.logging.qf_parent_logger import ib_logger
 from qf_lib.brokers.ib_broker.ib_wrapper import IBWrapper
 
