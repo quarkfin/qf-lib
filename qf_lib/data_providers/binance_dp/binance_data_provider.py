@@ -53,6 +53,9 @@ class BinanceDataProvider(CSVDataProvider):
         beginning of the data in local time (it is automatically converted to UTC time used by binance)
     end_date: datetime
         end of the data in local time (it is automatically converted to UTC time used by binance)
+    contract_ticker_mapper: BinanceContractTickerMapper
+        object which contains a set of parameters for every ticker and allows to map a ticker onto a broker
+        specific contract / ticker object that could be afterwards used while sending the Order.
     frequency: Frequency = Frequency.MIN_1
         frequency of the data
     """
