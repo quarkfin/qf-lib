@@ -27,7 +27,8 @@ from qf_lib.plotting.charts.chart import Chart
 
 class ChartElement(Element):
     def __init__(self, chart: Chart, figsize: Tuple[float, float] = None, dpi=250,
-                 optimise=False, grid_proportion=GridProportion.Eight, comment: str = ""):
+                 optimise=False, grid_proportion=GridProportion.Eight, comment: str = "",
+                 fig_actual_size: Tuple[float, float] = None, float_setting: str = None, **savefig_settings):
         """
         Constructs a new chart element that can be rendered in a PDF or on a website.
 
@@ -50,15 +51,30 @@ class ChartElement(Element):
             the ``Web`` plotting mode.
         comment
             An optional comment to add underneath a chart shown inside a PDF.
+        fig_actual_size: Tuple[float, float]
+            The actual size of the chart in pixels
+            If None, then the width will the 100%
+        float_setting: str
+            The HTML float style parameter for the chart
+        **savefig_settings
+            Settings for the savefig method inside the render_as_base64_image method
         """
         super().__init__(grid_proportion)
         self._chart = chart
         self._filename = "{}.png".format(uuid.uuid4())
         self.figsize = figsize
+
+        self.fig_actual_size = fig_actual_size
+
         self.dpi = dpi
         self.optimise = optimise
         self.grid_proportion = grid_proportion
         self.comment = comment
+
+        self.savefig_settings = savefig_settings
+
+        self.float_setting = float_setting
+
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
     def get_grid_proportion_css_class(self) -> str:
@@ -91,10 +107,21 @@ class ChartElement(Element):
         memory, then encoded to base64 and embedded in the HTML
         """
         try:
-            base64 = self._chart.render_as_base64_image(self.figsize, self.dpi, self.optimise)
+            base64 = self._chart.render_as_base64_image(self.figsize, self.dpi, self.optimise,
+                                                        **self.savefig_settings)
             env = templates.environment
             template = env.get_template("chart.html")
-            result = template.render(data=base64, width="100%")
+
+            if self.fig_actual_size:
+                width, height = self.fig_actual_size
+                result = template.render(data=base64,
+                                         width=f'{width}px',
+                                         height=f'{height}px',
+                                         float=self.float_setting)
+            else:
+                result = template.render(data=base64,
+                                         width='100%',
+                                         float=self.float_setting)
 
         except Exception as ex:
             error_message = "{}\n{}".format(ex.__class__.__name__, traceback.format_exc())
