@@ -53,7 +53,7 @@ class ChartElement(Element):
             An optional comment to add underneath a chart shown inside a PDF.
         html_figsize: Tuple[float, float]
             The actual size of the chart in pixels
-            If None, then the width will the 100%
+            If None, then the width will be 100%
         float_setting: str
             The HTML float style parameter for the chart
         **savefig_settings
