@@ -22,7 +22,6 @@ from collections import OrderedDict
 from typing import List, Any, Union, Tuple
 
 import matplotlib as mpl
-import matplotlib.artist as artist
 import matplotlib.pyplot as plt
 from PIL import Image
 from matplotlib.ticker import FixedLocator
