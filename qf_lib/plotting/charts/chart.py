@@ -22,7 +22,6 @@ from collections import OrderedDict
 from typing import List, Any, Union, Tuple
 
 import matplotlib as mpl
-import matplotlib.artist as artist
 import matplotlib.pyplot as plt
 from PIL import Image
 from matplotlib.ticker import FixedLocator
@@ -129,7 +128,7 @@ class Chart:
         raise NotImplementedError
 
     def render_as_base64_image(
-            self, figsize: Tuple[float, float] = None, dpi: int = 250, optimise: bool = False) -> str:
+            self, figsize: Tuple[float, float] = None, dpi: int = 250, optimise: bool = False, **savefig_settings) -> str:
         """
         Plots the chart and returns the base64 image.
         """
@@ -140,7 +139,7 @@ class Chart:
 
             # Render as PNG.
             buffer = io.BytesIO()
-            self.figure.savefig(buffer, format="PNG", dpi=dpi)
+            self.figure.savefig(buffer, format="PNG", dpi=dpi, **savefig_settings)
 
             buffer.seek(0)
 
@@ -307,7 +306,7 @@ class Chart:
         Set's default style properties, which couldn't be set using style sheets.
         """
         # make x labels horizontal
-        artist.setp(self.axes.xaxis.get_majorticklabels(), rotation=0, horizontalalignment='center')
+        # artist.setp(self.axes.xaxis.get_majorticklabels(), rotation=0, horizontalalignment='center')
 
         # Remove right and top lines around the graph.
         self.axes.spines['right'].set_visible(False)
