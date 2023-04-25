@@ -28,7 +28,7 @@ from qf_lib.plotting.charts.chart import Chart
 class ChartElement(Element):
     def __init__(self, chart: Chart, figsize: Tuple[float, float] = None, dpi=250,
                  optimise=False, grid_proportion=GridProportion.Eight, comment: str = "",
-                 fig_actual_size: Tuple[float, float] = None, float_setting: str = None, **savefig_settings):
+                 html_figsize: Tuple[float, float] = None, float_setting: str = None, **savefig_settings):
         """
         Constructs a new chart element that can be rendered in a PDF or on a website.
 
@@ -51,7 +51,7 @@ class ChartElement(Element):
             the ``Web`` plotting mode.
         comment
             An optional comment to add underneath a chart shown inside a PDF.
-        fig_actual_size: Tuple[float, float]
+        html_figsize: Tuple[float, float]
             The actual size of the chart in pixels
             If None, then the width will the 100%
         float_setting: str
@@ -64,7 +64,7 @@ class ChartElement(Element):
         self._filename = "{}.png".format(uuid.uuid4())
         self.figsize = figsize
 
-        self.fig_actual_size = fig_actual_size
+        self.html_figsize = html_figsize
 
         self.dpi = dpi
         self.optimise = optimise
@@ -112,8 +112,8 @@ class ChartElement(Element):
             env = templates.environment
             template = env.get_template("chart.html")
 
-            if self.fig_actual_size:
-                width, height = self.fig_actual_size
+            if self.html_figsize:
+                width, height = self.html_figsize
                 result = template.render(data=base64,
                                          width=f'{width}px',
                                          height=f'{height}px',
