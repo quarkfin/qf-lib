@@ -281,7 +281,7 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
         }
         return expiration_date_field_dict
 
-    def price_field_to_str_map(self, ticker: BloombergTicker = None) -> Dict[PriceField, str]:
+    def price_field_to_str_map(self) -> Dict[PriceField, str]:
         price_field_dict = {
             PriceField.Open: 'PX_OPEN',
             PriceField.High: 'PX_HIGH',

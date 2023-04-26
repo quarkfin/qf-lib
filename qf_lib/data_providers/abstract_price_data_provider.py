@@ -53,7 +53,7 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
         fields_str = self._map_field_to_str(tickers, fields)
         container = self.get_history(tickers, fields_str, start_date, end_date, frequency)
 
-        str_to_field_dict = self.str_to_price_field_map(self._get_first_ticker(tickers))
+        str_to_field_dict = self.str_to_price_field_map()
 
         # Map the specific fields onto the fields given by the str_to_field_dict
         if isinstance(container, QFDataArray):
@@ -71,16 +71,11 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
         return normalized_result
 
     @abstractmethod
-    def price_field_to_str_map(self, ticker: Ticker = None) -> Dict[PriceField, str]:
+    def price_field_to_str_map(self) -> Dict[PriceField, str]:
         """
         Method has to be implemented in each data provider in order to be able to use get_price.
         Returns dictionary containing mapping between PriceField and corresponding string that has to be used by
         get_history method to get appropriate type of price series.
-
-        Parameters
-        -----------
-        ticker: None, Ticker
-            ticker is optional and might be uses by particular data providers to create appropriate dictionary
 
         Returns
         -------
@@ -156,11 +151,11 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
         inv_dict = {v: k for k, v in field_str_dict.items()}
         return inv_dict
 
-    def str_to_price_field_map(self, ticker: Ticker = None) -> Dict[str, PriceField]:
+    def str_to_price_field_map(self) -> Dict[str, PriceField]:
         """
         Inverse of price_field_to_str_map.
         """
-        field_str_dict = self.price_field_to_str_map(ticker)
+        field_str_dict = self.price_field_to_str_map()
         inv_dict = {v: k for k, v in field_str_dict.items()}
         return inv_dict
 
@@ -187,7 +182,7 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
         if fields is None:
             return None
 
-        field_str_dict = self.price_field_to_str_map(self._get_first_ticker(tickers))
+        field_str_dict = self.price_field_to_str_map()
 
         if self._is_single_price_field(fields):
             if fields in field_str_dict:
