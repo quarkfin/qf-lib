@@ -1,0 +1,31 @@
+name: integration_test
+
+# Were we can define the inputs that our action will accept
+inputs:
+  subdirectory:
+    required: true
+  quantfin_secrets:
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[blpapi]" --extra-index-url https://bcms.bloomberg.com/pip/simple/
+        pip install --force-reinstall MarkupSafe==2.0.1
+        pip install flake8==5.0.4 pytest
+        pip install coverage
+    - name: Integration tests
+      env:
+        QUANTFIN_SECRET: ${{ inputs.quantfin_secrets }}
+      run: |
+        coverage run -a -m pytest qf_lib/tests/integration_tests/${{ inputs.subdirectory }}
+        coverage xml
+    - name: Upload to Codecov
+      uses: codecov/codecov-action@v2
+      with:
+        fail_ci_if_error: true
+        name: qf-lib-codecov
+        verbose: true
