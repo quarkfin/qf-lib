@@ -50,7 +50,7 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
         tickers, got_single_ticker = convert_to_list(tickers, Ticker)
         fields, got_single_field = convert_to_list(fields, PriceField)
 
-        fields_str = self._map_field_to_str(tickers, fields)
+        fields_str = self._map_field_to_str(fields)
         container = self.get_history(tickers, fields_str, start_date, end_date, frequency)
 
         str_to_field_dict = self.str_to_price_field_map()
@@ -160,7 +160,7 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
         return inv_dict
 
     def _map_field_to_str(
-            self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[None, PriceField, Sequence[PriceField]]) \
+            self, fields: Union[None, PriceField, Sequence[PriceField]]) \
             -> Union[None, str, Sequence[str]]:
         """
         The method maps enum to sting that is recognised by the specific database.
