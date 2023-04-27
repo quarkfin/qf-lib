@@ -228,7 +228,7 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
 
         return normalized_result
 
-    def price_field_to_str_map(self, ticker: BloombergTicker = None) -> Dict[PriceField, str]:
+    def price_field_to_str_map(self) -> Dict[PriceField, str]:
         return {
             PriceField.Open: 'PX_OPEN',
             PriceField.High: 'PX_HIGH',

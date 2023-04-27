@@ -99,7 +99,7 @@ class HaverDataProvider(AbstractPriceDataProvider):
     def supported_ticker_types(self):
         return {HaverTicker}
 
-    def price_field_to_str_map(self, ticker: HaverTicker = None) -> Dict[PriceField, Optional[str]]:
+    def price_field_to_str_map(self) -> Dict[PriceField, Optional[str]]:
         """
         Haver stores only end of day figures. Use PriceField.Close to obtain them
         """
