@@ -50,7 +50,7 @@ jobs:
       run: |
         coverage run -m pytest qf_lib/tests/unit_tests
     - name: Upload to Codecov
-      uses: codecov/codecov-action@v2
+      uses: codecov/codecov-action@v3
       with:
         fail_ci_if_error: true
         name: qf-lib-codecov
@@ -62,7 +62,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: "3.9"
       - name: Install dependencies
@@ -79,7 +79,7 @@ jobs:
           coverage run -a -m pytest qf_lib/tests/integration_tests/backtesting
           coverage xml
       - name: Upload to Codecov
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           fail_ci_if_error: true
           name: qf-lib-codecov
@@ -91,7 +91,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: "3.9"
       - name: Install dependencies
@@ -108,7 +108,7 @@ jobs:
           coverage run -a -m pytest qf_lib/tests/integration_tests/data_providers
           coverage xml
       - name: Upload to Codecov
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           fail_ci_if_error: true
           name: qf-lib-codecov
