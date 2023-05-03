@@ -1,0 +1,11 @@
+name: Other Issue
+description: Other kind of the issue
+title: "[Issue]: "
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Any precise description of the issue
+    validations:
+      required: true
