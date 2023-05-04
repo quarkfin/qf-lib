@@ -44,11 +44,12 @@ jobs:
         pip install --force-reinstall MarkupSafe==2.0.1
         pip install flake8==5.0.4 pytest
         pip install coverage
+        pip install pytest-cov
     - name: Unit tests
       env:
         QUANTFIN_SECRET: ${{ secrets.QUANTFIN_SECRET }}
       run: |
-        coverage run -m pytest qf_lib/tests/unit_tests
+        coverage run -m pytest --cov-report xml qf_lib/tests/unit_tests
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
@@ -119,5 +120,7 @@ jobs:
         uses: actions/checkout@v3
       - name: Download artifacts
         uses: actions/download-artifact@v3
+        with:
+          name: unit_tests
       - name: Upload to Codecov
         uses: codecov/codecov-action@v3
