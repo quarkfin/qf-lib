@@ -49,11 +49,13 @@ jobs:
       env:
         QUANTFIN_SECRET: ${{ secrets.QUANTFIN_SECRET }}
       run: |
-        coverage run -m pytest qf_lib/tests/unit_tests --cov-report=xml
+        coverage run -m pytest qf_lib/tests/unit_tests
+        coverage xml
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
         name: unit_tests
+        path: unit_tests.xml
 
 #  backtesting_tests:
 #    runs-on: ubuntu-latest
