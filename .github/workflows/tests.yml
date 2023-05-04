@@ -118,9 +118,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Download artifacts
-        uses: actions/download-artifact@v3
+        uses: marcofaggian/action-download-multiple-artifacts@v1
         with:
-          name: "unit_tests", "data_providers_tests", "backtesting_tests"
+          name: unit_tests data_providers_tests backtesting_tests
       - name: Upload to Codecov
         uses: codecov/codecov-action@v3
         with:
