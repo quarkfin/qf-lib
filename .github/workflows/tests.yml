@@ -55,7 +55,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: unit_tests
-        path: unit_tests.xml
+        path: coverage.xml
 
 #  backtesting_tests:
 #    runs-on: ubuntu-latest
