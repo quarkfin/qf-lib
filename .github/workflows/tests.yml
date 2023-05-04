@@ -117,10 +117,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Download artifacts
-        uses: marcofaggian/action-download-multiple-artifacts@v1
+      - name: Download unit_tests artifacts
+        uses: actions/download-artifact@v3
         with:
-          name: unit_tests data_providers_tests backtesting_tests
+          name: unit_tests
+      - name: Download artifacts data_providers_tests
+        uses: actions/download-artifact@v3
+        with:
+          name: data_providers_tests
+      - name: Download backtesting_tests artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: backtesting_tests
       - name: Upload to Codecov
         uses: codecov/codecov-action@v3
         with:
