@@ -132,6 +132,7 @@ jobs:
       - name: Upload to Codecov
         uses: codecov/codecov-action@v3
         with:
+          files: ./unit_tests.xml, ./data_providers_tests.xml, ./backtesting_tests.xml
           fail_ci_if_error: true
           name: qf-lib-codecov
           verbose: true
