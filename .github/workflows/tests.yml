@@ -55,7 +55,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: unit_tests
-        path: coverage.xml
+        path: unit_tests.xml
   backtesting_tests:
     runs-on: ubuntu-latest
     needs: style_check
@@ -82,7 +82,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: backtesting_tests
-          path: coverage.xml
+          path: backtesting_tests.xml
 
   data_providers_tests:
     runs-on: ubuntu-latest
@@ -110,7 +110,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: data_providers_tests
-          path: coverage.xml
+          path: data_providers_tests.xml
   codecov_upload:
     runs-on: ubuntu-latest
     needs: [unit_tests, data_providers_tests, backtesting_tests]
