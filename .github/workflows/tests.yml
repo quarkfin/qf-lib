@@ -33,21 +33,17 @@ jobs:
     needs: style_check
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Python
+    - name: Set up Python 3.9
       uses: actions/setup-python@v3
       with:
         python-version: "3.9"
-    - name: Cache python modules
-      uses: actions/cache@v3
-      env:
-        cache-name: cache-python-modules
-      with:
-        path: pip\
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-build-${{ env.cache-name }}-
-          ${{ runner.os }}-build-
-          ${{ runner.os }}-
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[blpapi]" --extra-index-url https://bcms.bloomberg.com/pip/simple/
+        pip install --force-reinstall MarkupSafe==2.0.1
+        pip install flake8==5.0.4 pytest
+        pip install coverage
     - name: Unit tests
       env:
         QUANTFIN_SECRET: ${{ secrets.QUANTFIN_SECRET }}
@@ -59,7 +55,6 @@ jobs:
       with:
         name: unit_tests
         path: unit_tests.xml
-
   backtesting_tests:
     runs-on: ubuntu-latest
     needs: style_check
@@ -115,7 +110,6 @@ jobs:
         with:
           name: data_providers_tests
           path: data_providers_tests.xml
-
   codecov_upload:
     runs-on: ubuntu-latest
     needs: [unit_tests, data_providers_tests, backtesting_tests]
