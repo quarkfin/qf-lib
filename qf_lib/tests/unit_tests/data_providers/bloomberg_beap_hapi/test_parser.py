@@ -154,9 +154,9 @@ class TestBloombergBeapHapiParser(unittest.TestCase):
 
         self.assertEqual(df.shape, (1, 1))
 
-        expected_active_tickers_str_list = ['STT US Equity']
+        expected_active_tickers_str_list = BloombergTicker.from_string(['STT US Equity'])
         self.assertCountEqual(df.index.tolist(), expected_active_tickers_str_list)
-        self.assertEqual(df.loc['STT US Equity', 'RTG_SP_LT_FC_ISSUER_CREDIT'], None)
+        self.assertEqual(df.loc[BloombergTicker('STT US Equity'), 'RTG_SP_LT_FC_ISSUER_CREDIT'], None)
 
     @patch('qf_lib.data_providers.bloomberg_beap_hapi.bloomberg_beap_hapi_parser.gzip')
     def test_get_current_values_single_ticker_na_real_field(self, mock):
@@ -180,9 +180,9 @@ class TestBloombergBeapHapiParser(unittest.TestCase):
 
         self.assertEqual(df.shape, (1, 1))
 
-        expected_active_tickers_str_list = ['SOME SW Equity']
+        expected_active_tickers_str_list = BloombergTicker.from_string(['SOME SW Equity'])
         self.assertCountEqual(df.index.tolist(), expected_active_tickers_str_list)
-        self.assertTrue(isna(df.loc['SOME SW Equity', 'VOLATILITY_90D']))
+        self.assertTrue(isna(df.loc[BloombergTicker('SOME SW Equity'), 'VOLATILITY_90D']))
 
     @patch('qf_lib.data_providers.bloomberg_beap_hapi.bloomberg_beap_hapi_parser.gzip')
     def test_get_history_multiple_tickers_multiple_fields_multiple_dates(self, mock):
@@ -303,11 +303,11 @@ class TestBloombergBeapHapiParser(unittest.TestCase):
         self.assertEqual(type(df), QFDataFrame)
         self.assertEqual(df.shape, (1, 1))
 
-        expected_active_tickers_str_list = ['RTYA Index']
+        expected_active_tickers_str_list = BloombergTicker.from_string(['RTYA Index'])
         self.assertCountEqual(df.index.tolist(), expected_active_tickers_str_list)
 
         expected_tickers_str_list = ['RTYU17 Index', 'RTYZ17 Index', 'RTYH18 Index', 'RTYM18 Index', 'RTYU18 Index']
-        self.assertCountEqual(df.loc['RTYA Index', 'FUT_CHAIN'], expected_tickers_str_list)
+        self.assertCountEqual(df.loc[BloombergTicker('RTYA Index'), 'FUT_CHAIN'], expected_tickers_str_list)
 
     @patch('qf_lib.data_providers.bloomberg_beap_hapi.bloomberg_beap_hapi_parser.gzip')
     def test_get_chain_multiple_tickers_single_field_multiple_tickers(self, mock):
@@ -334,14 +334,14 @@ class TestBloombergBeapHapiParser(unittest.TestCase):
         self.assertEqual(type(df), QFDataFrame)
         self.assertEqual(df.shape, (2, 1))
 
-        expected_active_tickers_str_list = ['CTA Index', 'RTYA Index']
+        expected_active_tickers_str_list = BloombergTicker.from_string(['CTA Index', 'RTYA Index'])
         self.assertCountEqual(df.index.tolist(), expected_active_tickers_str_list)
 
         expected_tickers_str_list = ['RTYU17 Index', 'RTYZ17 Index', 'RTYH18 Index', 'RTYM18 Index', 'RTYU18 Index']
-        self.assertCountEqual(df.loc['RTYA Index', 'FUT_CHAIN'], expected_tickers_str_list)
+        self.assertCountEqual(df.loc[BloombergTicker('RTYA Index'), 'FUT_CHAIN'], expected_tickers_str_list)
 
         expected_tickers_str_list = ['CTU17 Index', 'CTZ17 Index']
-        self.assertCountEqual(df.loc['CTA Index', 'FUT_CHAIN'], expected_tickers_str_list)
+        self.assertCountEqual(df.loc[BloombergTicker('CTA Index'), 'FUT_CHAIN'], expected_tickers_str_list)
 
     @patch('qf_lib.data_providers.bloomberg_beap_hapi.bloomberg_beap_hapi_parser.gzip')
     def test_get_chain_multiple_tickers_single_field__correct_and_incorrect_ticker(self, mock):
@@ -368,12 +368,12 @@ class TestBloombergBeapHapiParser(unittest.TestCase):
         self.assertEqual(type(df), QFDataFrame)
         self.assertEqual(df.shape, (2, 1))
 
-        expected_active_tickers_str_list = ['RTASYA Index', 'RTYA Index']
+        expected_active_tickers_str_list = BloombergTicker.from_string(['RTASYA Index', 'RTYA Index'])
         self.assertCountEqual(df.index.tolist(), expected_active_tickers_str_list)
 
         expected_tickers_str_list = ['RTYU17 Index', 'RTYZ17 Index', 'RTYH18 Index', 'RTYM18 Index', 'RTYU18 Index']
-        self.assertCountEqual(df.loc['RTYA Index', 'FUT_CHAIN'], expected_tickers_str_list)
-        self.assertCountEqual(df.loc['RTASYA Index', 'FUT_CHAIN'], [])
+        self.assertCountEqual(df.loc[BloombergTicker('RTYA Index'), 'FUT_CHAIN'], expected_tickers_str_list)
+        self.assertCountEqual(df.loc[BloombergTicker('RTASYA Index'), 'FUT_CHAIN'], [])
 
     @patch('qf_lib.data_providers.bloomberg_beap_hapi.bloomberg_beap_hapi_parser.gzip')
     def test_get_chain_single_ticker_single_field__incorrect_ticker(self, mock):
@@ -399,9 +399,9 @@ class TestBloombergBeapHapiParser(unittest.TestCase):
         self.assertEqual(type(df), QFDataFrame)
         self.assertEqual(df.shape, (1, 1))
 
-        expected_active_tickers_str_list = ['RTASYA Index']
+        expected_active_tickers_str_list = BloombergTicker.from_string(['RTASYA Index'])
         self.assertCountEqual(df.index.tolist(), expected_active_tickers_str_list)
-        self.assertCountEqual(df.loc['RTASYA Index', 'FUT_CHAIN'], [])
+        self.assertCountEqual(df.loc[BloombergTicker('RTASYA Index'), 'FUT_CHAIN'], [])
 
     @patch('qf_lib.data_providers.bloomberg_beap_hapi.bloomberg_beap_hapi_parser.gzip')
     def test_get_dates_multiple_tickers_single_field(self, mock):
@@ -432,7 +432,7 @@ class TestBloombergBeapHapiParser(unittest.TestCase):
         self.assertEqual(df.shape, (5, 1))
         self.assertTrue(len(df))
 
-        expected_tickers_str_list = ['RTYU17 Index', 'RTYZ17 Index', 'RTYH18 Index', 'RTYM18 Index', 'RTYU18 Index']
+        expected_tickers_str_list = BloombergTicker.from_string(['RTYU17 Index', 'RTYZ17 Index', 'RTYH18 Index', 'RTYM18 Index', 'RTYU18 Index'])
         self.assertCountEqual(df.index.tolist(), expected_tickers_str_list)
 
         expected_field = ['FUT_NOTICE_FIRST']
@@ -473,7 +473,7 @@ class TestBloombergBeapHapiParser(unittest.TestCase):
         self.assertEqual(df.shape, (5, 2))
         self.assertTrue(len(df))
 
-        expected_tickers_str_list = ['CTH4 Comdty', 'CTK4 Comdty', 'RTYU1 Index', 'RTYZ1 Index', 'RTYU2 Index']
+        expected_tickers_str_list = BloombergTicker.from_string(['CTH4 Comdty', 'CTK4 Comdty', 'RTYU1 Index', 'RTYZ1 Index', 'RTYU2 Index'])
         self.assertCountEqual(df.index.tolist(), expected_tickers_str_list)
 
         expected_fields_list = ['FUT_NOTICE_FIRST', 'LAST_TRADEABLE_DT']
@@ -529,8 +529,10 @@ class TestBloombergBeapHapiParser(unittest.TestCase):
             """
         )))
         expected_df = QFDataFrame.from_dict({
-            'NAME': {'SPY US Equity': 'SPDR S&P 500 ETF TRUST', 'MSFT US Equity': 'MICROSOFT CORP'},
-            'PX_LAST': {'SPY US Equity': 67.83, 'MSFT US Equity': 39.67}
+            'NAME': {BloombergTicker('SPY US Equity'): 'SPDR S&P 500 ETF TRUST',
+                     BloombergTicker('MSFT US Equity'): 'MICROSOFT CORP'},
+            'PX_LAST': {BloombergTicker('SPY US Equity'): 67.83,
+                      BloombergTicker('MSFT US Equity'): 39.67}
         })
         parser = BloombergBeapHapiParser()
         df = parser.get_current_values(Mock(), {"NAME": "String", "PX_LAST": "Price"})
@@ -555,8 +557,10 @@ class TestBloombergBeapHapiParser(unittest.TestCase):
             """
         )))
         expected_df = QFDataFrame.from_dict({
-            'NAME': {'SPY US Equity': 'SPDR S&P 500 ETF TRUST', 'Incorrect Equity': None},
-            'PX_LAST': {'SPY US Equity': 68.32, 'Incorrect Equity': nan}
+            'NAME': {BloombergTicker('SPY US Equity'): 'SPDR S&P 500 ETF TRUST',
+                     BloombergTicker('Incorrect Equity'): None},
+            'PX_LAST': {BloombergTicker('SPY US Equity'): 68.32,
+                        BloombergTicker('Incorrect Equity'): nan}
         })
         expected_df['PX_LAST'] = expected_df['PX_LAST'].astype(float64)
         parser = BloombergBeapHapiParser()
