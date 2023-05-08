@@ -387,10 +387,9 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
         self.logger.info(f'universe_id: {universe_id} fields_list_id: {fields_list_id} request_id: {request_id}')
 
         out_path = self._download_response(request_id)
-        data_frame = self.parser.get_current_values(out_path, field_to_type)
+        data_frame = self.parser.get_current_values(out_path, field_to_type, tickers_str_to_obj)
 
         # to keep the order of tickers and fields we reindex the data frame
-        data_frame.index = [tickers_str_to_obj.get(x, BloombergTicker.from_string(x)) for x in data_frame.index]
         data_frame = data_frame.reindex(index=tickers, columns=fields)
 
         # squeeze unused dimensions
