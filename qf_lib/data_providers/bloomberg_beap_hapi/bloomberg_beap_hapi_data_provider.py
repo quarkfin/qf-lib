@@ -297,7 +297,7 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
         self._assert_is_connected()
 
         tickers, got_single_ticker = convert_to_list(tickers, BloombergFutureTicker)
-        expiration_date_fields, _ = convert_to_list(expiration_date_fields, ExpirationDateField)
+        expiration_date_fields, _ = convert_to_list(expiration_date_fields, str)
 
         active_ticker_string_to_future_ticker = {
             future_ticker.get_active_ticker(): future_ticker for future_ticker in tickers

@@ -432,7 +432,8 @@ class TestBloombergBeapHapiParser(unittest.TestCase):
         self.assertEqual(df.shape, (5, 1))
         self.assertTrue(len(df))
 
-        expected_tickers_str_list = BloombergTicker.from_string(['RTYU17 Index', 'RTYZ17 Index', 'RTYH18 Index', 'RTYM18 Index', 'RTYU18 Index'])
+        expected_tickers_str_list = BloombergTicker.from_string(
+            ['RTYU17 Index', 'RTYZ17 Index', 'RTYH18 Index', 'RTYM18 Index', 'RTYU18 Index'])
         self.assertCountEqual(df.index.tolist(), expected_tickers_str_list)
 
         expected_field = ['FUT_NOTICE_FIRST']
@@ -473,7 +474,8 @@ class TestBloombergBeapHapiParser(unittest.TestCase):
         self.assertEqual(df.shape, (5, 2))
         self.assertTrue(len(df))
 
-        expected_tickers_str_list = BloombergTicker.from_string(['CTH4 Comdty', 'CTK4 Comdty', 'RTYU1 Index', 'RTYZ1 Index', 'RTYU2 Index'])
+        expected_tickers_str_list = BloombergTicker.from_string(
+            ['CTH4 Comdty', 'CTK4 Comdty', 'RTYU1 Index', 'RTYZ1 Index', 'RTYU2 Index'])
         self.assertCountEqual(df.index.tolist(), expected_tickers_str_list)
 
         expected_fields_list = ['FUT_NOTICE_FIRST', 'LAST_TRADEABLE_DT']
@@ -532,7 +534,7 @@ class TestBloombergBeapHapiParser(unittest.TestCase):
             'NAME': {BloombergTicker('SPY US Equity'): 'SPDR S&P 500 ETF TRUST',
                      BloombergTicker('MSFT US Equity'): 'MICROSOFT CORP'},
             'PX_LAST': {BloombergTicker('SPY US Equity'): 67.83,
-                      BloombergTicker('MSFT US Equity'): 39.67}
+                        BloombergTicker('MSFT US Equity'): 39.67}
         })
         parser = BloombergBeapHapiParser()
         df = parser.get_current_values(Mock(), {"NAME": "String", "PX_LAST": "Price"})
