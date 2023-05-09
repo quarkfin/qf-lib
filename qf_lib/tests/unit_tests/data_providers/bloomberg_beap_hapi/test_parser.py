@@ -70,6 +70,46 @@ class TestBloombergBeapHapiParser(unittest.TestCase):
         self.assertCountEqual(actual_datetime_strings, expected_datetime_strings)
 
     @patch('qf_lib.data_providers.bloomberg_beap_hapi.bloomberg_beap_hapi_parser.gzip')
+    def test_get_history_single_isin_single_field_multiple_dates(self, mock):
+        mock.open.return_value = BytesIO(str.encode(dedent(
+            """
+            START-OF-FILE
+            ...
+            START-OF-FIELDS
+            PX_LAST
+            END-OF-FIELDS
+            ...
+            START-OF-DATA
+            US78378X1072|0|1|EX|20210701|0.859|
+            US78378X1072|0|1|EX|20210702|0.8697|
+            US78378X1072|0|1|EX|20210706|0.874|
+            US78378X1072|0|1|EX|20210707|0.8763|
+            END-OF-DATA
+            ...
+            END-OF-FILE
+            """
+        )))
+        parser = BloombergBeapHapiParser()
+        actual_data_array = parser.get_history(Mock(), {"PX_LAST": "Price"},
+                                               {"/isin/US78378X1072": BloombergTicker("/isin/US78378X1072")})
+
+        self.assertEqual(type(actual_data_array), QFDataArray)
+        self.assertEqual(actual_data_array.shape, (4, 1, 1))
+        self.assertTrue(len(actual_data_array))  # not empty df
+
+        expected_tickers_str_list = [BloombergTicker('/isin/US78378X1072')]
+        self.assertCountEqual(actual_data_array.tickers.values, expected_tickers_str_list)
+
+        expected_fields_str_list = ['PX_LAST']
+        self.assertCountEqual(actual_data_array.fields.values, expected_fields_str_list)
+
+        # Compare string values of dates (to simplify the numpy.datetime64 comparison)
+        expected_datetime_strings = ['2021-07-01', '2021-07-02', '2021-07-06', '2021-07-07']
+        actual_datetime_strings = [datetime_as_string(datetime64(dt), unit='D') for dt in
+                                   actual_data_array.dates.values]
+        self.assertCountEqual(actual_datetime_strings, expected_datetime_strings)
+
+    @patch('qf_lib.data_providers.bloomberg_beap_hapi.bloomberg_beap_hapi_parser.gzip')
     def test_get_history_single_ticker_single_field_empty_response(self, mock):
         mock.open.return_value = BytesIO(str.encode(dedent(
             """
@@ -221,6 +261,54 @@ class TestBloombergBeapHapiParser(unittest.TestCase):
         self.assertEqual(actual_data_array.dtype, float64)
 
         expected_tickers_str_list = ['RTYM1 Index', 'CTA Comdty']
+        self.assertCountEqual(actual_data_array.tickers.values, BloombergTicker.from_string(expected_tickers_str_list))
+
+        expected_fields_str_list = ['PX_OPEN', 'PX_HIGH', 'PX_LOW', 'PX_LAST']
+        self.assertCountEqual(actual_data_array.fields.values, expected_fields_str_list)
+
+        # Compare string values of dates (to simplify the numpy.datetime64 comparison)
+        expected_datetime_strings = ['2021-07-01', '2021-07-02', '2021-07-06', '2021-07-07', '2021-07-08']
+        actual_datetime_strings = [datetime_as_string(datetime64(dt), unit='D') for dt in
+                                   actual_data_array.dates.values]
+        self.assertCountEqual(actual_datetime_strings, expected_datetime_strings)
+
+    @patch('qf_lib.data_providers.bloomberg_beap_hapi.bloomberg_beap_hapi_parser.gzip')
+    def test_get_history_multiple_tickers_and_isins_multiple_fields_multiple_dates(self, mock):
+        mock.open.return_value = BytesIO(str.encode(dedent(
+            """
+            START-OF-FILE
+            ...
+            START-OF-FIELDS
+            PX_OPEN
+            PX_HIGH
+            PX_LOW
+            PX_LAST
+            END-OF-FIELDS
+            ...
+            START-OF-DATA
+            US78378X1072|0|5|EX| | | | | |
+            CTA Comdty|0|5|EX|20210701|0.8505|0.8685|0.8492|0.859|
+            CTA Comdty|0|5|EX|20210702|0.86|0.8715|0.8587|0.8697|
+            CTA Comdty|0|5|EX|20210706|0.876|0.8889|0.8608|0.874|
+            CTA Comdty|0|5|EX|20210707|0.874|0.8795|0.8657|0.8763|
+            CTA Comdty|0|5|EX|20210708|0.8757|0.8763|0.863|0.8688|
+            END-OF-DATA
+            ...
+            END-OF-FILE
+            """
+        )))
+        parser = BloombergBeapHapiParser()
+        actual_data_array = parser.get_history(Mock(), {'PX_OPEN': "Price", 'PX_HIGH': "Price", 'PX_LOW': "Price",
+                                                        'PX_LAST': "Price"},
+                                               {'/isin/US78378X1072': BloombergTicker("/isin/US78378X1072"),
+                                                'CTA Comdty': BloombergTicker('CTA Comdty')})
+
+        self.assertEqual(type(actual_data_array), QFDataArray)
+        self.assertEqual(actual_data_array.shape, (5, 2, 4))
+        self.assertTrue(len(actual_data_array))
+        self.assertEqual(actual_data_array.dtype, float64)
+
+        expected_tickers_str_list = ['/isin/US78378X1072', 'CTA Comdty']
         self.assertCountEqual(actual_data_array.tickers.values, BloombergTicker.from_string(expected_tickers_str_list))
 
         expected_fields_str_list = ['PX_OPEN', 'PX_HIGH', 'PX_LOW', 'PX_LAST']
