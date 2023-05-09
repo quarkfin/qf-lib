@@ -64,8 +64,13 @@ class BloombergBeapHapiUniverseProvider:
             URL address of created hapi universe
         """
         tickers, got_single_field = convert_to_list(tickers, str)
-        contains = [{'@type': 'Identifier', 'identifierType': 'TICKER', 'identifierValue': ticker} for ticker in
-                    tickers]
+        tickers_and_types = [self._get_indentifier_and_type(ticker) for ticker in tickers]
+        contains = [{'@type': 'Identifier', 'identifierType': identifier_type, 'identifierValue': identifier}
+                    for identifier_type, identifier in tickers_and_types if identifier]
+        if len(contains) == 0:
+            raise ValueError("No valid identifiers (tickers) were provided. Please refer to the logs and adjust your "
+                             "data request accordingly.")
+
         if fields_overrides:
             # noinspection PyTypeChecker
             contains[0]['fieldOverrides'] = [{
@@ -102,3 +107,35 @@ class BloombergBeapHapiUniverseProvider:
             self.logger.info('Universe successfully created at %s', universe_url)
 
         return universe_url
+
+    def _get_indentifier_and_type(self, ticker) -> Tuple[Optional[str], Optional[str]]:
+        blp_hapi_compatibility_mapping = {
+            "ticker": "TICKER",
+            "cusip": "CUSIP",
+            "buid": "BB_UNIQUE",
+            "bbgid": "BB_GLOBAL",
+            "isin": "ISIN",
+            "wpk": "WPK",
+            "sedol1": "SEDOL",
+            "common": "COMMON_NUMBER",
+            "cins": "CINS",
+            "cats": "CATS"
+        }
+
+        ticker = f"/ticker/{ticker}" if ticker.count("/") == 0 else ticker
+        if ticker.count("/") != 2:
+            self.logger.error(f"Detected incorrect identifier: {ticker}. It will be removed from the data request.\n"
+                              f"In order to provide an identifier, which is not a ticker, please use "
+                              f"'/id_type/identifier' format, with id_type being one of the following: "
+                              f"{blp_hapi_compatibility_mapping.values()}")
+            return None, None
+
+        id_type, id = ticker.lstrip("/").split("/")
+        try:
+            return blp_hapi_compatibility_mapping[id_type.lower()], id
+        except KeyError:
+            self.logger.error(
+                f"Detected incorrect identifier type: {id_type.lower()}. The identifier will be removed from the "
+                f"data request.\n"
+                f"List of valid identifier types: {blp_hapi_compatibility_mapping.values()}")
+            return None, None

@@ -297,7 +297,7 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
         self._assert_is_connected()
 
         tickers, got_single_ticker = convert_to_list(tickers, BloombergFutureTicker)
-        expiration_date_fields, _ = convert_to_list(expiration_date_fields, ExpirationDateField)
+        expiration_date_fields, _ = convert_to_list(expiration_date_fields, str)
 
         active_ticker_string_to_future_ticker = {
             future_ticker.get_active_ticker(): future_ticker for future_ticker in tickers
@@ -387,10 +387,9 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
         self.logger.info(f'universe_id: {universe_id} fields_list_id: {fields_list_id} request_id: {request_id}')
 
         out_path = self._download_response(request_id)
-        data_frame = self.parser.get_current_values(out_path, field_to_type)
+        data_frame = self.parser.get_current_values(out_path, field_to_type, tickers_str_to_obj)
 
         # to keep the order of tickers and fields we reindex the data frame
-        data_frame.index = [tickers_str_to_obj.get(x, BloombergTicker.from_string(x)) for x in data_frame.index]
         data_frame = data_frame.reindex(index=tickers, columns=fields)
 
         # squeeze unused dimensions

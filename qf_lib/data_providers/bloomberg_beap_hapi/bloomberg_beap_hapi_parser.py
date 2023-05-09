@@ -14,7 +14,7 @@
 import gzip
 import re
 from io import StringIO
-from typing import Tuple, List, Dict
+from typing import Tuple, List, Dict, Optional
 
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
@@ -54,7 +54,8 @@ class BloombergBeapHapiParser:
         self.logger = qf_logger.getChild(self.__class__.__name__)
         self.type_converter = BloombergDataLicenseTypeConverter()
 
-    def get_current_values(self, filepath: str, field_to_type: Dict[str, str]) -> QFDataFrame:
+    def get_current_values(self, filepath: str, field_to_type: Dict[str, str],
+                           tickers_mapping: Optional[Dict[str, BloombergTicker]] = None) -> QFDataFrame:
         """
         Method to parse hapi response and extract dates (e.g. FUT_NOTICE_FIRST, LAST_TRADEABLE_DT) for tickers
 
@@ -64,19 +65,28 @@ class BloombergBeapHapiParser:
             The full filepath with downloaded response
         field_to_type: Dict[str, str]
             dictionary mapping requested, correct fields into their corresponding types
+        tickers_mapping: Optional[Dict[str, BloombergTicker]]
+            dictionary mapping string representations of tickers onto corresponding ticker objects
 
         Returns
         -------
         QFDataFrame
             QFDataFrame with current values
         """
+        tickers_mapping = tickers_mapping or {}
+        tickers_mapping = {
+            self._strip_identifier_name(ticker_str): ticker for ticker_str, ticker in tickers_mapping.items()
+        }
         column_names = ["Ticker", "Error code", "Num flds"]
         field_to_type = {**field_to_type, "Ticker": "String"}
         fields, content = self._get_fields_and_data_content(filepath, field_to_type, column_names, header_row=True)
 
-        return content.set_index("Ticker")[fields]
+        data_frame = content.set_index("Ticker")[fields]
+        data_frame.index = data_frame.index.map(lambda x: tickers_mapping.get(x, BloombergTicker.from_string(x)))
+        return data_frame
 
-    def get_history(self, filepath: str, field_to_type: Dict[str, str], tickers_mapping: Dict[str, BloombergTicker]) \
+    def get_history(self, filepath: str, field_to_type: Dict[str, str],
+                    tickers_mapping: Optional[Dict[str, BloombergTicker]] = None) \
             -> QFDataArray:
         """
         Method to parse hapi response and get history data
@@ -87,7 +97,7 @@ class BloombergBeapHapiParser:
             The full filepath with downloaded response
         field_to_type: Dict[str, str]
             dictionary mapping requested, correct fields into their corresponding types
-        tickers_mapping: Dict[str, BloombergTicker]
+        tickers_mapping: Optional[Dict[str, BloombergTicker]]
             dictionary mapping string representations of tickers onto corresponding ticker objects
 
         Returns
@@ -95,13 +105,17 @@ class BloombergBeapHapiParser:
         QFDataArray
             QFDataArray with history data
         """
+        tickers_mapping = tickers_mapping or {}
+        tickers_mapping = {
+            self._strip_identifier_name(ticker_str): ticker for ticker_str, ticker in tickers_mapping.items()
+        }
         column_names = ["Ticker", "Error code", "Num flds", "Pricing Source", "Dates"]
         field_to_type = {**field_to_type, "Ticker": "String", "Error code": "String", "Num flds": "String",
                          "Pricing Source": "String", "Dates": "Date"}
         fields, content = self._get_fields_and_data_content(filepath, field_to_type, column_names)
 
         tickers_dict = {
-            tickers_mapping[ticker]: df.set_index("Dates")[fields].dropna(how="all")
+            tickers_mapping.get(ticker, BloombergTicker.from_string(ticker)): df.set_index("Dates")[fields].dropna(how="all")
             for ticker, df in content.groupby(by="Ticker")
         }
 
@@ -154,3 +168,10 @@ class BloombergBeapHapiParser:
         records = [line for line in records if len(line) == len(column_names)]
         df = QFDataFrame.from_records(records, columns=column_names)
         return df.replace(r'^\s+$', np.nan, regex=True)
+
+    def _strip_identifier_name(self, identifier: str) -> str:
+        """
+        In case if the identifier contains identifiertype in its name (e.g. /bbgid/BBG000BDTBL9), remove the identifier
+        type and leave just the identifier name (in the given example - BBG000BDTBL9).
+        """
+        return identifier.split("/")[-1]
