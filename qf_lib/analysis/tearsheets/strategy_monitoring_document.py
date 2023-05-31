@@ -65,7 +65,7 @@ class StrategyMonitoringDocument(AbstractTearsheet):
         self._add_relative_performance_chart(self.strategy_series, self.benchmark_series)
         self.document.add_element(ParagraphElement("\n\n"))
 
-        self._add_excess_cone_chart()
+        self._add_cone_chart()
         self.document.add_element(ParagraphElement("\n\n"))
 
         self._add_rolling_return_chart(series_list)
@@ -81,15 +81,27 @@ class StrategyMonitoringDocument(AbstractTearsheet):
         self.excess_is_mean_return = excess_is_mean_return
         self.excess_is_sigma = excess_is_sigma
 
-    def _add_excess_cone_chart(self):
-        diff = self.strategy_series.to_simple_returns().subtract(self.benchmark_series.to_simple_returns(),
-                                                                 fill_value=0)
+    def _add_cone_chart(self):
+        if self.is_sigma and self.is_mean_return:
+            diff = self.strategy_series.to_simple_returns()
+            title = "Returns"
+            mean_return = self.is_mean_return
+            sigma = self.is_sigma
+        elif self.excess_is_sigma and self.excess_is_mean_return:
+            diff = self.strategy_series.to_simple_returns().subtract(self.benchmark_series.to_simple_returns(),
+                                                                     fill_value=0)
+            title = "Excess returns"
+            mean_return = self.excess_is_mean_return
+            sigma = self.excess_is_sigma
+        else:
+            raise ValueError("You need to set stats for either returns or excess returns")
+
         diff = diff.iloc[-200:]
         diff = diff.to_prices(1)
         cone_chart = ConeChartOOS(diff,
-                                  is_mean_return=self.excess_is_mean_return,
-                                  is_sigma=self.excess_is_sigma,
-                                  title="Excess returns")
+                                  is_mean_return=mean_return,
+                                  is_sigma=sigma,
+                                  title=title)
 
         position_decorator = AxesPositionDecorator(*self.full_image_axis_position)
         cone_chart.add_decorator(position_decorator)
