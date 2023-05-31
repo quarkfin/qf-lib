@@ -94,7 +94,8 @@ class StrategyMonitoringDocument(AbstractTearsheet):
             mean_return = self.excess_is_mean_return
             sigma = self.excess_is_sigma
         else:
-            raise ValueError("You need to set stats for either returns or excess returns")
+            raise ValueError("You need to set parameters using either set_in_sample_statistics or "
+                             "set_in_sample_excess_statistics")
 
         diff = diff.iloc[-200:]
         diff = diff.to_prices(1)
