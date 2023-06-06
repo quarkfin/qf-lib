@@ -31,33 +31,46 @@ class TestBloombergBeapHapiUniverseProvider(unittest.TestCase):
         self.location = '{}universes/{}/'.format(self.address_url, self.fieldlist_id)
         self.host = 'https://api.bloomberg.com'
         self.account_url = urljoin(self.host, self.address_url)
-        self.tickers = ['TICKER']
         self.post_response.headers = {'Location': self.location}
 
-    def test_get_fields_url__get_response(self):
+    def test_get_universe_url__get_response(self):
         self.session_mock.get.return_value.status_code = 200
         provider = BloombergBeapHapiUniverseProvider(self.host, self.session_mock, self.account_url)
         field_overrides = [("CHAIN_DATE", datetime.now().strftime('%Y%m%d')), ('INCLUDE_EXPIRED_CONTRACTS', 'Y')]
-        url = provider.get_universe_url(self.fieldlist_id, self.tickers, field_overrides)
+        tickers = ["SPY US Equity"]
+        url = provider.get_universe_url(self.fieldlist_id, tickers, field_overrides)
         self.assertEqual(url, urljoin(self.host, self.location))
 
-    def test_get_fields_url__post_response(self):
+    def test_get_universe_url__post_response(self):
         self.session_mock.get.return_value.status_code = 404
         self.post_response.status_code = 201
         provider = BloombergBeapHapiUniverseProvider(self.host, self.session_mock, self.account_url)
         field_overrides = [("CHAIN_DATE", datetime.now().strftime('%Y%m%d')), ('INCLUDE_EXPIRED_CONTRACTS', 'Y')]
-        url = provider.get_universe_url(self.fieldlist_id, self.tickers, field_overrides)
+        tickers = ["SPY US Equity"]
+        url = provider.get_universe_url(self.fieldlist_id, tickers, field_overrides)
         self.assertEqual(url, urljoin(self.host, self.location))
 
-    def test_get_fields_url__unknown_get_response(self):
+    def test_get_universe_url__unknown_get_response(self):
         self.session_mock.get.return_value.status_code = 404
         provider = BloombergBeapHapiUniverseProvider(self.host, self.session_mock, self.account_url)
         field_overrides = [("CHAIN_DATE", datetime.now().strftime('%Y%m%d')), ('INCLUDE_EXPIRED_CONTRACTS', 'Y')]
-        self.assertRaises(BloombergError, provider.get_universe_url, self.fieldlist_id, self.tickers, field_overrides)
+        tickers = ["SPY US Equity"]
+        self.assertRaises(BloombergError, provider.get_universe_url, self.fieldlist_id, tickers, field_overrides)
 
-    def test_get_fields_url__unknown_post_response(self):
+    def test_get_universe_url__unknown_post_response(self):
         self.session_mock.get.return_value.status_code = 404
         self.post_response.status_code = 200
         provider = BloombergBeapHapiUniverseProvider(self.host, self.session_mock, self.account_url)
         field_overrides = [("CHAIN_DATE", datetime.now().strftime('%Y%m%d')), ('INCLUDE_EXPIRED_CONTRACTS', 'Y')]
-        self.assertRaises(BloombergError, provider.get_universe_url, self.fieldlist_id, self.tickers, field_overrides)
+        tickers = ["SPY US Equity"]
+        self.assertRaises(BloombergError, provider.get_universe_url, self.fieldlist_id, tickers, field_overrides)
+
+    def test_get_universe_url__no_correct_identifiers(self):
+        provider = BloombergBeapHapiUniverseProvider(self.host, self.session_mock, self.account_url)
+        tickers = ["/incorrect_type/SPY US Equity"]
+        self.assertRaises(ValueError, provider.get_universe_url, self.fieldlist_id, tickers)
+
+    def test_get_universe_url__empty_identifiers_list(self):
+        provider = BloombergBeapHapiUniverseProvider(self.host, self.session_mock, self.account_url)
+        tickers = []
+        self.assertRaises(ValueError, provider.get_universe_url, self.fieldlist_id, tickers)
