@@ -64,7 +64,7 @@ class BloombergBeapHapiUniverseProvider:
             URL address of created hapi universe
         """
         tickers, got_single_field = convert_to_list(tickers, str)
-        tickers_and_types = [self._get_indentifier_and_type(ticker) for ticker in tickers]
+        tickers_and_types = [self._get_identifier_and_type(ticker) for ticker in tickers]
         contains = [{'@type': 'Identifier', 'identifierType': identifier_type, 'identifierValue': identifier}
                     for identifier_type, identifier in tickers_and_types if identifier]
         if len(contains) == 0:
@@ -108,7 +108,7 @@ class BloombergBeapHapiUniverseProvider:
 
         return universe_url
 
-    def _get_indentifier_and_type(self, identifier: str) -> Tuple[Optional[str], Optional[str]]:
+    def _get_identifier_and_type(self, identifier: str) -> Tuple[Optional[str], Optional[str]]:
         blp_hapi_compatibility_mapping = {
             "ticker": "TICKER",
             "cusip": "CUSIP",

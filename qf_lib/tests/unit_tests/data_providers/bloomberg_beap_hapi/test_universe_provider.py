@@ -74,3 +74,17 @@ class TestBloombergBeapHapiUniverseProvider(unittest.TestCase):
         provider = BloombergBeapHapiUniverseProvider(self.host, self.session_mock, self.account_url)
         tickers = []
         self.assertRaises(ValueError, provider.get_universe_url, self.fieldlist_id, tickers)
+
+    def test_get_universe_url__correct_identifier_with_special_characters(self):
+        self.session_mock.get.return_value.status_code = 200
+        provider = BloombergBeapHapiUniverseProvider(self.host, self.session_mock, self.account_url)
+        tickers = ["/ticker/AA/ US Equity"]
+        url = provider.get_universe_url(self.fieldlist_id, tickers)
+        self.assertEqual(url, urljoin(self.host, self.location))
+
+    def test_get_universe_url__correct_ticker_with_special_characters(self):
+        self.session_mock.get.return_value.status_code = 200
+        provider = BloombergBeapHapiUniverseProvider(self.host, self.session_mock, self.account_url)
+        tickers = ["AA/ US Equity"]
+        url = provider.get_universe_url(self.fieldlist_id, tickers)
+        self.assertEqual(url, urljoin(self.host, self.location))
