@@ -14,7 +14,6 @@
 from itertools import groupby
 from typing import Sequence, Optional, Union, Dict, Any
 
-import pandas as pd
 from qf_lib.common.enums.grid_proportion import GridProportion
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
