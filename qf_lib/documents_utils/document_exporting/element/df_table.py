@@ -26,7 +26,7 @@ from qf_lib.documents_utils.document_exporting import templates
 
 class DFTable(Element):
     def __init__(self, data: QFDataFrame = None, columns: Sequence[str] = None, css_classes: Union[str, Sequence[str]] =
-                 "table", title: str = "", grid_proportion: GridProportion = GridProportion.Eight):
+                 "table", title: str = "", grid_proportion: GridProportion = GridProportion.Eight, include_index = False):
         super().__init__(grid_proportion)
 
         self.model = ModelController(data=data, index=data.index,
@@ -38,6 +38,9 @@ class DFTable(Element):
         self.model.table_styles.add_css_class(css_classes)
 
         self.title = title
+
+        if include_index:
+            self.model.index_styling = self.model.IndexStyle()
 
     def generate_html(self, document: Optional[Document] = None) -> str:
         """
@@ -186,11 +189,15 @@ class ModelController:
     def add_index_style(self, styles: Union[Dict[str, str], Sequence[str]]):
         if self.index_styling is None:
             self.index_styling = self.IndexStyle()
+        else:
+            self.remove_index_style()
         self.index_styling.add_styles(styles)
 
     def add_index_class(self, css_classes: str):
         if self.index_styling is None:
             self.index_styling = self.IndexStyle()
+        else:
+            self.remove_index_class()
         self.index_styling.add_css_class(css_classes)
 
     def remove_index_style(self):
