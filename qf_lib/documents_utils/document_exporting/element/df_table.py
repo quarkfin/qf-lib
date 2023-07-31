@@ -310,5 +310,3 @@ class ModelController:
                 element.add_css_class(data_to_update)
             else:
                 element.remove_css_class(data_to_update)
-
-
