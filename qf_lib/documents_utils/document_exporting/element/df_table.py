@@ -26,7 +26,7 @@ from qf_lib.documents_utils.document_exporting import templates
 
 class DFTable(Element):
     def __init__(self, data: QFDataFrame = None, columns: Sequence[str] = None, css_classes: Union[str, Sequence[str]] =
-                 "table", title: str = "", grid_proportion: GridProportion = GridProportion.Eight):
+                 "table", title: str = "", grid_proportion: GridProportion = GridProportion.Eight, include_index=False):
         super().__init__(grid_proportion)
 
         self.model = ModelController(data=data, index=data.index,
@@ -38,6 +38,9 @@ class DFTable(Element):
         self.model.table_styles.add_css_class(css_classes)
 
         self.title = title
+
+        if include_index:
+            self.model.index_styling = self.model.IndexStyle()
 
     def generate_html(self, document: Optional[Document] = None) -> str:
         """
@@ -59,7 +62,15 @@ class DFTable(Element):
             for level in range(self.columns.nlevels)
         ]
 
-        return template.render(css_class=self.model.table_styles.classes(), table=self, columns=columns_to_occurrences)
+        if self.model.index_styling:
+            index_levels = self.model.data.index.nlevels
+            columns_to_occurrences[0] = [("Index", index_levels)] + columns_to_occurrences[0]
+            for index, occurence in enumerate(columns_to_occurrences[1:]):
+                columns_to_occurrences[index+1] = [("", index_levels)] + occurence
+
+        return template.render(css_class=self.model.table_styles.classes(), table=self,
+                               columns=columns_to_occurrences,
+                               index_styling=self.model.index_styling)
 
     @property
     def columns(self):
@@ -132,6 +143,19 @@ class DFTable(Element):
         css_classes, _ = convert_to_list(css_classes, str)
         self.model.remove_cells_classes(columns, rows, css_classes)
 
+    def add_index_style(self, styles: Union[Dict[str, str], Sequence[str]]):
+        self.model.add_index_style(styles)
+
+    def add_index_class(self, css_classes: str):
+        css_classes, _ = convert_to_list(css_classes, str)
+        self.model.add_index_class(css_classes)
+
+    def remove_index_style(self):
+        self.model.remove_index_style()
+
+    def remove_index_class(self):
+        self.model.remove_index_class()
+
 
 class ModelController:
     def __init__(self, data=None, index=None, columns=None, dtype=None, copy=False):
@@ -160,11 +184,33 @@ class ModelController:
         }, index=self.data.index, columns=self.data.columns)
 
         self.table_styles = self.Style()
+        self.index_styling = None
+
+    def add_index_style(self, styles: Union[Dict[str, str], Sequence[str]]):
+        if self.index_styling is None:
+            self.index_styling = self.IndexStyle()
+        else:
+            self.remove_index_style()
+        self.index_styling.add_styles(styles)
+
+    def add_index_class(self, css_classes: str):
+        if self.index_styling is None:
+            self.index_styling = self.IndexStyle()
+        else:
+            self.remove_index_class()
+        self.index_styling.add_css_class(css_classes)
+
+    def remove_index_style(self):
+        if self.index_styling:
+            self.index_styling.style = dict()
+
+    def remove_index_class(self):
+        if self.index_styling:
+            self.index_styling.css_class = []
 
     def add_columns_styles(self, columns: Union[str, Sequence[str]], styles_dict: Dict[str, str]):
         if not isinstance(columns, list):
             columns = [columns]
-
         for column_name in columns:
             self.columns_styles[column_name].add_styles(styles_dict)
 
@@ -353,6 +399,10 @@ class ModelController:
 
             css_classes = merge_classes(self.css_class)
             return css_classes
+
+    class IndexStyle(Style):
+        def __init__(self, style: Dict[str, str] = None, css_class: str = None):
+            super().__init__(style, css_class)
 
     class ColumnStyle(Style):
         def __init__(self, column_name: str, style: Dict[str, str] = None, css_class: str = None):
