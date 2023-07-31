@@ -1,6 +1,6 @@
 from typing import Dict, Sequence, Union, Any
 
-from common.utils.logging.qf_parent_logger import qf_logger
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 
 
 class Style:

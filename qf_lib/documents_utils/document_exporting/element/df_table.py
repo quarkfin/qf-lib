@@ -12,18 +12,18 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 from itertools import groupby
-from typing import Sequence, Optional, Union, Dict, Any, Tuple
+from typing import Sequence, Optional, Union, Dict, Tuple
 
-from documents_utils.document_exporting.element.helpers.style import Style, ColumnStyle, RowStyle, CellStyle
-from documents_utils.document_exporting.element.helpers.style_enums import DataType, StylingType
+from qf_lib.documents_utils.document_exporting.element.helpers.style import *
+from qf_lib.documents_utils.document_exporting.element.helpers.style_enums import *
 from qf_lib.common.enums.grid_proportion import GridProportion
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
+from qf_lib.documents_utils.document_exporting import templates
 from qf_lib.documents_utils.document_exporting.document import Document
 from qf_lib.documents_utils.document_exporting.element import Element
-from qf_lib.documents_utils.document_exporting import templates
 
 
 class DFTable(Element):
@@ -220,30 +220,30 @@ class ModelController:
             - if True, then it is adding to the current list of css
             - if False, then it is removing from the current list of css
         """
-        def get_target_styles(location):
-            if data_type == DataType.INDEX:
-                return self.index_styling or Style()
-            elif data_type == DataType.ROW:
-                return [self.rows_styles.loc[location]]
-            elif data_type == DataType.COLUMN:
-                return [self.columns_styles[location]] if not isinstance(location, list) else [
-                    self.columns_styles[column_name] for column_name in location
-                ]
-            elif data_type == DataType.CELL:
-                if not isinstance(location[0], list):
-                    location = ([location[0]], location[1])
-                if not isinstance(location[1], list):
-                    location = (location[0], [location[1]])
-                return [
-                    self.styles.loc[row, column_name]
-                    for column_name in location[0]
-                    for row in location[1]
-                ]
-            elif data_type == DataType.TABLE:
-                return [self.table_styles]
+        if data_type == DataType.INDEX:
+            if not self.index_styling:
+                self.index_styling = Style()
+            self._add_styles_classes(self.index_styling, data_to_update, styling_type, modify_data)
+        elif data_type == DataType.ROW:
+            for row in self.rows_styles.loc[location]:
+                self._add_styles_classes(row, data_to_update, styling_type, modify_data)
+        elif data_type == DataType.COLUMN:
+            if not isinstance(location, list):
+                location = [location]
+            for column_name in location:
+                self._add_styles_classes(self.columns_styles[column_name], data_to_update, styling_type, modify_data)
+        elif data_type == DataType.CELL:
+            if not isinstance(location[0], list):
+                location = ([location[0]], location[1])
+            if not isinstance(location[1], list):
+                location = (location[0], [location[1]])
 
-        for target_style in get_target_styles(location):
-            self._add_styles_classes(target_style, data_to_update, styling_type, modify_data)
+            for column_name in location[0]:
+                for row in location[1]:
+                    self._add_styles_classes(self.styles.loc[row, column_name], data_to_update, styling_type,
+                                            modify_data)
+        elif data_type == DataType.TABLE:
+            self._add_styles_classes(self.table_styles, data_to_update, styling_type, modify_data)
 
     def iterrows(self):
         return zip(self.data.iterrows(), self.styles.iterrows())
