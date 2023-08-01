@@ -229,7 +229,7 @@ class ModelController:
             for column_name in location[0]:
                 for row in location[1]:
                     self._add_styles_classes(self.styles.loc[row, column_name], data_to_update, styling_type,
-                                            modify_data)
+                                             modify_data)
         elif data_type == DataType.TABLE:
             self._add_styles_classes(self.table_styles, data_to_update, styling_type, modify_data)
 
