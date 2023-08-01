@@ -208,7 +208,6 @@ class ModelController:
             - if True, then it is adding to the current list of css
             - if False, then it is removing from the current list of css
         """
-        list_of_modified_elements = []
         if data_type == DataType.INDEX:
             if not self.index_styling:
                 self.index_styling = Style()
@@ -216,17 +215,15 @@ class ModelController:
         elif data_type == DataType.ROW:
             list_of_modified_elements = self.rows_styles.loc[location].tolist()
         elif data_type == DataType.COLUMN:
-            if not isinstance(location, list):
-                location = [location]
-            for column_name in location:
-                list_of_modified_elements = [self.columns_styles[column_name]]
+            location = location if isinstance(location, list) else [location]
+            list_of_modified_elements = [self.columns_styles[column_name] for column_name in location]
         elif data_type == DataType.CELL:
             location = tuple([item] if not isinstance(item, list) else item for item in location)
-            list_of_modified_elements = [self.styles.loc[row, column_name]
-                                         for column_name in location[0]
-                                         for row in location[1]]
+            list_of_modified_elements = [self.styles.loc[row, column_name] for column_name in location[0] for row in location[1]]
         elif data_type == DataType.TABLE:
             list_of_modified_elements = [self.table_styles]
+        else:
+            list_of_modified_elements = []
 
         for modified_element in list_of_modified_elements:
             self._add_styles_classes(modified_element, data_to_update, styling_type, modify_data)
