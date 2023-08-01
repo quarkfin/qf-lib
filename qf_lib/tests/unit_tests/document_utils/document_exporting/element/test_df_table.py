@@ -59,14 +59,12 @@ class TestElements(unittest.TestCase):
         self.data_nested_2_html = data_nested_2_html
 
     def test_index(self):
-
         self.assertTrue(self.data_nested_html.model.index_styling is not None)
         self.assertEqual(self.data_nested_html.model.index_styling.css_class, ['wider-second-column', 'center-align'])
         self.assertEqual(self.data_nested_html.model.index_styling.style, {'background-color': 'rgb(225,225,225)',
                                                                            'border-color': 'rgb(100,0,0)'})
 
         self.assertTrue(self.data_nested_2_html.model.index_styling is None)
-
 
     def test_columns(self):
         self.assertTrue(self.data_nested_html.model.columns_styles is not None)
