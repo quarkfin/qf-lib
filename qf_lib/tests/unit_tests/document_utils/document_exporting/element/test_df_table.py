@@ -4,7 +4,7 @@ import pandas as pd
 
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
-from documents_utils.document_exporting.element.df_table import DFTable
+from qf_lib.documents_utils.document_exporting.element.df_table import DFTable
 
 
 class TestElements(unittest.TestCase):
