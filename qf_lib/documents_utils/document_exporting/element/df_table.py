@@ -98,10 +98,10 @@ class DFTable(Element):
     def remove_table_classes(self, css_classes: Union[str, Sequence[str]]):
         self.model.modify_data(None, css_classes, DataType.TABLE, StylingType.CLASS, False)
 
-    def add_columns_styles(self, columns: Union[str, Sequence[str]], css_styles: Dict[str, str]): # Used
+    def add_columns_styles(self, columns: Union[str, Sequence[str]], css_styles: Dict[str, str]):
         self.model.modify_data(columns, css_styles, DataType.COLUMN, StylingType.STYLE)
 
-    def add_columns_classes(self, columns: Union[str, Sequence[str]], css_classes: Union[str, Sequence[str]]): # Used
+    def add_columns_classes(self, columns: Union[str, Sequence[str]], css_classes: Union[str, Sequence[str]]):
         self.model.modify_data(columns, css_classes, DataType.COLUMN, StylingType.CLASS)
 
     def remove_columns_styles(self, columns: Union[str, Sequence[str]],
@@ -111,7 +111,7 @@ class DFTable(Element):
     def remove_columns_classes(self, columns: Union[str, Sequence[str]], css_classes: Union[str, Sequence[str]]):
         self.model.modify_data(columns, css_classes, DataType.COLUMN, StylingType.CLASS, False)
 
-    def add_rows_styles(self, loc_indexer: Union[Any, Sequence[Any]], css_styles: Dict[str, str]): # Used
+    def add_rows_styles(self, loc_indexer: Union[Any, Sequence[Any]], css_styles: Dict[str, str]):
         self.model.modify_data(loc_indexer, css_styles, DataType.ROW, StylingType.STYLE)
 
     def add_rows_classes(self, loc_indexer: Union[Any, Sequence[Any]], css_classes: Union[str, Sequence[str]]):
@@ -125,11 +125,11 @@ class DFTable(Element):
         self.model.modify_data(loc_indexer, css_classes, DataType.ROW, StylingType.CLASS, False)
 
     def add_cells_styles(self, columns: Union[str, Sequence[str]], rows: Union[Any, Sequence[Any]],
-                         css_styles: Dict[str, str]): # Used
+                         css_styles: Dict[str, str]):
         self.model.modify_data((columns, rows), css_styles, DataType.CELL, StylingType.STYLE)
 
     def add_cells_classes(self, columns: Union[str, Sequence[str]], rows: Union[Any, Sequence[Any]],
-                          css_classes: Union[str, Sequence[str]]): # Used
+                          css_classes: Union[str, Sequence[str]]):
         self.model.modify_data((columns, rows), css_classes, DataType.CELL, StylingType.CLASS)
 
     def remove_cells_styles(self, columns: Union[str, Sequence[str]], rows: Union[Any, Sequence[Any]],
