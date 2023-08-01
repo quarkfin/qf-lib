@@ -211,27 +211,22 @@ class ModelController:
         if data_type == DataType.INDEX:
             if not self.index_styling:
                 self.index_styling = Style()
-            self._add_styles_classes(self.index_styling, data_to_update, styling_type, modify_data)
+            list_of_modified_elements = [self.index_styling]
         elif data_type == DataType.ROW:
-            for row in self.rows_styles.loc[location]:
-                self._add_styles_classes(row, data_to_update, styling_type, modify_data)
+            list_of_modified_elements = self.rows_styles.loc[location].tolist()
         elif data_type == DataType.COLUMN:
-            if not isinstance(location, list):
-                location = [location]
-            for column_name in location:
-                self._add_styles_classes(self.columns_styles[column_name], data_to_update, styling_type, modify_data)
+            location = location if isinstance(location, list) else [location]
+            list_of_modified_elements = [self.columns_styles[column_name] for column_name in location]
         elif data_type == DataType.CELL:
-            if not isinstance(location[0], list):
-                location = ([location[0]], location[1])
-            if not isinstance(location[1], list):
-                location = (location[0], [location[1]])
-
-            for column_name in location[0]:
-                for row in location[1]:
-                    self._add_styles_classes(self.styles.loc[row, column_name], data_to_update, styling_type,
-                                             modify_data)
+            location = tuple([item] if not isinstance(item, list) else item for item in location)
+            list_of_modified_elements = [self.styles.loc[row, column_name] for column_name in location[0] for row in location[1]]
         elif data_type == DataType.TABLE:
-            self._add_styles_classes(self.table_styles, data_to_update, styling_type, modify_data)
+            list_of_modified_elements = [self.table_styles]
+        else:
+            list_of_modified_elements = []
+
+        for modified_element in list_of_modified_elements:
+            self._add_styles_classes(modified_element, data_to_update, styling_type, modify_data)
 
     def iterrows(self):
         return zip(self.data.iterrows(), self.styles.iterrows())
