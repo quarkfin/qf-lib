@@ -1,4 +1,5 @@
 import unittest
+from typing import Dict
 
 import pandas as pd
 
@@ -43,6 +44,10 @@ class TestElements(unittest.TestCase):
         data_nested_html.add_cells_styles([data_nested_html.columns[0], data_nested_html.columns[4]],
                                           [("Person", 0), ("Person", 1)],
                                           {"background-color": "rgb(100, 255, 255)", "color": dark_red})
+
+        data_nested_html.add_header_style({"background-color": "rgb(100, 100, 255)"}, [1, 0])
+        data_nested_html.remove_header_style({"background-color": "rgb(200, 255, 255)"}, 1)
+
         self.data_nested_html = data_nested_html
 
         # Create a DataFrame with MultiIndex for both rows and columns
@@ -56,6 +61,7 @@ class TestElements(unittest.TestCase):
         data_nested_2_html.add_cells_styles([data_nested_2_html.columns[1], data_nested_2_html.columns[3]],
                                             [("Person", 1), ("Person", 2)],
                                             {"background-color": "rgb(255, 100, 255)", "color": dark_red})
+        data_nested_2_html.add_header_style({"background-color": "rgb(0, 255, 0)"})
         self.data_nested_2_html = data_nested_2_html
 
     def test_index(self):
@@ -83,6 +89,15 @@ class TestElements(unittest.TestCase):
         self.assertEqual(self.data_nested_html.model.styles[("General", "Age")].iloc[1].style,
                          {'background-color': 'rgb(100,100,255)', 'color': '#8B0000'})
 
+    def test_header(self):
+        self.assertTrue(isinstance(self.data_nested_html.model.header_styles, list))
+        self.assertTrue(isinstance(self.data_nested_2_html.model.header_styles, list))
+
+        self.assertEqual(self.data_nested_html.model.header_styles[0].style, {'background-color': 'rgb(100,100,255)'})
+        self.assertEqual(self.data_nested_html.model.header_styles[1].style, {})
+
+        self.assertEqual(self.data_nested_2_html.model.header_styles[0].style,
+                         self.data_nested_2_html.model.header_styles[1].style)
 
 if __name__ == '__main__':
     unittest.main()

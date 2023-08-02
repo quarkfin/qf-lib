@@ -73,8 +73,8 @@ class DFTable(Element):
                 columns_to_occurrences[index + 1] = [("", index_levels)] + occurence
 
         return template.render(css_class=self.model.table_styles.classes(), table=self,
-                               columns=columns_to_occurrences,
-                               index_styling=self.model.index_styling)
+                               columns=enumerate(columns_to_occurrences),
+                               index_styling=self.model.index_styling, header_styling=self.model.header_styles)
 
     @property
     def columns(self):
@@ -152,6 +152,18 @@ class DFTable(Element):
     def remove_index_class(self, css_classes: str):
         self.model.modify_data(None, css_classes, DataType.INDEX, StylingType.CLASS, False)
 
+    def add_header_style(self, styles: Union[Dict[str, str], Sequence[str]], level: Union[int, Sequence[int]] = None):
+        self.model.modify_data(level, styles, DataType.HEADER, StylingType.STYLE)
+
+    def add_header_class(self, css_classes: str, level: Union[int, Sequence[int]] = None):
+        self.model.modify_data(level, css_classes, DataType.HEADER, StylingType.CLASS)
+
+    def remove_header_style(self, styles: Union[Dict[str, str], Sequence[str]], level: Union[int, Sequence[int]] = None):
+        self.model.modify_data(level, styles, DataType.HEADER, StylingType.STYLE, False)
+
+    def remove_header_class(self, css_classes: str, level: Union[int, Sequence[int]] = None):
+        self.model.modify_data(level, css_classes, DataType.HEADER, StylingType.CLASS, False)
+
 
 class ModelController:
     def __init__(self, data=None, index=None, columns=None, dtype=None, copy=False):
@@ -176,6 +188,7 @@ class ModelController:
         }, index=self.data.index, columns=self.data.columns)
         self.table_styles = Style()
         self.index_styling = None
+        self.header_styles = [Style() for level in range(0, columns.nlevels)]
 
     def modify_data(self, location: Optional[Union[Any, Sequence[Any], Tuple[Any, Any]]] = None,
                     data_to_update: Union[str, Dict[str, str], Sequence[str]] = None,
@@ -193,6 +206,7 @@ class ModelController:
             - cells: Tuple[column, rows]
             - table: None
             - index: None
+            - header: None
             Default is None
         data_to_update: Union[str, Dict[str, str], Sequence[str]]
             The actual css information that will be inserted/deleted from the model.
@@ -219,9 +233,16 @@ class ModelController:
             list_of_modified_elements = [self.columns_styles[column_name] for column_name in location]
         elif data_type == DataType.CELL:
             location = tuple([item] if not isinstance(item, list) else item for item in location)
-            list_of_modified_elements = [self.styles.loc[row, column_name] for column_name in location[0] for row in location[1]]
+            list_of_modified_elements = [self.styles.loc[row, column_name] for column_name in location[0] for row in
+                                         location[1]]
         elif data_type == DataType.TABLE:
             list_of_modified_elements = [self.table_styles]
+        elif data_type == DataType.HEADER:
+            if location == None:
+                list_of_modified_elements = self.header_styles
+            else:
+                location, _ = convert_to_list(location, int)
+                list_of_modified_elements = [self.header_styles[i] for i in location if i >= 0 and i < len(self.header_styles)]
         else:
             list_of_modified_elements = []
 
