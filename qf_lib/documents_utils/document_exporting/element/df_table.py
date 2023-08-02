@@ -206,7 +206,7 @@ class ModelController:
             - cells: Tuple[column, rows]
             - table: None
             - index: None
-            - header: None
+            - header: Union[int, Sequence[int], None]
             Default is None
         data_to_update: Union[str, Dict[str, str], Sequence[str]]
             The actual css information that will be inserted/deleted from the model.
