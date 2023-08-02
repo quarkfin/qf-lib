@@ -29,7 +29,20 @@ from qf_lib.documents_utils.document_exporting.element import Element
 class DFTable(Element):
     def __init__(self, data: QFDataFrame = None, columns: Sequence[str] = None,
                  css_classes: Union[str, Sequence[str]] = "table", title: str = "",
-                 grid_proportion: GridProportion = GridProportion.Eight, include_index=False):
+                 grid_proportion: GridProportion = GridProportion.Eight, index_name: str = None):
+        """
+        Main method that modifies the css style and/or class of different elements in the ModelController
+        Parameters
+        ----------
+        data: QFDataFrame
+        columns: Sequence[str]
+        css_classes: Union[str, Sequence[str]]
+        title: str
+        grid_proportion: GridProportion
+        index_name: str
+            If it is None, then the dftable won't show the index
+            If it is any string (empty string included), the most upper level will take the name
+        """
         super().__init__(grid_proportion)
 
         self.model = ModelController(data=data, index=data.index,
@@ -42,9 +55,7 @@ class DFTable(Element):
         self.model.table_styles.add_css_class(css_classes)
 
         self.title = title
-
-        if include_index:
-            self.model.index_styling = Style()
+        self.index_name = index_name
 
     def generate_html(self, document: Optional[Document] = None) -> str:
         """
@@ -66,15 +77,18 @@ class DFTable(Element):
             for level in range(self.columns.nlevels)
         ]
 
-        if self.model.index_styling:
+        if self.index_name is not None:
             index_levels = self.model.data.index.nlevels
-            columns_to_occurrences[0] = [("Index", index_levels)] + columns_to_occurrences[0]
+            self.index_name = " " if len(self.index_name) == 0 else self.index_name
+
+            columns_to_occurrences[0] = [(self.index_name, index_levels)] + columns_to_occurrences[0]
             for index, occurence in enumerate(columns_to_occurrences[1:]):
                 columns_to_occurrences[index + 1] = [("", index_levels)] + occurence
 
         return template.render(css_class=self.model.table_styles.classes(), table=self,
-                               columns=columns_to_occurrences,
-                               index_styling=self.model.index_styling)
+                               columns=enumerate(columns_to_occurrences),
+                               include_index=self.index_name is not None, index_styling=self.model.index_styling,
+                               header_styling=self.model.header_styles)
 
     @property
     def columns(self):
@@ -140,17 +154,30 @@ class DFTable(Element):
                              css_classes: Union[str, Sequence[str]]):
         self.model.modify_data((columns, rows), css_classes, DataType.CELL, StylingType.CLASS, False)
 
-    def add_index_style(self, styles: Union[Dict[str, str], Sequence[str]]):
-        self.model.modify_data(None, styles, DataType.INDEX, StylingType.STYLE)
+    def add_index_style(self, styles: Union[Dict[str, str], Sequence[str]], level: Union[int, Sequence[int]] = None):
+        self.model.modify_data(level, styles, DataType.INDEX, StylingType.STYLE)
 
-    def add_index_class(self, css_classes: str):
-        self.model.modify_data(None, css_classes, DataType.INDEX, StylingType.CLASS)
+    def add_index_class(self, css_classes: str, level: Union[int, Sequence[int]] = None):
+        self.model.modify_data(level, css_classes, DataType.INDEX, StylingType.CLASS)
 
-    def remove_index_style(self, styles: Union[Dict[str, str], Sequence[str]]):
-        self.model.modify_data(None, styles, DataType.INDEX, StylingType.STYLE, False)
+    def remove_index_style(self, styles: Union[Dict[str, str], Sequence[str]], level: Union[int, Sequence[int]] = None):
+        self.model.modify_data(level, styles, DataType.INDEX, StylingType.STYLE, False)
 
-    def remove_index_class(self, css_classes: str):
-        self.model.modify_data(None, css_classes, DataType.INDEX, StylingType.CLASS, False)
+    def remove_index_class(self, css_classes: str, level: Union[int, Sequence[int]] = None):
+        self.model.modify_data(level, css_classes, DataType.INDEX, StylingType.CLASS, False)
+
+    def add_header_style(self, styles: Union[Dict[str, str], Sequence[str]], level: Union[int, Sequence[int]] = None):
+        self.model.modify_data(level, styles, DataType.HEADER, StylingType.STYLE)
+
+    def add_header_class(self, css_classes: str, level: Union[int, Sequence[int]] = None):
+        self.model.modify_data(level, css_classes, DataType.HEADER, StylingType.CLASS)
+
+    def remove_header_style(self, styles: Union[Dict[str, str], Sequence[str]],
+                            level: Union[int, Sequence[int]] = None):
+        self.model.modify_data(level, styles, DataType.HEADER, StylingType.STYLE, False)
+
+    def remove_header_class(self, css_classes: str, level: Union[int, Sequence[int]] = None):
+        self.model.modify_data(level, css_classes, DataType.HEADER, StylingType.CLASS, False)
 
 
 class ModelController:
@@ -175,7 +202,8 @@ class ModelController:
             ] for column_name, column_style in self.columns_styles.items()
         }, index=self.data.index, columns=self.data.columns)
         self.table_styles = Style()
-        self.index_styling = None
+        self.index_styling = [Style() for level in range(0, index.nlevels)]
+        self.header_styles = [Style() for level in range(0, columns.nlevels)]
 
     def modify_data(self, location: Optional[Union[Any, Sequence[Any], Tuple[Any, Any]]] = None,
                     data_to_update: Union[str, Dict[str, str], Sequence[str]] = None,
@@ -192,7 +220,8 @@ class ModelController:
             - rows: Union[Any, Sequence[Any]]
             - cells: Tuple[column, rows]
             - table: None
-            - index: None
+            - index: Union[int, Sequence[int], None]
+            - header: Union[int, Sequence[int], None]
             Default is None
         data_to_update: Union[str, Dict[str, str], Sequence[str]]
             The actual css information that will be inserted/deleted from the model.
@@ -209,9 +238,12 @@ class ModelController:
             - if False, then it is removing from the current list of css
         """
         if data_type == DataType.INDEX:
-            if not self.index_styling:
-                self.index_styling = Style()
-            list_of_modified_elements = [self.index_styling]
+            if location is None:
+                list_of_modified_elements = self.index_styling
+            else:
+                location, _ = convert_to_list(location, int)
+                list_of_modified_elements = [self.index_styling[i] for i in location if
+                                             0 <= i < len(self.index_styling)]
         elif data_type == DataType.ROW:
             list_of_modified_elements = self.rows_styles.loc[location].tolist()
         elif data_type == DataType.COLUMN:
@@ -219,9 +251,17 @@ class ModelController:
             list_of_modified_elements = [self.columns_styles[column_name] for column_name in location]
         elif data_type == DataType.CELL:
             location = tuple([item] if not isinstance(item, list) else item for item in location)
-            list_of_modified_elements = [self.styles.loc[row, column_name] for column_name in location[0] for row in location[1]]
+            list_of_modified_elements = [self.styles.loc[row, column_name] for column_name in location[0] for row in
+                                         location[1]]
         elif data_type == DataType.TABLE:
             list_of_modified_elements = [self.table_styles]
+        elif data_type == DataType.HEADER:
+            if location is None:
+                list_of_modified_elements = self.header_styles
+            else:
+                location, _ = convert_to_list(location, int)
+                list_of_modified_elements = [self.header_styles[i] for i in location if
+                                             0 <= i < len(self.header_styles)]
         else:
             list_of_modified_elements = []
 
