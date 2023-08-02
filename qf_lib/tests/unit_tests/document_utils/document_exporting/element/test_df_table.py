@@ -25,7 +25,7 @@ class TestElements(unittest.TestCase):
                                                       names=['Category', 'ID'])
 
         # Create a DataFrame with a MultiIndex for columns
-        data_nested_html = DFTable(data_nested, css_classes=["table", "wide-first-column"], include_index=True)
+        data_nested_html = DFTable(data_nested, css_classes=["table", "wide-first-column"], index_name="Sth custom")
         data_nested_html.add_index_class("wider-second-column")
         data_nested_html.add_index_class("center-align")
         data_nested_html.add_index_style({"background-color": "rgb(225, 0, 225)"}, 1)
@@ -56,7 +56,7 @@ class TestElements(unittest.TestCase):
                                                         names=['Category', 'ID'])
 
         # Create a DataFrame with a MultiIndex for columns
-        data_nested_2_html = DFTable(data_nested_2, css_classes=["table", "wide-first-column"], include_index=False)
+        data_nested_2_html = DFTable(data_nested_2, css_classes=["table", "wide-first-column"])
         dark_red = "#8B08B0"
         data_nested_2_html.add_cells_styles([data_nested_2_html.columns[1], data_nested_2_html.columns[3]],
                                             [("Person", 1), ("Person", 2)],

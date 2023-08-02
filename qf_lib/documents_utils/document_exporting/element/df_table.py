@@ -12,7 +12,7 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 from itertools import groupby
-from typing import Sequence, Optional, Union, Dict, Tuple, Any
+from typing import Sequence, Optional, Union, Dict, Tuple, Any, List
 
 from qf_lib.documents_utils.document_exporting.element.helpers.style import Style, ColumnStyle, RowStyle, CellStyle
 from qf_lib.documents_utils.document_exporting.element.helpers.style_enums import DataType, StylingType
@@ -29,7 +29,20 @@ from qf_lib.documents_utils.document_exporting.element import Element
 class DFTable(Element):
     def __init__(self, data: QFDataFrame = None, columns: Sequence[str] = None,
                  css_classes: Union[str, Sequence[str]] = "table", title: str = "",
-                 grid_proportion: GridProportion = GridProportion.Eight, include_index=False):
+                 grid_proportion: GridProportion = GridProportion.Eight, index_name: str = None):
+        """
+        Main method that modifies the css style and/or class of different elements in the ModelController
+        Parameters
+        ----------
+        data: QFDataFrame
+        columns: Sequence[str]
+        css_classes: Union[str, Sequence[str]]
+        title: str
+        grid_proportion: GridProportion
+        index_name: str
+            If it is None, then the dftable won't show the index
+            If it is any string (empty string included), the most upper level will take the name
+        """
         super().__init__(grid_proportion)
 
         self.model = ModelController(data=data, index=data.index,
@@ -42,7 +55,7 @@ class DFTable(Element):
         self.model.table_styles.add_css_class(css_classes)
 
         self.title = title
-        self.include_index = include_index
+        self.index_name = index_name
 
     def generate_html(self, document: Optional[Document] = None) -> str:
         """
@@ -64,15 +77,17 @@ class DFTable(Element):
             for level in range(self.columns.nlevels)
         ]
 
-        if self.include_index:
+        if self.index_name is not None:
             index_levels = self.model.data.index.nlevels
-            columns_to_occurrences[0] = [("Index", index_levels)] + columns_to_occurrences[0]
+            self.index_name = " " if len(self.index_name) == 0 else self.index_name
+
+            columns_to_occurrences[0] = [(self.index_name, index_levels)] + columns_to_occurrences[0]
             for index, occurence in enumerate(columns_to_occurrences[1:]):
                 columns_to_occurrences[index + 1] = [("", index_levels)] + occurence
 
         return template.render(css_class=self.model.table_styles.classes(), table=self,
                                columns=enumerate(columns_to_occurrences),
-                               include_index=self.include_index, index_styling=self.model.index_styling,
+                               include_index=self.index_name is not None, index_styling=self.model.index_styling,
                                header_styling=self.model.header_styles)
 
     @property
