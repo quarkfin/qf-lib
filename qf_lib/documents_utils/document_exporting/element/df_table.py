@@ -12,7 +12,7 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 from itertools import groupby
-from typing import Sequence, Optional, Union, Dict, Tuple, Any, List
+from typing import Sequence, Optional, Union, Dict, Tuple, Any
 
 from qf_lib.documents_utils.document_exporting.element.helpers.style import Style, ColumnStyle, RowStyle, CellStyle
 from qf_lib.documents_utils.document_exporting.element.helpers.style_enums import DataType, StylingType
