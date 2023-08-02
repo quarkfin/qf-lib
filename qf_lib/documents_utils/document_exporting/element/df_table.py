@@ -42,9 +42,7 @@ class DFTable(Element):
         self.model.table_styles.add_css_class(css_classes)
 
         self.title = title
-
-        if include_index:
-            self.model.index_styling = Style()
+        self.include_index = include_index
 
     def generate_html(self, document: Optional[Document] = None) -> str:
         """
@@ -66,7 +64,7 @@ class DFTable(Element):
             for level in range(self.columns.nlevels)
         ]
 
-        if self.model.index_styling:
+        if self.include_index:
             index_levels = self.model.data.index.nlevels
             columns_to_occurrences[0] = [("Index", index_levels)] + columns_to_occurrences[0]
             for index, occurence in enumerate(columns_to_occurrences[1:]):
@@ -74,7 +72,8 @@ class DFTable(Element):
 
         return template.render(css_class=self.model.table_styles.classes(), table=self,
                                columns=enumerate(columns_to_occurrences),
-                               index_styling=self.model.index_styling, header_styling=self.model.header_styles)
+                               include_index=self.include_index, index_styling=self.model.index_styling,
+                               header_styling=self.model.header_styles)
 
     @property
     def columns(self):
@@ -140,17 +139,17 @@ class DFTable(Element):
                              css_classes: Union[str, Sequence[str]]):
         self.model.modify_data((columns, rows), css_classes, DataType.CELL, StylingType.CLASS, False)
 
-    def add_index_style(self, styles: Union[Dict[str, str], Sequence[str]]):
-        self.model.modify_data(None, styles, DataType.INDEX, StylingType.STYLE)
+    def add_index_style(self, styles: Union[Dict[str, str], Sequence[str]], level: Union[int, Sequence[int]] = None):
+        self.model.modify_data(level, styles, DataType.INDEX, StylingType.STYLE)
 
-    def add_index_class(self, css_classes: str):
-        self.model.modify_data(None, css_classes, DataType.INDEX, StylingType.CLASS)
+    def add_index_class(self, css_classes: str, level: Union[int, Sequence[int]] = None):
+        self.model.modify_data(level, css_classes, DataType.INDEX, StylingType.CLASS)
 
-    def remove_index_style(self, styles: Union[Dict[str, str], Sequence[str]]):
-        self.model.modify_data(None, styles, DataType.INDEX, StylingType.STYLE, False)
+    def remove_index_style(self, styles: Union[Dict[str, str], Sequence[str]], level: Union[int, Sequence[int]] = None):
+        self.model.modify_data(level, styles, DataType.INDEX, StylingType.STYLE, False)
 
-    def remove_index_class(self, css_classes: str):
-        self.model.modify_data(None, css_classes, DataType.INDEX, StylingType.CLASS, False)
+    def remove_index_class(self, css_classes: str, level: Union[int, Sequence[int]] = None):
+        self.model.modify_data(level, css_classes, DataType.INDEX, StylingType.CLASS, False)
 
     def add_header_style(self, styles: Union[Dict[str, str], Sequence[str]], level: Union[int, Sequence[int]] = None):
         self.model.modify_data(level, styles, DataType.HEADER, StylingType.STYLE)
@@ -158,7 +157,8 @@ class DFTable(Element):
     def add_header_class(self, css_classes: str, level: Union[int, Sequence[int]] = None):
         self.model.modify_data(level, css_classes, DataType.HEADER, StylingType.CLASS)
 
-    def remove_header_style(self, styles: Union[Dict[str, str], Sequence[str]], level: Union[int, Sequence[int]] = None):
+    def remove_header_style(self, styles: Union[Dict[str, str], Sequence[str]],
+                            level: Union[int, Sequence[int]] = None):
         self.model.modify_data(level, styles, DataType.HEADER, StylingType.STYLE, False)
 
     def remove_header_class(self, css_classes: str, level: Union[int, Sequence[int]] = None):
@@ -187,7 +187,7 @@ class ModelController:
             ] for column_name, column_style in self.columns_styles.items()
         }, index=self.data.index, columns=self.data.columns)
         self.table_styles = Style()
-        self.index_styling = None
+        self.index_styling = [Style() for level in range(0, index.nlevels)]
         self.header_styles = [Style() for level in range(0, columns.nlevels)]
 
     def modify_data(self, location: Optional[Union[Any, Sequence[Any], Tuple[Any, Any]]] = None,
@@ -205,7 +205,7 @@ class ModelController:
             - rows: Union[Any, Sequence[Any]]
             - cells: Tuple[column, rows]
             - table: None
-            - index: None
+            - index: Union[int, Sequence[int], None]
             - header: Union[int, Sequence[int], None]
             Default is None
         data_to_update: Union[str, Dict[str, str], Sequence[str]]
@@ -223,9 +223,12 @@ class ModelController:
             - if False, then it is removing from the current list of css
         """
         if data_type == DataType.INDEX:
-            if not self.index_styling:
-                self.index_styling = Style()
-            list_of_modified_elements = [self.index_styling]
+            if location is None:
+                list_of_modified_elements = self.index_styling
+            else:
+                location, _ = convert_to_list(location, int)
+                list_of_modified_elements = [self.index_styling[i] for i in location if
+                                             0 <= i < len(self.index_styling)]
         elif data_type == DataType.ROW:
             list_of_modified_elements = self.rows_styles.loc[location].tolist()
         elif data_type == DataType.COLUMN:
