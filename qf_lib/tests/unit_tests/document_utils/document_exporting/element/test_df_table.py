@@ -1,5 +1,4 @@
 import unittest
-from typing import Dict
 
 import pandas as pd
 
@@ -98,6 +97,7 @@ class TestElements(unittest.TestCase):
 
         self.assertEqual(self.data_nested_2_html.model.header_styles[0].style,
                          self.data_nested_2_html.model.header_styles[1].style)
+
 
 if __name__ == '__main__':
     unittest.main()

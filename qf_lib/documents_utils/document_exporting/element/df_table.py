@@ -238,11 +238,12 @@ class ModelController:
         elif data_type == DataType.TABLE:
             list_of_modified_elements = [self.table_styles]
         elif data_type == DataType.HEADER:
-            if location == None:
+            if location is None:
                 list_of_modified_elements = self.header_styles
             else:
                 location, _ = convert_to_list(location, int)
-                list_of_modified_elements = [self.header_styles[i] for i in location if i >= 0 and i < len(self.header_styles)]
+                list_of_modified_elements = [self.header_styles[i] for i in location if
+                                             0 <= i < len(self.header_styles)]
         else:
             list_of_modified_elements = []
 
