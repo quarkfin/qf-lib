@@ -45,7 +45,7 @@ class TestRiskParityBoxesFactory(TestCase):
 
         bbg_data_provider = Mock(spec=BloombergDataProvider)
 
-        all_tickers_str = ['BCIT3T Index', 'IEF US Equity', 'LQD US Equity', 'MSBIERTR Index', 'MXUS Index',
+        all_tickers_str = ['BCIT3T Index', 'IEF US Equity', 'LQD US Equity', 'MSBICBGU Index', 'MXUS Index',
                            'SPGSCITR Index', 'XAU Curncy']
         all_tickers = BloombergTicker.from_string(all_tickers_str)
         assets_prices_df = PricesDataFrame(index=datetime_index, columns=all_tickers, data=[

@@ -130,7 +130,7 @@ class RiskParityBoxesFactory:
             ChangeDirection.RISING: {
                 ChangeDirection.RISING: [
                     BloombergTicker("SPGSCITR Index"),  # Commodities (S&P GSCI Total Return CME)
-                    BloombergTicker("MSBIERTR Index"),  # EM Debt (Morningstar Emerging Markets Corporate Bond Index TR)
+                    BloombergTicker("MSBICBGU Index"),  # EM Debt (Morningstar Emerging Markets Corporate Bond Index TR)
                     BloombergTicker("XAU Curncy")  # Gold (XAUUSD Spot Exchange Rate - Price of 1 XAU in USD)
                 ],
                 ChangeDirection.FALLING: [
