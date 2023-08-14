@@ -168,12 +168,12 @@ class RiskParityBoxesFactory:
         asset_prices_df = self.data_provider.get_price(self.all_tickers, PriceField.Close, start_date, end_date, frequency)
         asset_prices_df = cast_dataframe(asset_prices_df, output_type=PricesDataFrame)
 
+        # remove intermediate NaNs
+        asset_prices_df = asset_prices_df.ffill().bfill()
+
         # trim
         common_start, common_end = get_common_start_and_end(asset_prices_df)
         trimmed_asset_prices_df = asset_prices_df.loc[common_start:common_end, :]  # type: PricesDataFrame
-
-        # remove intermediate NaNs
-        trimmed_asset_prices_df = trimmed_asset_prices_df.fillna(method='pad')  # forward fill
 
         # convert to simple returns
         assets_rets = trimmed_asset_prices_df.to_simple_returns()
