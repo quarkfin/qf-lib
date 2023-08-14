@@ -24,7 +24,7 @@ from qf_lib.containers.dataframe.cast_dataframe import cast_dataframe
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.dataframe.simple_returns_dataframe import SimpleReturnsDataFrame
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
-from qf_lib.data_providers.bloomberg.bloomberg_data_provider import BloombergDataProvider
+from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 from qf_lib.portfolio_construction.portfolio_models.equal_risk_contribution_portfolio import \
     EqualRiskContributionPortfolio
 from qf_lib.portfolio_construction.portfolio_models.portfolio import Portfolio
@@ -89,12 +89,12 @@ class RiskParityBoxesFactory:
 
     Parameters
     ----------
-    bbg_data_provider: BloombergDataProvider
-        reference to bloomberg data provider
+    data_provider: AbstractPriceDataProvider
+        reference to a class that implements AbstractPriceDataProvider
     """
 
-    def __init__(self, bbg_data_provider: BloombergDataProvider):
-        self.bbg_data_provider = bbg_data_provider
+    def __init__(self, data_provider: AbstractPriceDataProvider):
+        self.data_provider = data_provider
 
         # index: growth, columns: inflation
         self.tickers_dict = self._create_tickers_dict()
@@ -165,7 +165,7 @@ class RiskParityBoxesFactory:
 
     def _get_assets_data(self, end_date, start_date, frequency):
         # download data
-        asset_prices_df = self.bbg_data_provider.get_price(self.all_tickers, PriceField.Close, start_date, end_date, frequency)
+        asset_prices_df = self.data_provider.get_price(self.all_tickers, PriceField.Close, start_date, end_date, frequency)
         asset_prices_df = cast_dataframe(asset_prices_df, output_type=PricesDataFrame)
 
         # trim
