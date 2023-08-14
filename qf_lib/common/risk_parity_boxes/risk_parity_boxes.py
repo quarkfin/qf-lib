@@ -91,13 +91,15 @@ class RiskParityBoxesFactory:
     ----------
     data_provider: AbstractPriceDataProvider
         reference to a class that implements AbstractPriceDataProvider
+    tickers_dict: dict
+        tickers for different economic environments
     """
 
-    def __init__(self, data_provider: AbstractPriceDataProvider):
+    def __init__(self, data_provider: AbstractPriceDataProvider, tickers_dict: dict = None):
         self.data_provider = data_provider
 
         # index: growth, columns: inflation
-        self.tickers_dict = self._create_tickers_dict()
+        self.tickers_dict = tickers_dict or self._create_tickers_dict()
 
         self.all_tickers = self._get_all_tickers(self.tickers_dict)
 
@@ -130,7 +132,7 @@ class RiskParityBoxesFactory:
             ChangeDirection.RISING: {
                 ChangeDirection.RISING: [
                     BloombergTicker("SPGSCITR Index"),  # Commodities (S&P GSCI Total Return CME)
-                    BloombergTicker("MSBICBGU Index"),  # EM Debt (Morningstar Emerging Markets Corporate Bond Index TR)
+                    BloombergTicker("MSBICBGU Index"),  # EM Debt
                     BloombergTicker("XAU Curncy")  # Gold (XAUUSD Spot Exchange Rate - Price of 1 XAU in USD)
                 ],
                 ChangeDirection.FALLING: [
