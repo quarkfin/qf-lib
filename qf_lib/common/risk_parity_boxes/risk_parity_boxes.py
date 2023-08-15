@@ -24,7 +24,7 @@ from qf_lib.containers.dataframe.cast_dataframe import cast_dataframe
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.dataframe.simple_returns_dataframe import SimpleReturnsDataFrame
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
-from qf_lib.data_providers.bloomberg.bloomberg_data_provider import BloombergDataProvider
+from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 from qf_lib.portfolio_construction.portfolio_models.equal_risk_contribution_portfolio import \
     EqualRiskContributionPortfolio
 from qf_lib.portfolio_construction.portfolio_models.portfolio import Portfolio
@@ -89,15 +89,17 @@ class RiskParityBoxesFactory:
 
     Parameters
     ----------
-    bbg_data_provider: BloombergDataProvider
-        reference to bloomberg data provider
+    data_provider: AbstractPriceDataProvider
+        reference to a class providing the price data
+    tickers_dict: dict
+        tickers for different economic environments
     """
 
-    def __init__(self, bbg_data_provider: BloombergDataProvider):
-        self.bbg_data_provider = bbg_data_provider
+    def __init__(self, data_provider: AbstractPriceDataProvider, tickers_dict: dict = None):
+        self.data_provider = data_provider
 
         # index: growth, columns: inflation
-        self.tickers_dict = self._create_tickers_dict()
+        self.tickers_dict = tickers_dict or self._create_tickers_dict()
 
         self.all_tickers = self._get_all_tickers(self.tickers_dict)
 
@@ -130,7 +132,7 @@ class RiskParityBoxesFactory:
             ChangeDirection.RISING: {
                 ChangeDirection.RISING: [
                     BloombergTicker("SPGSCITR Index"),  # Commodities (S&P GSCI Total Return CME)
-                    BloombergTicker("MSBICBGU Index"),  # EM Debt (Morningstar Emerging Markets Corporate Bond Index TR)
+                    BloombergTicker("MSBICBGU Index"),  # Morningstar Emerging Markets Corporate Bond GR USD
                     BloombergTicker("XAU Curncy")  # Gold (XAUUSD Spot Exchange Rate - Price of 1 XAU in USD)
                 ],
                 ChangeDirection.FALLING: [
@@ -165,15 +167,15 @@ class RiskParityBoxesFactory:
 
     def _get_assets_data(self, end_date, start_date, frequency):
         # download data
-        asset_prices_df = self.bbg_data_provider.get_price(self.all_tickers, PriceField.Close, start_date, end_date, frequency)
+        asset_prices_df = self.data_provider.get_price(self.all_tickers, PriceField.Close, start_date, end_date, frequency)
         asset_prices_df = cast_dataframe(asset_prices_df, output_type=PricesDataFrame)
+
+        # remove intermediate NaNs
+        asset_prices_df = asset_prices_df.ffill().bfill()
 
         # trim
         common_start, common_end = get_common_start_and_end(asset_prices_df)
         trimmed_asset_prices_df = asset_prices_df.loc[common_start:common_end, :]  # type: PricesDataFrame
-
-        # remove intermediate NaNs
-        trimmed_asset_prices_df = trimmed_asset_prices_df.fillna(method='pad')  # forward fill
 
         # convert to simple returns
         assets_rets = trimmed_asset_prices_df.to_simple_returns()
