@@ -31,21 +31,21 @@ from qf_lib.tests.helpers.testing_tools.containers_comparison import assert_seri
 class TestRiskParityBoxesFactory(TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.start_date = str_to_date("2017-10-01")
-        cls.end_date = str_to_date("2017-11-01")
+        cls.start_date = str_to_date("2022-10-01")
+        cls.end_date = str_to_date("2022-11-01")
         cls.frequency = Frequency.DAILY
 
         datetime_index = pd.DatetimeIndex([
-            '2017-10-02', '2017-10-03', '2017-10-04', '2017-10-05', '2017-10-06',
-            '2017-10-09', '2017-10-10', '2017-10-11', '2017-10-12', '2017-10-13',
-            '2017-10-16', '2017-10-17', '2017-10-18', '2017-10-19', '2017-10-20',
-            '2017-10-23', '2017-10-24', '2017-10-25', '2017-10-26', '2017-10-27',
-            '2017-10-30', '2017-10-31', '2017-11-01'
+            '2022-10-02', '2022-10-03', '2022-10-04', '2022-10-05', '2022-10-06',
+            '2022-10-09', '2022-10-10', '2022-10-11', '2022-10-12', '2022-10-13',
+            '2022-10-16', '2022-10-17', '2022-10-18', '2022-10-19', '2022-10-20',
+            '2022-10-23', '2022-10-24', '2022-10-25', '2022-10-26', '2022-10-27',
+            '2022-10-30', '2022-10-31', '2022-11-01'
         ])
 
         bbg_data_provider = Mock(spec=BloombergDataProvider)
 
-        all_tickers_str = ['BCIT3T Index', 'IEF US Equity', 'LQD US Equity', 'MSBIERTR Index', 'MXUS Index',
+        all_tickers_str = ['BCIT3T Index', 'IEF US Equity', 'LQD US Equity', 'MSBICBGU Index', 'MXUS Index',
                            'SPGSCITR Index', 'XAU Curncy']
         all_tickers = BloombergTicker.from_string(all_tickers_str)
         assets_prices_df = PricesDataFrame(index=datetime_index, columns=all_tickers, data=[
@@ -85,11 +85,11 @@ class TestRiskParityBoxesFactory(TestCase):
 
         actual_boxes = self.risk_parity_boxes_factory.make_parity_boxes(self.start_date, self.end_date)
         datetime_index = pd.DatetimeIndex([
-            '2017-10-03', '2017-10-04', '2017-10-05', '2017-10-06',
-            '2017-10-09', '2017-10-10', '2017-10-11', '2017-10-12', '2017-10-13',
-            '2017-10-16', '2017-10-17', '2017-10-18', '2017-10-19', '2017-10-20',
-            '2017-10-23', '2017-10-24', '2017-10-25', '2017-10-26', '2017-10-27',
-            '2017-10-30', '2017-10-31', '2017-11-01'
+            '2022-10-03', '2022-10-04', '2022-10-05', '2022-10-06',
+            '2022-10-09', '2022-10-10', '2022-10-11', '2022-10-12', '2022-10-13',
+            '2022-10-16', '2022-10-17', '2022-10-18', '2022-10-19', '2022-10-20',
+            '2022-10-23', '2022-10-24', '2022-10-25', '2022-10-26', '2022-10-27',
+            '2022-10-30', '2022-10-31', '2022-11-01'
         ])
 
         expected_series = SimpleReturnsSeries(index=datetime_index, data=[
