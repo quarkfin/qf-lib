@@ -90,7 +90,7 @@ class RiskParityBoxesFactory:
     Parameters
     ----------
     data_provider: AbstractPriceDataProvider
-        reference to a class that implements AbstractPriceDataProvider
+        reference to a class providing the price data
     tickers_dict: dict
         tickers for different economic environments
     """
@@ -132,7 +132,7 @@ class RiskParityBoxesFactory:
             ChangeDirection.RISING: {
                 ChangeDirection.RISING: [
                     BloombergTicker("SPGSCITR Index"),  # Commodities (S&P GSCI Total Return CME)
-                    BloombergTicker("MSBICBGU Index"),  # EM Debt
+                    BloombergTicker("MSBICBGU Index"),  # Morningstar Emerging Markets Corporate Bond GR USD
                     BloombergTicker("XAU Curncy")  # Gold (XAUUSD Spot Exchange Rate - Price of 1 XAU in USD)
                 ],
                 ChangeDirection.FALLING: [
