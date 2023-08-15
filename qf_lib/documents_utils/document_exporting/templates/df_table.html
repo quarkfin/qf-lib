@@ -17,10 +17,11 @@
 <table class="{{ css_class }}">
     <caption>{{ table.title }}</caption>
     <thead>
-        {% for level in columns: %}
+        {% for level, content in columns: %}
             <tr>
-                {% for col, multiplier in level: %}
-                    <th colspan="{{multiplier}}">
+                {% for col, multiplier in content: %}
+                    <th colspan="{{multiplier}}" style={{header_styling[level].styles()}}
+                        class={{header_styling[level].classes()}}>
                         {{ col }}
                     </th>
                 {% endfor %}
@@ -30,18 +31,19 @@
     <tbody>
         {% for (indices, row), (_, styles) in table.model.iterrows(): %}
             <tr>
-                {% if index_styling%}
-                    {% if indices is iterable %}
-                        {% for index in indices %}
-                            <td style={{index_styling.styles()}} class={{index_styling.classes()}}>
-                                    {{index}}
+                {% if include_index%}
+                    {% if indices is iterable and indices is not string %}
+                        {% for index in range(index_styling | length) %}
+                            <td style={{index_styling[index].styles()}} class={{index_styling[index].classes()}}>
+                                    {{indices[index]}}
                             </td>
                         {% endfor %}
                     {% else %}
-                        <td style={{index_styling.styles()}} class={{index_styling.classes()}}>
+                        <td style={{index_styling[0].styles()}} class={{index_styling[0].classes()}}>
                                 {{indices}}
                         </td>
-                    {% endif%}
+                    {% endif %}
+
                 {% endif %}
 
                 {% for i in range(0, row|length): %}
