@@ -33,9 +33,10 @@ END_DATE = str_to_date('2018-01-31')
 
 TICKERS = [DummyTicker('AAA'), DummyTicker('BBB'), DummyTicker('CCC')]
 
+
 def create_plot_bar_chart(df: QFDataFrame, stacked=True):
-    chart_title = TitleDecorator(f"Bar Chart {START_DATE.date()} - {END_DATE.date()}")
-    bar_chart = BarChart(orientation=Orientation.Vertical, stacked=stacked, start_x=START_DATE - datetime.timedelta(days=1), end_x=END_DATE + datetime.timedelta(days=1), thickness=0.1)
+    chart_title = TitleDecorator(f" Stacked{stacked} Bar Chart {START_DATE.date()} - {END_DATE.date()}")
+    bar_chart = BarChart(orientation=Orientation.Vertical, stacked=stacked, start_x=START_DATE - datetime.timedelta(days=1), end_x=END_DATE + datetime.timedelta(days=1), thickness=0.2)
     bar_chart.add_decorator(chart_title)
     legend = LegendDecorator()
     for col in df.columns:
@@ -46,8 +47,8 @@ def create_plot_bar_chart(df: QFDataFrame, stacked=True):
     bar_chart.add_decorator(legend)
     axes_label = AxesLabelDecorator(x_label='Date', y_label='Value')
     bar_chart.add_decorator(axes_label)
-
     return bar_chart
+
 
 def main():
     df = daily_data_provider.get_price(TICKERS, PriceField.Close, start_date=START_DATE, end_date=END_DATE)
@@ -59,6 +60,7 @@ def main():
     unstacked_bar_chart = create_plot_bar_chart(df, stacked=False)
     unstacked_bar_chart.plot()
     plt.show(block=True)
+
 
 if __name__ == '__main__':
     main()
