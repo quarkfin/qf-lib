@@ -36,7 +36,11 @@ TICKERS = [DummyTicker('AAA'), DummyTicker('BBB'), DummyTicker('CCC')]
 
 def create_plot_bar_chart(df: QFDataFrame, stacked=True):
     chart_title = TitleDecorator(f"Bar Chart {START_DATE.date()} - {END_DATE.date()}")
-    bar_chart = BarChart(orientation=Orientation.Vertical, stacked=stacked, start_x=START_DATE - datetime.timedelta(days=1), end_x=END_DATE + datetime.timedelta(days=1), thickness=0.2)
+    bar_chart = BarChart(orientation=Orientation.Vertical,
+                         stacked=stacked,
+                         start_x=START_DATE - datetime.timedelta(days=1),
+                         end_x=END_DATE + datetime.timedelta(days=1),
+                         thickness=0.2)
     bar_chart.add_decorator(chart_title)
     legend = LegendDecorator()
     for col in df.columns:

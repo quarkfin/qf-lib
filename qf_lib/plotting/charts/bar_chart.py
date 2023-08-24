@@ -12,6 +12,7 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
+import warnings
 import matplotlib.dates as dates
 from itertools import cycle
 from typing import List, Any, Tuple
@@ -83,6 +84,8 @@ class BarChart(Chart):
         # Holds the positions of the bars that have been plotted most recently. It is used to stack
         # bars on top of each other and tracks where to place the bars so that they are on top of each other.
         last_data_element_positions = (None, None)  # (Positive, Negative)
+        # Previous index plotted, used to check if unstacked bars overlap
+        prev_index = None
 
         for i, data_element in enumerate(data_element_decorators):
             # copy the general plot settings and add DataElementDecorator-specific plot settings to the copy
@@ -95,7 +98,7 @@ class BarChart(Chart):
                 plot_settings["color"] = next(default_color_iter)
 
             data = self._trim_data(data_element.data)
-
+            data.sort_index(inplace=True)
             # Pick the axes to plot on.
             axes = self.axes
             if data_element.use_secondary_axes:
@@ -108,10 +111,16 @@ class BarChart(Chart):
             if not self._stacked:
                 if is_datetime(index):
                     converted_index = dates.date2num(index)
-                    converted_index += i*self._thickness
-                    index = dates.num2date(converted_index)
+                    new_index = converted_index + i*self._thickness
+                    if i > 0 and not (new_index[:-1] > prev_index[1:]).all():
+                        warnings.warn(f"BarChart: Bars overlap with thickness={self._thickness}")
+                    prev_index = new_index
+                    index = dates.num2date(new_index)
                 else:
                     index += i*self._thickness
+                    if i > 0 and not (index[:-1] > prev_index[1:]).all():
+                        warnings.warn(f"BarChart: Bars overlap with thickness={self._thickness}")
+                    prev_index = index
 
             bars = self._plot_data(axes, index, data, last_data_element_positions, plot_settings)
             data_element.legend_artist = bars
