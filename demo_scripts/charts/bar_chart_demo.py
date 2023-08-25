@@ -42,7 +42,7 @@ def create_plot_bar_chart(df: QFDataFrame, stacked=True):
                          end_x=END_DATE + datetime.timedelta(days=1))
     bar_chart.add_decorator(chart_title)
     legend = LegendDecorator()
-    for col in df.columns[:-1]:
+    for col in df.columns:
         qf_series = QFSeries(df[col])
         data = DataElementDecorator(qf_series)
         bar_chart.add_decorator(data)
