@@ -98,7 +98,6 @@ class BarChart(Chart):
                 plot_settings["color"] = next(default_color_iter)
 
             data = self._trim_data(data_element.data)
-            data.sort_index(inplace=True)
             # Pick the axes to plot on.
             axes = self.axes
             if data_element.use_secondary_axes:
