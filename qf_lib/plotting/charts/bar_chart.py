@@ -84,8 +84,20 @@ class BarChart(Chart):
         # bars on top of each other and tracks where to place the bars so that they are on top of each other.
         last_data_element_positions = (None, None)  # (Positive, Negative)
 
-        if not self._stacked:
-            self._thickness /= len(data_element_decorators)
+        # Adjust thickness based on minimum difference between index values,
+        # and the number of bars for each index value.
+        if not self._stacked and len(data_element_decorators) > 1:
+            indices = [data_element.data.index for data_element in data_element_decorators]
+
+            if is_datetime(indices[0]):
+                indices = [dates.date2num(index) for index in indices]
+
+            minimum = float('inf')
+            for i in range(len(indices) - 1):
+                min_difference = min(indices[i+1][1:] - indices[i][:-1])
+                if min_difference < minimum:
+                    minimum = min_difference
+            self._thickness /= len(data_element_decorators) / minimum
 
         for i, data_element in enumerate(data_element_decorators):
             # copy the general plot settings and add DataElementDecorator-specific plot settings to the copy
