@@ -13,9 +13,10 @@
 #     limitations under the License.
 
 import matplotlib.dates as dates
+import numpy as np
 from itertools import cycle
 from typing import List, Any, Tuple
-from pandas import DataFrame
+from functools import reduce
 from pandas.api.types import is_datetime64_any_dtype as is_datetime
 
 from qf_lib.common.enums.orientation import Orientation
@@ -87,13 +88,12 @@ class BarChart(Chart):
 
         # Adjust thickness based on minimum difference between index values,
         # and the number of bars for each index value.
-        if not self._stacked and len(data_element_decorators) > 1:
-            indices = [data_element.data.index for data_element in data_element_decorators]
+        if not self._stacked:
+            indices = [data_element.data.index if not is_datetime(data_element.data.index) else
+                       dates.date2num(data_element.data.index) for
+                       data_element in data_element_decorators]
 
-            if is_datetime(indices[0]):
-                indices = [dates.date2num(index) for index in indices]
-
-            minimum = DataFrame(indices).T.melt().value.sort_values().drop_duplicates().diff().min()
+            minimum = np.diff(reduce(np.union1d, indices)).min()
 
             self._thickness /= len(data_element_decorators) / minimum
 
