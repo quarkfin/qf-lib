@@ -15,6 +15,7 @@
 import matplotlib.dates as dates
 from itertools import cycle
 from typing import List, Any, Tuple
+from pandas import DataFrame
 from pandas.api.types import is_datetime64_any_dtype as is_datetime
 
 from qf_lib.common.enums.orientation import Orientation
@@ -92,11 +93,7 @@ class BarChart(Chart):
             if is_datetime(indices[0]):
                 indices = [dates.date2num(index) for index in indices]
 
-            minimum = float('inf')
-            for i in range(len(indices) - 1):
-                min_difference = min(indices[i+1][1:] - indices[i][:-1])
-                if min_difference < minimum:
-                    minimum = min_difference
+            minimum = DataFrame(indices).T.diff().min().min()
             self._thickness /= len(data_element_decorators) / minimum
 
         for i, data_element in enumerate(data_element_decorators):
