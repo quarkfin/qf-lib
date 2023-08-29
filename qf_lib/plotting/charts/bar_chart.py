@@ -12,8 +12,12 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
+import matplotlib.dates as dates
+import numpy as np
 from itertools import cycle
 from typing import List, Any, Tuple
+from functools import reduce
+from pandas.api.types import is_datetime64_any_dtype as is_datetime
 
 from qf_lib.common.enums.orientation import Orientation
 from qf_lib.plotting.charts.chart import Chart
@@ -82,7 +86,18 @@ class BarChart(Chart):
         # bars on top of each other and tracks where to place the bars so that they are on top of each other.
         last_data_element_positions = (None, None)  # (Positive, Negative)
 
-        for data_element in data_element_decorators:
+        # Adjust thickness based on minimum difference between index values,
+        # and the number of bars for each index value.
+        if not self._stacked:
+            indices = [data_element.data.index if not is_datetime(data_element.data.index) else
+                       dates.date2num(data_element.data.index) for
+                       data_element in data_element_decorators]
+
+            minimum = np.diff(reduce(np.union1d, indices)).min()
+
+            self._thickness /= len(data_element_decorators) / minimum
+
+        for i, data_element in enumerate(data_element_decorators):
             # copy the general plot settings and add DataElementDecorator-specific plot settings to the copy
             # (overwrite general plot settings if necessary)
             plot_settings = dict(self._plot_settings)
@@ -93,14 +108,24 @@ class BarChart(Chart):
                 plot_settings["color"] = next(default_color_iter)
 
             data = self._trim_data(data_element.data)
-
             # Pick the axes to plot on.
             axes = self.axes
             if data_element.use_secondary_axes:
                 self.setup_secondary_axes_if_necessary()
                 axes = self.secondary_axes
 
-            bars = self._plot_data(axes, data, last_data_element_positions, plot_settings)
+            index = self.index_translator.translate(data.index) if self.index_translator is not None else data.index
+
+            # Shift bars if not stacked
+            if not self._stacked:
+                if is_datetime(index):
+                    converted_index = dates.date2num(index)
+                    converted_index += i*self._thickness
+                    index = dates.num2date(converted_index)
+                else:
+                    index += i*self._thickness
+
+            bars = self._plot_data(axes, index, data, last_data_element_positions, plot_settings)
             data_element.legend_artist = bars
 
             last_data_element_positions = self._calculate_last_data_positions(data, last_data_element_positions)
@@ -119,19 +144,21 @@ class BarChart(Chart):
 
         return positive_positions, negative_positions
 
-    def _plot_data(self, axes, data, last_data_element_positions, plot_settings):
-        index = self.index_translator.translate(data.index) if self.index_translator is not None else data.index
+    def _plot_data(self, axes, index, data, last_data_element_positions, plot_settings):
 
-        # Positive and negative values need to be separated in order to plot them accurately when bars are stacked.
-        positive = data[data >= 0].reindex(data.index, fill_value=0)
-        positive_bars = self._plot_bars(axes, positive, index, last_data_element_positions[0], plot_settings)
+        if self._stacked:
+            # Positive and negative values need to be separated in order to plot them accurately when bars are stacked.
+            positive = data[data >= 0].reindex(data.index, fill_value=0)
+            positive_bars = self._plot_bars(axes, index, positive, last_data_element_positions[0], plot_settings)
 
-        negative = data[data < 0].reindex(data.index, fill_value=0)
-        negative_bars = self._plot_bars(axes, negative, index, last_data_element_positions[1], plot_settings)
+            negative = data[data < 0].reindex(data.index, fill_value=0)
+            negative_bars = self._plot_bars(axes, index, negative, last_data_element_positions[1], plot_settings)
 
-        return negative_bars if positive_bars is None else positive_bars
+            return positive_bars or negative_bars
 
-    def _plot_bars(self, axes, data, index, last_positions, plot_settings):
+        return self._plot_bars(axes, index, data, last_data_element_positions[1], plot_settings)
+
+    def _plot_bars(self, axes, index, data, last_positions, plot_settings):
         bars = None
         if len(data) > 0:
             if self._orientation == Orientation.Vertical:
