@@ -93,7 +93,8 @@ class BarChart(Chart):
             if is_datetime(indices[0]):
                 indices = [dates.date2num(index) for index in indices]
 
-            minimum = DataFrame(indices).T.diff().min().min()
+            minimum = DataFrame(indices).T.melt().value.sort_values().drop_duplicates().diff().min()
+
             self._thickness /= len(data_element_decorators) / minimum
 
         for i, data_element in enumerate(data_element_decorators):
