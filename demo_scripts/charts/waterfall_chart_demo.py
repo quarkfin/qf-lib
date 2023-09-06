@@ -18,9 +18,9 @@ from qf_lib.containers.series.qf_series import QFSeries
 
 
 def waterfall_demo():
-    my_series = QFSeries([100, 10, -20, -30, 60],
-                         ['Value 1', 'Value 2', 'Value 3', 'Value 4', 'Value 5'])
-    pie_chart = WaterfallChart(my_series, title="Waterfall Chart")
+    my_series = QFSeries([4.42, 4.60, -3.55, 5.47],
+                         ['FX Un-Hedged Performance', 'CHFUSD Move', 'Cost of hedging', 'FX Hedged Performance'])
+    pie_chart = WaterfallChart(my_series, title="Waterfall Chart", total=['FX Hedged Performance'])
     pie_chart.plot()
     plt.show(block=True)
 
