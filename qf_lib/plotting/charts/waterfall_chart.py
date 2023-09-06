@@ -20,7 +20,7 @@ from qf_lib.plotting.charts.chart import Chart
 
 
 class WaterfallChart(Chart):
-    def __init__(self, data: QFSeries, title: Optional[str] = None, total: Optional[List]=None):
+    def __init__(self, data: QFSeries, title: Optional[str] = None, total: Optional[List] = None):
         super().__init__()
         self.cumulative_sum = None
         self.data = data
