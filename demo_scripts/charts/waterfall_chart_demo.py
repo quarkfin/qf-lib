@@ -13,12 +13,12 @@
 #     limitations under the License.
 from matplotlib import pyplot as plt
 
-from plotting.charts.waterfall_chart import WaterfallChart
 from qf_lib.containers.series.qf_series import QFSeries
+from qf_lib.plotting.charts.waterfall_chart import WaterfallChart
 
 
 def waterfall_demo():
-    my_series = QFSeries([4.42, 4.60, -3.55, 5.47],
+    my_series = QFSeries([4.55, 5.23, -3.03, 6.75],
                          ['Value 1', 'Value 2', 'Value 3', 'Total'])
     pie_chart = WaterfallChart(my_series, title="Waterfall Chart", total=['Total'])
     pie_chart.plot()

@@ -27,31 +27,29 @@ class WaterfallChart(Chart):
         self.assert_is_qfseries(data)
         self.title = title
         self.total = total
-        self.color_green = '#3CB371'
-        self.color_red = '#FA8072'
-        self.color_blue = '#659FF1'
 
     def plot(self, figsize: Tuple[float, float] = None) -> None:
         self._setup_axes_if_necessary(figsize)
         self.axes.set_xlim(0, self.data.size)
 
-        if self.data.size > 1500:
-            # plot line chart instead as there are too many bars
-            data = self.data.reset_index(drop=True)
-            self.axes.plot(data, linewidth=0.5)
-        else:
-            self.cumulative_sum = np.cumsum(self.data.values)
-            for index, value in enumerate(self.data.items()):
-                self._plot_waterfall(index, value)
+        self.cumulative_sum = np.cumsum(self.data.values)
+        for index, value in enumerate(self.data.items()):
+            self._plot_waterfall(index, value)
 
         # Set x-axis label using 'category' column
-        self.axes.set_xticks(range(len(self.data.index)))
-        self.axes.set_xticklabels(self.data.index)
+        self.axes.set_xticks(range(len(self.data.index) + 2))
+        self.axes.set_xticklabels(['', *self.data.index, ''])
 
     def _plot_waterfall(self, index, value):
-        color = self.color_blue if value[0] in self.total else self.color_green if value[1] > 0 else self.color_red
+
+        # Bar color is determined based on whether there has been an increase, decrease,
+        # or it represents a total column.
+        color = '#A6A6A6' if value[0] in self.total else '#4472C4' if value[1] > 0 else '#ED7D31'
 
         if index == 0 or value[0] in self.total:
-            self.axes.bar(index, value[1], color=color, edgecolor="black")
+            self.axes.bar(index + 1, value[1], color=color)
         else:
-            self.axes.bar(index, value[1], bottom=self.cumulative_sum[index - 1], color=color, edgecolor="black", )
+            self.axes.bar(index + 1, value[1], bottom=self.cumulative_sum[index - 1], color=color)
+
+    def apply_data_element_decorators(self, data_element_decorators: List["DataElementDecorator"]):
+        pass
