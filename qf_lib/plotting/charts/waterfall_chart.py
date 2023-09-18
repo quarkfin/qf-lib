@@ -56,8 +56,8 @@ class WaterfallChart(Chart):
             self.axes.bar(index + 1, value[1], bottom=self.cumulative_sum[index - 1], color=color)
             self.axes.text(index + 1, self.cumulative_sum[index] + 0.02, formatted_value, ha='center', va='bottom', fontsize=10)
 
-    def add_total(self, price, title: Optional[str] = "Total"):
-        self.data = self.data.append(QFSeries([price], [title]))
+    def add_total(self, value, title: Optional[str] = "Total"):
+        self.data = self.data.append(QFSeries([value], [title]))
         self.total_value = self.data.index[-1]
 
     def flag_total(self, value):
