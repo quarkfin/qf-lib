@@ -36,9 +36,20 @@ def waterfall_demo_with_total():
     plt.show(block=True)
 
 
+def waterfall_demo_flag_total():
+    my_series = QFSeries([4.55, 5.23, -3.03, 6.75],
+                         ['Value 1', 'Value 2', 'Value 3', 'Value 4'])
+    pie_chart = WaterfallChart(my_series, title="Waterfall Chart Flag Total")
+    pie_chart.flag_total("Value 4")
+
+    pie_chart.plot()
+    plt.show(block=True)
+
+
 def main():
-    waterfall_demo_with_total()
     waterfall_demo_without_total()
+    waterfall_demo_with_total()
+    waterfall_demo_flag_total()
 
 
 if __name__ == '__main__':

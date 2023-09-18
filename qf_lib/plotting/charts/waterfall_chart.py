@@ -60,5 +60,8 @@ class WaterfallChart(Chart):
         self.data = self.data.append(QFSeries([price], [title]))
         self.total_value = self.data.index[-1]
 
+    def flag_total(self, value):
+        self.total_value = value
+
     def apply_data_element_decorators(self, data_element_decorators: List["DataElementDecorator"]):
         pass
