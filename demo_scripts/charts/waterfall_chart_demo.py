@@ -17,16 +17,28 @@ from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.plotting.charts.waterfall_chart import WaterfallChart
 
 
-def waterfall_demo():
+def waterfall_demo_without_total():
     my_series = QFSeries([4.55, 5.23, -3.03, 6.75],
-                         ['Value 1', 'Value 2', 'Value 3', 'Total'])
-    pie_chart = WaterfallChart(my_series, title="Waterfall Chart", total=['Total'])
+                         ['Value 1', 'Value 2', 'Value 3', 'Value 4'])
+    pie_chart = WaterfallChart(my_series, title="Waterfall Chart Without Total")
+
+    pie_chart.plot()
+    plt.show(block=True)
+
+
+def waterfall_demo_with_total():
+    my_series = QFSeries([4.55, 5.23, -3.03, ],
+                         ['Value 1', 'Value 2', 'Value 3'])
+    pie_chart = WaterfallChart(my_series, title="Waterfall Chart With Total")
+    pie_chart.add_total(6.75, title="Value 4")
+
     pie_chart.plot()
     plt.show(block=True)
 
 
 def main():
-    waterfall_demo()
+    waterfall_demo_with_total()
+    waterfall_demo_without_total()
 
 
 if __name__ == '__main__':

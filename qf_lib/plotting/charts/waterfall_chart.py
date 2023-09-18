@@ -20,13 +20,13 @@ from qf_lib.plotting.charts.chart import Chart
 
 
 class WaterfallChart(Chart):
-    def __init__(self, data: QFSeries, title: Optional[str] = None, total: Optional[List] = None):
+    def __init__(self, data: QFSeries, title: Optional[str] = None):
         super().__init__()
+        self.total_value = None
         self.cumulative_sum = None
         self.data = data
         self.assert_is_qfseries(data)
         self.title = title
-        self.total = total
 
     def plot(self, figsize: Tuple[float, float] = None) -> None:
         self._setup_axes_if_necessary(figsize)
@@ -43,18 +43,22 @@ class WaterfallChart(Chart):
         self.axes.set_xticklabels(['', *self.data.index, ''])
 
     def _plot_waterfall(self, index, value):
-
         # Bar color is determined based on whether there has been an increase, decrease,
         # or it represents a total column.
-        color = '#A6A6A6' if any([x in value[0] for x in self.total]) else '#4472C4' if value[1] > 0 else '#ED7D31'
+        color = '#A6A6A6' if value[0] == self.total_value else '#4472C4' if value[1] > 0 else '#ED7D31'
+        formatted_value = "{:.2f}%".format(value[1])
 
-        if index == 0 or value[0] in self.total:
+        if index == 0 or value[0] == self.total_value:
             self.axes.bar(index + 1, value[1], color=color)
-            self.axes.text(index + 1, value[1] + 0.02, value[1], ha='center', va='bottom', fontsize=10)
+            self.axes.text(index + 1, value[1] + 0.02, formatted_value, ha='center', va='bottom', fontsize=10)
 
         else:
             self.axes.bar(index + 1, value[1], bottom=self.cumulative_sum[index - 1], color=color)
-            self.axes.text(index + 1, self.cumulative_sum[index] + 0.02, value[1], ha='center', va='bottom', fontsize=10)
+            self.axes.text(index + 1, self.cumulative_sum[index] + 0.02, formatted_value, ha='center', va='bottom', fontsize=10)
+
+    def add_total(self, price, title: Optional[str] = "Total"):
+        self.data = self.data.append(QFSeries([price], [title]))
+        self.total_value = self.data.index[-1]
 
     def apply_data_element_decorators(self, data_element_decorators: List["DataElementDecorator"]):
         pass
