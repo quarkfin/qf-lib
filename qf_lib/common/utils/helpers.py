@@ -12,7 +12,6 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 from datetime import datetime
-from itertools import zip_longest
 
 
 def get_formatted_filename(reports_title, date: datetime, extension: str):
@@ -23,18 +22,3 @@ def get_formatted_filename(reports_title, date: datetime, extension: str):
     filename = filename.replace(" ", "_")
 
     return filename
-
-
-def grouper(chunk_size: int, iterable, pad_value=None):
-    """
-    Group an iterable into n-sized chunks
-
-    Parameters
-    ----------
-    chunk_size
-        the size of the chunk
-    iterable
-    pad_value
-        the value used to pad the chunk
-    """
-    return zip_longest(*[iter(iterable)] * chunk_size, fillvalue=pad_value)
