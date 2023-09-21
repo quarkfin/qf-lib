@@ -26,11 +26,10 @@ from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
-from qf_lib.settings import Settings
 
 
 class BloombergTickerMapper(ContractTickerMapper):
-    def __init__(self, settings: Settings, data_caching: bool = True):
+    def __init__(self, openfigi_apikey: str = None, data_caching: bool = True):
         """
 
         The purpose of this class is to provide a mapping between various Bloomberg Tickers and other Ticker
@@ -44,22 +43,17 @@ class BloombergTickerMapper(ContractTickerMapper):
 
         Parameters
         -----------
-        settings: Settings
-            settings with the openfigi_apikey parameter
+        openfigi_apikey: str
+            API key for the openFIGI
         data_caching: bool
             if set to False, for each ticker to FIGI and FIGI to ticker mapping a request to openFIGI will be created
             and the data will not be stored in cache
         """
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
-        try:
-            self._openfigi_apikey = settings.openfigi_apikey
-        except AttributeError:
-            self._openfigi_apikey = None
-            self.logger.warning(f"No openFIGI key was provided. The limited version of the API will be used.")
-
-        self._limit_timeout_seconds = 6 if self._openfigi_apikey else 60
-        self._jobs_per_request = 100 if self._openfigi_apikey else 10
+        self._openfigi_apikey = openfigi_apikey
+        self._limit_timeout_seconds = 6 if openfigi_apikey else 60
+        self._jobs_per_request = 100 if openfigi_apikey else 10
         self._openfigi_mapping_url = "https://api.openfigi.com/v3/mapping"
 
         self._enable_data_caching = data_caching
