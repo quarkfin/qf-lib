@@ -19,11 +19,10 @@ import re
 from typing import List, Dict, Sequence, Union, Optional, Tuple
 from urllib.request import HTTPHandler, build_opener, Request
 
-from more_itertools import batched
-
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.tickers.tickers import BloombergTicker
+from qf_lib.common.utils.helpers import grouper
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 
@@ -194,7 +193,7 @@ class BloombergTickerMapper(ContractTickerMapper):
     async def _distribute_mapping_requests(self, requests: Sequence):
         return await asyncio.gather(
             *[self._send_mapping_request(requests_chunk, i * self._limit_timeout_seconds)
-              for i, requests_chunk in enumerate(batched(requests, self._jobs_per_request))]
+              for i, requests_chunk in enumerate(grouper(self._jobs_per_request, requests))]
         )
 
     async def _send_mapping_request(self, request_content: List, delay: int = 0) -> List:

@@ -12,6 +12,7 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 from datetime import datetime
+from itertools import zip_longest, islice
 
 
 def get_formatted_filename(reports_title, date: datetime, extension: str):
@@ -22,3 +23,28 @@ def get_formatted_filename(reports_title, date: datetime, extension: str):
     filename = filename.replace(" ", "_")
 
     return filename
+
+
+def grouper(chunk_size: int, iterable, fill: bool = False, pad_value=None):
+    """
+    Group an iterable into n-sized chunks
+
+    Parameters
+    ----------
+    chunk_size
+        the size of the chunk
+    iterable
+    fill: bool
+        True if the chunks should be padded with the pad_value, False otherwise
+    pad_value
+        the value used to pad the chunk
+    """
+    it = iter(iterable)
+    if fill:
+        return zip_longest(*[it] * chunk_size, fillvalue=pad_value)
+    else:
+        while True:
+            batch = list(islice(it, chunk_size))
+            if not batch:
+                break
+            yield batch
