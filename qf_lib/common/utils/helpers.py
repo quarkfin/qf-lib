@@ -12,7 +12,7 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 from datetime import datetime
-from itertools import zip_longest, islice
+from itertools import islice
 
 
 def get_formatted_filename(reports_title, date: datetime, extension: str):
