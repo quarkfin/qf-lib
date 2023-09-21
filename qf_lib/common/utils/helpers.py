@@ -25,7 +25,7 @@ def get_formatted_filename(reports_title, date: datetime, extension: str):
     return filename
 
 
-def grouper(chunk_size: int, iterable, fill: bool = False, pad_value=None):
+def grouper(chunk_size: int, iterable):
     """
     Group an iterable into n-sized chunks
 
@@ -34,17 +34,10 @@ def grouper(chunk_size: int, iterable, fill: bool = False, pad_value=None):
     chunk_size
         the size of the chunk
     iterable
-    fill: bool
-        True if the chunks should be padded with the pad_value, False otherwise
-    pad_value
-        the value used to pad the chunk
     """
     it = iter(iterable)
-    if fill:
-        return zip_longest(*[it] * chunk_size, fillvalue=pad_value)
-    else:
-        while True:
-            batch = list(islice(it, chunk_size))
-            if not batch:
-                break
-            yield batch
+    while True:
+        batch = list(islice(it, chunk_size))
+        if not batch:
+            break
+        yield batch
