@@ -17,6 +17,7 @@ import itertools
 import json
 import re
 from typing import List, Dict, Sequence, Union, Optional, Tuple
+from urllib.error import HTTPError
 from urllib.request import HTTPHandler, build_opener, Request
 
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
@@ -212,13 +213,13 @@ class BloombergTickerMapper(ContractTickerMapper):
                     results = json.loads(response.read().decode("utf-8"))
                     return [r.get('data', [{}])[0] for r in results]
 
-        except Exception as response:
-            if response.status == 401:
+        except HTTPError as response:
+            if response.code == 401:
                 raise ConnectionError("The given API key is invalid.") from None
-            elif response.status == 429:
+            elif response.code == 429:
                 raise ConnectionError("Too Many Request. You have reached the rate limitations.") from None
             else:
-                raise ConnectionError(f"The request failed with the  code: {response.status}.") from None
+                raise ConnectionError(f"The request failed with the  code: {response.code}.") from None
 
     def __str__(self):
         return self.__class__.__name__
