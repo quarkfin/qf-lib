@@ -26,10 +26,11 @@ from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
+from qf_lib.settings import Settings
 
 
 class BloombergTickerMapper(ContractTickerMapper):
-    def __init__(self, openfigi_apikey: str = None, data_caching: bool = True):
+    def __init__(self, settings: Settings, data_caching: bool = True):
         """
 
         The purpose of this class is to provide a mapping between various Bloomberg Tickers and other Ticker
@@ -43,39 +44,67 @@ class BloombergTickerMapper(ContractTickerMapper):
 
         Parameters
         -----------
-        openfigi_apikey: str
+        settings: Settings
+            settings with the openfigi_apikey parameter
         data_caching: bool
+            if set to False, for each ticker to FIGI and FIGI to ticker mapping a request to openFIGI will be created
+            and the data will not be stored in cache
         """
-        self._openfigi_apikey = openfigi_apikey
-        self._limit_timeout_seconds = 6 if openfigi_apikey else 60
-        self._jobs_per_request = 100 if openfigi_apikey else 10
+        self.logger = qf_logger.getChild(self.__class__.__name__)
+
+        try:
+            self._openfigi_apikey = settings.openfigi_apikey
+        except AttributeError:
+            self._openfigi_apikey = None
+            self.logger.warning(f"No openFIGI key was provided. The limited version of the API will be used.")
+
+        self._limit_timeout_seconds = 6 if self._openfigi_apikey else 60
+        self._jobs_per_request = 100 if self._openfigi_apikey else 10
         self._openfigi_mapping_url = "https://api.openfigi.com/v3/mapping"
 
         self._enable_data_caching = data_caching
-        self._ticker_to_contract_data = {}
-        self._contract_data_to_ticker = {}
-
-        self.logger = qf_logger.getChild(self.__class__.__name__)
+        self.ticker_to_contract_data = {}
+        self.contract_data_to_ticker = {}
 
     def preload_tickers_mapping(self, tickers: Union[Sequence[BloombergTicker], BloombergTicker]):
+        """
+        Preloads ticker <-> FIGI mapping for a number of Bloomberg tickers and stores them in memory, so that
+        they can be easily fetched using ticker_to_contract and contract_to_ticker functions, without sending additional
+        requests to openFIGI.
+
+        Parameters
+        -----------
+        tickers: Union[Sequence[BloombergTicker], BloombergTicker]
+            ticker(s) for which the mapping should be fetched and saved
+        """
         tickers, _ = convert_to_list(tickers, BloombergTicker)
 
         requests = [self._ticker_into_openfigi_requests(ticker) for ticker in tickers]
         results = asyncio.run(self._distribute_mapping_requests(requests))
-        figi_values = map(lambda x: x.get('figi', None), itertools.chain(*results))
+        figi_values = map(lambda r: r.get('figi', None), itertools.chain(*results))
 
-        self._ticker_to_contract_data.update(dict(zip(tickers, figi_values)))
-        self._contract_data_to_ticker.update(dict(zip(figi_values, tickers)))
+        self.ticker_to_contract_data.update(dict(zip(tickers, figi_values)))
+        self.contract_data_to_ticker.update(dict(zip(figi_values, tickers)))
 
     def preload_figi_mapping(self, figis: Union[Sequence[str], str]):
+        """
+        Preloads ticker <-> FIGI mapping for a number of FIGI identifiers and stores them in memory, so that
+        they can be easily fetched using ticker_to_contract and contract_to_ticker functions, without sending additional
+        requests to openFIGI.
+
+        Parameters
+        -----------
+        figis: Union[Sequence[str], str]
+            FIGI(s) for which the mapping should be fetched and saved
+        """
         figis, _ = convert_to_list(figis, str)
 
         requests = [{"idType": "ID_BB_GLOBAL", "idValue": f} for f in figis]
         results = itertools.chain(*asyncio.run(self._distribute_mapping_requests(requests)))
         mapping = dict(self._ticker_from_openfigi_response(r, f) for (r, f) in zip(results, figis))
 
-        self._contract_data_to_ticker.update(mapping)
-        self._ticker_to_contract_data.update({val: key for key, val in mapping.items()})
+        self.ticker_to_contract_data.update(mapping)
+        self.contract_data_to_ticker.update({val: key for key, val in mapping.items()})
 
     def contract_to_ticker(self, figi: str) -> BloombergTicker:
         """ Maps Broker specific contract objects onto corresponding Tickers.
@@ -91,13 +120,13 @@ class BloombergTickerMapper(ContractTickerMapper):
             corresponding Bloomberg ticker
         """
         try:
-            ticker = self._contract_data_to_ticker[figi]
+            ticker = self.contract_data_to_ticker[figi]
         except KeyError:
             request = [{"idType": "ID_BB_GLOBAL", "idValue": figi}]
             result = asyncio.run(self._distribute_mapping_requests(request))[0][0]
             ticker, _ = self._ticker_from_openfigi_response(result, figi)
             if self._enable_data_caching:
-                self._contract_data_to_ticker.update({figi: ticker})
+                self.contract_data_to_ticker.update({figi: ticker})
 
         return ticker
 
@@ -116,13 +145,13 @@ class BloombergTickerMapper(ContractTickerMapper):
         """
 
         try:
-            figi = self._ticker_to_contract_data[ticker]
+            figi = self.ticker_to_contract_data[ticker]
         except KeyError:
             request = self._ticker_into_openfigi_requests(ticker)
             data = asyncio.run(self._distribute_mapping_requests([request]))[0][0]
             figi = data.get('figi', None)
             if self._enable_data_caching:
-                self._ticker_to_contract_data.update({ticker: figi})
+                self.ticker_to_contract_data.update({ticker: figi})
 
         return figi
 
@@ -141,6 +170,8 @@ class BloombergTickerMapper(ContractTickerMapper):
             return {"idType": "TICKER", **request}
         except KeyError:
             raise ValueError(f"The {ticker.security_type} is not supported by the {self.__class__.__name__}.") from None
+        except AttributeError:
+            return {"idType": "TICKER", "idValue": ticker.as_string().lstrip("/ticker/")}
 
     def _ticker_from_openfigi_response(self, contract_data: Dict[str, str], figi: str) -> \
             Tuple[Optional[BloombergTicker], str]:
@@ -198,24 +229,3 @@ class BloombergTickerMapper(ContractTickerMapper):
 
     def __str__(self):
         return self.__class__.__name__
-
-
-if __name__ == '__main__':
-    mapper = BloombergTickerMapper()
-
-    mapper.preload_tickers_mapping([BloombergTicker("SPX Index", SecurityType.INDEX),
-                                    BloombergTicker("RTY Index", SecurityType.INDEX),
-                                    BloombergTicker("dsfdsfs Index", SecurityType.INDEX),
-                                    BloombergTicker("SPY US Equity", SecurityType.STOCK),
-                                    BloombergTicker("C Z6 Comdty", SecurityType.FUTURE),
-                                    BloombergTicker("USDCHF Curncy", SecurityType.FX),
-                                    ])
-
-    """
-    print(mapper.ticker_to_contract(BloombergTicker("SPY US Equity", SecurityType.STOCK)))
-    print(mapper.ticker_to_contract(BloombergTicker("SPY US Equity", SecurityType.STOCK)))
-    print(mapper.ticker_to_contract(BloombergTicker("SPY US Equity", SecurityType.STOCK)))
-    print(mapper.ticker_to_contract(BloombergTicker("SPY US Equity", SecurityType.STOCK)))
-    """
-    # mapper.preload_figi_mapping(["BBG000BDTBL9", "BBG000P5N0C1", "BBG01BXXLQR5", "hehehe", "BBG0013HFN45"])
-    print(mapper.contract_to_ticker("BBG000BDTBL9"))
