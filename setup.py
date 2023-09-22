@@ -25,7 +25,7 @@ setup(
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
     author='Jacek Witkowski, Marcin Borratynski, Thomas Ruxton, Dominik Picheta, Olga Kalinowska, Karolina Cynk, '
-           'Jakub Czerski, Bartlomiej Czajewski, Octavian Matei',
+           'Jakub Czerski, Bartlomiej Czajewski, Zeynep Gültuğ Aydemir, Octavian-Mihai Matei, Eirik Thorp Eythorsson',
     description='Quantitative Finance Library',
     long_description=long_description,
     license='Apache License 2.0',
