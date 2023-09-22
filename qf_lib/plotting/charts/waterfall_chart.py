@@ -46,17 +46,15 @@ class WaterfallChart(Chart):
     def _add_text(self):
         data_element_decorators = self.get_data_element_decorators()
         self.cumulative_sum = np.cumsum(np.concatenate([d.data.values for d in data_element_decorators]))
-        index = 0
-        for data_element in data_element_decorators:
-            for value in data_element.data.items():
-                y_loc = value[1] if index == 0 or value[0] == self.total_value else self.cumulative_sum[index]
-                text = "{:.2f}%".format(value[1]) if self.percentage else value[1]
-                self.add_decorator(TextDecorator(text, y=DataCoordinate(y_loc + 0.02),
-                                                 x=DataCoordinate(index + 1),
-                                                 verticalalignment='bottom',
-                                                 horizontalalignment='center',
-                                                 fontsize=10))
-                index += 1
+        for index, value in enumerate([value for data_element in data_element_decorators
+                                       for value in data_element.data.items()]):
+            y_loc = value[1] if index == 0 or value[0] == self.total_value else self.cumulative_sum[index]
+            text = "{:.2f}%".format(value[1]) if self.percentage else value[1]
+            self.add_decorator(TextDecorator(text, y=DataCoordinate(y_loc + 0.02),
+                                             x=DataCoordinate(index + 1),
+                                             verticalalignment='bottom',
+                                             horizontalalignment='center',
+                                             fontsize=10))
 
     def _plot_waterfall(self, index, value):
         if index == 0 or value[0] == self.total_value:
@@ -77,8 +75,6 @@ class WaterfallChart(Chart):
         self.total_value = value
 
     def apply_data_element_decorators(self, data_element_decorators: List["DataElementDecorator"]):
-        index = 0
-        for data_element in data_element_decorators:
-            for value in data_element.data.items():
-                self._plot_waterfall(index, value)
-                index += 1
+        for index, value in enumerate([value for data_element in data_element_decorators
+                                       for value in data_element.data.items()]):
+            self._plot_waterfall(index, value)
