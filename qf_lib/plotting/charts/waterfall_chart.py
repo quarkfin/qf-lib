@@ -46,8 +46,9 @@ class WaterfallChart(Chart):
     def _add_text(self):
         data_element_decorators = self.get_data_element_decorators()
         self.cumulative_sum = np.cumsum(np.concatenate([d.data.values for d in data_element_decorators]))
+        index = 0
         for data_element in data_element_decorators:
-            for index, value in enumerate(data_element.data.items()):
+            for value in data_element.data.items():
                 y_loc = value[1] if index == 0 or value[0] == self.total_value else self.cumulative_sum[index]
                 text = "{:.2f}%".format(value[1]) if self.percentage else value[1]
                 self.add_decorator(TextDecorator(text, y=DataCoordinate(y_loc + 0.02),
@@ -55,6 +56,7 @@ class WaterfallChart(Chart):
                                                  verticalalignment='bottom',
                                                  horizontalalignment='center',
                                                  fontsize=10))
+                index += 1
 
     def _plot_waterfall(self, index, value):
         if index == 0 or value[0] == self.total_value:
@@ -69,7 +71,7 @@ class WaterfallChart(Chart):
     def add_total(self, value, title: Optional[str] = "Total"):
         series = QFSeries([value], [title])
         self.add_decorator(DataElementDecorator(series))
-        self.total_value = series.index[-1]
+        self.total_value = series.index
 
     def flag_total(self, value):
         self.total_value = value

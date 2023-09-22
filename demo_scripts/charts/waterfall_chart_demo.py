@@ -66,11 +66,15 @@ def waterfall_demo_flag_total():
 
 
 def waterfall_demo_with_percentage():
-    data_element = DataElementDecorator(QFSeries([4.55, 5.23, -3.03, 6.75],
-                                         ['Value 1', 'Value 2', 'Value 3', 'Value 4']))
+    data_element_1 = DataElementDecorator(QFSeries([4.55, 5.23],
+                                                   ['Value 1', 'Value 2']))
+
+    data_element_2 = DataElementDecorator(QFSeries([-3.03, 6.75],
+                                                   ['Value 3', 'Value 4']))
 
     chart = WaterfallChart(percentage=True)
-    chart.add_decorator(data_element)
+    chart.add_decorator(data_element_1)
+    chart.add_decorator(data_element_2)
 
     chart_title = TitleDecorator("Waterfall Chart With Percentage")
     chart.add_decorator(chart_title)
