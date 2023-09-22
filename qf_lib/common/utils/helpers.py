@@ -12,6 +12,7 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 from datetime import datetime
+from itertools import islice
 
 
 def get_formatted_filename(reports_title, date: datetime, extension: str):
@@ -22,3 +23,21 @@ def get_formatted_filename(reports_title, date: datetime, extension: str):
     filename = filename.replace(" ", "_")
 
     return filename
+
+
+def grouper(chunk_size: int, iterable):
+    """
+    Group an iterable into n-sized chunks
+
+    Parameters
+    ----------
+    chunk_size
+        the size of the chunk
+    iterable
+    """
+    it = iter(iterable)
+    while True:
+        batch = list(islice(it, chunk_size))
+        if not batch:
+            break
+        yield batch
