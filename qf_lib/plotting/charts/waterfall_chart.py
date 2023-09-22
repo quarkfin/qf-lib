@@ -12,6 +12,7 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 from typing import Tuple, Optional, List
+from itertools import chain
 
 import numpy as np
 
@@ -37,7 +38,7 @@ class WaterfallChart(Chart):
 
     def _configure_axis(self):
         data_element_decorators = self.get_data_element_decorators()
-        indices = [i for index in [d.data.index for d in data_element_decorators] for i in index]
+        indices = list(chain.from_iterable(d.data.index for d in data_element_decorators))
         self.axes.set_xlim(0, len(indices))
         self.axes.tick_params(axis='both', which='major', labelsize=10)
         self.axes.set_xticks(range(len(indices) + 2))
