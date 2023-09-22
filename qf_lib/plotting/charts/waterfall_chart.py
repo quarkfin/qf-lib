@@ -12,64 +12,70 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 from typing import Tuple, Optional, List
+from itertools import chain
 
 import numpy as np
 
-from plotting.decorators.coordinate import DataCoordinate
-from plotting.decorators.text_decorator import TextDecorator
+from qf_lib.plotting.decorators.coordinate import DataCoordinate
+from qf_lib.plotting.decorators.data_element_decorator import DataElementDecorator
+from qf_lib.plotting.decorators.text_decorator import TextDecorator
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.plotting.charts.chart import Chart
 
 
 class WaterfallChart(Chart):
-    def __init__(self, data: QFSeries, title: Optional[str] = None, percentage: Optional[bool] = False):
+    def __init__(self, percentage: Optional[bool] = False):
         super().__init__()
         self.total_value = None
         self.cumulative_sum = None
-        self.data = data
-        self.assert_is_qfseries(data)
-        self.title = title
         self.percentage = percentage
 
     def plot(self, figsize: Tuple[float, float] = None) -> None:
         self._setup_axes_if_necessary(figsize)
-        self.axes.set_xlim(0, self.data.size)
-
-        self.cumulative_sum = np.cumsum(self.data.values)
-        for index, value in enumerate(self.data.items()):
-            self._plot_waterfall(index, value)
-
-        # Set x-axis label using 'category' column
-        self.axes.tick_params(axis='both', which='major', labelsize=10)
-        self.axes.set_xticks(range(len(self.data.index) + 2))
-        self.axes.set_xticklabels(['', *self.data.index, ''])
-        self.axes.set_title(self.title, y=1.04)
-
+        self._configure_axis()
+        self._add_text()
         self._apply_decorators()
+
+    def _configure_axis(self):
+        data_element_decorators = self.get_data_element_decorators()
+        indices = list(chain.from_iterable(d.data.index for d in data_element_decorators))
+        self.axes.set_xlim(0, len(indices))
+        self.axes.tick_params(axis='both', which='major', labelsize=10)
+        self.axes.set_xticks(range(len(indices) + 2))
+        self.axes.set_xticklabels(['', *indices, ''])
+
+    def _add_text(self):
+        data_element_decorators = self.get_data_element_decorators()
+        self.cumulative_sum = np.cumsum(np.concatenate([d.data.values for d in data_element_decorators]))
+        for index, value in enumerate([value for data_element in data_element_decorators
+                                       for value in data_element.data.items()]):
+            y_loc = value[1] if index == 0 or value[0] == self.total_value else self.cumulative_sum[index]
+            text = "{:.2f}%".format(value[1]) if self.percentage else value[1]
+            self.add_decorator(TextDecorator(text, y=DataCoordinate(y_loc + 0.02),
+                                             x=DataCoordinate(index + 1),
+                                             verticalalignment='bottom',
+                                             horizontalalignment='center',
+                                             fontsize=10))
 
     def _plot_waterfall(self, index, value):
         if index == 0 or value[0] == self.total_value:
             color = '#A6A6A6' if value[0] == self.total_value else '#4472C4' if value[1] > 0 else '#ED7D31'
             bottom = 0
-            y_loc = value[1]
-
         else:
             color = '#4472C4' if value[1] > 0 else '#ED7D31'
             bottom = self.cumulative_sum[index - 1]
-            y_loc = self.cumulative_sum[index]
-
-        text = "{:.2f}%".format(value[1]) if self.percentage else value[1]
 
         self.axes.bar(index + 1, value[1], bottom=bottom, color=color)
-        self.add_decorator(TextDecorator(text, y=DataCoordinate(y_loc + 0.02), x=DataCoordinate(index + 1),
-                                         verticalalignment='bottom', horizontalalignment='center', fontsize=10))
 
     def add_total(self, value, title: Optional[str] = "Total"):
-        self.data = self.data.append(QFSeries([value], [title]))
-        self.total_value = self.data.index[-1]
+        series = QFSeries([value], [title])
+        self.add_decorator(DataElementDecorator(series))
+        self.total_value = series.index
 
     def flag_total(self, value):
         self.total_value = value
 
     def apply_data_element_decorators(self, data_element_decorators: List["DataElementDecorator"]):
-        pass
+        for index, value in enumerate([value for data_element in data_element_decorators
+                                       for value in data_element.data.items()]):
+            self._plot_waterfall(index, value)
