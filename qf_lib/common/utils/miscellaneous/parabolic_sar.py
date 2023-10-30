@@ -34,37 +34,36 @@ def parabolic_sar(df: PricesDataFrame, acceleration=0.02, max_acceleration=0.2):
     QFSeries
         Series with PSAR values for each index in the dataframe.
     """
-    df.dropna(inplace=True)
-    high_tms = df[PriceField.High]
-    low_tms = df[PriceField.Low]
-    close_tms = df[PriceField.Close]
-
-    initial_af = acceleration
-    af = initial_af
-    sar = close_tms[0] - initial_af * (high_tms[0] - close_tms[0])
+    df = df[[PriceField.High, PriceField.Low, PriceField.Close]].dropna()
 
     trend = 1  # 1 = positive, -1 = negative trend
-    sar_values = []
+    initial_af = acceleration
+    af = initial_af
+    psar = df[PriceField.Close][0] - initial_af * (df[PriceField.High][0] - df[PriceField.Close][0])
 
-    for i in range(1, len(df)):
+    def _calculate_psar(row):
+        nonlocal trend, psar, af
+
         if trend == 1:
-            if close_tms[i] > sar:
-                sar = sar + af*(high_tms[i]-sar)
-                if high_tms[i] > high_tms[i-1]:
-                    af = min(af+initial_af, max_acceleration)
-            else:
+            continue_trend = row[PriceField.Close] > psar
+            psar = psar + af * (row[PriceField.High] - psar) * continue_trend
+            af = min(af + initial_af, max_acceleration) if row[PriceField.High] > row['high_shifted'] else af
+            if not continue_trend:
                 trend = -1
-                sar = high_tms[i-1]
                 af = initial_af
+                psar = row['high_shifted']
         else:
-            if close_tms[i] < sar:
-                sar = sar - af*(sar-low_tms[i])
-                if low_tms[i] < low_tms[i-1]:
-                    af = min(af+initial_af, max_acceleration)
-            else:
+            continue_trend = row[PriceField.Close] < psar
+            psar = psar - af * (psar - row[PriceField.Low]) * continue_trend
+            af = min(af + initial_af, max_acceleration) if row[PriceField.Low] < row['low_shifted'] else af
+            if not continue_trend:
                 trend = 1
-                sar = low_tms[i-1]
                 af = initial_af
-        sar_values.append(sar)
+                psar = row['low_shifted']
 
-    return QFSeries(sar_values, index=df.index[1:])
+        return psar
+
+    df['high_shifted'] = df[PriceField.High].shift(1)
+    df['low_shifted'] = df[PriceField.Low].shift(1)
+
+    return QFSeries(df[1:].apply(_calculate_psar, axis=1), index=df.index[1:])
