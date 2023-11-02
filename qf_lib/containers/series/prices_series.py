@@ -48,13 +48,8 @@ class PricesSeries(QFSeries):
 
     def to_simple_returns(self) -> "SimpleReturnsSeries":
         from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
-
-        shifted = self.copy().shift(1)
-        rets = self / shifted - 1  # type: PricesSeries
-
-        dates = self.index[1:].copy()
-        returns = rets.iloc[1:]
-        return SimpleReturnsSeries(index=dates, data=returns).__finalize__(self)
+        rets = self.pct_change()  # type: PricesSeries
+        return SimpleReturnsSeries(index=self.index[1:], data=rets.iloc[1:]).__finalize__(self)
 
     def to_prices(self, initial_price: float = None, suggested_initial_date: datetime = None, frequency=None) \
             -> ["PricesSeries"]:

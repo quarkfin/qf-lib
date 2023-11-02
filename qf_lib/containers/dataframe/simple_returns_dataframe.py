@@ -37,3 +37,15 @@ class SimpleReturnsDataFrame(QFDataFrame):
 
         annual_returns_df = self.apply(agg_series_by_year, axis=0)
         return annual_returns_df
+
+    def to_simple_returns(self) -> "SimpleReturnsDataFrame":
+        """
+        Converts dataframe to the dataframe of simple returns. First date of prices in the returns timeseries won't
+        be present.
+
+        Returns
+        -------
+        SimpleReturnsDataFrame
+            dataframe of simple returns
+        """
+        return self
