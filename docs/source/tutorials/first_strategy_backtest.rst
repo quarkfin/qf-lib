@@ -264,7 +264,7 @@ the `start_trading()` on the Backtest Trading Session!
         ticker = DummyTicker("AAA")
 
         # configuration
-        session_builder = container.resolve(BacktestTradingSessionBuilder)  # type: BacktestTradingSessionBuilder
+        session_builder = container.resolve(BacktestTradingSessionBuilder)
         session_builder.set_frequency(Frequency.DAILY)
         session_builder.set_backtest_name(backtest_name)
         session_builder.set_data_provider(daily_data_provider)
