@@ -132,9 +132,9 @@ is used by the Backtest Trading Session to execute our trading strategy, so it's
 
     class SimpleMAStrategy(AbstractStrategy):
         """
-        strategy, which computes every day, before the market open time, two simple moving averages (long - 20 days,
-        short - 5 days) and creates a buy order in case if the short moving average is greater or equal to the long moving
-        average.
+        strategy, which computes every day, before the market open time, two simple moving averages
+        (long - 20 days, short - 5 days) and creates a buy order in case if the short moving average
+        is greater or equal to the long moving average.
         """
         def __init__(self, ts: BacktestTradingSession, ticker: Ticker):
             super().__init__(ts)
@@ -157,9 +157,11 @@ is used by the Backtest Trading Session to execute our trading strategy, so it's
 
             if short_ma_price >= long_ma_price:
                 # Place a buy Market Order, adjusting the position to a value equal to 100% of the portfolio
-                orders = self.order_factory.target_percent_orders({self.ticker: 1.0}, MarketOrder(), TimeInForce.DAY)
+                orders = self.order_factory.target_percent_orders({self.ticker: 1.0},
+                    MarketOrder(), TimeInForce.DAY)
             else:
-                orders = self.order_factory.target_percent_orders({self.ticker: 0.0}, MarketOrder(), TimeInForce.DAY)
+                orders = self.order_factory.target_percent_orders({self.ticker: 0.0},
+                    MarketOrder(), TimeInForce.DAY)
 
             # Cancel any open orders and place the newly created ones
             self.broker.cancel_all_open_orders()
@@ -222,9 +224,9 @@ the `start_trading()` on the Backtest Trading Session!
 
     class SimpleMAStrategy(AbstractStrategy):
         """
-        strategy, which computes every day, before the market open time, two simple moving averages (long - 20 days,
-        short - 5 days) and creates a buy order in case if the short moving average is greater or equal to the long moving
-        average.
+        strategy, which computes every day, before the market open time, two simple moving averages
+        (long - 20 days, short - 5 days) and creates a buy order in case if the short moving average
+        is greater or equal to the long moving average.
         """
         def __init__(self, ts: BacktestTradingSession, ticker: Ticker):
             super().__init__(ts)
@@ -247,9 +249,11 @@ the `start_trading()` on the Backtest Trading Session!
 
             if short_ma_price >= long_ma_price:
                 # Place a buy Market Order, adjusting the position to a value equal to 100% of the portfolio
-                orders = self.order_factory.target_percent_orders({self.ticker: 1.0}, MarketOrder(), TimeInForce.DAY)
+                orders = self.order_factory.target_percent_orders({self.ticker: 1.0},
+                    MarketOrder(), TimeInForce.DAY)
             else:
-                orders = self.order_factory.target_percent_orders({self.ticker: 0.0}, MarketOrder(), TimeInForce.DAY)
+                orders = self.order_factory.target_percent_orders({self.ticker: 0.0},
+                    MarketOrder(), TimeInForce.DAY)
 
             # Cancel any open orders and place the newly created ones
             self.broker.cancel_all_open_orders()
