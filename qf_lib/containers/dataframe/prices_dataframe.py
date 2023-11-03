@@ -11,7 +11,6 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 
 
@@ -27,3 +26,17 @@ class PricesDataFrame(QFDataFrame):
     @property
     def _constructor(self):
         return PricesDataFrame
+
+    def to_simple_returns(self) -> "SimpleReturnsDataFrame":
+        """
+        Converts dataframe to the dataframe of simple returns. First date of prices in the returns timeseries won't
+        be present.
+
+        Returns
+        -------
+        SimpleReturnsDataFrame
+            dataframe of simple returns
+        """
+        from qf_lib.containers.dataframe.simple_returns_dataframe import SimpleReturnsDataFrame
+        returns = self.pct_change()
+        return SimpleReturnsDataFrame(data=returns.iloc[1:], index=self.index[1:]).__finalize__(self)
