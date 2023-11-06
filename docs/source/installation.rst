@@ -18,6 +18,8 @@ Alternatively, to install the library from sources, you can download the project
 Prerequisites
 --------------
 
+QF-Lib currently requires Python 3.7-3.9. The library has been tested on Windows, macOS, and Ubuntu.
+
 The library uses `WeasyPrint <https://weasyprint.readthedocs.io>`__ to
 export documents to PDF. WeasyPrint requires additional dependencies,
 check the `platform-specific instructions for Linux, macOS and Windows
