@@ -131,6 +131,11 @@ is used by the Backtest Trading Session to execute our trading strategy, so it's
 .. code-block::
 
     class SimpleMAStrategy(AbstractStrategy):
+        """
+        strategy, which computes every day, before the market open time, two simple moving averages
+        (long - 20 days, short - 5 days) and creates a buy order in case if the short moving average
+        is greater or equal to the long moving average.
+        """
         def __init__(self, ts: BacktestTradingSession, ticker: Ticker):
             super().__init__(ts)
             self.broker = ts.broker
@@ -143,6 +148,7 @@ is used by the Backtest Trading Session to execute our trading strategy, so it's
             long_ma_len = 20
             short_ma_len = 5
 
+            # Use data handler to download last 20 daily close prices and use them to compute the moving averages
             long_ma_series = self.data_handler.historical_price(self.ticker, PriceField.Close, long_ma_len)
             long_ma_price = long_ma_series.mean()
 
@@ -150,7 +156,7 @@ is used by the Backtest Trading Session to execute our trading strategy, so it's
             short_ma_price = short_ma_series.mean()
 
             if short_ma_price >= long_ma_price:
-                # Place a buy Market Order, adjusting the position to 100% of the portfolio
+                # Place a buy Market Order, adjusting the position to a value equal to 100% of the portfolio
                 orders = self.order_factory.target_percent_orders({self.ticker: 1.0},
                     MarketOrder(), TimeInForce.DAY)
             else:
@@ -197,10 +203,11 @@ the `start_trading()` on the Backtest Trading Session!
 
     import matplotlib.pyplot as plt
 
+    from qf_lib.backtesting.events.time_event.regular_time_event.calculate_and_place_orders_event import \
+        CalculateAndPlaceOrdersRegularEvent
     from qf_lib.backtesting.strategies.abstract_strategy import AbstractStrategy
-    from qf_lib.backtesting.strategies.signal_generators import OnBeforeMarketOpenSignalGeneration
 
-    plt.ion()  # required for dynamic chart
+    plt.ion()  # required for dynamic chart, good to keep this at the beginning of imports
 
     from demo_scripts.common.utils.dummy_ticker import DummyTicker
     from demo_scripts.demo_configuration.demo_data_provider import daily_data_provider
@@ -216,6 +223,11 @@ the `start_trading()` on the Backtest Trading Session!
 
 
     class SimpleMAStrategy(AbstractStrategy):
+        """
+        strategy, which computes every day, before the market open time, two simple moving averages
+        (long - 20 days, short - 5 days) and creates a buy order in case if the short moving average
+        is greater or equal to the long moving average.
+        """
         def __init__(self, ts: BacktestTradingSession, ticker: Ticker):
             super().__init__(ts)
             self.broker = ts.broker
@@ -228,6 +240,7 @@ the `start_trading()` on the Backtest Trading Session!
             long_ma_len = 20
             short_ma_len = 5
 
+            # Use data handler to download last 20 daily close prices and use them to compute the moving averages
             long_ma_series = self.data_handler.historical_price(self.ticker, PriceField.Close, long_ma_len)
             long_ma_price = long_ma_series.mean()
 
@@ -235,6 +248,7 @@ the `start_trading()` on the Backtest Trading Session!
             short_ma_price = short_ma_series.mean()
 
             if short_ma_price >= long_ma_price:
+                # Place a buy Market Order, adjusting the position to a value equal to 100% of the portfolio
                 orders = self.order_factory.target_percent_orders({self.ticker: 1.0},
                     MarketOrder(), TimeInForce.DAY)
             else:
@@ -247,11 +261,13 @@ the `start_trading()` on the Backtest Trading Session!
 
 
     def main():
+        # settings
         backtest_name = 'Simple MA Strategy Demo'
         start_date = str_to_date("2010-01-01")
         end_date = str_to_date("2015-03-01")
         ticker = DummyTicker("AAA")
 
+        # configuration
         session_builder = container.resolve(BacktestTradingSessionBuilder)
         session_builder.set_frequency(Frequency.DAILY)
         session_builder.set_backtest_name(backtest_name)
