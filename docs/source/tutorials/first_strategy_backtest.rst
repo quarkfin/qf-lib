@@ -282,6 +282,114 @@ the `start_trading()` on the Backtest Trading Session!
 
         ts.start_trading()
 
+Intraday strategy example
+==========================
+
+For intraday strategies, one needs to remember that the backtest flow supports only one-minute data bars.
+Setting up a strategy that calculates orders at the same frequency as the data frequency (every minute) is fairly
+straightforward. Below, we use the same moving average strategy as before. Note that at the one-minute frequency,
+data bars used to compute the average now correspond to minutes not days.
+
+.. code-block::
+
+    class IntradayMAStrategy(AbstractStrategy):
+        """
+        Strategy which computes two simple moving averages (long - 20 minutes, short - 5 minutes) 
+        between 10:00 and 13:00, and creates a buy order in case if the short moving average is 
+        greater or equal to the long moving average.
+        """
+        def __init__(self, ts: BacktestTradingSession, ticker: Ticker):
+            super().__init__(ts)
+            self.broker = ts.broker
+            self.order_factory = ts.order_factory
+            self.data_handler = ts.data_handler
+            self.position_sizer = ts.position_sizer
+            self.timer = ts.timer
+            self.ticker = ticker
+
+            self.logger = qf_logger.getChild(self.__class__.__name__)
+
+        def calculate_and_place_orders(self):
+            self.logger.info("{} - Computing signals".format(self.timer.now()))
+
+            # Compute the moving averages
+            long_ma_len = 20
+            short_ma_len = 5
+
+            # Use data handler to download last 20 daily close prices and use them to compute the moving averages
+            long_ma_series = self.data_handler.historical_price(self.ticker, PriceField.Close, long_ma_len,
+                                                                frequency=Frequency.MIN_1)
+            long_ma_price = long_ma_series.mean()
+
+            short_ma_series = long_ma_series.tail(short_ma_len)
+            short_ma_price = short_ma_series.mean()
+
+            specific_ticker = self.ticker.get_current_specific_ticker() if isinstance(self.ticker, FutureTicker) \
+                else self.ticker
+            if short_ma_price >= long_ma_price:
+                # Place a buy Market Order, adjusting the position to a value equal to 100% of the portfolio
+                orders = self.order_factory.target_percent_orders({specific_ticker: 1.0}, 
+                    MarketOrder(), TimeInForce.DAY)
+            else:
+                orders = self.order_factory.target_percent_orders({specific_ticker: 0.0}, 
+                    MarketOrder(), TimeInForce.DAY)
+
+            # Cancel any open orders and place the newly created ones
+            self.broker.cancel_all_open_orders()
+            self.broker.place_orders(orders)
+
+
+    def main():
+        # settings
+        backtest_name = 'Intraday MA Strategy Demo'
+        start_date = str_to_date("2019-06-04")
+        end_date = str_to_date("2019-10-17")
+        ticker = DummyTicker("AAA")
+
+        setup_logging(logging.INFO, console_logging=True)
+
+        CalculateAndPlaceOrdersPeriodicEvent.set_frequency(Frequency.MIN_1)
+        CalculateAndPlaceOrdersPeriodicEvent.set_start_and_end_time(
+            {"hour": 10, "minute": 0},
+            {"hour": 13, "minute": 0})
+
+        # configuration
+        session_builder = container.resolve(BacktestTradingSessionBuilder) 
+        session_builder.set_frequency(Frequency.MIN_1)
+        session_builder.set_market_open_and_close_time({"hour": 9, "minute": 15}, {"hour": 13, "minute": 15})
+        session_builder.set_backtest_name(backtest_name)
+        session_builder.set_data_provider(intraday_data_provider)
+
+        ts = session_builder.build(start_date, end_date)
+
+        strategy = IntradayMAStrategy(ts, ticker)
+        strategy.subscribe(CalculateAndPlaceOrdersPeriodicEvent)
+
+        ts.start_trading()
+
+As you can see above, you need to specify the market open and market close times. Matching the times of the first and
+the last price data of the day is recommended. Similarly, you need to define the exact hours of the signal generation event,
+i.e. the start and end time of `CalculateAndPlaceOrdersRegularEvent`.
+
+.. note::
+    The start and end time of `CalculateAndPlaceOrdersRegularEvent` are inclusive, i.e. in the example above, the last signal
+    will be generated at 13:00. Note that if the end time coincides with the market close time, the signal will be generated at
+    the market close, resulting in an order being executed at the next market open.
+
+However, we do not always want to test such high-frequency trading scenarios. Let's say we would like to test
+a strategy where we only trade once per hour using 30-minute data bars to compute our orders. We cannot adjust 
+the trading session frequency as it still requires 1-minute data bars. Instead, we can simulate the scenario by 
+changing the price calculation of the strategy and the signal generation frequency accordingly.
+
+.. code::
+
+    long_ma_series = self.data_handler.historical_price(self.ticker, PriceField.Close, long_ma_len,
+                                                        frequency=Frequency.MIN_30)
+
+.. code::
+
+    CalculateAndPlaceOrdersPeriodicEvent.set_frequency(Frequency.MIN_60)
+
 **********************************
 I run the backtest. What now?
 **********************************
