@@ -45,7 +45,7 @@ class DataProvider(object, metaclass=ABCMeta):
 
     @abstractmethod
     def get_price(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
-                  start_date: datetime, end_date: datetime = None, frequency: Frequency = None) -> Union[
+                  start_date: datetime, end_date: datetime = None, frequency: Frequency = None, **kwargs) -> Union[
                         None, PricesSeries, PricesDataFrame, QFDataArray]:
         """
         Gets adjusted historical Prices (Open, High, Low, Close) and Volume

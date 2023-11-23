@@ -11,6 +11,7 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
+
 import matplotlib.pyplot as plt
 
 from qf_lib.backtesting.events.time_event.regular_time_event.calculate_and_place_orders_event import \
@@ -76,7 +77,7 @@ def main():
     ticker = DummyTicker("AAA")
 
     # configuration
-    session_builder = container.resolve(BacktestTradingSessionBuilder)  # type: BacktestTradingSessionBuilder
+    session_builder = container.resolve(BacktestTradingSessionBuilder)
     session_builder.set_frequency(Frequency.DAILY)
     session_builder.set_backtest_name(backtest_name)
     session_builder.set_data_provider(daily_data_provider)

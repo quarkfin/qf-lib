@@ -39,7 +39,7 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
     """
 
     def get_price(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
-                  start_date: datetime, end_date: datetime = None, frequency: Frequency = Frequency.DAILY) -> \
+                  start_date: datetime, end_date: datetime = None, frequency: Frequency = Frequency.DAILY, **kwargs) -> \
             Union[None, PricesSeries, PricesDataFrame, QFDataArray]:
 
         if end_date:
@@ -51,7 +51,7 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
         fields, got_single_field = convert_to_list(fields, PriceField)
 
         fields_str = self._map_field_to_str(fields)
-        container = self.get_history(tickers, fields_str, start_date, end_date, frequency)
+        container = self.get_history(tickers, fields_str, start_date, end_date, frequency, **kwargs)
 
         str_to_field_dict = self.str_to_price_field_map()
 
