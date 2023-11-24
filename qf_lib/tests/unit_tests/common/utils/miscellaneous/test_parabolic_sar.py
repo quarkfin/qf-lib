@@ -37,8 +37,25 @@ class TestParabolicSAR(TestCase):
         calculated_psar = parabolic_sar(dummy_prices_dataframe)
 
         np.testing.assert_allclose(test_psar_values, calculated_psar.values, rtol=1e-9)
-        self.assertListEqual(list(dummy_prices_dataframe.index[1:]), list(calculated_psar.index))
+        self.assertListEqual(list(dummy_prices_dataframe.index[1:]),
+                             list(calculated_psar.index))
         self.assertIsInstance(calculated_psar, QFSeries)
+
+    def test_psar_with_nan(self):
+        dummy_price_data_with_nan = {
+            PriceField.Low: [1.1, 1.4, 2.6, 3.4, None, 5.1, 4.4, 3.1],
+            PriceField.High: [None, 2.2, None, 6.5, 7.1, 7.4, 7.6, 5.],
+            PriceField.Close: [None, 1.2, 3.5, 5.3, 7.1, 6.3, 6.5, 4.2],
+        }
+        dummy_prices_dataframe_with_nan = PricesDataFrame(dummy_price_data_with_nan)
+
+        test_psar_values_with_nan = [1.2864, 1.530944, 1.89508736, 2.1434803712]
+        calculated_psar_with_nan = parabolic_sar(dummy_prices_dataframe_with_nan)
+
+        np.testing.assert_allclose(test_psar_values_with_nan, calculated_psar_with_nan.values, rtol=1e-9)
+        self.assertListEqual(list(dummy_prices_dataframe_with_nan.dropna().index[1:]),
+                             list(calculated_psar_with_nan.index))
+        self.assertIsInstance(calculated_psar_with_nan, QFSeries)
 
 
 if __name__ == "__main__":
