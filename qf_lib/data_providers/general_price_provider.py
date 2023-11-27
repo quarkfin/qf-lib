@@ -52,7 +52,8 @@ class GeneralPriceProvider(DataProvider):
                 self._register_data_provider(provider)
 
     def get_price(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
-                  start_date: datetime, end_date: datetime = None, frequency: Frequency = Frequency.DAILY) -> Union[None, PricesSeries, PricesDataFrame, QFDataArray]:
+                  start_date: datetime, end_date: datetime = None, frequency: Frequency = Frequency.DAILY, **kwargs) \
+            -> Union[None, PricesSeries, PricesDataFrame, QFDataArray]:
         """
         Implements the functionality of AbstractPriceDataProvider using duck-typing.
 

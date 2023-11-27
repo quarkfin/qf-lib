@@ -63,7 +63,7 @@ class QuandlDataProvider(DataProvider):
 
     def get_price(self, tickers: Union[QuandlTicker, Sequence[QuandlTicker]],
                   fields: Union[PriceField, Sequence[PriceField]], start_date: datetime, end_date: datetime = None,
-                  frequency: Frequency = Frequency.DAILY):
+                  frequency: Frequency = Frequency.DAILY, **kwargs):
         start_date = self._adjust_start_date(start_date, frequency)
         return self._get_history(
             convert_to_prices_types=True, tickers=tickers, fields=fields, start_date=start_date, end_date=end_date)

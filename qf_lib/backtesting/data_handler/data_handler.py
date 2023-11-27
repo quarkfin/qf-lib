@@ -105,7 +105,7 @@ class DataHandler(DataProvider):
         return self.data_provider.historical_price(tickers, fields, nr_of_bars, end_date, frequency)
 
     def get_price(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
-                  start_date: datetime, end_date: datetime = None, frequency: Frequency = None) -> \
+                  start_date: datetime, end_date: datetime = None, frequency: Frequency = None, **kwargs) -> \
             Union[PricesSeries, PricesDataFrame, QFDataArray]:
         """
         Runs DataProvider.get_price(...) but before makes sure that the query doesn't concern data from
@@ -129,6 +129,7 @@ class DataHandler(DataProvider):
         Returns
         -------
         None, PricesSeries, PricesDataFrame, QFDataArray
+        :param **kwargs:
         """
         frequency = frequency or self.default_frequency
         assert frequency is not None, "Frequency cannot be equal to None"

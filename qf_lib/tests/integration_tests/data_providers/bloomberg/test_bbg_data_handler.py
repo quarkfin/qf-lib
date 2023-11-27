@@ -52,8 +52,8 @@ class TestBloombergDataHandler(TestCase):
 
     def test_market_open_price_before_market_open__single_date(self):
         self.timer.set_current_time(datetime(2022, 4, 26, 1))
-        prices = self.daily_data_handler.get_price(BloombergTicker("SPX Index"), PriceField.Open,
-                                                   datetime(2022, 4, 26), datetime(2022, 4, 26))
+        prices = self.daily_data_handler.get_price(BloombergTicker("SPX Index"), PriceField.Open, datetime(2022, 4, 26),
+                                                   datetime(2022, 4, 26))
         self.assertFalse(is_finite_number(prices))
 
     def test_market_open_price_before_market_close__single_date(self):
