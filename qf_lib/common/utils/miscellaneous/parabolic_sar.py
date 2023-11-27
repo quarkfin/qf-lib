@@ -17,7 +17,7 @@ from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
 
 
-def parabolic_sar(df: PricesDataFrame, acceleration=0.02, max_acceleration=0.2):
+def parabolic_sar(df: PricesDataFrame, acceleration: float = 0.02, max_acceleration: float = 0.2):
     """Computes the parabolic SAR (Stop And Return) indicator for the given dataframe.
 
     Parameters
@@ -34,6 +34,9 @@ def parabolic_sar(df: PricesDataFrame, acceleration=0.02, max_acceleration=0.2):
     QFSeries
         Series with PSAR values for each index in the dataframe.
     """
+    column_difference = {PriceField.High, PriceField.Low, PriceField.Close} - set(df.columns)
+    if column_difference:
+        raise ValueError(f"Missing {column_difference}")
     df = df[[PriceField.High, PriceField.Low, PriceField.Close]].dropna()
     high_tms = df[PriceField.High].values
     low_tms = df[PriceField.Low].values
