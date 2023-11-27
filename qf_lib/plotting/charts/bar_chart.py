@@ -89,9 +89,17 @@ class BarChart(Chart):
         # Adjust thickness based on minimum difference between index values,
         # and the number of bars for each index value.
         if not self._stacked:
-            indices = [data_element.data.index if not is_datetime(data_element.data.index) else
-                       dates.date2num(data_element.data.index) for
-                       data_element in data_element_decorators]
+            indices = []
+
+            for data_element in data_element_decorators:
+                data_index = data_element.data.index
+
+                if self.index_translator:
+                    indices.append(self.index_translator.translate(data_index))
+                elif is_datetime(data_index):
+                    indices.append(dates.date2num(data_index))
+                else:
+                    indices.append(data_index)
 
             minimum = np.diff(reduce(np.union1d, indices)).min()
 
@@ -120,10 +128,10 @@ class BarChart(Chart):
             if not self._stacked:
                 if is_datetime(index):
                     converted_index = dates.date2num(index)
-                    converted_index += i*self._thickness
+                    converted_index += i * self._thickness
                     index = dates.num2date(converted_index)
                 else:
-                    index += i*self._thickness
+                    index += i * self._thickness
 
             bars = self._plot_data(axes, index, data, last_data_element_positions, plot_settings)
             data_element.legend_artist = bars

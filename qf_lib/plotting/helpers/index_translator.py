@@ -13,9 +13,11 @@
 #     limitations under the License.
 
 from numbers import Number
+from pandas import Index
 from typing import Mapping, List, Sequence, Union
 
 from qf_lib.common.enums.orientation import Orientation
+from qf_lib.plotting.charts.chart import Chart
 
 
 class IndexTranslator:
@@ -36,7 +38,7 @@ class IndexTranslator:
             self._labels_to_locations_dict.update(labels_to_locations_dict)
 
     @classmethod
-    def setup_ticks_and_labels(cls, chart: "Chart"):
+    def setup_ticks_and_labels(cls, chart: Chart):
         """
         Setups ticks' locations and labels in the given chart if it used IndexTranslator.
         """
@@ -49,7 +51,7 @@ class IndexTranslator:
             labels = chart.index_translator.inv_translate(index_axis.get_ticklocs())
             index_axis.set_ticklabels(labels)
 
-    def translate(self, values: Union[str, Sequence[str]]) -> List[Number]:
+    def translate(self, values: Union[str, Sequence[str]]) -> Sequence[Number]:
         """
         Translates label into numeric coordinate. If the translation is done for the first time for this value
         it may modify the state of the translator (it may introduce a new translation).
@@ -75,9 +77,9 @@ class IndexTranslator:
                 numeric_coordinate = self._translate_and_update_dict(value)
             result.append(numeric_coordinate)
 
-        return result
+        return Index(result)
 
-    def inv_translate(self, translated_values: Union[Number, Sequence[Number]]) -> List[str]:
+    def inv_translate(self, translated_values: Union[Number, Sequence[Number]]) -> Sequence[str]:
         """
         Translates numeric coordinate into label. Requirement: the Translator must be familiar with mapping the label
         into numeric coordinate (either the translate must have been called or the labels_to_locations_dict must
@@ -97,7 +99,7 @@ class IndexTranslator:
             translated_values = [translated_values]
 
         inv_dict = {value: key for key, value in self._labels_to_locations_dict.items()}
-        return [inv_dict.get(numeric_value, '') for numeric_value in translated_values]
+        return Index([inv_dict.get(numeric_value, '') for numeric_value in translated_values])
 
     def values(self) -> List[float]:
         return list(self._labels_to_locations_dict.values())
