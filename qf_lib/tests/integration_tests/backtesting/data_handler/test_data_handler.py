@@ -58,8 +58,8 @@ class TestDataHandler(TestCase):
 
     def test_get_price_when_end_date_is_in_the_past(self):
         self.timer.set_current_time(str_to_date("2018-02-12 00:00:00.000000", DateFormat.FULL_ISO))
-        prices_tms = self.data_handler.get_price(self.spx_index_ticker, PriceField.Close,
-                                                 self.start_date, self.end_date)
+        prices_tms = self.data_handler.get_price(self.spx_index_ticker, PriceField.Close, self.start_date,
+                                                 self.end_date)
 
         self.assertEqual(self.start_date, prices_tms.index[0].to_pydatetime())
         self.assertEqual(self.end_date, prices_tms.index[-1].to_pydatetime())
@@ -67,8 +67,8 @@ class TestDataHandler(TestCase):
     def test_get_price_when_end_date_is_today_after_market_close(self):
         self.timer.set_current_time(
             str_to_date("2018-01-31") + MarketCloseEvent.trigger_time() + RelativeDelta(hours=1))
-        prices_tms = self.data_handler.get_price(self.spx_index_ticker, PriceField.Close,
-                                                 self.start_date, self.end_date)
+        prices_tms = self.data_handler.get_price(self.spx_index_ticker, PriceField.Close, self.start_date,
+                                                 self.end_date)
 
         self.assertEqual(self.start_date, prices_tms.index[0].to_pydatetime())
         self.assertEqual(self.end_date, prices_tms.index[-1].to_pydatetime())

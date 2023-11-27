@@ -105,7 +105,7 @@ class PresetDataProvider(DataProvider):
         return self._ticker_types
 
     def get_price(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
-                  start_date: datetime, end_date: datetime = None, frequency: Frequency = Frequency.DAILY) -> \
+                  start_date: datetime, end_date: datetime = None, frequency: Frequency = Frequency.DAILY, **kwargs) -> \
             Union[None, PricesSeries, PricesDataFrame, QFDataArray]:
         # The passed desired data frequency should be at most equal to the frequency of the initially loaded data
         # (in case of downsampling the data may be aggregated, but no data upsampling is supported).
