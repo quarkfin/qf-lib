@@ -57,6 +57,17 @@ class TestParabolicSAR(TestCase):
                              list(calculated_psar_with_nan.index))
         self.assertIsInstance(calculated_psar_with_nan, QFSeries)
 
+    def test_psar_with_empty_input(self):
+        dummy_price_data_with_nan = {
+            PriceField.Low: [],
+            PriceField.High: [],
+            PriceField.Close: [],
+        }
+        empty_dummy_prices = PricesDataFrame(dummy_price_data_with_nan)
+
+        with self.assertRaises(ValueError):
+            parabolic_sar(empty_dummy_prices)
+
 
 if __name__ == "__main__":
     unittest.main()

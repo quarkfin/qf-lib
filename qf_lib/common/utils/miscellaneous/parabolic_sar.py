@@ -38,6 +38,10 @@ def parabolic_sar(df: PricesDataFrame, acceleration: float = 0.02, max_accelerat
     if column_difference:
         raise ValueError(f"Missing {column_difference}")
     df = df[[PriceField.High, PriceField.Low, PriceField.Close]].dropna()
+
+    if len(df) < 2:
+        raise ValueError(f"At least 2 values are needed to compute the PSAR, input has {len(df)} values.")
+
     high_tms = df[PriceField.High].values
     low_tms = df[PriceField.Low].values
     close_tms = df[PriceField.Close].values
