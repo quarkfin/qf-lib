@@ -43,13 +43,13 @@ class TestParabolicSAR(TestCase):
 
     def test_psar_with_nan(self):
         dummy_price_data_with_nan = {
-            PriceField.Low: [1.1, 1.4, 2.6, 3.4, None, 5.1, 4.4, 3.1],
-            PriceField.High: [None, 2.2, None, 6.5, 7.1, 7.4, 7.6, 5.],
-            PriceField.Close: [None, 1.2, 3.5, 5.3, 7.1, 6.3, 6.5, 4.2],
-        }
+                PriceField.Low: [1.1, 1.4, 0.2, 3.4, None, 5.1, 4.4, 3.1],
+                PriceField.High: [None, 2.2, None, 6.5, 1, 7.1, 7.6, 5.],
+                PriceField.Close: [None, 1.2, 3.5, 0.1, 7.1, 6.3, 0.1, 2.2],
+            }
         dummy_prices_dataframe_with_nan = PricesDataFrame(dummy_price_data_with_nan)
 
-        test_psar_values_with_nan = [1.2864, 1.530944, 1.89508736, 2.1434803712]
+        test_psar_values_with_nan = [2.20, 3.40, 7.10, 7.02]
         calculated_psar_with_nan = parabolic_sar(dummy_prices_dataframe_with_nan)
 
         np.testing.assert_allclose(test_psar_values_with_nan, calculated_psar_with_nan.values, rtol=1e-9)
@@ -63,10 +63,18 @@ class TestParabolicSAR(TestCase):
             PriceField.High: [],
             PriceField.Close: [],
         }
-        empty_dummy_prices = PricesDataFrame(dummy_price_data_with_nan)
 
         with self.assertRaises(ValueError):
-            parabolic_sar(empty_dummy_prices)
+            parabolic_sar(PricesDataFrame(dummy_price_data_with_nan))
+
+    def test_psar_with_missing_column(self):
+        dummy_price_data_with_missing_column = {
+            PriceField.Low: [3.1, 4.4],
+            PriceField.Close: [5.6, 6.23],
+        }
+
+        with self.assertRaises(ValueError):
+            parabolic_sar(PricesDataFrame(dummy_price_data_with_missing_column))
 
 
 if __name__ == "__main__":
