@@ -27,6 +27,7 @@ def _get_ioc_container():
 
     from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
     from qf_lib.data_providers.quandl.quandl_data_provider import QuandlDataProvider
+    from qf_lib.data_providers.nasdaq.nasdaq_data_provider import NasdaqDataProvider
     from qf_lib.common.risk_parity_boxes.risk_parity_boxes import RiskParityBoxesFactory
     from qf_lib.common.utils.dateutils.timer import RealTimer
     from qf_lib.common.utils.dateutils.timer import Timer
@@ -48,6 +49,7 @@ def _get_ioc_container():
     builder.register_instance(Settings, settings)
 
     builder.register_class(QuandlDataProvider, component_scope=SingleInstance)
+    builder.register_class(NasdaqDataProvider, component_scope=SingleInstance)
 
     # PUBLISHERS
     builder.register_class(EmailPublisher, component_scope=SingleInstance)
