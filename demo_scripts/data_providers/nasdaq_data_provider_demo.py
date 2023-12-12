@@ -50,5 +50,6 @@ def main():
     data = data_provider.get_price(tickers=ticker, fields=PriceField.Close, start_date=start_date, end_date=end_date)
     print(data)
 
+
 if __name__ == '__main__':
     main()
