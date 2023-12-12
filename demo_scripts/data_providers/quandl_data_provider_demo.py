@@ -28,7 +28,7 @@ pd.options.display.max_columns = 100
 def main():
     data_provider = container.resolve(QuandlDataProvider)  # type: QuandlDataProvider
     start_date = str_to_date('2016-01-01')
-    end_date = str_to_date('2017-11-02')
+    end_date = str_to_date('2016-01-10')  # Using small data range to help spot errors.
 
     print('Single ticker:')
     ticker = QuandlTicker('IBM', 'WIKI')
@@ -52,21 +52,6 @@ def main():
 
     print('Continues Futures - CHRIS')
     ticker = QuandlTicker('ASX_TN2', 'CHRIS')
-    data = data_provider.get_history(tickers=ticker, start_date=start_date, end_date=end_date)
-    print(data)
-
-    print('Futures - ICE')
-    ticker = QuandlTicker('OZ2019', 'ICE')
-    data = data_provider.get_history(tickers=ticker, start_date=start_date, end_date=end_date)
-    print(data)
-
-    print('Futures - CME')
-    ticker = QuandlTicker('EMF2018', 'CME')
-    data = data_provider.get_history(tickers=ticker, start_date=start_date, end_date=end_date)
-    print(data)
-
-    print('Futures - EUREX')
-    ticker = QuandlTicker('FCXEZ2018', 'EUREX')
     data = data_provider.get_history(tickers=ticker, start_date=start_date, end_date=end_date)
     print(data)
 
