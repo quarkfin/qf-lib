@@ -28,7 +28,7 @@ pd.options.display.max_columns = 100
 def main():
     data_provider = container.resolve(QuandlDataProvider)  # type: QuandlDataProvider
     start_date = str_to_date('2016-01-01')
-    end_date = str_to_date('2016-01-10') # Using small data range to help spot errors. 
+    end_date = str_to_date('2016-01-10')  # Using small data range to help spot errors.
 
     print('Single ticker:')
     ticker = QuandlTicker('IBM', 'WIKI')
