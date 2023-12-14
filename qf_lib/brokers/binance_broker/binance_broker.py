@@ -79,7 +79,7 @@ class BinanceBroker(Broker):
 
         self.settings = settings
 
-        self.stable_coins = ['USDT', 'BUSD']
+        self.stable_coins = ['USDT', 'BUSD', 'USDC']
         self.time_in_force_to_string = {TimeInForce.GTC: 'GTC'}
 
         self.client = Client(settings.api_key, settings.api_secret)
