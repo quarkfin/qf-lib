@@ -134,3 +134,13 @@ class TestSeries(TestCase):
         benchmark = SimpleReturnsSeries(data=[0.50, 0.01, 0.01], index=benchmark_dates)
         rolling = strategy.rolling_window_with_benchmark(benchmark, 1, lambda x, y: x.mean() + y.mean())
         self.assertEqual(rolling.iloc[0], 0.02)
+
+    def test_prices_to_simple_returns_with_nan_values(self):
+        prices_values = [100, 101, 101, None, 101, None, None, 102, 103]
+        prices_dates = pd.date_range('2014-12-31', periods=9, freq='D')
+        nan_prices_tms = PricesSeries(data=prices_values, index=prices_dates, name='Test Name')
+
+        expected_tms = SimpleReturnsSeries([0.01, 0, None, None, None, None, None, 0.009804], prices_dates[1:],
+                                           name='Test Name')
+        actual_tms = nan_prices_tms.to_simple_returns()
+        assert_series_equal(expected_tms, actual_tms)
