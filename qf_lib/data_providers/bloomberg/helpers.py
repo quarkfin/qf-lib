@@ -92,7 +92,7 @@ def check_event_for_errors(event):
         error_message = "Number of messages != 1"
         raise BloombergError(error_message)
 
-    first_msg = blpapi.event.MessageIterator(event).next()
+    first_msg = next(blpapi.event.MessageIterator(event))
 
     if first_msg.asElement().hasElement(RESPONSE_ERROR):
         error_message = "Response error: " + str(first_msg.asElement())
@@ -100,12 +100,12 @@ def check_event_for_errors(event):
 
 
 def extract_security_data(event):
-    first_msg = blpapi.event.MessageIterator(event).next()
+    first_msg = next(blpapi.event.MessageIterator(event))
     return first_msg.getElement(SECURITY_DATA)
 
 
 def extract_bar_data(event):
-    first_msg = blpapi.event.MessageIterator(event).next()
+    first_msg = next(blpapi.event.MessageIterator(event))
     return first_msg.getElement(BAR_DATA)
 
 
