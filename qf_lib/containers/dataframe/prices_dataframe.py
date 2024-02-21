@@ -38,5 +38,5 @@ class PricesDataFrame(QFDataFrame):
             dataframe of simple returns
         """
         from qf_lib.containers.dataframe.simple_returns_dataframe import SimpleReturnsDataFrame
-        returns = self.pct_change()
+        returns = self.pct_change(fill_method=None)
         return SimpleReturnsDataFrame(data=returns.iloc[1:], index=self.index[1:]).__finalize__(self)
