@@ -25,7 +25,7 @@ setup(
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
     author='Jacek Witkowski, Marcin Borratynski, Thomas Ruxton, Dominik Picheta, Olga Kalinowska, Karolina Cynk, '
-           'Jakub Czerski, Bartlomiej Czajewski, Zeynep Gültuğ Aydemir, Octavian-Mihai Matei, Eirik Thorp Eythorsson',
+           'Jakub Czerski, Bartlomiej Czajewski, Zeynep Gültuğ Aydemir, Octavian-Mihai Matei, Eirik Thorp Eythorsson, Marek Bais',
     description='Quantitative Finance Library',
     long_description=long_description,
     license='Apache License 2.0',
@@ -51,7 +51,7 @@ setup(
     include_package_data=True,
     install_requires=requirements,
     extras_require={
-        "documentation": ["autodocsumm==0.1.13", "sphinx_rtd_theme==0.5.0", "Sphinx==3.1.1"],
+        "documentation": ["autodocsumm==0.2.9", "sphinx_rtd_theme==1.2.0", "Sphinx==5.0"],
         "interactive brokers": ["ibapi"],
         "bloomberg_beap_hapi": ["PyJWT>=0.2.3,<2.0.0", "retrying>=1.3.3", "beap-lib==0.0.1"],
         "blpapi": ["blpapi>=3.16.2,<=3.23.1"]
