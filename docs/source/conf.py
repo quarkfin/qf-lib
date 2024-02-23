@@ -12,13 +12,14 @@
 #
 import os
 import sys
+from datetime import datetime
 
 sys.path.append(os.path.abspath('../..'))
 
 # -- Project information -----------------------------------------------------
 
 project = 'QF Lib'
-copyright = '2021, Karolina Cynk'
+copyright = datetime.today().strftime("%Y") + ', Karolina Cynk'
 
 # The full version, including alpha/beta/rc tags
 # release = 'release...'
@@ -64,12 +65,9 @@ html_theme_options = {
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
-
-html_context = {
-    'css_files': [
-        '_static/theme_overrides.css',  # override wide tables in RTD theme
-    ],
-}
+html_css_files = [
+    'theme_overrides.css',
+]
 
 # -- Extension configuration -------------------------------------------------
 autosummary_generate = True
