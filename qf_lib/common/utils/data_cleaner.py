@@ -93,7 +93,7 @@ class DataCleaner:
 
     def _drop_underfilled_columns(self, result_dataframe, empty_values_idx):
         columns_to_delete = []
-        for column_name, is_empty_values in empty_values_idx.iteritems():
+        for column_name, is_empty_values in empty_values_idx.items():
             empty_values_ratio = sum(is_empty_values) / len(is_empty_values)  # #empty_values / #all_values
 
             if empty_values_ratio > self.threshold:

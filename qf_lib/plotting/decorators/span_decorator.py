@@ -74,7 +74,7 @@ class SpanDecorator(ChartDecorator, SimpleLegendItem):
         result = []  # List[Tuple[start_date, end_date]]
 
         start_date = None
-        for index, value in series.iteritems():
+        for index, value in series.items():
             if value < 1.0 and start_date is not None:
                 result.append((start_date, index))
                 start_date = None

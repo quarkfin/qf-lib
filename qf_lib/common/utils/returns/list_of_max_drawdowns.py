@@ -43,7 +43,7 @@ def list_of_max_drawdowns(prices_tms: QFSeries) -> (List[float], List[float]):
     dd_start_date = None
     series_sample = []
 
-    for date, value in drawdown_timeseries.iteritems():
+    for date, value in drawdown_timeseries.items():
         if value == 0:
             if series_sample:  # empty sequence returns false
                 max_drawdowns.append(max(series_sample))

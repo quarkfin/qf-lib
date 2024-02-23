@@ -366,8 +366,8 @@ class PortfolioAnalysisSheet(AbstractDocument):
         legend = LegendDecorator(key="legend_decorator")
         line_colors = iter(("#add8e6", "#000000", "#fa8072"))
 
-        for title, pnl_series in performance.iteritems():
-            # Plot series only in case if it consist anything else then 0
+        for title, pnl_series in performance.items():
+            # Plot series only in case if it consists of anything else then 0
             if (pnl_series != 0).any():
                 data_series = DataElementDecorator(pnl_series, **{"color": next(line_colors)})
                 legend.add_entry(data_series, title)

@@ -65,7 +65,7 @@ def main():
 
     # Calculate managed series
     managed_series = SimpleReturnsSeries()
-    for date, ret in spx_returns.iteritems():
+    for date, ret in spx_returns.items():
         risk_value = no_none_indicator_tms.asof(date - timedelta(days=2))
 
         leverage = 1

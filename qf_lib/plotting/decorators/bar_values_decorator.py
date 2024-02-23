@@ -39,7 +39,7 @@ class BarValuesDecorator(ChartDecorator):
         font_size = mpl.rcParams['legend.fontsize']
         max_val = self.series.abs().max()
         space = max_val * 0.02
-        for i, v in self.series.iteritems():
+        for i, v in self.series.items():
             if v < 0:
                 x = space
             else:

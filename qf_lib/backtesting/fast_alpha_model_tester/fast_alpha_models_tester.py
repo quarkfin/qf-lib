@@ -326,7 +326,7 @@ class FastAlphaModelTester:
                                           columns=exposure_df.columns)
 
         trade_data_list = []
-        for ticker, exposures_tms in shifted_exposure_df.iteritems():
+        for ticker, exposures_tms in shifted_exposure_df.items():
             trade_data_partial_list = self.generate_trades_for_ticker(prices_array, exposures_tms, ticker)
             trade_data_list.extend(trade_data_partial_list)
 

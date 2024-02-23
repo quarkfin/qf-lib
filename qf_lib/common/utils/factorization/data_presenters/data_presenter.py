@@ -293,7 +293,7 @@ class DataPresenter:
 
         r_squared_of_predictors = self.model.r_squared_of_each_predictor
         predictors_info = []
-        for ticker, r_squared in r_squared_of_predictors.iteritems():
+        for ticker, r_squared in r_squared_of_predictors.items():
             info = '        {r_squared:<8.6f}     {predictor_name:<35.35s}'.format(
                 r_squared=r_squared, predictor_name=self._get_security_name(ticker))
             predictors_info.append(info)
@@ -318,7 +318,7 @@ class DataPresenter:
             t_values = t_values[:-1]  # don't take the last t-value which corresponds to the "constant" factor
 
         infos = ["t-statistics:"]
-        for ticker, t_val in t_values.iteritems():
+        for ticker, t_val in t_values.items():
             infos.append('        {:< 9.3f}   {:s}'.format(t_val, self._get_security_name(ticker)))
 
         return '\n'.join(infos)
@@ -329,7 +329,7 @@ class DataPresenter:
             p_values = p_values[:-1]  # don't take the last t-value which corresponds to the "constant" factor
 
         infos = ["p-values"]
-        for ticker, p_val in p_values.iteritems():
+        for ticker, p_val in p_values.items():
             infos.append('        {:< 9.3f}   {:s}'.format(p_val, self._get_security_name(ticker)))
 
         return '\n'.join(infos)
@@ -376,7 +376,7 @@ class DataPresenter:
         regressors_and_fund_df = pd.concat([regressors_df, fund_tms], axis=1)
         colors = cycle(Chart.get_axes_colors())
 
-        for ticker, series in regressors_and_fund_df.iteritems():
+        for ticker, series in regressors_and_fund_df.items():
             marker_props = marker_props_template.copy()
             stemline_props = stemline_props_template.copy()
 
