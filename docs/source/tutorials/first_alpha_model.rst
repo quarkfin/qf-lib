@@ -86,7 +86,6 @@ necessary orders. Let's create a script to run the strategy at 1:00 a.m. every d
     from demo_scripts.backtester.moving_average_alpha_model import MovingAverageAlphaModel
     from demo_scripts.demo_configuration.demo_ioc import container
 
-    from qf_lib.backtesting.strategies.signal_generators import OnBeforeMarketOpenSignalGeneration
     from qf_lib.backtesting.strategies.alpha_model_strategy import AlphaModelStrategy
     from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
     from qf_lib.common.enums.frequency import Frequency

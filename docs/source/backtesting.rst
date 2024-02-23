@@ -52,9 +52,7 @@ events
 
     time_event.TimeEvent
     regular_time_event.regular_time_event.RegularTimeEvent
-    regular_time_event.daily_market_event.RegularMarketEvent
     regular_time_event.after_market_close_event.AfterMarketCloseEvent
-    regular_time_event.before_market_open_event.BeforeMarketOpenEvent
     regular_time_event.market_close_event.MarketCloseEvent
     regular_time_event.market_open_event.MarketOpenEvent
     regular_time_event.calculate_and_place_orders_event.CalculateAndPlaceOrdersRegularEvent
@@ -204,7 +202,6 @@ strategies
 
     abstract_strategy.AbstractStrategy
     alpha_model_strategy.AlphaModelStrategy
-    signal_generators.OnBeforeMarketOpenSignalGeneration
 
 trading_session
 =====================
