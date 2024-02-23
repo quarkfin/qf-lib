@@ -12,13 +12,14 @@
 #
 import os
 import sys
+from datetime import datetime
 
 sys.path.append(os.path.abspath('../..'))
 
 # -- Project information -----------------------------------------------------
 
 project = 'QF Lib'
-copyright = '2021, Karolina Cynk'
+copyright = datetime.today().strftime("%Y") + ', Karolina Cynk'
 
 # The full version, including alpha/beta/rc tags
 # release = 'release...'
