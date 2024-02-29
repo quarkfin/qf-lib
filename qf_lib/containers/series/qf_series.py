@@ -26,6 +26,13 @@ class QFSeries(pd.Series, TimeIndexedContainer):
     """
     Base class for all time-indexed series used in the quant-fin project.
     """
+
+    def __init__(self, data: object = None, index: object = None, dtype: object = None, name: object = None,
+                 copy: bool = False, fastpath: bool = False):
+        if data is None and dtype is None:
+            dtype = np.dtype(np.float64)
+        super().__init__(data, index, dtype, name, copy, fastpath)
+
     @property
     def _constructor(self):
         return QFSeries

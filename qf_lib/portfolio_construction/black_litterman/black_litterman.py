@@ -102,7 +102,7 @@ class BlackLitterman:
 
         Parameters
         -------------
-        short_asset_index: int
+        asset_index: int
             index of the asset that we expect to outperform the market (indexing starts at 0)
         outperformance: float
             how much are we expecting one asset to outperform the market

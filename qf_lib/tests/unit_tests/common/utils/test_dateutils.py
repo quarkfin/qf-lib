@@ -18,6 +18,7 @@ from unittest import TestCase
 
 import pandas as pd
 
+from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.common.utils.dateutils.common_start_and_end import get_common_start_and_end
 from qf_lib.common.utils.dateutils.date_to_string import date_to_str
 from qf_lib.common.utils.dateutils.eom_date import eom_date
@@ -73,6 +74,32 @@ class TestDateUtils(TestCase):
         test_dataframe = QFDataFrame(data, index, columns)
         actual_common_start, actual_common_end = get_common_start_and_end(test_dataframe)
         expected_common_start = str_to_date("2015-05-01")
+        expected_common_end = str_to_date("2015-08-01")
+        self.assertEqual(actual_common_start, expected_common_start)
+        self.assertEqual(actual_common_end, expected_common_end)
+
+    def test_get_common_start_and_end_with_series(self):
+        index = pd.DatetimeIndex([
+            "2015-01-01", "2015-02-01", "2015-03-01", "2015-04-01", "2015-05-01", "2015-06-01", "2015-07-01",
+            "2015-08-01", "2015-09-01"
+        ])
+        columns = pd.Index(['a', 'b'])
+        data = [
+            [None, None],
+            [1.1, None],
+            [None, None],
+            [1.2, None],
+            [1.5, 1.2],
+            [1.6, 1.9],
+            [1.3, None],
+            [1.2, 3.0],
+            [None, 1.1]
+        ]
+        test_dataframe = QFDataFrame(data, index, columns)
+        test_series = QFSeries(data=[None, 1, 2, None, 3, None], index=pd.DatetimeIndex([
+            "2015-06-01", "2015-07-01", "2015-08-01", "2015-09-01", "2015-10-01", "2015-11-01"]))
+        actual_common_start, actual_common_end = get_common_start_and_end(test_dataframe, test_series)
+        expected_common_start = str_to_date("2015-07-01")
         expected_common_end = str_to_date("2015-08-01")
         self.assertEqual(actual_common_start, expected_common_start)
         self.assertEqual(actual_common_end, expected_common_end)

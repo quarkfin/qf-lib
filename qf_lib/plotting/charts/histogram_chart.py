@@ -12,8 +12,7 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-from collections import Sequence
-from typing import Tuple, Union, Any
+from typing import Tuple, Union, Any, Sequence
 from scipy.stats import norm
 
 from qf_lib.plotting.charts.chart import Chart

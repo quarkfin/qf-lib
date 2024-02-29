@@ -124,7 +124,7 @@ class BinanceDataProvider(CSVDataProvider):
                 list_of_dfs.append(combined_df)
 
         df = pd.concat(list_of_dfs)
-        df.loc[:, fields] = df.loc[:, fields].astype(float64)
+        df[fields] = df[fields].astype(float64)
         df.to_csv(filepath)
 
     def _download_binance_data_df(self, ticker, start_time: datetime, end_time: datetime, frequency, ticker_col) -> QFDataFrame:

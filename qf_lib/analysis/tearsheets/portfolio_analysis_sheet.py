@@ -220,7 +220,8 @@ class PortfolioAnalysisSheet(AbstractDocument):
             mean_value = group.mean()
             samples = group.size
             group = group * (2 * ranks - samples - 1)
-            return group.sum() / (samples * samples * mean_value)
+            denominator = (samples * samples * mean_value)
+            return group.sum() / denominator if denominator != 0 else 0.0
 
         assets_history = assets_history.stack(dropna=False).groupby(level=0).apply(gini).to_frame("Gini coefficient")
         chart.add_decorator(DataElementDecorator(assets_history))
@@ -247,7 +248,7 @@ class PortfolioAnalysisSheet(AbstractDocument):
             columns=["Tickers name", "Start time", "End time", "Position direction"])
 
         def compute_duration(grouped_rows):
-            indexes = [pd.date_range(row["Start time"], row["End time"], freq='T', closed='left')
+            indexes = [pd.date_range(row["Start time"], row["End time"], freq='T', inclusive='left')
                        for _, row in grouped_rows.iterrows()]
 
             if len(indexes):

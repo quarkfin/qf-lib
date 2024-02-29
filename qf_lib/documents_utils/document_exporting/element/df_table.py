@@ -202,8 +202,8 @@ class ModelController:
             ] for column_name, column_style in self.columns_styles.items()
         }, index=self.data.index, columns=self.data.columns)
         self.table_styles = Style()
-        self.index_styling = [Style() for level in range(0, index.nlevels)]
-        self.header_styles = [Style() for level in range(0, columns.nlevels)]
+        self.index_styling = [Style() for _ in range(0, index.nlevels)]
+        self.header_styles = [Style() for _ in range(0, columns.nlevels)]
 
     def modify_data(self, location: Optional[Union[Any, Sequence[Any], Tuple[Any, Any]]] = None,
                     data_to_update: Union[str, Dict[str, str], Sequence[str]] = None,

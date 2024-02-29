@@ -23,9 +23,6 @@ class PricesSeries(QFSeries):
     Series of prices (for example prices of the SPY).
     """
 
-    def __init__(self, data=None, index=None, dtype=None, name=None, copy=False, fastpath=False):
-        super().__init__(data, index, dtype, name, copy, fastpath)
-
     @property
     def _constructor(self):
         return PricesSeries

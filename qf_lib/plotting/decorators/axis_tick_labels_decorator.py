@@ -45,18 +45,19 @@ class AxisTickLabelsDecorator(ChartDecorator):
         self._tick_values = tick_values
 
     def decorate(self, chart: "Chart"):
-        if self._axis == Axis.X:
-            axis = chart.axes.xaxis
-        elif self._axis == Axis.Y:
-            axis = chart.axes.yaxis
-        else:
+        axis_mapping = {Axis.X: chart.axes.xaxis, Axis.Y: chart.axes.yaxis}
+
+        axis = axis_mapping.get(self._axis)
+        if axis is None:
             raise ValueError("Supported axis: Axis.X and Axis.Y")
 
         if self._tick_values is not None:
             axis.set_ticks(self._tick_values)
 
-        if self._rotation and self._labels is not None:
-            axis.set_ticklabels(self._labels, ha="right", rotation_mode='anchor')
-            axis.set_tick_params(rotation=self._rotation)
-        elif self._labels is not None:
-            axis.set_ticklabels(self._labels)
+        if self._labels is not None:
+            if self._rotation:
+                axis.set_ticklabels(self._labels, ha="right", rotation_mode='anchor')
+                axis.set_tick_params(rotation=self._rotation)
+            elif self._tick_values is None:
+                axis.set_ticks(range(len(self._labels)))
+                axis.set_ticklabels(self._labels)

@@ -15,6 +15,7 @@
 from datetime import datetime
 from typing import Tuple
 
+from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.time_indexed_container import TimeIndexedContainer
 
@@ -29,7 +30,7 @@ def get_common_start_and_end(*containers: TimeIndexedContainer) -> Tuple[datetim
     Parameters
     ----------
     containers
-        list of containers for which the common beginning and ending should be found
+        containers for which the common beginning and ending should be found
 
     Returns
     -------
@@ -46,7 +47,7 @@ def get_common_start_and_end(*containers: TimeIndexedContainer) -> Tuple[datetim
 
             end_date = container.apply(lambda col: col.last_valid_index()).min()
             end_dates.append(end_date)
-        else:
+        elif isinstance(container, QFSeries):
             start_dates.append(container.first_valid_index())
             end_dates.append(container.last_valid_index())
 

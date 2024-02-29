@@ -155,7 +155,7 @@ class BloombergBeapHapiParser:
         content = self._read_csv(content, column_names + fields, header_row=header_row)
 
         for col, _type in field_to_type.items():
-            content.loc[:, col] = self.type_converter.infer_type(content.loc[:, col], _type)
+            content[col] = self.type_converter.infer_type(content[col], _type)
 
         return fields, content
 
