@@ -13,12 +13,11 @@
 #     limitations under the License.
 
 import queue
-import warnings
 from typing import Dict, Type, Sequence
 
 from qf_lib.backtesting.events.empty_queue_event.empty_queue_event import EmptyQueueEvent
 from qf_lib.backtesting.events.end_trading_event.end_trading_event import EndTradingEvent
-from qf_lib.backtesting.events.event_base import Event, EventNotifier, EventListener
+from qf_lib.backtesting.events.event_base import Event, EventNotifier
 from qf_lib.backtesting.events.time_event.time_event import TimeEvent
 from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
@@ -59,34 +58,6 @@ class EventManager:
         """
         for notifier in notifiers_list:
             self._events_to_notifiers[notifier.events_type()] = notifier
-
-    def subscribe(self, event_type: _EventType, listener: EventListener):
-        """
-        Whenever the event of type event_type occurs, the listener should be notified.
-
-        DEPRECATED
-        """
-        notifier = self._events_to_notifiers[event_type]
-        notifier_type_name = str(type(notifier))
-        warnings.warn(
-            "EventManager.subscribe() is deprecated. Please use the {:s}.subscribe().".format(notifier_type_name),
-            DeprecationWarning
-        )
-        notifier.subscribe(listener)
-
-    def unsubscribe(self, event_type: _EventType, listener: EventListener):
-        """
-        Stop notifications of events' occurrences of type event_type.
-
-        DEPRECATED
-        """
-        notifier = self._events_to_notifiers[event_type]
-        notifier_type_name = str(type(notifier))
-        warnings.warn(
-            "EventManager.unsubscribe() is deprecated. Please use the {:s}.unsubscribe().".format(notifier_type_name),
-            DeprecationWarning
-        )
-        notifier.unsubscribe(listener)
 
     def publish(self, event: Event):
         """

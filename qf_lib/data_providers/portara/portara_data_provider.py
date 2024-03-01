@@ -125,7 +125,7 @@ class PortaraDataProvider(PresetDataProvider):
                 try:
                     path = path.resolve()
                     df = pd.read_csv(path, names=['Contract', 'Expiration Date'], parse_dates=['Expiration Date'],
-                                     date_parser=lambda date: datetime.strptime(date, '%Y%m%d'), index_col="Contract")
+                                     date_format='%Y%m%d', index_col="Contract")
                     df = df.rename(columns={'Expiration Date': ExpirationDateField.LastTradeableDate})
                     df.index = PortaraTicker.from_string(df.index, security_type=future_ticker.security_type,
                                                          point_value=future_ticker.point_value)

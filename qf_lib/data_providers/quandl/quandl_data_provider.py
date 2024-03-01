@@ -15,6 +15,7 @@ import warnings
 from datetime import datetime
 from itertools import groupby
 from typing import Union, Sequence, Dict
+from warnings import warn
 
 import pandas as pd
 from qf_lib.common.enums.expiration_date_field import ExpirationDateField
@@ -48,6 +49,8 @@ class QuandlDataProvider(DataProvider):
     Class providing the Quandl data.
     The table database: WIKI/PRICES offers stock prices, dividends and splits for 3000 US publicly-traded companies.
     This database is updated at 9:15 PM EST every weekday.
+
+    Note: This class will be deprecated in later versions of qf-lib.
     """
 
     def __init__(self, settings: Settings):

@@ -14,7 +14,7 @@
 
 from datetime import datetime
 from typing import Union, Callable
-
+from collections.abc import Sequence
 import numpy as np
 import pandas as pd
 
@@ -29,7 +29,9 @@ class QFSeries(pd.Series, TimeIndexedContainer):
 
     def __init__(self, data: object = None, index: object = None, dtype: object = None, name: object = None,
                  copy: bool = False, fastpath: bool = False):
-        if data is None and dtype is None:
+
+        empty_sequence_object = isinstance(data, Sequence) and not isinstance(data, str) and len(data) < 1
+        if (data is None or empty_sequence_object) and dtype is None:
             dtype = np.dtype(np.float64)
         super().__init__(data, index, dtype, name, copy, fastpath)
 
