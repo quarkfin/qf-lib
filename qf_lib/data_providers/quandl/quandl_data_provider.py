@@ -15,7 +15,6 @@ import warnings
 from datetime import datetime
 from itertools import groupby
 from typing import Union, Sequence, Dict
-from warnings import warn
 
 import pandas as pd
 from qf_lib.common.enums.expiration_date_field import ExpirationDateField

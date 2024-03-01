@@ -33,8 +33,8 @@ class TradesGenerator:
     """
 
     def create_trades_from_backtest_positions(self, positions: Union[BacktestPosition, Sequence[BacktestPosition]],
-                                              portfolio_values: Optional[QFSeries] = None) -> Union[
-        Trade, Sequence[Trade]]:
+                                              portfolio_values: Optional[QFSeries] = None) -> (
+            Union)[Trade, Sequence[Trade]]:
         """
         Generates trades from BacktestPositions.
 
