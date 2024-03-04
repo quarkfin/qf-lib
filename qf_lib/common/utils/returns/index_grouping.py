@@ -22,7 +22,7 @@ def get_grouping_for_frequency(frequency):
     """
     Returns a proper grouping function which can then be applied in the series.groupby() or dataframe.groupby().
     """
-    warn('get_grouping_for_frequency is deprecated and will be remove in a future version of qf-lib',
+    warn('get_grouping_for_frequency is deprecated and will be removed in a future version of qf-lib',
          DeprecationWarning, stacklevel=2)
     if frequency == Frequency.DAILY:
         grouping = [lambda x: x.day, lambda x: x.month, lambda x: x.year]
