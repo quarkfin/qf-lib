@@ -319,7 +319,7 @@ class ModelController:
                 RowStyle(loc) for loc in new_indices
             ], index=new_indices)
 
-            self._rows_styles = concat([self._rows_styles,new_row_styles], ignore_index=False)
+            self._rows_styles = concat([self._rows_styles, new_row_styles], ignore_index=False)
 
         return self._rows_styles
 
