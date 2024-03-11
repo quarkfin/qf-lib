@@ -17,7 +17,7 @@ from typing import Any, Sequence, Dict
 
 import numpy as np
 import pandas as pd
-from pandas import to_datetime
+from pandas import to_datetime, concat
 
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.tickers.tickers import BloombergTicker
@@ -216,7 +216,7 @@ class HistoricalDataProvider:
                     ]
 
                 df = tickers_data_dict[requested_ticker]
-                tickers_data_dict[requested_ticker] = df.append(dates_fields_values)
+                tickers_data_dict[requested_ticker] = concat([df, dates_fields_values])
             except BloombergError as e:
                 self.logger.error(e)
 

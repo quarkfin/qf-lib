@@ -18,6 +18,7 @@ from typing import List, Union, Dict
 import numpy as np
 import matplotlib as plt
 import pandas as pd
+from pandas import concat
 from pandas.core.dtypes.common import is_numeric_dtype
 
 from qf_lib.analysis.strategy_monitoring.pnl_calculator import PnLCalculator
@@ -282,7 +283,7 @@ class AssetPerfAndDrawdownSheet(AbstractDocument):
         # Add the Total Performance row (divide by 2 as the df contains already aggregated data for each group)
         total_sum_row = performance_df[numeric_columns].sum() / 2
         total_sum_row["Asset"] = "Total Performance"
-        performance_df = performance_df.append(total_sum_row, ignore_index=True)
+        performance_df = concat([performance_df, total_sum_row], ignore_index=True)
 
         # Format the rows using the percentage formatter
         performance_df[numeric_columns] = performance_df[numeric_columns].applymap(lambda x: '{:.2%}'.format(x))
