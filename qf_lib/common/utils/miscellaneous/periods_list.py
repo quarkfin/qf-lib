@@ -57,7 +57,7 @@ def periods_list_from_bool_series(series: QFSeries) -> Sequence[Tuple[datetime, 
     first_occurrences_only = drop_consecutive_duplicates(series, Method.KEEP_FIRST)
 
     start_date = None
-    for date, should_be_shadowed in first_occurrences_only.iteritems():
+    for date, should_be_shadowed in first_occurrences_only.items():
         date = date.to_pydatetime()  # convert from pandas.Timestamp
 
         if should_be_shadowed:

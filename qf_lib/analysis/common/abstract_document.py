@@ -218,7 +218,7 @@ class AbstractDocument(metaclass=ABCMeta):
         line_decorator = HorizontalLineDecorator(0, key="h_line", linewidth=1)
         chart.add_decorator(line_decorator)
 
-        for _, tms in df.iteritems():
+        for _, tms in df.items():
             rolling = tms.rolling_window(rolling_window_len, rolling_function, step=step)
             rolling_element = DataElementDecorator(rolling)
             chart.add_decorator(rolling_element)

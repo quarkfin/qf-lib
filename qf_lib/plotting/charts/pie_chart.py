@@ -67,7 +67,7 @@ class PieChart(Chart):
         }
 
         sum_series = self.data.sum()
-        labels = [f"{index}, {value / sum_series:.1%}" for index, value in self.data.iteritems()]
+        labels = [f"{index}, {value / sum_series:.1%}" for index, value in self.data.items()]
 
         for i, p in enumerate(wedges):
             angle = (p.theta2 - p.theta1) / 2. + p.theta1

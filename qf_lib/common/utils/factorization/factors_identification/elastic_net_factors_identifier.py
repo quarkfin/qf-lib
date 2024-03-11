@@ -161,7 +161,7 @@ class ElasticNetFactorsIdentifier(FactorsIdentifier):
     def _create_coeffs_debug_chart(self, alphas, chosen_solution, coeffs_path, min_se_solution):
         coeffs_chart = LineChart()
         coefficients_paths = QFDataFrame(data=coeffs_path, index=pd.Index(alphas))
-        for _, path in coefficients_paths.iteritems():
+        for _, path in coefficients_paths.items():
             coeffs_chart.add_decorator(DataElementDecorator(path))
         coeffs_chart.add_decorator(TitleDecorator("Elastic Net (using Cross Validation)"))
         coeffs_chart.add_decorator(VerticalLineDecorator(x=min_se_solution, linestyle='-.'))
@@ -175,7 +175,7 @@ class ElasticNetFactorsIdentifier(FactorsIdentifier):
         mse_chart = LineChart()
         mean_square_errors_paths = QFDataFrame(data=mean_square_errors, index=pd.Index(alphas))
         mse_chart.add_decorator(TitleDecorator("Cross-validated avg. MSE of Elastic Net fit"))
-        for _, path in mean_square_errors_paths.iteritems():
+        for _, path in mean_square_errors_paths.items():
             mse_chart.add_decorator(DataElementDecorator(path))
         mse_chart.add_decorator(VerticalLineDecorator(x=min_se_solution, linestyle='-.'))
         mse_chart.add_decorator(VerticalLineDecorator(x=chosen_solution, linestyle='-'))

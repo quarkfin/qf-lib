@@ -210,7 +210,7 @@ class TimeseriesAnalysis(TimeseriesAnalysisDTO):
             (optional) frequency of the returns or price sampling in the DataFrame. By default daily frequency is used
 
         """
-        name_ta_list = [(name, TimeseriesAnalysis(asset_tms, frequency)) for name, asset_tms in df.iteritems()]
+        name_ta_list = [(name, TimeseriesAnalysis(asset_tms, frequency)) for name, asset_tms in df.items()]
         first_ta = name_ta_list[0][1]
 
         result = "Analysed period: {} - {}, using {} data\n".format(

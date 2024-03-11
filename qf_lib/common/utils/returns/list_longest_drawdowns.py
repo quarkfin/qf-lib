@@ -35,7 +35,7 @@ def list_longest_drawdowns(prices_tms: QFSeries, count: int) -> List[Tuple[datet
 
     start_date = None
 
-    for date, value in drawdown_timeseries.iteritems():
+    for date, value in drawdown_timeseries.items():
         if value == 0:
             if start_date is not None:
                 result.append((start_date, date))

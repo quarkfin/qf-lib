@@ -50,7 +50,7 @@ def main():
     chart = LineChart(start_x=str_to_date('2014-12-31'), end_x=str_to_date('2015-01-08'))
     legend = LegendDecorator()
 
-    for name, series in regressors_and_fund_df.iteritems():
+    for name, series in regressors_and_fund_df.items():
         marker_props = marker_props_template.copy()
         stemline_props = stemline_props_template.copy()
 

@@ -33,7 +33,8 @@ class TradesGenerator:
     """
 
     def create_trades_from_backtest_positions(self, positions: Union[BacktestPosition, Sequence[BacktestPosition]],
-                                              portfolio_values: Optional[QFSeries] = None) -> Union[Trade, Sequence[Trade]]:
+                                              portfolio_values: Optional[QFSeries] = None) -> (
+            Union)[Trade, Sequence[Trade]]:
         """
         Generates trades from BacktestPositions.
 
@@ -93,17 +94,19 @@ class TradesGenerator:
 
         # Position size after transacting the transaction, where position is identified by "ticker" variable
         transactions_df.sort_values(by="time", inplace=True)
-        transactions_df["position size"] = transactions_df.groupby(by="ticker")["quantity"].cumsum()
+        transactions_df["position size"] = transactions_df.groupby(by="ticker", group_keys=False)["quantity"].cumsum()
 
         # Assign position start values - a position was opened when the position size was equal to the quantity of
         # the transaction (the quantity of the ticker in the portfolio before transaction was = 0)
-        new_positions_beginning = QFSeries([isclose(x, 0, rel_tol=ISCLOSE_REL_TOL, abs_tol=ISCLOSE_ABS_TOL) for x in transactions_df["position size"] - transactions_df["quantity"]])
+        new_positions_beginning = QFSeries([isclose(x, 0, rel_tol=ISCLOSE_REL_TOL, abs_tol=ISCLOSE_ABS_TOL) for x in
+                                            transactions_df["position size"] - transactions_df["quantity"]])
         transactions_df.loc[:, "position start"] = None
-        transactions_df.loc[new_positions_beginning, "position start"] = transactions_df.loc[new_positions_beginning].index
-        transactions_df.loc[:, "position start"] = transactions_df.groupby(by="ticker")["position start"].apply(
-            lambda tms: tms.fillna(method="ffill"))
+        transactions_df.loc[new_positions_beginning, "position start"] = transactions_df.loc[
+            new_positions_beginning].index
+        transactions_df.loc[:, "position start"] = transactions_df.groupby(by="ticker", group_keys=False)[
+            "position start"].apply(lambda tms: tms.fillna(method="ffill"))
 
-        trades_series = transactions_df.groupby(by=["position start"])["transaction"].apply(
+        trades_series = transactions_df.groupby(by=["position start"], group_keys=False)["transaction"].apply(
             lambda t: self._parse_position(t, portfolio_values))
         trades = trades_series.sort_index(level=1).tolist()
 

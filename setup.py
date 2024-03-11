@@ -25,7 +25,8 @@ setup(
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
     author='Jacek Witkowski, Marcin Borratynski, Thomas Ruxton, Dominik Picheta, Olga Kalinowska, Karolina Cynk, '
-           'Jakub Czerski, Bartlomiej Czajewski, Zeynep Gültuğ Aydemir, Octavian-Mihai Matei, Eirik Thorp Eythorsson, Marek Bais',
+           'Jakub Czerski, Bartlomiej Czajewski, Zeynep Gültuğ Aydemir, Octavian-Mihai Matei, Eirik Thorp Eythorsson, '
+           'Marek Bais',
     description='Quantitative Finance Library',
     long_description=long_description,
     license='Apache License 2.0',
@@ -36,11 +37,9 @@ setup(
     },
     classifiers=[
         'Development Status :: 5 - Production/Stable',
+        'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.7',
-        "Programming Language :: Python",
-        "Programming Language :: Python :: 3",
         'Operating System :: OS Independent',
         'Intended Audience :: Science/Research',
         'Topic :: Office/Business :: Financial',
@@ -54,8 +53,9 @@ setup(
         "documentation": ["autodocsumm==0.2.9", "sphinx_rtd_theme==1.2.0", "Sphinx==5.0"],
         "interactive brokers": ["ibapi"],
         "bloomberg_beap_hapi": ["PyJWT>=0.2.3,<2.0.0", "retrying>=1.3.3", "beap-lib==0.0.1"],
-        "blpapi": ["blpapi>=3.16.2,<=3.23.1"]
+        "blpapi": ["blpapi>=3.16.2,<=3.20.1"],
+        "quandl": ["quandl>=3.6.1,<=3.7.0"],
     },
     keywords='quantitative finance backtester',
-    python_requires='>=3.7.1'
+    python_requires='>=3.8.0'
 )

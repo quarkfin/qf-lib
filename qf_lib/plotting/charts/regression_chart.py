@@ -17,6 +17,7 @@ from typing import Tuple
 import matplotlib as mpl
 import numpy as np
 import pandas as pd
+from pandas import Index
 
 from qf_lib.common.utils.dateutils.get_values_common_dates import get_values_for_common_dates
 from qf_lib.common.utils.returns.beta_and_alpha import beta_and_alpha_full_stats
@@ -94,7 +95,7 @@ class RegressionChart(Chart):
         max_ret = datapoints_tms.abs().max().max()  # take max element from the whole data-frame
         x = np.linspace(-max_ret, max_ret, 20)
         y = beta * x + alpha
-        regression_line = QFSeries(data=y, index=pd.Float64Index(x))
+        regression_line = QFSeries(data=y, index=Index(x))
 
         return datapoints_tms, regression_line, beta, alpha, r_value ** 2, max_ret
 

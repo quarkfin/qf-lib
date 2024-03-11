@@ -86,7 +86,7 @@ class RollingDataPresenter:
         line_chart = LineChart()
         legend = LegendDecorator()
 
-        for column_name, values_tms in rolling_values.iteritems():
+        for column_name, values_tms in rolling_values.items():
             coeff_tms_data_elem = DataElementDecorator(values_tms)
             line_chart.add_decorator(coeff_tms_data_elem)
             legend.add_entry(coeff_tms_data_elem, column_name)

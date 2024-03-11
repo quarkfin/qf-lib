@@ -85,7 +85,7 @@ class TestBacktester(TestCase):
         CalculateAndPlaceOrdersRegularEvent.set_daily_default_trigger_time()
         CalculateAndPlaceOrdersRegularEvent.exclude_weekends()
         strategy.subscribe(CalculateAndPlaceOrdersRegularEvent)
-        strategy = BuyAndHoldStrategy(ts)
+        BuyAndHoldStrategy(ts)
 
         # Set up the backtest
         ts.start_trading()

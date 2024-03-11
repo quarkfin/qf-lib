@@ -12,8 +12,7 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-from collections import Sequence
-from typing import Any
+from typing import Any, Sequence
 
 from qf_lib.plotting.charts.chart import Chart
 from qf_lib.plotting.decorators.chart_decorator import ChartDecorator

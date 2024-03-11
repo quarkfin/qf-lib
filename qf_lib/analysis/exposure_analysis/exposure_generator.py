@@ -14,6 +14,8 @@
 
 from datetime import datetime
 from typing import List
+
+from pandas import concat
 from sklearn import linear_model
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
@@ -155,9 +157,9 @@ class ExposureGenerator:
             from_date = portfolio_date - RelativeDelta(months=regression_len)
             coefficients, current_regressors_tickers = self._get_coefficients_and_current_regressors_tickers(
                 regressors_tickers, positions_tickers, positions_allocation, from_date, portfolio_date)
-
-            df = df.append(QFDataFrame({col: val for val, col in zip(coefficients, current_regressors_tickers)},
-                                       index=[portfolio_date]))
+            temp_df = QFDataFrame({col: val for val, col in zip(coefficients, current_regressors_tickers)},
+                                  index=[portfolio_date])
+            df = concat([df, temp_df])
 
         # remove missing regressors
         df = df.dropna(axis=1, how='all')

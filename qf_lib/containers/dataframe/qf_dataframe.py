@@ -31,9 +31,6 @@ class QFDataFrame(pd.DataFrame, TimeIndexedContainer):
     of the same types (e.g. log-returns/prices).
     """
 
-    def __init__(self, data=None, index=None, columns=None, dtype=None, copy=False):
-        super().__init__(data, index, columns, dtype, copy)
-
     @property
     def _constructor_sliced(self):
         from qf_lib.containers.series.qf_series import QFSeries

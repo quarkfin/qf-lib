@@ -11,6 +11,7 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
+from pandas import concat
 
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.utils.volatility.get_volatility import get_volatility
@@ -79,6 +80,6 @@ class VolatilityManager:
         managed_returns_tms = managed_returns_tms * target_weights_tms
 
         skipped_part = self.returns_tms.iloc[:window_size]
-        managed_returns_tms = skipped_part.append(managed_returns_tms, verify_integrity=True)
+        managed_returns_tms = concat([skipped_part, managed_returns_tms], verify_integrity=True)
 
         return managed_returns_tms, target_weights_tms

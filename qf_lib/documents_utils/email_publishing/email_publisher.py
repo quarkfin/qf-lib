@@ -15,6 +15,7 @@
 import io
 import os.path as path
 from typing import List, Union, Dict
+from warnings import warn
 
 import emails
 from emails.template import JinjaTemplate as T
@@ -29,6 +30,8 @@ class EmailPublisher:
     """Used to create and send an e-mail from given templates.
     """
     def __init__(self, settings: Settings):
+        warn('EmailPublisher is deprecated and will be removed in a future version of qf_lib',
+             DeprecationWarning, stacklevel=2)
         self.smtp_settings = settings.smtp
         self.templates_path = path.join(get_starting_dir_abs_path(), settings.email_templates_directory)
         self.logger = qf_logger.getChild(self.__class__.__name__)

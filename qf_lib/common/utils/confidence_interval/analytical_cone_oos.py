@@ -15,7 +15,7 @@
 from math import exp
 
 import numpy as np
-from pandas import Int64Index
+from pandas import Index
 
 from qf_lib.common.utils.confidence_interval.analytical_cone_base import AnalyticalConeBase
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
@@ -70,7 +70,7 @@ class AnalyticalConeOOS(AnalyticalConeBase):
             strategy_values[-i - 1] = total_strategy_return
             expected_values[-i - 1] = total_expected_return
 
-        index = Int64Index(range(0, nr_of_data_points))
+        index = Index(range(0, nr_of_data_points))
 
         strategy_values_tms = PricesSeries(index=index, data=strategy_values)
         expected_tms = QFSeries(index=index, data=expected_values)

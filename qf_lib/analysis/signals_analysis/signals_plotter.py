@@ -233,7 +233,11 @@ class SignalsPlotter(AbstractDocument):
                 start_time = day + MarketOpenEvent.trigger_time()
                 end_time = day + MarketCloseEvent.trigger_time()
                 signal_times_for_a_day = date_range(start_time, end_time, freq=self.signal_frequency.to_pandas_freq())
+
                 signal_time_holder.append(signal_times_for_a_day)
-            evaluation_dates = signal_time_holder[0].union_many(signal_time_holder[1:])
+
+            evaluation_dates = signal_time_holder[0]
+            for idx in signal_time_holder[1:]:
+                evaluation_dates = evaluation_dates.union(idx)
 
         return evaluation_dates

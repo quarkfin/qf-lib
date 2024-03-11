@@ -14,6 +14,8 @@
 from itertools import groupby
 from typing import Sequence, Optional, Union, Dict, Tuple, Any
 
+from pandas import concat
+
 from qf_lib.documents_utils.document_exporting.element.helpers.style import Style, ColumnStyle, RowStyle, CellStyle
 from qf_lib.documents_utils.document_exporting.element.helpers.style_enums import DataType, StylingType
 from qf_lib.common.enums.grid_proportion import GridProportion
@@ -97,8 +99,8 @@ class DFTable(Element):
     def set_columns(self, column_names: Sequence[str]):
         self.model.data.columns = column_names
 
-    def append(self, data: Union[QFDataFrame, QFSeries, Dict], ignore_index=False, verify_integrity=False, sort=None):
-        self.model.data = self.model.data.append(data, ignore_index, verify_integrity, sort)
+    def append(self, data: Union[QFDataFrame, QFSeries], ignore_index=False, verify_integrity=False, sort=None):
+        self.model.data = concat([self.model.data, data], ignore_index, verify_integrity, sort)
 
     def sort_by_column(self, columns: Union[str, Sequence[str]], css_class=("sorted-by-column",), ascending=True):
         # Sort by the given columns
@@ -202,8 +204,8 @@ class ModelController:
             ] for column_name, column_style in self.columns_styles.items()
         }, index=self.data.index, columns=self.data.columns)
         self.table_styles = Style()
-        self.index_styling = [Style() for level in range(0, index.nlevels)]
-        self.header_styles = [Style() for level in range(0, columns.nlevels)]
+        self.index_styling = [Style() for _ in range(0, index.nlevels)]
+        self.header_styles = [Style() for _ in range(0, columns.nlevels)]
 
     def modify_data(self, location: Optional[Union[Any, Sequence[Any], Tuple[Any, Any]]] = None,
                     data_to_update: Union[str, Dict[str, str], Sequence[str]] = None,
@@ -317,7 +319,7 @@ class ModelController:
                 RowStyle(loc) for loc in new_indices
             ], index=new_indices)
 
-            self._rows_styles = self._rows_styles.append(new_row_styles, ignore_index=False)
+            self._rows_styles = concat([self._rows_styles, new_row_styles], ignore_index=False)
 
         return self._rows_styles
 

@@ -88,7 +88,7 @@ class TestSignalsRegister(unittest.TestCase):
         self.assertEqual(type(signals_df), QFDataFrame)
         self.assertEqual(signals_df.shape, (number_of_days, 1))
 
-        for column, tms in signals_df.iteritems():
+        for column, tms in signals_df.items():
             self.assertTrue(all(s.suggested_exposure == Exposure.LONG for s in tms))
 
     @patch.object(BloombergFutureTicker, "ticker")
