@@ -163,7 +163,7 @@ class HistoricalDataProvider:
         ticker_str_to_ticker: Dict[str, BloombergTicker] = {t.as_string(): t for t in requested_tickers}
 
         response_events = get_response_events(self._session)
-        tickers_data_dict = defaultdict(lambda: QFDataFrame(columns=requested_fields))
+        tickers_data_dict = defaultdict(lambda: QFDataFrame(columns=requested_fields, dtype=np.float64))
 
         for event in response_events:
             try:
