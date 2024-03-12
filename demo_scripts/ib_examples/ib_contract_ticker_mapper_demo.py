@@ -13,8 +13,7 @@
 #     limitations under the License.
 
 """ Map Bloomberg Tickers onto IB Contracts. """
-from demo_scripts.demo_configuration.demo_ioc import container
-
+from demo_scripts.demo_configuration.demo_settings import get_demo_settings
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.ib_contract_ticker_mapper import IBContractTickerMapper
 from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.tickers.tickers import BloombergTicker
@@ -32,7 +31,8 @@ def map_future_ticker_to_contract():
         BloombergTicker("PAH20 Comdty", SecurityType.FUTURE, 100): IBContract("PA", SecurityType.FUTURE, "NYMEX", "100",
                                                                               "", str_to_date("2020-03-27"))
     }
-    data_provider = container.resolve(BloombergDataProvider)
+    settings = get_demo_settings()
+    data_provider = BloombergDataProvider(settings)
 
     contract_ticker_mapper = IBContractTickerMapper(mapping, data_provider)
     current_time = str_to_date("2020-12-01")

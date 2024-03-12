@@ -16,7 +16,7 @@ import os
 
 import numpy as np
 
-from demo_scripts.demo_configuration.demo_ioc import container
+from demo_scripts.demo_configuration.demo_settings import get_demo_settings
 from qf_lib.analysis.trade_analysis.trade_analysis_sheet import TradeAnalysisSheet
 from qf_lib.backtesting.portfolio.trade import Trade
 from qf_lib.common.enums.security_type import SecurityType
@@ -45,8 +45,8 @@ def main():
     trades, nr_of_assets_traded, start_date, end_date = cached_value(
         get_data, os.path.join(this_dir_path, 'trade_analysis.cache'))
 
-    settings = container.resolve(Settings)  # type: Settings
-    pdf_exporter = container.resolve(PDFExporter)  # type: PDFExporter
+    settings = get_demo_settings()  # type: Settings
+    pdf_exporter = PDFExporter(settings)  # type: PDFExporter
     nr_of_assets_traded = len(set(t.ticker.name for t in trades))
 
     trade_analysis_sheet = TradeAnalysisSheet(

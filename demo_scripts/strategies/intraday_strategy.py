@@ -15,6 +15,10 @@ import logging
 
 import matplotlib.pyplot as plt
 
+from demo_scripts.demo_configuration.demo_settings import get_demo_settings
+from documents_utils.document_exporting.pdf_exporter import PDFExporter
+from documents_utils.excel.excel_exporter import ExcelExporter
+
 plt.ion()  # required for dynamic chart, good to keep this at the beginning of imports
 
 from qf_lib.backtesting.events.time_event.periodic_event.calculate_and_place_orders_event import \
@@ -25,7 +29,6 @@ from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 from demo_scripts.common.utils.dummy_ticker import DummyTicker
 from demo_scripts.demo_configuration.demo_data_provider import intraday_data_provider
-from demo_scripts.demo_configuration.demo_ioc import container
 from qf_lib.backtesting.order.execution_style import MarketOrder
 from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.backtesting.trading_session.backtest_trading_session import BacktestTradingSession
@@ -96,7 +99,11 @@ def main():
         {"hour": 13, "minute": 0})
 
     # configuration
-    session_builder = container.resolve(BacktestTradingSessionBuilder)  # type: BacktestTradingSessionBuilder
+    settings = get_demo_settings()
+    pdf_exporter = PDFExporter(settings)
+    excel_exporter = ExcelExporter(settings)
+
+    session_builder = BacktestTradingSessionBuilder(settings, pdf_exporter, excel_exporter)
     session_builder.set_frequency(Frequency.MIN_1)
     session_builder.set_market_open_and_close_time({"hour": 9, "minute": 15}, {"hour": 13, "minute": 15})
     session_builder.set_backtest_name(backtest_name)

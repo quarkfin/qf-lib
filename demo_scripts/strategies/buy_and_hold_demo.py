@@ -13,11 +13,15 @@
 #     limitations under the License.
 
 import matplotlib.pyplot as plt
+
+from demo_scripts.demo_configuration.demo_settings import get_demo_settings
+from documents_utils.document_exporting.pdf_exporter import PDFExporter
+from documents_utils.excel.excel_exporter import ExcelExporter
+
 plt.ion()  # required for dynamic chart, keep before other imports
 
 from demo_scripts.common.utils.dummy_ticker import DummyTicker
 from demo_scripts.demo_configuration.demo_data_provider import daily_data_provider
-from demo_scripts.demo_configuration.demo_ioc import container
 from qf_lib.backtesting.events.time_event.regular_time_event.calculate_and_place_orders_event import \
     CalculateAndPlaceOrdersRegularEvent
 from qf_lib.backtesting.order.execution_style import MarketOrder
@@ -58,7 +62,11 @@ def main():
     start_date = str_to_date("2010-01-01")
     end_date = str_to_date("2018-01-01")
 
-    session_builder = container.resolve(BacktestTradingSessionBuilder)  # type: BacktestTradingSessionBuilder
+    settings = get_demo_settings()
+    pdf_exporter = PDFExporter(settings)
+    excel_exporter = ExcelExporter(settings)
+
+    session_builder = BacktestTradingSessionBuilder(settings, pdf_exporter, excel_exporter)
     session_builder.set_backtest_name('Buy and Hold')
     session_builder.set_data_provider(daily_data_provider)
     session_builder.set_frequency(Frequency.DAILY)

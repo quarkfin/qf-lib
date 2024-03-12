@@ -17,7 +17,7 @@ import os
 
 from demo_scripts.common.utils.dummy_ticker import DummyTicker
 from demo_scripts.demo_configuration.demo_data_provider import daily_data_provider
-from demo_scripts.demo_configuration.demo_ioc import container
+from demo_scripts.demo_configuration.demo_settings import get_demo_settings
 from qf_lib.analysis.tearsheets.tearsheet_comparative import TearsheetComparative
 from qf_lib.analysis.tearsheets.tearsheet_with_benchmark import TearsheetWithBenchmark
 from qf_lib.analysis.tearsheets.tearsheet_without_benchmark import TearsheetWithoutBenchmark
@@ -55,8 +55,8 @@ def main():
     this_dir_path = os.path.dirname(os.path.abspath(__file__))
     strategy, benchmark, live_date = cached_value(get_data, os.path.join(this_dir_path, 'tearsheet.cache'))
 
-    settings = container.resolve(Settings)  # type: Settings
-    pdf_exporter = container.resolve(PDFExporter)  # type: PDFExporter
+    settings = get_demo_settings()  # type: Settings
+    pdf_exporter = PDFExporter(settings)  # type: PDFExporter
 
     title = "Tearsheet With Benchmark, With Live Date"
     tearsheet = TearsheetWithBenchmark(
