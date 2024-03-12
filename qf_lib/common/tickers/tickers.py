@@ -17,6 +17,7 @@ from functools import total_ordering
 from typing import Union, Sequence
 
 from qf_lib.common.enums.quandl_db_type import QuandlDBType
+from qf_lib.common.enums.nasdaq_db_type import NasdaqDBType
 from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 
@@ -244,7 +245,6 @@ class HaverTicker(Ticker):
         else:
             return [to_ticker(t) for t in ticker_str]
 
-
 class QuandlTicker(Ticker):
     """ Representation of Quandl tickers.
 
@@ -293,6 +293,60 @@ class QuandlTicker(Ticker):
         def to_ticker(ticker_string: str):
             db_name, ticker = ticker_string.rsplit('/', 1)
             return QuandlTicker(ticker, db_name, db_type, security_type=security_type, point_value=point_value)
+
+        if isinstance(ticker_str, str):
+            return to_ticker(ticker_str)
+        else:
+            return [to_ticker(t) for t in ticker_str]
+
+class NasdaqTicker(Ticker):
+    """ Representation of Nasdaq tickers.
+
+    Parameters
+    ------------
+    ticker: str
+        string containing series ID within a specific database
+    database_name: str
+        name of the database where the series is located
+    database_type: NasdaqDBType
+        type of the database
+    security_type: SecurityType
+        denotes the type of the security, that the ticker is representing e.g. SecurityType.STOCK for a stock,
+        SecurityType.FUTURE for a futures contract etc. By default equals SecurityType.STOCK.
+    point_value: int
+        size of the contract as given by the ticker's Data Provider. Used mostly by tickers of security_type FUTURE and
+        by default equals 1.
+    """
+    def __init__(self, ticker: str, database_name: str, database_type: NasdaqDBType = NasdaqDBType.Timeseries,
+                 security_type: SecurityType = SecurityType.STOCK, point_value: int = 1):
+        super().__init__(ticker, security_type, point_value)
+        self.database_name = database_name
+        self.database_type = database_type
+
+    def as_string(self) -> str:
+        if self.database_type == NasdaqDBType.Timeseries:
+            # returns a string that corresponds to the notation used by Nasdaq Timeseries: db_name/ticker
+            return self.database_name + '/' + self.ticker
+        elif self.database_type == NasdaqDBType.Table:
+            return self.ticker
+        else:
+            raise TypeError("Incorrect database type: {}".format(self.database_type))
+
+    def field_to_column_name(self, field: str):
+        return self.as_string() + ' - ' + field
+
+    @classmethod
+    def from_string(cls, ticker_str: Union[str, Sequence[str]], db_type: NasdaqDBType = NasdaqDBType.Timeseries,
+                    security_type: SecurityType = SecurityType.STOCK, point_value: int = 1) \
+            -> Union["NasdaqTicker", Sequence["NasdaqTicker"]]:
+        """
+        Example: NasdaqTicker.from_string('WIKI/MSFT')
+        Note: this method supports only the Timeseries tickers at the moment.
+        """
+
+        def to_ticker(ticker_string: str):
+            db_name, ticker = ticker_string.rsplit('/', 1)
+            return NasdaqTicker(ticker, db_name, db_type, security_type=security_type, point_value=point_value)
 
         if isinstance(ticker_str, str):
             return to_ticker(ticker_str)
