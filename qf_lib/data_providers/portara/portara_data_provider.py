@@ -124,7 +124,7 @@ class PortaraDataProvider(PresetDataProvider):
             for path in list(Path(dir_path).glob('**/{}.txt'.format(future_ticker.family_id.replace("{}", "")))):
                 try:
                     path = path.resolve()
-                    df = pd.read_csv(path, names=['Contract', 'Expiration Date'] , index_col="Contract")
+                    df = pd.read_csv(path, names=['Contract', 'Expiration Date'], index_col="Contract")
                     df['Expiration Date'] = pd.to_datetime(df['Expiration Date'], format='%Y%m%d')
                     df = df.rename(columns={'Expiration Date': ExpirationDateField.LastTradeableDate})
                     df.index = PortaraTicker.from_string(df.index, security_type=future_ticker.security_type,
