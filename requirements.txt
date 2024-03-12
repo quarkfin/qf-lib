@@ -1,7 +1,7 @@
 pandas>=1.4.0,<2.1.0
 xarray>=0.21.0,<=2022.9.0
 numpy>=1.19.3,<=1.26.4
-scipy>=1.6.3,<1.10.0
+scipy>=1.6.3,<1.12.0
 matplotlib>=3.4.0,<=3.6.1
 dic==1.5.2b1
 emails==0.6
@@ -16,4 +16,4 @@ openpyxl>=3.0.7,<=3.0.9
 WeasyPrint==52.5
 Jinja2==2.11.3
 arch==4.19
-requests==2.25.1
+requests>=2.25.1,<=2.31.0
