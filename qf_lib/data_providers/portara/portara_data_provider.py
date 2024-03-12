@@ -96,7 +96,7 @@ class PortaraDataProvider(PresetDataProvider):
         if future_tickers:
             exp_dates = self._get_expiration_dates(path, future_tickers)
 
-            # Filter out all theses specific future contracts, which expired before start_date
+            # Filter out all these specific future contracts, which expired before start_date
             for ft in future_tickers:
                 all_tickers.extend(chain_tickers_within_range(ft, exp_dates[ft], start_date, end_date))
 
@@ -124,8 +124,8 @@ class PortaraDataProvider(PresetDataProvider):
             for path in list(Path(dir_path).glob('**/{}.txt'.format(future_ticker.family_id.replace("{}", "")))):
                 try:
                     path = path.resolve()
-                    df = pd.read_csv(path, names=['Contract', 'Expiration Date'], parse_dates=['Expiration Date'],
-                                     date_format='%Y%m%d', index_col="Contract")
+                    df = pd.read_csv(path, names=['Contract', 'Expiration Date'], index_col="Contract")
+                    df['Expiration Date'] = pd.to_datetime(df['Expiration Date'], format='%Y%m%d')
                     df = df.rename(columns={'Expiration Date': ExpirationDateField.LastTradeableDate})
                     df.index = PortaraTicker.from_string(df.index, security_type=future_ticker.security_type,
                                                          point_value=future_ticker.point_value)
