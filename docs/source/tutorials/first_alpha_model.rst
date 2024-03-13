@@ -84,7 +84,9 @@ necessary orders. Let's create a script to run the strategy at 1:00 a.m. every d
     from demo_scripts.common.utils.dummy_ticker import DummyTicker
     from demo_scripts.demo_configuration.demo_data_provider import daily_data_provider
     from demo_scripts.backtester.moving_average_alpha_model import MovingAverageAlphaModel
-    from demo_scripts.demo_configuration.demo_ioc import container
+    from demo_scripts.demo_configuration.demo_settings import get_demo_settings
+    from documents_utils.document_exporting.pdf_exporter import PDFExporter
+    from documents_utils.excel.excel_exporter import ExcelExporter
 
     from qf_lib.backtesting.strategies.alpha_model_strategy import AlphaModelStrategy
     from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
@@ -96,8 +98,11 @@ necessary orders. Let's create a script to run the strategy at 1:00 a.m. every d
         start_date = str_to_date("2010-01-01")
         end_date = str_to_date("2015-03-01")
 
-        session_builder = container.resolve(BacktestTradingSessionBuilder)
-        session_builder.set_frequency(Frequency.DAILY)
+        settings = get_demo_settings()
+        pdf_exporter = PDFExporter(settings)
+        excel_exporter = ExcelExporter(settings)
+
+        session_builder = BacktestTradingSessionBuilder(settings, pdf_exporter, excel_exporter)        session_builder.set_frequency(Frequency.DAILY)
         session_builder.set_data_provider(daily_data_provider)
 
         ts = session_builder.build(start_date, end_date)
@@ -149,7 +154,11 @@ You can try out other position sizers to see which one will fit your needs.
         start_date = str_to_date("2010-01-01")
         end_date = str_to_date("2015-03-01")
 
-        session_builder = container.resolve(BacktestTradingSessionBuilder)
+        settings = get_demo_settings()
+        pdf_exporter = PDFExporter(settings)
+        excel_exporter = ExcelExporter(settings)
+
+        session_builder = BacktestTradingSessionBuilder(settings, pdf_exporter, excel_exporter)
         session_builder.set_frequency(Frequency.DAILY)
         session_builder.set_data_provider(daily_data_provider)
         session_builder.set_position_sizer(FixedPortfolioPercentagePositionSizer, fixed_percentage=0.2)
@@ -177,7 +186,11 @@ You can try out other position sizers to see which one will fit your needs.
         start_date = str_to_date("2010-01-01")
         end_date = str_to_date("2015-03-01")
 
-        session_builder = container.resolve(BacktestTradingSessionBuilder)
+        settings = get_demo_settings()
+        pdf_exporter = PDFExporter(settings)
+        excel_exporter = ExcelExporter(settings)
+
+        session_builder = BacktestTradingSessionBuilder(settings, pdf_exporter, excel_exporter)
         session_builder.set_frequency(Frequency.DAILY)
         session_builder.set_data_provider(daily_data_provider)
         session_builder.set_position_sizer(InitialRiskPositionSizer, initial_risk=0.05)
@@ -215,7 +228,8 @@ To create the document with the chart you can use the following code sample:
     from demo_scripts.backtester.moving_average_alpha_model import MovingAverageAlphaModel
     from demo_scripts.common.utils.dummy_ticker import DummyTicker
     from demo_scripts.demo_configuration.demo_data_provider import daily_data_provider
-    from demo_scripts.demo_configuration.demo_ioc import container
+    from demo_scripts.demo_configuration.demo_settings import get_demo_settings
+    from documents_utils.document_exporting.pdf_exporter import PDFExporter
     from qf_lib.analysis.signals_analysis.signals_plotter import SignalsPlotter
     from qf_lib.backtesting.data_handler.daily_data_handler import DailyDataHandler
     from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
@@ -243,9 +257,8 @@ To create the document with the chart you can use the following code sample:
         model = MovingAverageAlphaModel(fast_time_period=5, slow_time_period=20,
                                         risk_estimation_factor=1.25,
                                         data_provider=data_handler)
-
-        pdf_exporter = container.resolve(PDFExporter)
-        settings = container.resolve(Settings)
+        settings = get_demo_settings()
+        pdf_exporter = PDFExporter(settings)
 
         plotter = SignalsPlotter([DummyTicker("AAA")], start_date, end_date, data_handler,
                                  model, settings, pdf_exporter, title, signal_frequency, data_frequency=signal_frequency)
