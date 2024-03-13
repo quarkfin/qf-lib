@@ -18,7 +18,7 @@ Alternatively, to install the library from sources, you can download the project
 Prerequisites
 --------------
 
-QF-Lib currently requires Python 3.7-3.9. The library has been tested on Windows, macOS, and Ubuntu.
+QF-Lib currently supports Python 3.8-3.11. The library has been tested on Windows, macOS, and Ubuntu.
 
 The library uses `WeasyPrint <https://weasyprint.readthedocs.io>`__ to
 export documents to PDF. WeasyPrint requires additional dependencies,
@@ -38,12 +38,12 @@ Installing optional data providers
 
 Bloomberg Data Provider
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-For Bloomberg API (version: 3.16.2) there are prebuilt binaries in both 32 and 64 bits, for Windows, macOS, and most versions
+For Bloomberg API there are prebuilt binaries in both 32 and 64 bits, for Windows, macOS, and most versions
 of Linux. On Linux, ‘pip’ >= 19.0 is required to install these binaries. You can install Bloomberg using the pip command:
 
 .. code:: console
 
-   $ pip install --index-url=https://bcms.bloomberg.com/pip/simple/ blpapi==3.16.2
+   $ pip install --index-url=https://bcms.bloomberg.com/pip/simple/ blpapi==3.20.1
 
 
 Quandl Data Provider
