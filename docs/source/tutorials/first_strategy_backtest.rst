@@ -220,8 +220,8 @@ the `start_trading()` on the Backtest Trading Session!
     from demo_scripts.common.utils.dummy_ticker import DummyTicker
     from demo_scripts.demo_configuration.demo_data_provider import daily_data_provider
     from demo_scripts.demo_configuration.demo_settings import get_demo_settings
-    from documents_utils.document_exporting.pdf_exporter import PDFExporter
-    from documents_utils.excel.excel_exporter import ExcelExporter
+    from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
+    from qf_lib.documents_utils.excel.excel_exporter import ExcelExporter
     from qf_lib.backtesting.order.execution_style import MarketOrder
     from qf_lib.backtesting.order.time_in_force import TimeInForce
     from qf_lib.backtesting.trading_session.backtest_trading_session import BacktestTradingSession

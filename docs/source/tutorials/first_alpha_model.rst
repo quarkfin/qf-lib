@@ -85,8 +85,8 @@ necessary orders. Let's create a script to run the strategy at 1:00 a.m. every d
     from demo_scripts.demo_configuration.demo_data_provider import daily_data_provider
     from demo_scripts.backtester.moving_average_alpha_model import MovingAverageAlphaModel
     from demo_scripts.demo_configuration.demo_settings import get_demo_settings
-    from documents_utils.document_exporting.pdf_exporter import PDFExporter
-    from documents_utils.excel.excel_exporter import ExcelExporter
+    from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
+    from qf_lib.documents_utils.excel.excel_exporter import ExcelExporter
 
     from qf_lib.backtesting.strategies.alpha_model_strategy import AlphaModelStrategy
     from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
@@ -229,7 +229,7 @@ To create the document with the chart you can use the following code sample:
     from demo_scripts.common.utils.dummy_ticker import DummyTicker
     from demo_scripts.demo_configuration.demo_data_provider import daily_data_provider
     from demo_scripts.demo_configuration.demo_settings import get_demo_settings
-    from documents_utils.document_exporting.pdf_exporter import PDFExporter
+    from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
     from qf_lib.analysis.signals_analysis.signals_plotter import SignalsPlotter
     from qf_lib.backtesting.data_handler.daily_data_handler import DailyDataHandler
     from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
