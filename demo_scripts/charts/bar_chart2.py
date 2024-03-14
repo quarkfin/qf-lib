@@ -51,9 +51,6 @@ def rand_recession(series):
 
 
 def main():
-    # add custom style
-    plt.style.use(['seaborn-poster', 'macrostyle'])
-
     # get data provider
     data_provider = daily_data_provider
 

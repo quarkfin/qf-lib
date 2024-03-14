@@ -12,12 +12,16 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 import matplotlib.pyplot as plt
+
+from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
+from qf_lib.documents_utils.excel.excel_exporter import ExcelExporter
+
 plt.ion()  # required for dynamic chart, good to keep this at the beginning of imports
 
 from demo_scripts.backtester.moving_average_alpha_model import MovingAverageAlphaModel
 from demo_scripts.common.utils.dummy_ticker import DummyTicker
 from demo_scripts.demo_configuration.demo_data_provider import daily_data_provider
-from demo_scripts.demo_configuration.demo_ioc import container
+from demo_scripts.demo_configuration.demo_settings import get_demo_settings
 from qf_lib.backtesting.events.time_event.regular_time_event.calculate_and_place_orders_event import \
     CalculateAndPlaceOrdersRegularEvent
 from qf_lib.backtesting.execution_handler.commission_models.ib_commission_model import IBCommissionModel
@@ -38,7 +42,11 @@ def main():
     end_date = str_to_date('2017-12-31')
 
     # ----- build trading session ----- #
-    session_builder = container.resolve(BacktestTradingSessionBuilder)  # type: BacktestTradingSessionBuilder
+    settings = get_demo_settings()
+    pdf_exporter = PDFExporter(settings)
+    excel_exporter = ExcelExporter(settings)
+
+    session_builder = BacktestTradingSessionBuilder(settings, pdf_exporter, excel_exporter)
     session_builder.set_data_provider(daily_data_provider)
     session_builder.set_backtest_name('Moving Average Alpha Model Backtest')
     session_builder.set_position_sizer(InitialRiskPositionSizer, initial_risk=initial_risk)

@@ -18,7 +18,9 @@ from typing import List
 from demo_scripts.backtester.moving_average_alpha_model import MovingAverageAlphaModel
 from demo_scripts.common.utils.dummy_ticker import DummyTicker
 from demo_scripts.demo_configuration.demo_data_provider import daily_data_provider
-from demo_scripts.demo_configuration.demo_ioc import container
+from demo_scripts.demo_configuration.demo_settings import get_demo_settings
+from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
+from qf_lib.documents_utils.excel.excel_exporter import ExcelExporter
 from qf_lib.analysis.trade_analysis.trades_generator import TradesGenerator
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
 from qf_lib.backtesting.events.time_event.regular_time_event.calculate_and_place_orders_event import \
@@ -39,7 +41,11 @@ def _create_trading_session(init_risk: float):
     start_date = str_to_date('2016-01-01')
     end_date = str_to_date('2017-12-31')
 
-    session_builder = container.resolve(BacktestTradingSessionBuilder)  # type: BacktestTradingSessionBuilder
+    settings = get_demo_settings()
+    pdf_exporter = PDFExporter(settings)
+    excel_exporter = ExcelExporter(settings)
+
+    session_builder = BacktestTradingSessionBuilder(settings, pdf_exporter, excel_exporter)
     session_builder.set_data_provider(daily_data_provider)
     session_builder.set_position_sizer(InitialRiskPositionSizer, initial_risk=init_risk)
     session_builder.set_monitor_settings(BacktestMonitorSettings.no_stats())

@@ -14,7 +14,7 @@
 
 import pandas as pd
 
-from demo_scripts.demo_configuration.demo_ioc import container
+from demo_scripts.demo_configuration.demo_settings import get_demo_settings
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.enums.quandl_db_type import QuandlDBType
 from qf_lib.common.tickers.tickers import QuandlTicker
@@ -26,7 +26,8 @@ pd.options.display.max_columns = 100
 
 
 def main():
-    data_provider = container.resolve(QuandlDataProvider)  # type: QuandlDataProvider
+    settings = get_demo_settings()
+    data_provider = QuandlDataProvider(settings)  # type: QuandlDataProvider
     start_date = str_to_date('2016-01-01')
     end_date = str_to_date('2016-01-10')  # Using small data range to help spot errors.
 

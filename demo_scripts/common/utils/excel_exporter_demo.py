@@ -11,15 +11,15 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-
-from demo_scripts.demo_configuration.demo_ioc import container
+from demo_scripts.demo_configuration.demo_settings import get_demo_settings
 from qf_lib.documents_utils.excel.excel_exporter import ExcelExporter
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 
 
 def main():
     xlx_file_path = 'excel_example.xlsx'
-    xlx_exporter = container.resolve(ExcelExporter)  # type: ExcelExporter
+    settings = get_demo_settings()
+    xlx_exporter = ExcelExporter(settings)  # type: ExcelExporter
 
     df = QFDataFrame({"Test": [1, 2, 3, 4, 5], "Test2": [10, 20, 30, 40, 50]}, ["A", "B", "C", "D", "E"])
     absolute_path = xlx_exporter.export_container(

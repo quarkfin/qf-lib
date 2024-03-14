@@ -14,7 +14,9 @@
 from demo_scripts.backtester.moving_average_alpha_model import MovingAverageAlphaModel
 from demo_scripts.common.utils.dummy_ticker import DummyTicker
 from demo_scripts.demo_configuration.demo_data_provider import daily_data_provider
-from demo_scripts.demo_configuration.demo_ioc import container
+from demo_scripts.demo_configuration.demo_settings import get_demo_settings
+from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
+from qf_lib.documents_utils.excel.excel_exporter import ExcelExporter
 from qf_lib.backtesting.events.time_event.regular_time_event.calculate_and_place_orders_event import \
     CalculateAndPlaceOrdersRegularEvent
 from qf_lib.backtesting.execution_handler.commission_models.ib_commission_model import IBCommissionModel
@@ -35,7 +37,11 @@ def main():
     data_provider = daily_data_provider
 
     # ----- build trading session ----- #
-    session_builder = container.resolve(BacktestTradingSessionBuilder)  # type: BacktestTradingSessionBuilder
+    settings = get_demo_settings()
+    pdf_exporter = PDFExporter(settings)
+    excel_exporter = ExcelExporter(settings)
+
+    session_builder = BacktestTradingSessionBuilder(settings, pdf_exporter, excel_exporter)
     session_builder.set_backtest_name('Moving Average Alpha Model Backtest no weekends')
     session_builder.set_position_sizer(InitialRiskPositionSizer, initial_risk=initial_risk)
     session_builder.set_commission_model(IBCommissionModel)
