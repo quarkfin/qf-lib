@@ -16,8 +16,8 @@ from datetime import datetime, timedelta
 
 import matplotlib.pyplot as plt
 
-from data_providers.bloomberg import BloombergDataProvider
-from data_providers.quandl.quandl_data_provider import QuandlDataProvider
+from qf_lib.data_providers.bloomberg import BloombergDataProvider
+from qf_lib.data_providers.quandl.quandl_data_provider import QuandlDataProvider
 from demo_scripts.demo_configuration.demo_settings import get_demo_settings
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import BloombergTicker
