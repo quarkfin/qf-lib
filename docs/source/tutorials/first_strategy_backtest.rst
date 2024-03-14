@@ -32,7 +32,7 @@ Create a simple trading session
 
 Backtest Trading Session contains the full configuration of all elements, connections and dependencies, which belong to your
 trading environment. It contains parameters like backtest frequency, data provider and also more complicated elements like
-commission or slippage model. To make the configuration easier we use the preconfigured `container`_ and `BacktestTradingSessionBuilder`.
+commission or slippage model. To simplify the setup, we will use predefined demo settings available in the `demo_scripts`.
 
 .. code-block::
     :caption: Backtest a daily strategy for ticker AAA between 01/01/2010 and 01/03/2015
@@ -42,7 +42,11 @@ commission or slippage model. To make the configuration easier we use the precon
         start_date = str_to_date("2010-01-01")
         end_date = str_to_date("2015-03-01")
 
-        session_builder = container.resolve(BacktestTradingSessionBuilder)
+        settings = get_demo_settings()
+        pdf_exporter = PDFExporter(settings)
+        excel_exporter = ExcelExporter(settings)
+
+        session_builder = BacktestTradingSessionBuilder(settings, pdf_exporter, excel_exporter)
         session_builder.set_frequency(Frequency.DAILY)
         session_builder.set_data_provider(daily_data_provider)
 
@@ -56,7 +60,11 @@ commission or slippage model. To make the configuration easier we use the precon
         start_date = str_to_date("2019-07-01")
         end_date = str_to_date("2019-08-31")
 
-        session_builder = container.resolve(BacktestTradingSessionBuilder)
+        settings = get_demo_settings()
+        pdf_exporter = PDFExporter(settings)
+        excel_exporter = ExcelExporter(settings)
+
+        session_builder = BacktestTradingSessionBuilder(settings, pdf_exporter, excel_exporter)
         session_builder.set_frequency(Frequency.MIN_1)
         session_builder.set_data_provider(intraday_data_provider)
         session_builder.set_market_open_and_close_time(
@@ -211,7 +219,9 @@ the `start_trading()` on the Backtest Trading Session!
 
     from demo_scripts.common.utils.dummy_ticker import DummyTicker
     from demo_scripts.demo_configuration.demo_data_provider import daily_data_provider
-    from demo_scripts.demo_configuration.demo_ioc import container
+    from demo_scripts.demo_configuration.demo_settings import get_demo_settings
+    from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
+    from qf_lib.documents_utils.excel.excel_exporter import ExcelExporter
     from qf_lib.backtesting.order.execution_style import MarketOrder
     from qf_lib.backtesting.order.time_in_force import TimeInForce
     from qf_lib.backtesting.trading_session.backtest_trading_session import BacktestTradingSession
@@ -268,7 +278,11 @@ the `start_trading()` on the Backtest Trading Session!
         ticker = DummyTicker("AAA")
 
         # configuration
-        session_builder = container.resolve(BacktestTradingSessionBuilder)
+        settings = get_demo_settings()
+        pdf_exporter = PDFExporter(settings)
+        excel_exporter = ExcelExporter(settings)
+
+        session_builder = BacktestTradingSessionBuilder(settings, pdf_exporter, excel_exporter)
         session_builder.set_frequency(Frequency.DAILY)
         session_builder.set_backtest_name(backtest_name)
         session_builder.set_data_provider(daily_data_provider)
@@ -354,8 +368,11 @@ data bars used to compute the average now correspond to minutes not days.
             {"hour": 13, "minute": 0})
 
         # configuration
-        session_builder = container.resolve(BacktestTradingSessionBuilder) 
-        session_builder.set_frequency(Frequency.MIN_1)
+        settings = get_demo_settings()
+        pdf_exporter = PDFExporter(settings)
+        excel_exporter = ExcelExporter(settings)
+
+        session_builder = BacktestTradingSessionBuilder(settings, pdf_exporter, excel_exporter)        session_builder.set_frequency(Frequency.MIN_1)
         session_builder.set_market_open_and_close_time({"hour": 9, "minute": 15}, {"hour": 13, "minute": 15})
         session_builder.set_backtest_name(backtest_name)
         session_builder.set_data_provider(intraday_data_provider)

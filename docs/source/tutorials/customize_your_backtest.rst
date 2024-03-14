@@ -40,7 +40,11 @@ expressed in the currency of the traded asset, e.g. 1.0 could denote 1.0 USD).
         start_date = str_to_date("2010-01-01")
         end_date = str_to_date("2015-03-01")
 
-        session_builder = container.resolve(BacktestTradingSessionBuilder)
+        settings = get_demo_settings()
+        pdf_exporter = PDFExporter(settings)
+        excel_exporter = ExcelExporter(settings)
+
+        session_builder = BacktestTradingSessionBuilder(settings, pdf_exporter, excel_exporter)
         session_builder.set_frequency(Frequency.DAILY)
         session_builder.set_data_provider(daily_data_provider)
 
@@ -76,7 +80,11 @@ For example the configuration below will always use 2pbs of the value of the tra
         ticker = DummyTicker("AAA")
 
         # configuration
-        session_builder = container.resolve(BacktestTradingSessionBuilder)
+        settings = get_demo_settings()
+        pdf_exporter = PDFExporter(settings)
+        excel_exporter = ExcelExporter(settings)
+
+        session_builder = BacktestTradingSessionBuilder(settings, pdf_exporter, excel_exporter)
         session_builder.set_frequency(Frequency.DAILY)
         session_builder.set_backtest_name(backtest_name)
         session_builder.set_data_provider(daily_data_provider)
@@ -114,7 +122,11 @@ If you would like to see the pricing details, they are available `here`_.
         ticker = DummyTicker("AAA")
 
         # configuration
-        session_builder = container.resolve(BacktestTradingSessionBuilder)
+        settings = get_demo_settings()
+        pdf_exporter = PDFExporter(settings)
+        excel_exporter = ExcelExporter(settings)
+
+        session_builder = BacktestTradingSessionBuilder(settings, pdf_exporter, excel_exporter)
         session_builder.set_frequency(Frequency.DAILY)
         session_builder.set_backtest_name(backtest_name)
         session_builder.set_data_provider(daily_data_provider)
@@ -164,7 +176,11 @@ change our script to include the following:
         ticker = DummyTicker("AAA")
 
         # configuration
-        session_builder = container.resolve(BacktestTradingSessionBuilder)
+        settings = get_demo_settings()
+        pdf_exporter = PDFExporter(settings)
+        excel_exporter = ExcelExporter(settings)
+
+        session_builder = BacktestTradingSessionBuilder(settings, pdf_exporter, excel_exporter)
         session_builder.set_frequency(Frequency.DAILY)
         session_builder.set_backtest_name(backtest_name)
         session_builder.set_data_provider(daily_data_provider)
@@ -216,7 +232,11 @@ fixed fraction of the current securities' price (e.g. always 0.1%).
         ticker = DummyTicker("AAA")
 
         # configuration
-        session_builder = container.resolve(BacktestTradingSessionBuilder)
+        settings = get_demo_settings()
+        pdf_exporter = PDFExporter(settings)
+        excel_exporter = ExcelExporter(settings)
+
+        session_builder = BacktestTradingSessionBuilder(settings, pdf_exporter, excel_exporter)
         session_builder.set_frequency(Frequency.DAILY)
         session_builder.set_backtest_name(backtest_name)
         session_builder.set_data_provider(daily_data_provider)
@@ -257,7 +277,11 @@ buying and decreases when selling).
         ticker = DummyTicker("AAA")
 
         # configuration
-        session_builder = container.resolve(BacktestTradingSessionBuilder)
+        settings = get_demo_settings()
+        pdf_exporter = PDFExporter(settings)
+        excel_exporter = ExcelExporter(settings)
+
+        session_builder = BacktestTradingSessionBuilder(settings, pdf_exporter, excel_exporter)
         session_builder.set_frequency(Frequency.DAILY)
         session_builder.set_backtest_name(backtest_name)
         session_builder.set_data_provider(daily_data_provider)
@@ -304,7 +328,11 @@ Let's see how the Simple Moving Average strategy would perform in case of 0.1% p
         ticker = DummyTicker("AAA")
 
         # configuration
-        session_builder = container.resolve(BacktestTradingSessionBuilder)
+        settings = get_demo_settings()
+        pdf_exporter = PDFExporter(settings)
+        excel_exporter = ExcelExporter(settings)
+
+        session_builder = BacktestTradingSessionBuilder(settings, pdf_exporter, excel_exporter)
         session_builder.set_frequency(Frequency.DAILY)
         session_builder.set_backtest_name(backtest_name)
         session_builder.set_data_provider(daily_data_provider)
