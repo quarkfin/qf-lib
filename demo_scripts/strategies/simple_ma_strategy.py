@@ -15,8 +15,8 @@
 import matplotlib.pyplot as plt
 
 from demo_scripts.demo_configuration.demo_settings import get_demo_settings
-from documents_utils.document_exporting.pdf_exporter import PDFExporter
-from documents_utils.excel.excel_exporter import ExcelExporter
+from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
+from qf_lib.documents_utils.excel.excel_exporter import ExcelExporter
 from qf_lib.backtesting.events.time_event.regular_time_event.calculate_and_place_orders_event import \
     CalculateAndPlaceOrdersRegularEvent
 from qf_lib.backtesting.strategies.abstract_strategy import AbstractStrategy

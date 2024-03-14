@@ -27,8 +27,8 @@ import matplotlib.pyplot as plt
 
 from demo_scripts.demo_configuration.demo_settings import get_demo_settings
 from demo_scripts.strategies.intraday_strategy import IntradayMAStrategy
-from documents_utils.document_exporting.pdf_exporter import PDFExporter
-from documents_utils.excel.excel_exporter import ExcelExporter
+from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
+from qf_lib.documents_utils.excel.excel_exporter import ExcelExporter
 from qf_lib.backtesting.events.time_event.periodic_event.calculate_and_place_orders_event import \
     CalculateAndPlaceOrdersPeriodicEvent
 from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder

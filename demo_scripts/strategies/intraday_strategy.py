@@ -16,8 +16,8 @@ import logging
 import matplotlib.pyplot as plt
 
 from demo_scripts.demo_configuration.demo_settings import get_demo_settings
-from documents_utils.document_exporting.pdf_exporter import PDFExporter
-from documents_utils.excel.excel_exporter import ExcelExporter
+from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
+from qf_lib.documents_utils.excel.excel_exporter import ExcelExporter
 
 plt.ion()  # required for dynamic chart, good to keep this at the beginning of imports
 

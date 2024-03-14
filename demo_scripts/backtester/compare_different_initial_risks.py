@@ -19,8 +19,8 @@ from demo_scripts.backtester.moving_average_alpha_model import MovingAverageAlph
 from demo_scripts.common.utils.dummy_ticker import DummyTicker
 from demo_scripts.demo_configuration.demo_data_provider import daily_data_provider
 from demo_scripts.demo_configuration.demo_settings import get_demo_settings
-from documents_utils.document_exporting.pdf_exporter import PDFExporter
-from documents_utils.excel.excel_exporter import ExcelExporter
+from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
+from qf_lib.documents_utils.excel.excel_exporter import ExcelExporter
 from qf_lib.analysis.trade_analysis.trades_generator import TradesGenerator
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
 from qf_lib.backtesting.events.time_event.regular_time_event.calculate_and_place_orders_event import \
