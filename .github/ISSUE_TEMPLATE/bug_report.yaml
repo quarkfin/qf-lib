@@ -37,7 +37,7 @@ body:
         ![DESCRIPTION](LINK.png)
       render: bash
     validations:
-      required: true
+      required: false
   - type: textarea
     id: reprod
     attributes:
