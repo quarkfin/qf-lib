@@ -152,7 +152,8 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
 
     def get_history(self, tickers: Union[BloombergTicker, Sequence[BloombergTicker]], fields: Union[str, Sequence[str]],
                     start_date: datetime, end_date: datetime = None, frequency: Frequency = Frequency.DAILY,
-                    universe_creation_time: Optional[datetime] = None, currency: Optional[str] = None) -> \
+                    universe_creation_time: Optional[datetime] = None, currency: Optional[str] = None,
+                    pricing_source: Optional[str] = None) -> \
             Union[QFSeries, QFDataFrame, QFDataArray]:
         """
         Gets historical data from Bloomberg HAPI from the (start_date - end_date) time range.
@@ -174,6 +175,9 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
             Used only if we want to get previously created universe, fields universe or request
         currency: Optional[str]
             currency which should be used to obtain the historical data (by default local currency is used)
+        pricing_source: Optional[str]
+            Allows a user to specify a pricing source that is applied to all financial instruments in the request
+            universe. By default equals to 'BGN'.
 
         Returns
         -------
@@ -211,7 +215,7 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
         # for requests - always create a new request with current time
         request_id = f'hReq{datetime.now():%m%d%H%M%S%f}'
         self.request_hapi_provider.create_request_history(request_id, universe_url, fields_list_url, start_date,
-                                                          end_date, frequency, currency)
+                                                          end_date, frequency, currency, pricing_source)
         self.logger.info(f'universe_id: {universe_id} fields_list_id: {fields_list_id} request_id: {request_id}')
 
         out_path = self._download_response(request_id)
@@ -261,8 +265,7 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
 
         field = 'INDX_MEMBERS'
         tickers: List[str] = self.get_current_values(universe_ticker, field)
-        tickers = [BloombergTicker(f"{t} Equity", SecurityType.STOCK, 1) for t in tickers]
-        return tickers
+        return [BloombergTicker(f"{t} Equity", SecurityType.STOCK, 1) for t in tickers]
 
     def get_unique_tickers(self, universe_ticker: BloombergTicker) -> List[BloombergTicker]:
         raise ValueError(f"{self.__class__.__name__} does not provide historical tickers_universe data")
@@ -339,7 +342,7 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
 
     def get_current_values(self, tickers: Union[BloombergTicker, Sequence[BloombergTicker]],
                            fields: Union[str, Sequence[str]], universe_creation_time: datetime = None,
-                           fields_overrides: Optional[List[Tuple]] = None) -> \
+                           fields_overrides: Optional[List[Tuple]] = None, pricing_source: Optional[str] = None) -> \
             Union[None, float, str, List, QFSeries, QFDataFrame]:
         """
         Gets from the Bloomberg HAPI the current values of fields for given tickers.
@@ -356,6 +359,9 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
             list of tuples representing overrides, where first element is always the name of the override and second
             element is the value e.g. in case if we want to download 'FUT_CHAIN' and include expired
             contracts we add the following overrides [('INCLUDE_EXPIRED_CONTRACTS', 'Y'),]
+        pricing_source: Optional[str]
+            Allows a user to specify a pricing source that is applied to all financial instruments in the request
+            universe. By default equals to 'BGN'.
 
         Returns
         -------
@@ -383,7 +389,7 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
         request_id = f'cReq{datetime.now():%m%d%H%M%S%f}'
 
         # bulk format is ignored, but it gives response without column description - easier to parse
-        self.request_hapi_provider.create_request(request_id, universe_url, fields_list_url)
+        self.request_hapi_provider.create_request(request_id, universe_url, fields_list_url, pricing_source)
         self.logger.info(f'universe_id: {universe_id} fields_list_id: {fields_list_id} request_id: {request_id}')
 
         out_path = self._download_response(request_id)
