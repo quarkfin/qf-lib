@@ -89,6 +89,12 @@ class ChartElement(Element):
         -------
         A string with the base64 image (with encoding prefix) of the chart.
         """
+        if self._chart.closed:
+            error_message = 'Chart generation error: The chart you are trying to generate has been already closed. ' \
+                            'Check if you are not trying to regenerate the json for an already processed chart.'
+            self.logger.warning(error_message)
+            return error_message
+
         try:
             result = "data:image/png;base64," + self._chart.render_as_base64_image(
                 self.figsize, self.dpi, self.optimise)
@@ -101,44 +107,52 @@ class ChartElement(Element):
         self._chart.close()
         return result
 
-    def generate_html(self, document: Optional[Document] = None) -> str:
-        """
-        Generates the HTML necessary to display the underlying chart in a PDF document. The chart is rendered in
-        memory, then encoded to base64 and embedded in the HTML
-        """
-        try:
-            base64 = self._chart.render_as_base64_image(self.figsize, self.dpi, self.optimise,
-                                                        **self.savefig_settings)
-            env = templates.environment
-            template = env.get_template("chart.html")
 
-            if self.html_figsize:
-                width, height = self.html_figsize
-                result = template.render(data=base64,
-                                         width=f'{width}px',
-                                         height=f'{height}px',
-                                         float=self.float_setting)
-            else:
-                result = template.render(data=base64,
-                                         width='100%',
-                                         float=self.float_setting)
-
-        except Exception as ex:
-            error_message = "{}\n{}".format(ex.__class__.__name__, traceback.format_exc())
-            self.logger.exception('Chart generation error:')
-            self.logger.exception(error_message)
-            result = "<h2 class='chart-render-failure'>Failed to render chart</h1>"
-        # Close the chart's figure as we are no longer going to be using it.
-        if self._chart is not None:
-            self._chart.close()
-        # Add the optional comment.
+def generate_html(self, document: Optional[Document] = None) -> str:
+    """
+    Generates the HTML necessary to display the underlying chart in a PDF document. The chart is rendered in
+    memory, then encoded to base64 and embedded in the HTML
+    """
+    if self._chart.closed:
+        self.logger.warning('Chart generation error: The chart you are trying to generate has been already closed. '
+                            'Check if you are not trying to regenerate the html for an already processed chart.')
+        result = "<h2 class='chart-render-failure'>Failed to render chart</h1>"
         result += self._create_html_comment()
-
         return result
 
-    def _create_html_comment(self):
-        template = Template("""
+    try:
+        base64 = self._chart.render_as_base64_image(self.figsize, self.dpi, self.optimise,
+                                                    **self.savefig_settings)
+        env = templates.environment
+        template = env.get_template("chart.html")
+
+        if self.html_figsize:
+            width, height = self.html_figsize
+            result = template.render(data=base64,
+                                     width=f'{width}px',
+                                     height=f'{height}px',
+                                     float=self.float_setting)
+        else:
+            result = template.render(data=base64,
+                                     width='100%',
+                                     float=self.float_setting)
+
+    except Exception as ex:
+        error_message = "{}\n{}".format(ex.__class__.__name__, traceback.format_exc())
+        self.logger.exception(f'Chart generation error: {error_message}')
+        result = "<h2 class='chart-render-failure'>Failed to render chart</h1>"
+    # Close the chart's figure as we are no longer going to be using it.
+    if self._chart is not None:
+        self._chart.close()
+    # Add the optional comment.
+    result += self._create_html_comment()
+
+    return result
+
+
+def _create_html_comment(self):
+    template = Template("""
             <p class="comment">{{ comment }}</p>
         """)
 
-        return template.render(comment=self.comment)
+    return template.render(comment=self.comment)

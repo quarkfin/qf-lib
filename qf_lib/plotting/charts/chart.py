@@ -95,6 +95,7 @@ class Chart:
         Determines where secondary axes should be created. When Vertical, a vertical axes is created using ``twinx``,
         otherwise a horizontal axes is created using ``twiny``.
         """
+        self.closed = False
 
     @property
     def axes(self):
@@ -179,6 +180,7 @@ class Chart:
         """
         Closes the window containing the figure.
         """
+        self.closed = True
         plt.close(self.figure)
 
     def set_x_range(self, start_x=None, end_x=None):
