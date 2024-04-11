@@ -309,7 +309,7 @@ class PortfolioAnalysisSheet(AbstractDocument):
 
         all_positions_pnl = pd.concat([closed_positions_pnl, open_positions_pnl], sort=False)
 
-        performance_dicts_series = all_positions_pnl.groupby(by=["Tickers name"]).apply(
+        performance_dicts_series = all_positions_pnl.groupby(by="Tickers name").apply(
             self._performance_series_for_ticker)
         performance_df = QFDataFrame(performance_dicts_series.tolist(), index=performance_dicts_series.index)
 
