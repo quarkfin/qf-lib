@@ -106,7 +106,7 @@ class TradesGenerator:
         transactions_df.loc[:, "position start"] = transactions_df.groupby(by="ticker", group_keys=False)[
             "position start"].apply(lambda tms: tms.fillna(method="ffill"))
 
-        trades_series = transactions_df.groupby(by=["position start"], group_keys=False)["transaction"].apply(
+        trades_series = transactions_df.groupby(by="position start", group_keys=False)["transaction"].apply(
             lambda t: self._parse_position(t, portfolio_values))
         trades = trades_series.sort_index(level=1).tolist()
 
