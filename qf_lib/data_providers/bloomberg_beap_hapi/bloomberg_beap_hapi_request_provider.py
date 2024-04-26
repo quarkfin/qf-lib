@@ -57,7 +57,7 @@ class BloombergBeapHapiRequestsProvider:
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
     def create_request(self, request_id: str, universe_url: str, fieldlist_url: str,
-                       pricing_source: Optional[str] = None):
+                       pricing_source: Optional[str] = "BGN"):
         """
         Method to create hapi request and get request address URL
 
@@ -92,7 +92,7 @@ class BloombergBeapHapiRequestsProvider:
             'pricingSourceOptions': {
                 '@type': 'DataPricingSourceOptions',
                 'exclusive': True,
-                'prefer': {'mnemonic': pricing_source or 'BGN'}
+                'prefer': {'mnemonic': pricing_source}
             }
         }
 
@@ -102,7 +102,7 @@ class BloombergBeapHapiRequestsProvider:
 
     def create_request_history(self, request_id: str, universe_url: str, fieldlist_url: str, start_date: datetime,
                                end_date: datetime, frequency: Frequency, currency: Optional[str] = None,
-                               pricing_source: Optional[str] = None):
+                               pricing_source: Optional[str] = "BGN"):
         """
         Method to create hapi history request
 
@@ -151,7 +151,7 @@ class BloombergBeapHapiRequestsProvider:
             },
             'pricingSourceOptions': {
                 '@type': 'HistoryPricingSourceOptions',
-                'prefer': {'mnemonic': pricing_source or 'BGN'}
+                'prefer': {'mnemonic': pricing_source}
             }
         }
 
