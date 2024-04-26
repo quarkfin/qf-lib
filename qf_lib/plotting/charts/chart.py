@@ -146,9 +146,8 @@ class Chart:
         # Optimise file size.
         if optimise:
             img = Image.open(buffer)
-            # Optimise image by changing its color space. Use the Antialias filter to preserve quality as much as
-            # possible.
-            img = img.convert("RGB").convert("P", palette=Image.ANTIALIAS)
+            # Optimise image by changing its color space
+            img = img.convert("RGB").convert("P", palette=Image.Palette.ADAPTIVE)
             buffer.seek(0)
             # Re-save the image with the converted color space and with the optimise flag set to ensure PIL performs
             # an optimise pass on the file.
