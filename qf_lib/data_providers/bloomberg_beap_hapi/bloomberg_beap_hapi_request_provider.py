@@ -56,7 +56,8 @@ class BloombergBeapHapiRequestsProvider:
 
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
-    def create_request(self, request_id: str, universe_url: str, fieldlist_url: str):
+    def create_request(self, request_id: str, universe_url: str, fieldlist_url: str,
+                       pricing_source: Optional[str] = "BGN"):
         """
         Method to create hapi request and get request address URL
 
@@ -68,6 +69,9 @@ class BloombergBeapHapiRequestsProvider:
             URL address of the universe
         fieldlist_url: str
             URL address of the fields
+        pricing_source: Optional[str]
+            Allows a user to specify a pricing source that is applied to all financial instruments in the request
+            universe. By default equals to 'BGN'.
         """
         request_payload = {
             '@type': 'DataRequest',
@@ -87,7 +91,8 @@ class BloombergBeapHapiRequestsProvider:
             },
             'pricingSourceOptions': {
                 '@type': 'DataPricingSourceOptions',
-                'prefer': {'mnemonic': 'BGN'}
+                'exclusive': True,
+                'prefer': {'mnemonic': pricing_source}
             }
         }
 
@@ -96,7 +101,8 @@ class BloombergBeapHapiRequestsProvider:
         self._create_request_common(request_id, request_payload)
 
     def create_request_history(self, request_id: str, universe_url: str, fieldlist_url: str, start_date: datetime,
-                               end_date: datetime, frequency: Frequency, currency: Optional[str] = None):
+                               end_date: datetime, frequency: Frequency, currency: Optional[str] = None,
+                               pricing_source: Optional[str] = "BGN"):
         """
         Method to create hapi history request
 
@@ -116,6 +122,9 @@ class BloombergBeapHapiRequestsProvider:
             Frequency of data
         currency: Optional[str]
             currency which should be used to make the requests
+        pricing_source: Optional[str]
+            Allows a user to specify a pricing source that is applied to all financial instruments in the request
+            universe. By default equals to 'BGN'.
         """
         request_payload = {
             '@type': 'HistoryRequest',
@@ -142,7 +151,7 @@ class BloombergBeapHapiRequestsProvider:
             },
             'pricingSourceOptions': {
                 '@type': 'HistoryPricingSourceOptions',
-                'exclusive': True
+                'prefer': {'mnemonic': pricing_source}
             }
         }
 
