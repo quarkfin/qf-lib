@@ -118,7 +118,7 @@ class BloombergTicker(Ticker):
         size of the contract as given by the ticker's Data Provider. Used mostly by tickers of security_type FUTURE and
         by default equals 1.
     """
-    def __init__(self, ticker: str, security_type: SecurityType = SecurityType.STOCK, 
+    def __init__(self, ticker: str, security_type: SecurityType = SecurityType.STOCK,
                  point_value: int = 1, currency: Currency = None):
         super().__init__(ticker, security_type, point_value)
         self.currency = currency
