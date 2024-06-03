@@ -67,13 +67,15 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
         DataProvider get_futures_chain_tickers function.
     """
     def __init__(self, name: str, family_id: str, N: int, days_before_exp_date: int, point_value: int = 1,
-                 designated_contracts: Optional[str] = None, security_type: SecurityType = SecurityType.FUTURE):
+                 designated_contracts: Optional[str] = None, security_type: SecurityType = SecurityType.FUTURE,
+                 currency: str = "USD"):
         super().__init__(family_id, security_type, point_value)
         self._name = name
         self.family_id = family_id
         self.point_value = point_value
         self.N = N
         self.designated_contracts = designated_contracts
+        self.currency = currency
 
         self._days_before_exp_date = days_before_exp_date
 

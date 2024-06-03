@@ -16,6 +16,7 @@ from abc import abstractmethod, ABCMeta
 from functools import total_ordering
 from typing import Union, Sequence
 
+from qf_lib.common.enums.currency import Currency
 from qf_lib.common.enums.quandl_db_type import QuandlDBType
 from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
@@ -117,8 +118,10 @@ class BloombergTicker(Ticker):
         size of the contract as given by the ticker's Data Provider. Used mostly by tickers of security_type FUTURE and
         by default equals 1.
     """
-    def __init__(self, ticker: str, security_type: SecurityType = SecurityType.STOCK, point_value: int = 1):
+    def __init__(self, ticker: str, security_type: SecurityType = SecurityType.STOCK, 
+                 point_value: int = 1, currency: Currency = None):
         super().__init__(ticker, security_type, point_value)
+        self.currency = currency
 
     @classmethod
     def from_string(cls, ticker_str: Union[str, Sequence[str]], security_type: SecurityType = SecurityType.STOCK,
@@ -130,6 +133,9 @@ class BloombergTicker(Ticker):
             return BloombergTicker(ticker_str, security_type, point_value)
         else:
             return [BloombergTicker(t, security_type, point_value) for t in ticker_str]
+
+    def set_currency(self, currency: Currency):
+        self.currency = currency
 
 
 class PortaraTicker(Ticker):

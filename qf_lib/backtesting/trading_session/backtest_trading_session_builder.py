@@ -41,11 +41,13 @@ from qf_lib.backtesting.position_sizer.simple_position_sizer import SimplePositi
 from qf_lib.backtesting.signals.backtest_signals_register import BacktestSignalsRegister
 from qf_lib.backtesting.signals.signals_register import SignalsRegister
 from qf_lib.backtesting.trading_session.backtest_trading_session import BacktestTradingSession
+from qf_lib.common.enums.currency import Currency
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.utils.config_exporter import ConfigExporter
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
+from qf_lib.containers.futures.future_tickers.exchange_rate_ticker import CurrencyExchangeTicker
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.data_provider import DataProvider
 from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
@@ -81,6 +83,7 @@ class BacktestTradingSessionBuilder:
 
         self._backtest_name = "Backtest Results"
         self._initial_cash = 10000000
+        self._currency = Currency.USD
         self._initial_risk = None
         self._benchmark_tms = None
         self._monitor_settings = None
@@ -333,6 +336,9 @@ class BacktestTradingSessionBuilder:
         except TypeError as e:
             self._logger.error("The Position Sizer could not be set correctly - {}".format(e))
 
+    def set_currency_exchange_tickers(self, currency_exchange_tickers: List[CurrencyExchangeTicker]):
+        self.currency_exchange_tickers = currency_exchange_tickers
+
     @ConfigExporter.append_config
     def add_orders_filter(self, orders_filter_type: Type[OrdersFilter], **kwargs):
         """Adds orders filter to the pipeline. Ths parameters to initialize the OrdersFilter should be passed as keyword
@@ -408,7 +414,7 @@ class BacktestTradingSessionBuilder:
         self._data_handler = self._create_data_handler(self._data_provider, self._timer)
         signals_register = self._signals_register if self._signals_register else BacktestSignalsRegister()
 
-        self._portfolio = Portfolio(self._data_handler, self._initial_cash, self._timer)
+        self._portfolio = Portfolio(self._data_handler, self._initial_cash, self._timer, self._currency, self.currency_exchange_tickers)
 
         self._backtest_result = BacktestResult(self._portfolio, signals_register, self._backtest_name, start_date,
                                                end_date, self._initial_risk)
