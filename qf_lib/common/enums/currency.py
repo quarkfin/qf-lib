@@ -48,3 +48,5 @@ class Currency(Enum):
     "Danish Krone"
     PLN = "Polish złoty"
     "Polish złoty"
+    BTC = "Bitcoin"
+    "Bitcoin"

@@ -20,11 +20,11 @@ from qf_lib.backtesting.portfolio.position_factory import BacktestPositionFactor
 from qf_lib.backtesting.portfolio.transaction import Transaction
 from qf_lib.backtesting.portfolio.utils import split_transaction_if_needed
 from qf_lib.common.enums.currency import Currency
+from qf_lib.common.tickers.exchange_rate_ticker import CurrencyExchangeTicker
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
-from qf_lib.common.tickers.exchange_rate_ticker import CurrencyExchangeTicker
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 
@@ -42,7 +42,7 @@ class Portfolio:
         self.portfolio_currency = currency
         self.currency_exchange_tickers = currency_exchange_tickers
 
-        if self.portfolio_currency is None:
+        if self.portfolio_currency is not None:
             assert self.currency_exchange_tickers is not None
 
         self.net_liquidation = initial_cash
