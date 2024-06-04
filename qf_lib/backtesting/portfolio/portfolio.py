@@ -24,14 +24,14 @@ from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
-from qf_lib.containers.futures.future_tickers.exchange_rate_ticker import CurrencyExchangeTicker
+from qf_lib.common.tickers.exchange_rate_ticker import CurrencyExchangeTicker
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 
 
 class Portfolio:
     def __init__(self, data_handler: DataHandler, initial_cash: float, timer: Timer,
-                 currency: Currency, currency_exchange_tickers: List[CurrencyExchangeTicker]):
+                 currency: Currency = None, currency_exchange_tickers: List[CurrencyExchangeTicker] = None):
         """
         On creation, the Portfolio object contains no positions and all values are "reset" to the initial
         cash, with no PnL.
@@ -41,6 +41,9 @@ class Portfolio:
         self.timer = timer
         self.portfolio_currency = currency
         self.currency_exchange_tickers = currency_exchange_tickers
+
+        if self.portfolio_currency is None:
+            assert self.currency_exchange_tickers is not None
 
         self.net_liquidation = initial_cash
         """ Cash value includes futures P&L + stock value + securities options value + bond value + fund value. """
@@ -69,21 +72,25 @@ class Portfolio:
 
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
-    def get_currency_ticker(self, from_currency: Currency, to_currency: Currency) -> CurrencyExchangeTicker:
+    def _get_currency_ticker(self, from_currency: Currency, to_currency: Currency) -> CurrencyExchangeTicker:
         for ticker in self.currency_exchange_tickers:
             if ticker.from_currency == from_currency and ticker.to_currency == to_currency:
                 return ticker
+        raise ValueError(f"No currency exchange ticker found from {from_currency} to {to_currency}.")
 
-    def current_exchange_rate(self, currency: Currency) -> float:
+    def _current_exchange_rate(self, currency: Currency) -> float:
         """Last available exchange rate from the specified currency to the portfolio currency."""
         if currency != self.portfolio_currency:
-            currency_ticker = self.get_currency_ticker(from_currency=currency, to_currency=self.portfolio_currency)
+            currency_ticker = self._get_currency_ticker(from_currency=currency, to_currency=self.portfolio_currency)
             return self.data_handler.get_last_available_price(tickers=currency_ticker)/currency_ticker.point_value
         return 1.
 
     def net_liquidation_in_currency(self, currency: Currency) -> float:
         """Converts the current net liquidation from the portfolio currency into the specified currency"""
-        return self.net_liquidation/self.current_exchange_rate(currency)
+        if self.portfolio_currency is not None:
+            return self.net_liquidation/self._current_exchange_rate(currency)
+        else:
+            raise ValueError("Portfolio currency is not specified.")
 
     def transact_transaction(self, transaction: Transaction):
         """
@@ -111,7 +118,10 @@ class Portfolio:
                 new_position = self._create_new_position(remaining_transaction)
                 transaction_cost += new_position.transact_transaction(remaining_transaction)
 
-        self.current_cash += transaction_cost*self.current_exchange_rate(transaction.ticker.currency)
+        if self.portfolio_currency is not None:
+            self.current_cash += transaction_cost*self._current_exchange_rate(transaction.ticker.currency)
+        else:
+            self.current_cash += transaction_cost
 
     def update(self, record=False):
         """
@@ -132,10 +142,11 @@ class Portfolio:
             position.update_price(bid_price=security_price, ask_price=security_price)
             position_value = position.market_value()
             position_exposure = position.total_exposure()
-            current_exchange_rate = self.current_exchange_rate(ticker.currency)
-            self.net_liquidation += position_value*current_exchange_rate
 
+            current_exchange_rate = self._current_exchange_rate(ticker.currency) if self.portfolio_currency is not None else 1.
+            self.net_liquidation += position_value*current_exchange_rate
             self.gross_exposure_of_positions += abs(position_exposure)*current_exchange_rate
+
             if record:
                 current_positions[ticker] = BacktestPositionSummary(position)
 

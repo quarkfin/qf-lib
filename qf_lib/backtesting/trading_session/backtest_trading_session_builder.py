@@ -47,7 +47,7 @@ from qf_lib.common.utils.config_exporter import ConfigExporter
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
-from qf_lib.containers.futures.future_tickers.exchange_rate_ticker import CurrencyExchangeTicker
+from qf_lib.common.tickers.exchange_rate_ticker import CurrencyExchangeTicker
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.data_provider import DataProvider
 from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter

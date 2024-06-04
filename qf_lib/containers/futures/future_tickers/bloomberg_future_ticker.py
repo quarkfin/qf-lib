@@ -12,7 +12,7 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 import re
-from typing import Type
+from typing import Optional, Type
 
 from pandas import to_datetime
 
@@ -60,10 +60,14 @@ class BloombergFutureTicker(FutureTicker, BloombergTicker):
         parameter value equal to "HMUZ", would restrict the future chain to only the contracts, which expire in
         March, June, September and December, even if contracts for any other months exist and are returned by the
         DataProvider get_futures_chain_tickers function.
+    security_type: SecurityType
+        Enum which denotes the type of the security.
+    currency: Currency
+        Enum which denotes the currency of the security. For example 'Currency.USD'.
     """
     def __init__(self, name: str, family_id: str, N: int, days_before_exp_date: int, point_value: int = 1,
                  designated_contracts: str = "FGHJKMNQUVXZ", security_type: SecurityType = SecurityType.FUTURE,
-                 currency: Currency = Currency.USD):
+                 currency: Optional[Currency] = None):
         if not len(designated_contracts) > 0:
             raise ValueError("At least one month code should be provided.")
 
