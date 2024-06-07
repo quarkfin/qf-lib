@@ -14,8 +14,7 @@
 import logging
 from abc import ABCMeta, abstractmethod
 
-from sqlalchemy.exc import DatabaseError
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import sessionmaker
 
 from settings import Settings
 
@@ -26,19 +25,8 @@ class DBConnectionProvider(metaclass=ABCMeta):
     def __init__(self, settings: Settings, **kwargs):
         self.engine = self._create_engine(settings, **kwargs)
         self.Session = sessionmaker(bind=self.engine)
-        self.session = None
-
         self.logger = logging.getLogger(self.__class__.__name__)
 
     @abstractmethod
     def _create_engine(self, settings, **kwargs):
         raise NotImplementedError
-
-    def get_session(self) -> Session:
-        if self.session is None:
-            try:
-                self.session = self.Session()  # create a session
-            except DatabaseError:
-                self.logger.warning("Couldn't connect to the Database, queries will fail.")
-
-        return self.session
