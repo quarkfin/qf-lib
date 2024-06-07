@@ -14,9 +14,8 @@
 import logging
 from abc import ABCMeta, abstractmethod
 
-from blpapi import Session
 from sqlalchemy.exc import DatabaseError
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, Session
 
 from settings import Settings
 
