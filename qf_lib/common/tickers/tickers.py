@@ -14,7 +14,7 @@
 
 from abc import abstractmethod, ABCMeta
 from functools import total_ordering
-from typing import Union, Sequence
+from typing import Union, Sequence, Optional
 
 from qf_lib.common.enums.quandl_db_type import QuandlDBType
 from qf_lib.common.enums.security_type import SecurityType
@@ -329,3 +329,41 @@ class CcyTicker(Ticker):
             return to_ticker(ticker_str)
         else:
             return [to_ticker(t) for t in ticker_str]
+
+
+class SPTicker(Ticker):
+    """
+    Representation of S&P tickers.
+
+    Parameters
+    --------------
+    trading_item_id: Union[str, int]
+        identifier of the security, e.g. '2621697' or 2621697
+    security_type: SecurityType
+        denotes the type of the security, that the ticker is representing e.g. SecurityType.STOCK for a stock,
+        SecurityType.FUTURE for a futures contract etc. By default equals SecurityType.STOCK.
+    point_value: int
+        size of the contract as given by the ticker's Data Provider. Used mostly by tickers of security_type FUTURE and
+        by default equals 1.
+    currency: str
+    """
+    def __init__(self, trading_item_id: Union[str, int], security_type: SecurityType = SecurityType.STOCK,
+                 point_value: int = 1, currency: Optional[str] = None):
+        if isinstance(trading_item_id, int):
+            trading_item_id = str(trading_item_id)
+        super().__init__(trading_item_id, security_type, point_value)
+        self.currency = currency
+
+        self.tid: int = int(trading_item_id)
+        """Trading item ID"""
+
+    @classmethod
+    def from_string(cls, trading_item_id: Union[str, Sequence[str]], security_type: SecurityType = SecurityType.STOCK,
+                    point_value: int = 1) -> Union["SPTicker", Sequence["SPTicker"]]:
+        """
+        Example: SPTicker.from_string("2621697")
+        """
+        if isinstance(trading_item_id, str):
+            return SPTicker(trading_item_id, security_type, point_value)
+        else:
+            return [SPTicker(t, security_type, point_value) for t in trading_item_id]
