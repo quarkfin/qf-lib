@@ -10,7 +10,6 @@ on:
   pull_request:
     branches:
     - master
-    - 'feature/**'
 
 jobs:
   style_check:
@@ -110,9 +109,11 @@ jobs:
         with:
           name: data_providers_tests
           path: data_providers_tests.xml
+
   codecov_upload:
     runs-on: ubuntu-latest
     needs: [unit_tests, data_providers_tests, backtesting_tests]
+    if: github.ref == 'refs/heads/master'
     steps:
       - name: Checkout
         uses: actions/checkout@v3
