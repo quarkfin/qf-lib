@@ -337,7 +337,7 @@ class SPTicker(Ticker):
 
     Parameters
     --------------
-    trading_item_id: Union[str, int]
+    tradingitem_id: Union[str, int]
         identifier of the security, e.g. '2621697' or 2621697
     security_type: SecurityType
         denotes the type of the security, that the ticker is representing e.g. SecurityType.STOCK for a stock,
@@ -347,21 +347,20 @@ class SPTicker(Ticker):
         by default equals 1.
     currency: str
     """
-    def __init__(self, trading_item_id: Union[str, int], security_type: SecurityType = SecurityType.STOCK,
+    def __init__(self, tradingitem_id: Union[str, int], security_type: SecurityType = SecurityType.STOCK,
                  point_value: int = 1, currency: Optional[str] = None):
-        super().__init__(str(trading_item_id), security_type, point_value)
+        super().__init__(str(tradingitem_id), security_type, point_value)
         self.currency = currency
 
-        self.tid: int = int(trading_item_id)
-        """Trading item ID"""
+        self.tradingitem_id: int = int(tradingitem_id)
 
     @classmethod
-    def from_string(cls, trading_item_id: Union[str, Sequence[str]], security_type: SecurityType = SecurityType.STOCK,
+    def from_string(cls, tradingitem_id: Union[str, Sequence[str]], security_type: SecurityType = SecurityType.STOCK,
                     point_value: int = 1) -> Union["SPTicker", Sequence["SPTicker"]]:
         """
         Example: SPTicker.from_string("2621697")
         """
-        if isinstance(trading_item_id, str):
-            return SPTicker(trading_item_id, security_type, point_value)
+        if isinstance(tradingitem_id, str):
+            return SPTicker(tradingitem_id, security_type, point_value)
         else:
-            return [SPTicker(t, security_type, point_value) for t in trading_item_id]
+            return [SPTicker(t, security_type, point_value) for t in tradingitem_id]
