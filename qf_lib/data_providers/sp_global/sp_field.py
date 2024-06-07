@@ -15,4 +15,14 @@ from enum import Enum
 
 
 class SPField(Enum):
-    pass
+
+    # Market Data - Prices
+    DivYield = 'divyield'
+    BidPrice = 'pricebid'
+    AskPrice = 'priceask'
+    ClosePrice = 'priceclose'
+    OpenPrice = 'priceopen'
+    LowPrice = 'pricelow'
+    HighPrice = 'pricehigh'
+    Volume = 'volume'
+    Currency = 'currency'
