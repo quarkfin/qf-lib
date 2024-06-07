@@ -43,5 +43,3 @@ class DBConnectionProvider(metaclass=ABCMeta):
                 self.logger.warning("Couldn't connect to the Database, queries will fail.")
 
         return self.session
-
-
