@@ -349,9 +349,7 @@ class SPTicker(Ticker):
     """
     def __init__(self, trading_item_id: Union[str, int], security_type: SecurityType = SecurityType.STOCK,
                  point_value: int = 1, currency: Optional[str] = None):
-        if isinstance(trading_item_id, int):
-            trading_item_id = str(trading_item_id)
-        super().__init__(trading_item_id, security_type, point_value)
+        super().__init__(str(trading_item_id), security_type, point_value)
         self.currency = currency
 
         self.tid: int = int(trading_item_id)
