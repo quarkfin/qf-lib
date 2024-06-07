@@ -14,7 +14,7 @@
 
 from abc import abstractmethod, ABCMeta
 from functools import total_ordering
-from typing import Union, Sequence
+from typing import Union, Sequence, Optional
 
 from qf_lib.common.enums.quandl_db_type import QuandlDBType
 from qf_lib.common.enums.security_type import SecurityType
@@ -329,3 +329,38 @@ class CcyTicker(Ticker):
             return to_ticker(ticker_str)
         else:
             return [to_ticker(t) for t in ticker_str]
+
+
+class SPTicker(Ticker):
+    """
+    Representation of S&P tickers.
+
+    Parameters
+    --------------
+    tradingitem_id: Union[str, int]
+        identifier of the security, e.g. '2621697' or 2621697
+    security_type: SecurityType
+        denotes the type of the security, that the ticker is representing e.g. SecurityType.STOCK for a stock,
+        SecurityType.FUTURE for a futures contract etc. By default equals SecurityType.STOCK.
+    point_value: int
+        size of the contract as given by the ticker's Data Provider. Used mostly by tickers of security_type FUTURE and
+        by default equals 1.
+    currency: str
+    """
+    def __init__(self, tradingitem_id: Union[str, int], security_type: SecurityType = SecurityType.STOCK,
+                 point_value: int = 1, currency: Optional[str] = None):
+        super().__init__(str(tradingitem_id), security_type, point_value)
+        self.currency = currency
+
+        self.tradingitem_id: int = int(tradingitem_id)
+
+    @classmethod
+    def from_string(cls, tradingitem_id: Union[str, Sequence[str]], security_type: SecurityType = SecurityType.STOCK,
+                    point_value: int = 1) -> Union["SPTicker", Sequence["SPTicker"]]:
+        """
+        Example: SPTicker.from_string("2621697")
+        """
+        if isinstance(tradingitem_id, str):
+            return SPTicker(tradingitem_id, security_type, point_value)
+        else:
+            return [SPTicker(t, security_type, point_value) for t in tradingitem_id]
