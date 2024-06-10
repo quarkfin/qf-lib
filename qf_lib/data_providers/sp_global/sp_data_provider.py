@@ -18,6 +18,7 @@ from typing import Sequence, Dict, Union, Set, Type, List
 import numpy as np
 import pandas as pd
 
+from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.data_providers.db_connection_providers import DBConnectionProvider
 from qf_lib.data_providers.sp_global.sp_dao import SPDAO
 from qf_lib.data_providers.sp_global.sp_field import SPField
@@ -41,14 +42,14 @@ class SPDataProvider(AbstractPriceDataProvider, SPDAO):
     def __init__(self, db_connection_provider: DBConnectionProvider, use_adjusted_prices: bool = True,
                  exchange_rate_snap_id: int = 6):
         """
-        Class to get Open, High, Low, Close and Volume from SP database
+        Class responsible for fetching the market data from S&P Global. Requires the Market Data package.
 
         Parameters
         ----------
         use_adjusted_prices: bool
-            SP is not adjusting historical prices by default to all corporate actions.
-            In order to adjust historical pricing to events like merges or spin-offs, one need to do it on his end.
-            Current set up is adjusting pricing to match the best prices from BBG. By default True.
+            Adjust the prices for corporate actions (mergers, spin-offs). The adjustment is always applied as
+            of end_datetime. If a corporate action occurred afterwards, it is not taken into account when computing
+            prices adjustment. By default True.
         exchange_rate_snap_id: int
             ID corresponding to the snapshot of the exchange rates used. Available values are:
                 1	- Sydney Midday
@@ -63,8 +64,8 @@ class SPDataProvider(AbstractPriceDataProvider, SPDAO):
         """
         AbstractPriceDataProvider.__init__(self)
         SPDAO.__init__(self, db_connection_provider)
-        self.use_adjusted_prices = use_adjusted_prices
 
+        self.use_adjusted_prices = use_adjusted_prices
         if exchange_rate_snap_id not in range(1, 9):
             raise ValueError(f"Incorrect Snapshot ID {exchange_rate_snap_id}. Possible values are integers between "
                              f"1 and 8. Consult the documentation to see what each snapshot ID corresponds to.")
@@ -86,7 +87,8 @@ class SPDataProvider(AbstractPriceDataProvider, SPDAO):
 
     def get_history(self, tickers: Union[SPTicker, Sequence[SPTicker]], fields: Union[SPField, Sequence[SPField]],
                     start_datetime: datetime, end_datetime: datetime = datetime.now(),
-                    frequency: Frequency = Frequency.DAILY, to_usd: bool = False, **kwargs):
+                    frequency: Frequency = Frequency.DAILY, to_usd: bool = False, **kwargs) \
+            -> Union[float, QFSeries, QFDataFrame, QFDataArray]:
         """
         Parameters
         ----------
@@ -106,14 +108,9 @@ class SPDataProvider(AbstractPriceDataProvider, SPDAO):
         to_usd: bool
             flag indicating whether all pricing data should be converted to USD (by default False)
 
-        Returns
-        --------
-
         """
-
-        # TODO add possibility to resample the frequency
-        if frequency > Frequency.DAILY:
-            raise NotImplementedError("SPDataProvider get_history() does not support intraday frequency.")
+        if frequency != Frequency.DAILY:
+            raise NotImplementedError("SPDataProvider get_history() supports currently only daily frequency.")
 
         tickers, got_single_ticker = convert_to_list(tickers, SPTicker)
         fields, got_single_field = convert_to_list(fields, SPField)
@@ -121,8 +118,8 @@ class SPDataProvider(AbstractPriceDataProvider, SPDAO):
         got_single_date = self._got_single_date(start_datetime, end_datetime, frequency)
 
         # Dictionary mapping each of the tickers into a pandas DataFrame, which contains the values for each of the
-        # requested fields. This dictionary is further converted into QFDataArray and normalized afterwards.
-        tickers_data_dict = {}  # type: Dict[SPTicker, QFDataFrame]
+        # requested fields. This dictionary is further converted into QFDataArray and normalized later.
+        tickers_data_dict: Dict[SPTicker, QFDataFrame] = {}
         actual_tickers_to_sp_id = {t: t.tradingitem_id for t in tickers}
         fields_query = [(getattr(self.ciqpriceequity, field.value) / self.ciqexchangerate.priceclose
                          if to_usd and field in self._fields_to_adjust() else getattr(self.ciqpriceequity, field.value)

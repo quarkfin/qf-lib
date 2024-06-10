@@ -26,7 +26,7 @@ def db_conn_provider():
 def initialize_database(db_conn_provider):
     from qf_lib.tests.unit_tests.data_providers.sp_global.init_db import initialize_database
     # Initialize the database schema
-    with db_conn_provider.engine.connect() as conn:
+    with db_conn_provider.engine.connect() as _:
         initialize_database(db_conn_provider.engine)
         yield
 
