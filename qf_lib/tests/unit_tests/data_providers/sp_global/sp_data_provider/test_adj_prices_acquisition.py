@@ -13,15 +13,12 @@
 #     limitations under the License.
 from datetime import datetime
 
-import pytest
-from numpy import nan
-from pandas import DatetimeIndex, notna, isna
-from pandas._testing import assert_frame_equal, assert_series_equal
+from pandas import DatetimeIndex
 
 from qf_lib.common.tickers.tickers import SPTicker
-from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.sp_global.sp_field import SPField
+from qf_lib.tests.helpers.testing_tools.containers_comparison import assert_series_equal
 
 
 def test_adjustment__volume(sp_data_provider, session, Base):

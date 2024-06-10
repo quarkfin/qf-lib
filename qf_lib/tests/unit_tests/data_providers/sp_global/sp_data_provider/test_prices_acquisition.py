@@ -16,12 +16,12 @@ from datetime import datetime
 import pytest
 from numpy import nan
 from pandas import DatetimeIndex, notna, isna
-from pandas._testing import assert_frame_equal, assert_series_equal
 
 from qf_lib.common.tickers.tickers import SPTicker
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.sp_global.sp_field import SPField
+from qf_lib.tests.helpers.testing_tools.containers_comparison import assert_series_equal, assert_dataframes_equal
 
 
 @pytest.mark.parametrize("date,expected_price", [(datetime(2011, 1, 1), 15.0), (datetime(2011, 1, 3), nan)])
@@ -122,4 +122,4 @@ def test_get_history__exchange_rate_usd_jpy(adjustment, sp_data_provider):
     }, index)
     expected_prices.name = "2001"
     expected_prices.columns.name = "fields"
-    assert_frame_equal(prices, expected_prices)
+    assert_dataframes_equal(prices, expected_prices)
