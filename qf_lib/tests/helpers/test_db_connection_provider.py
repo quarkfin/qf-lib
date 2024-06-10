@@ -13,7 +13,7 @@
 #     limitations under the License.
 from sqlalchemy import create_engine
 
-from data_providers.db_connection_providers import DBConnectionProvider
+from qf_lib.data_providers.db_connection_providers import DBConnectionProvider
 
 
 class TestDBConnectionProvider(DBConnectionProvider):

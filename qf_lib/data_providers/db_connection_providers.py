@@ -16,7 +16,7 @@ from abc import ABCMeta, abstractmethod
 
 from sqlalchemy.orm import sessionmaker
 
-from settings import Settings
+from qf_lib.settings import Settings
 
 
 class DBConnectionProvider(metaclass=ABCMeta):

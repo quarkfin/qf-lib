@@ -18,13 +18,13 @@ from typing import Union, Sequence
 from sqlalchemy import MetaData
 from sqlalchemy.ext.automap import automap_base
 
-from common.enums.frequency import Frequency
-from common.tickers.tickers import SPTicker
-from containers.dataframe.qf_dataframe import QFDataFrame
-from containers.qf_data_array import QFDataArray
-from containers.series.qf_series import QFSeries
-from data_providers.db_connection_providers import DBConnectionProvider
-from data_providers.sp_global.sp_field import SPField
+from qf_lib.common.enums.frequency import Frequency
+from qf_lib.common.tickers.tickers import SPTicker
+from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
+from qf_lib.containers.qf_data_array import QFDataArray
+from qf_lib.containers.series.qf_series import QFSeries
+from qf_lib.data_providers.db_connection_providers import DBConnectionProvider
+from qf_lib.data_providers.sp_global.sp_field import SPField
 
 
 class SPDAO(metaclass=ABCMeta):
@@ -37,7 +37,7 @@ class SPDAO(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def get_history(self, tickers: Union[SPTicker, Sequence[SPTicker]], fields: Union[str, Sequence[str]],
+    def get_history(self, tickers: Union[SPTicker, Sequence[SPTicker]], fields: Union[SPField, Sequence[SPField]],
                     start_date: datetime, end_date: datetime = None, frequency: Frequency = None, **kwargs) -> \
             Union[QFSeries, QFDataFrame, QFDataArray]:
         raise NotImplementedError
