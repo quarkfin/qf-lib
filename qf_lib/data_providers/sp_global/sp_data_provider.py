@@ -199,7 +199,7 @@ class SPDataProvider(AbstractPriceDataProvider, SPDAO):
             results = []
             for ticker_group in grouper(1000, tickers):
                 data_frame = fetch_func(self, ticker_group, *args, **kwargs)
-                data_frame = data_frame.rename(columns={f.value: f for f in SPField})
+                data_frame = data_frame.rename(columns={f.value: f for f in self.supported_fields})
                 results.append(data_frame)
             return pd.concat(results)
 
