@@ -13,6 +13,7 @@
 #     limitations under the License.
 
 from datetime import datetime
+from functools import wraps
 from typing import Sequence, Dict, Union, Set, Type, List
 
 import numpy as np
@@ -34,8 +35,8 @@ from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 from qf_lib.data_providers.helpers import tickers_dict_to_data_array, normalize_data_array
-from sqlalchemy import and_, or_
-from sqlalchemy.orm import Session
+from sqlalchemy import and_, or_, func
+from sqlalchemy.orm import Session, aliased
 
 
 class SPDataProvider(AbstractPriceDataProvider, SPDAO):
@@ -117,63 +118,30 @@ class SPDataProvider(AbstractPriceDataProvider, SPDAO):
         start_datetime = self._adjust_start_date(start_datetime, frequency)
         got_single_date = self._got_single_date(start_datetime, end_datetime, frequency)
 
-        # Dictionary mapping each of the tickers into a pandas DataFrame, which contains the values for each of the
-        # requested fields. This dictionary is further converted into QFDataArray and normalized later.
-        tickers_data_dict: Dict[SPTicker, QFDataFrame] = {}
-        actual_tickers_to_sp_id = {t: t.tradingitem_id for t in tickers}
-        fields_query = [(getattr(self.ciqpriceequity, field.value) / self.ciqexchangerate.priceclose
-                         if to_usd and field in self._fields_to_adjust() else getattr(self.ciqpriceequity, field.value)
-                         ).label(field.value) for field in fields]
+        tid_to_tickers = {t.tradingitem_id: t for t in tickers}
 
-        with self._db_connection_provider.Session.begin() as session:
-            for ticker_group in grouper(1000, actual_tickers_to_sp_id.values()):
-                historical_bars = session.query(self.ciqpriceequity.tradingitemid, self.ciqpriceequity.pricingdate,
-                                                *fields_query) \
-                    .join(self.ciqtradingitem, self.ciqtradingitem.tradingitemid == self.ciqpriceequity.tradingitemid) \
-                    .join(self.ciqexchangerate, and_(self.ciqexchangerate.currencyid == self.ciqtradingitem.currencyid,
-                                                     self.ciqexchangerate.pricedate == self.ciqpriceequity.pricingdate),
-                          isouter=True) \
-                    .filter(self.ciqpriceequity.tradingitemid.in_(ticker_group)) \
-                    .filter(self.ciqpriceequity.pricingdate.between(start_datetime.date(), end_datetime.date())) \
-                    .filter(or_(self.ciqexchangerate.snapid == self.exchange_rate_snap_id,
-                                self.ciqexchangerate.snapid.is_(None))) \
-                    .order_by(self.ciqpriceequity.pricingdate, self.ciqpriceequity.tradingitemid).statement
+        # Fetch prices
+        price_fields = [f for f in fields if f in SPField.price_fields()]
+        _prices = self._fetch_pricing_data(tid_to_tickers.keys(), price_fields, start_datetime, end_datetime, to_usd)
+        _prices = pd.concat(_prices)
+        field_to_fetching_method = {
+            SPField.DivYield: self._fetch_dividend_yield(tid_to_tickers.keys(), start_datetime, end_datetime)
+        }
 
-                # Get the string representation of timestamp field in order to use it in the read_sql function
-                timestamp_string = self.ciqpriceequity.pricingdate.key
-                data_frame = QFDataFrame(pd.read_sql(historical_bars, con=session.bind, index_col=timestamp_string,
-                                                     parse_dates=timestamp_string)).replace([None], np.nan)
-                data_frame = data_frame.rename(columns={f.value: f for f in SPField})
+        # TODO only if price fields not empty
+        dfs = [_prices]
 
-                def update_tickers_data_dict(_df, _tickers):
-                    tickers_data_dict.update({
-                        ticker: _df[_df['tradingitemid'] == sp_id][fields]
-                        for ticker, sp_id in actual_tickers_to_sp_id.items() if sp_id in _tickers
-                    })
+        for field in fields:
+            if field not in SPField.price_fields():
+                # TODO refactor this
+                try:
+                    dfs.append(*field_to_fetching_method[field])
+                except KeyError:
+                    raise ValueError(f"Field {field} is not supported by the SPDataProvider.") from None
 
-                # adjust prices
-                if self.use_adjusted_prices:
-                    date_and_tids = self._get_corporate_actions_dates(session, ticker_group, [20, 31],
-                                                                      start_datetime, end_datetime)
-                    tids_with_corporate_actions = {t for _, t in date_and_tids}
-
-                    # Adjust pricing data of tickers with corporate actions
-                    if tids_with_corporate_actions:
-                        div_adj_factor = self._get_div_adj_factor(session, tids_with_corporate_actions)
-                        df_to_adjust = data_frame[data_frame["tradingitemid"].isin(tids_with_corporate_actions)]
-                        df_to_adjust = self._get_div_adjusted_prices(df_to_adjust, date_and_tids, div_adj_factor)
-                        update_tickers_data_dict(df_to_adjust, tids_with_corporate_actions)
-
-                    # Update pricing data of the remaining tickers
-                    tids_without_adjustment = set(ticker_group) - tids_with_corporate_actions
-                    if tids_without_adjustment:
-                        df = data_frame[data_frame["tradingitemid"].isin(tids_without_adjustment)]
-                        update_tickers_data_dict(df, tids_without_adjustment)
-
-                else:
-                    update_tickers_data_dict(data_frame, ticker_group)
-
-        data_array = tickers_dict_to_data_array(tickers_data_dict, tickers, fields)
+        grouped = pd.concat(dfs, axis=1).groupby(level=0)
+        tickers_dict = {tid_to_tickers[tid]: group.droplevel(0) for tid, group in grouped}
+        data_array = tickers_dict_to_data_array(tickers_dict, tickers, fields)
         return normalize_data_array(data_array, tickers, fields, got_single_date, got_single_ticker, got_single_field)
 
     def get_currency(self, tickers: Union[SPTicker, Sequence[SPTicker]]) -> Union[str, QFSeries]:
@@ -212,6 +180,119 @@ class SPDataProvider(AbstractPriceDataProvider, SPDAO):
     def supported_ticker_types(self) -> Set[Type[Ticker]]:
         return {SPTicker}
 
+    def _fetch_in_chunks(fetch_func):
+        """
+        Utility decorator, which batches the tickers before entering the querying function, maps all the fields
+        into SPField objects and returns a list of all dataframes. It is assumed that the decorated function
+        returns a dataframe.
+        """
+        @wraps(fetch_func)
+        def wrapper(self, tickers, *args, **kwargs):
+            # Expecting identifiers to be the first argument
+            results = []
+            for ticker_group in grouper(1000, tickers):
+                data_frame = fetch_func(self, ticker_group, *args, **kwargs)
+                data_frame = data_frame.rename(columns={f.value: f for f in SPField})
+                results.append(data_frame)
+            return results
+
+        return wrapper
+
+    _fetch_in_chunks = staticmethod(_fetch_in_chunks)
+
+    @_fetch_in_chunks
+    def _fetch_pricing_data(self, tickers: Sequence[int], fields: Sequence[SPField], start_datetime: datetime,
+                            end_datetime: datetime, to_usd: bool) -> list[QFDataFrame]:
+        fields_query = [(getattr(self.ciqpriceequity, field.value) / self.ciqexchangerate.priceclose
+                         if to_usd and field in self._fields_to_adjust() else getattr(self.ciqpriceequity, field.value)
+                         ).label(field.value) for field in fields]
+
+        with self._db_connection_provider.Session.begin() as session:
+            historical_bars = session.query(self.ciqpriceequity.tradingitemid,
+                                            self.ciqpriceequity.pricingdate,
+                                            *fields_query) \
+                .join(self.ciqtradingitem, self.ciqtradingitem.tradingitemid == self.ciqpriceequity.tradingitemid) \
+                .join(self.ciqexchangerate, and_(self.ciqexchangerate.currencyid == self.ciqtradingitem.currencyid,
+                                                 self.ciqexchangerate.pricedate == self.ciqpriceequity.pricingdate),
+                      isouter=True) \
+                .filter(self.ciqpriceequity.tradingitemid.in_(tickers)) \
+                .filter(self.ciqpriceequity.pricingdate.between(start_datetime.date(), end_datetime.date())) \
+                .filter(or_(self.ciqexchangerate.snapid == self.exchange_rate_snap_id,
+                            self.ciqexchangerate.snapid.is_(None))) \
+                .order_by(self.ciqpriceequity.pricingdate, self.ciqpriceequity.tradingitemid).statement
+
+            # Get the string representation of timestamp field in order to use it in the read_sql function
+            timestamp_string = self.ciqpriceequity.pricingdate.key
+            data_frame = QFDataFrame(pd.read_sql(historical_bars, con=session.bind,
+                                                 index_col=["tradingitemid", timestamp_string],
+                                                 parse_dates=timestamp_string)).replace([None], np.nan)
+
+            # adjust prices
+            if self.use_adjusted_prices:
+                dfs = []
+                date_and_tids = self._get_corporate_actions_dates(session, tickers, [20, 31],
+                                                                  start_datetime, end_datetime)
+                tids_with_corporate_actions = {t for t, _ in date_and_tids}
+
+                # Adjust pricing data of tickers with corporate actions
+                if tids_with_corporate_actions:
+                    div_adj_factor = self._get_div_adj_factor(session, tids_with_corporate_actions)
+                    df_to_adjust = data_frame[
+                        data_frame.index.get_level_values(0).isin(tids_with_corporate_actions)]
+                    adjusted_df = self._get_div_adjusted_prices(df_to_adjust, date_and_tids, div_adj_factor)
+                    dfs.append(adjusted_df)
+
+                # Update pricing data of the remaining tickers
+                tids_without_adjustment = set(tickers) - tids_with_corporate_actions
+                if tids_without_adjustment:
+                    df = data_frame[data_frame.index.get_level_values(0).isin(tids_without_adjustment)]
+                    dfs.append(df)
+
+                data_frame = pd.concat(dfs)
+
+        return data_frame
+
+    @_fetch_in_chunks
+    def _fetch_dividend_yield(self, tickers: Sequence[int], start_datetime: datetime, end_datetime: datetime):
+        """
+        Get dividend yield for a given SPTicker. On the day when new Dividend Yield value appears, the latter (last)
+        value is returned.
+        """
+        with self._db_connection_provider.Session.begin() as session:
+            peexrate = aliased(self.ciqexchangerate)  # Exchange rate table used to join ciqpriceequity
+            divexrate = aliased(self.ciqexchangerate)  # Exchange rate table used to join ciqiadividendchain
+            query = session.query(self.ciqpriceequity.pricingdate,
+                                  self.ciqpriceequity.tradingitemid,
+                                  (100 * (self.ciqiadividendchain.dataitemvalue / divexrate.priceclose) /
+                                   (self.ciqpriceequity.priceclose / peexrate.priceclose)).label("divyield")) \
+                .join(self.ciqtradingitem, self.ciqtradingitem.tradingitemid == self.ciqpriceequity.tradingitemid) \
+                .join(peexrate, and_(peexrate.currencyid == self.ciqtradingitem.currencyid,
+                                     peexrate.pricedate == self.ciqpriceequity.pricingdate)) \
+                .join(self.ciqiadividendchain,
+                      and_(self.ciqiadividendchain.tradingitemid == self.ciqpriceequity.tradingitemid,
+                           self.ciqpriceequity.pricingdate.between(self.ciqiadividendchain.startdate,
+                                                                   func.coalesce(self.ciqiadividendchain.enddate,
+                                                                                 func.current_date())))) \
+                .join(divexrate, and_(divexrate.currencyid == self.ciqiadividendchain.currencyid,
+                                      divexrate.pricedate.between(self.ciqiadividendchain.startdate,
+                                                                  func.coalesce(self.ciqiadividendchain.enddate,
+                                                                                func.current_date())),
+                                      divexrate.pricedate == self.ciqpriceequity.pricingdate)) \
+                .filter(self.ciqtradingitem.tradingitemid.in_(tickers)) \
+                .filter(peexrate.snapid == 6) \
+                .filter(divexrate.snapid == 6) \
+                .filter(self.ciqpriceequity.pricingdate.between(start_datetime.date(), end_datetime.date())) \
+                .order_by(self.ciqpriceequity.tradingitemid, self.ciqpriceequity.pricingdate,
+                          self.ciqiadividendchain.startdate).statement
+
+            timestamp_string = self.ciqpriceequity.pricingdate.key
+            data_frame = QFDataFrame(pd.read_sql(query, con=session.bind))
+            data_frame = data_frame.replace([None], np.nan)
+            data_frame = data_frame.drop_duplicates(subset=["tradingitemid", timestamp_string], keep="last")
+            data_frame[timestamp_string] = pd.to_datetime(data_frame[timestamp_string])
+            data_frame = data_frame.set_index(["tradingitemid", timestamp_string])
+        return data_frame
+
     def _fields_to_adjust(self) -> Set[SPField]:
         """
         Return a list of fields available in the Data Provider which are either adjustable or can be translated into
@@ -228,25 +309,24 @@ class SPDataProvider(AbstractPriceDataProvider, SPDAO):
         raise NotImplementedError()
 
     def _get_div_adjusted_prices(self, data_frame, date_and_tids, div_adj_factor):
-        data_frame_slice = data_frame.set_index(['tradingitemid'], append=True)
-
-        indices_union = data_frame_slice.index.union(div_adj_factor.index)
-        data_frame_slice = data_frame_slice.reindex(index=indices_union)
-        div_adj_factor = div_adj_factor.reindex(index=indices_union).groupby(level=1).ffill()
+        indices_union = data_frame.index.union(div_adj_factor.index)
+        data_frame = data_frame.reindex(index=indices_union)
+        div_adj_factor = div_adj_factor.reindex(index=indices_union).groupby(level=0).ffill()
 
         date_and_tids = div_adj_factor.index.intersection(date_and_tids)
-        vals = div_adj_factor.groupby(level=1).shift(1).loc[date_and_tids] / div_adj_factor.loc[date_and_tids]
-        ratio = vals.groupby(level=1).cumprod().reindex_like(div_adj_factor, method="bfill") \
-            .groupby(level=1).shift(-1).fillna(1.0)
+        vals = div_adj_factor.groupby(level=0).shift(1).loc[date_and_tids] / div_adj_factor.loc[date_and_tids]
+        ratio = vals.groupby(level=0).cumprod().reindex_like(div_adj_factor, method="bfill") \
+            .groupby(level=0).shift(-1).fillna(1.0)
 
-        fields = list(self._fields_to_adjust().intersection(data_frame_slice.columns))
-        data_frame_slice.loc[:, fields] = data_frame_slice.loc[:, fields].mul(ratio['divadjfactor'], axis=0)
-        return data_frame_slice.reset_index(level=1)
+        fields_to_adjust_str = {sp_field.value for sp_field in self._fields_to_adjust()}
+        fields = list(fields_to_adjust_str.intersection(data_frame.columns))
+        data_frame.loc[:, fields] = data_frame.loc[:, fields].mul(ratio['divadjfactor'], axis=0)
+        return data_frame.dropna(how="all")
 
     def _get_corporate_actions_dates(self, session: Session, ticker_group, corporate_action_ids: List[int],
                                      start_date: datetime, end_date: datetime):
         """" function to retrieve all corporate actions dates from the list of SP events after start date query """
-        corporate_dates_query = session.query(self.ciqdividend.exdate, self.ciqdividend.tradingitemid).filter(
+        corporate_dates_query = session.query(self.ciqdividend.tradingitemid, self.ciqdividend.exdate).filter(
             self.ciqdividend.tradingitemid.in_(ticker_group)).filter(
             self.ciqdividend.dividendtypeid.in_(corporate_action_ids)).filter(
             self.ciqdividend.exdate >= start_date.date()).filter(self.ciqdividend.exdate <= end_date.date()).order_by(
@@ -261,9 +341,12 @@ class SPDataProvider(AbstractPriceDataProvider, SPDAO):
             .filter(self.ciqpriceequitydivadjfactor.tradingitemid.in_(ticker_group)) \
             .order_by(self.ciqpriceequitydivadjfactor.fromdate, self.ciqpriceequitydivadjfactor.tradingitemid).statement
 
-        return pd.read_sql(query_adj_factor, con=session.bind, index_col=['fromdate', 'tradingitemid'])
+        return pd.read_sql(query_adj_factor, con=session.bind, index_col=['tradingitemid', 'fromdate', ])
+
+
 
     @property
     def _supported_tables(self) -> list[str]:
         return ['ciqcompany', 'ciqpriceequity', 'ciqsecurity', 'ciqtradingitem', 'ciqsimpleindustry',
-                'ciqcurrency', 'ciqpriceequitydivadjfactor', 'ciqdividend', 'ciqexchangerate']
+                'ciqcurrency', 'ciqpriceequitydivadjfactor', 'ciqdividend', 'ciqexchangerate',
+                'ciqiadividendchain']

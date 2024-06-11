@@ -16,7 +16,7 @@ from enum import Enum
 
 class SPField(Enum):
 
-    # Market Data - Prices
+    # Market Data
     DivYield = 'divyield'
     BidPrice = 'pricebid'
     AskPrice = 'priceask'
@@ -26,3 +26,8 @@ class SPField(Enum):
     HighPrice = 'pricehigh'
     Volume = 'volume'
     Currency = 'currency'
+
+    @staticmethod
+    def price_fields() -> list["SPField"]:
+        return [SPField.BidPrice, SPField.AskPrice, SPField.ClosePrice, SPField.OpenPrice, SPField.LowPrice,
+                SPField.HighPrice, SPField.Volume]
