@@ -26,3 +26,18 @@ class SPField(Enum):
     HighPrice = 'pricehigh'
     Volume = 'volume'
     Currency = 'currency'
+
+    BookValPerSH = '4020'
+    EPS = '9'  # Earnings Per Share
+    DvdPayOutRatio = '4377'
+    Sales = '112'
+    ROE = '4128'  # Return On Equity
+    RetCap = '43905'
+    ProfMargin = '4094'
+    Total_Debt_to_Capital = '43907'
+    GrossMargin = '4074'
+    CurrentRatio = '4030'
+    NetDebtToEBITDA = '4193'
+    TotalAssetTurnover = '4177'
+    EBITDA = '4051'  # Earnings Before Interest Taxes Depreciation and Amortization
+    NetIncome = '15'
