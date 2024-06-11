@@ -114,30 +114,29 @@ class SPDataProvider(AbstractPriceDataProvider, SPDAO):
             raise NotImplementedError("SPDataProvider get_history() supports currently only daily frequency.")
 
         tickers, got_single_ticker = convert_to_list(tickers, SPTicker)
+        tid_to_tickers = {t.tradingitem_id: t for t in tickers}
         fields, got_single_field = convert_to_list(fields, SPField)
         start_datetime = self._adjust_start_date(start_datetime, frequency)
         got_single_date = self._got_single_date(start_datetime, end_datetime, frequency)
-
-        tid_to_tickers = {t.tradingitem_id: t for t in tickers}
-
+        
+        dfs = []
+        
         # Fetch prices
         price_fields = [f for f in fields if f in SPField.price_fields()]
-        _prices = self._fetch_pricing_data(tid_to_tickers.keys(), price_fields, start_datetime, end_datetime, to_usd)
-        _prices = pd.concat(_prices)
+        if price_fields:
+            _prices = self._fetch_pricing_data(tid_to_tickers.keys(), price_fields, start_datetime, end_datetime, to_usd)
+            dfs.append(_prices)
+            
+        # Fetch all remaining fields            
         field_to_fetching_method = {
-            SPField.DivYield: self._fetch_dividend_yield(tid_to_tickers.keys(), start_datetime, end_datetime)
+            SPField.DivYield: self._fetch_dividend_yield(tid_to_tickers.keys(), start_datetime, end_datetime),
         }
 
-        # TODO only if price fields not empty
-        dfs = [_prices]
-
-        for field in fields:
-            if field not in SPField.price_fields():
-                # TODO refactor this
-                try:
-                    dfs.append(*field_to_fetching_method[field])
-                except KeyError:
-                    raise ValueError(f"Field {field} is not supported by the SPDataProvider.") from None
+        for field in [f for f in fields if f not in price_fields]:
+            try:
+                dfs.append(field_to_fetching_method[field])
+            except KeyError:
+                raise ValueError(f"Field {field} is not supported by the SPDataProvider.") from None
 
         grouped = pd.concat(dfs, axis=1).groupby(level=0)
         tickers_dict = {tid_to_tickers[tid]: group.droplevel(0) for tid, group in grouped}
@@ -194,7 +193,7 @@ class SPDataProvider(AbstractPriceDataProvider, SPDAO):
                 data_frame = fetch_func(self, ticker_group, *args, **kwargs)
                 data_frame = data_frame.rename(columns={f.value: f for f in SPField})
                 results.append(data_frame)
-            return results
+            return pd.concat(results)
 
         return wrapper
 
@@ -202,12 +201,14 @@ class SPDataProvider(AbstractPriceDataProvider, SPDAO):
 
     @_fetch_in_chunks
     def _fetch_pricing_data(self, tickers: Sequence[int], fields: Sequence[SPField], start_datetime: datetime,
-                            end_datetime: datetime, to_usd: bool) -> list[QFDataFrame]:
+                            end_datetime: datetime, to_usd: bool) -> QFDataFrame:
+        
         fields_query = [(getattr(self.ciqpriceequity, field.value) / self.ciqexchangerate.priceclose
-                         if to_usd and field in self._fields_to_adjust() else getattr(self.ciqpriceequity, field.value)
-                         ).label(field.value) for field in fields]
+                         if to_usd and field in self._fields_to_adjust() else 
+                         getattr(self.ciqpriceequity, field.value)).label(field.value) for field in fields]
 
         with self._db_connection_provider.Session.begin() as session:
+            
             historical_bars = session.query(self.ciqpriceequity.tradingitemid,
                                             self.ciqpriceequity.pricingdate,
                                             *fields_query) \
@@ -223,23 +224,23 @@ class SPDataProvider(AbstractPriceDataProvider, SPDAO):
 
             # Get the string representation of timestamp field in order to use it in the read_sql function
             timestamp_string = self.ciqpriceequity.pricingdate.key
-            data_frame = QFDataFrame(pd.read_sql(historical_bars, con=session.bind,
-                                                 index_col=["tradingitemid", timestamp_string],
+            tid = self.ciqpriceequity.tradingitemid.key
+            data_frame = QFDataFrame(pd.read_sql(historical_bars, con=session.bind, index_col=[tid, timestamp_string],
                                                  parse_dates=timestamp_string)).replace([None], np.nan)
 
             # adjust prices
             if self.use_adjusted_prices:
                 dfs = []
-                date_and_tids = self._get_corporate_actions_dates(session, tickers, [20, 31],
+                tids_and_dates = self._get_corporate_actions_dates(session, tickers, [20, 31],
                                                                   start_datetime, end_datetime)
-                tids_with_corporate_actions = {t for t, _ in date_and_tids}
+                tids_with_corporate_actions = {t for t, _ in tids_and_dates}
 
                 # Adjust pricing data of tickers with corporate actions
                 if tids_with_corporate_actions:
                     div_adj_factor = self._get_div_adj_factor(session, tids_with_corporate_actions)
                     df_to_adjust = data_frame[
                         data_frame.index.get_level_values(0).isin(tids_with_corporate_actions)]
-                    adjusted_df = self._get_div_adjusted_prices(df_to_adjust, date_and_tids, div_adj_factor)
+                    adjusted_df = self._get_div_adjusted_prices(df_to_adjust, tids_and_dates, div_adj_factor)
                     dfs.append(adjusted_df)
 
                 # Update pricing data of the remaining tickers
@@ -308,13 +309,13 @@ class SPDataProvider(AbstractPriceDataProvider, SPDAO):
     def expiration_date_field_str_map(self, ticker: Ticker = None) -> Dict[ExpirationDateField, str]:
         raise NotImplementedError()
 
-    def _get_div_adjusted_prices(self, data_frame, date_and_tids, div_adj_factor):
+    def _get_div_adjusted_prices(self, data_frame, tids_and_dates, div_adj_factor):
         indices_union = data_frame.index.union(div_adj_factor.index)
         data_frame = data_frame.reindex(index=indices_union)
         div_adj_factor = div_adj_factor.reindex(index=indices_union).groupby(level=0).ffill()
 
-        date_and_tids = div_adj_factor.index.intersection(date_and_tids)
-        vals = div_adj_factor.groupby(level=0).shift(1).loc[date_and_tids] / div_adj_factor.loc[date_and_tids]
+        tids_and_dates = div_adj_factor.index.intersection(tids_and_dates)
+        vals = div_adj_factor.groupby(level=0).shift(1).loc[tids_and_dates] / div_adj_factor.loc[tids_and_dates]
         ratio = vals.groupby(level=0).cumprod().reindex_like(div_adj_factor, method="bfill") \
             .groupby(level=0).shift(-1).fillna(1.0)
 
