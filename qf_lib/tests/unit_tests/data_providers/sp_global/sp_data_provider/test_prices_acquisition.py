@@ -24,7 +24,7 @@ from qf_lib.data_providers.sp_global.sp_field import SPField
 from qf_lib.tests.helpers.testing_tools.containers_comparison import assert_series_equal, assert_dataframes_equal
 
 
-@pytest.mark.parametrize("date,expected_price", [(datetime(2011, 1, 1), 15.0), (datetime(2011, 1, 3), nan)])
+@pytest.mark.parametrize("date,expected_price", [(datetime(2011, 1, 1), 20.0), (datetime(2011, 1, 3), nan)])
 def test_get_history__no_currency_data__single_price(date, expected_price, sp_data_provider):
     """
     Test single price output. Test description:
@@ -49,7 +49,7 @@ def test_get_history__no_currency_data__prices_series(adjustment, sp_data_provid
     prices = sp_data_provider.get_history(SPTicker(2002), SPField.ClosePrice, datetime(2011, 1, 1),
                                           datetime(2011, 1, 10))
     index = DatetimeIndex(['2011-01-01', '2011-01-02', '2011-01-04', '2011-01-05'], name="dates")
-    expected_prices = QFSeries([15.0, 16.0, 17.0, 18.0], index, name="2002")
+    expected_prices = QFSeries([20.0, 21.0, 22.0, 23.0], index, name="2002")
     assert_series_equal(prices, expected_prices)
 
 

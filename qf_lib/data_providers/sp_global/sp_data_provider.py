@@ -118,15 +118,16 @@ class SPDataProvider(AbstractPriceDataProvider, SPDAO):
         fields, got_single_field = convert_to_list(fields, SPField)
         start_datetime = self._adjust_start_date(start_datetime, frequency)
         got_single_date = self._got_single_date(start_datetime, end_datetime, frequency)
-        
+
         dfs = []
-        
+
         # Fetch prices
         price_fields = [f for f in fields if f in SPField.price_fields()]
         if price_fields:
-            _prices = self._fetch_pricing_data(tid_to_tickers.keys(), price_fields, start_datetime, end_datetime, to_usd)
+            _prices = self._fetch_pricing_data(tid_to_tickers.keys(), price_fields, start_datetime, end_datetime,
+                                               to_usd)
             dfs.append(_prices)
-            
+
         # Fetch all remaining fields            
         field_to_fetching_method = {
             SPField.DivYield: self._fetch_dividend_yield(tid_to_tickers.keys(), start_datetime, end_datetime),
@@ -185,6 +186,7 @@ class SPDataProvider(AbstractPriceDataProvider, SPDAO):
         into SPField objects and returns a list of all dataframes. It is assumed that the decorated function
         returns a dataframe.
         """
+
         @wraps(fetch_func)
         def wrapper(self, tickers, *args, **kwargs):
             # Expecting identifiers to be the first argument
@@ -202,13 +204,13 @@ class SPDataProvider(AbstractPriceDataProvider, SPDAO):
     @_fetch_in_chunks
     def _fetch_pricing_data(self, tickers: Sequence[int], fields: Sequence[SPField], start_datetime: datetime,
                             end_datetime: datetime, to_usd: bool) -> QFDataFrame:
-        
+
         fields_query = [(getattr(self.ciqpriceequity, field.value) / self.ciqexchangerate.priceclose
-                         if to_usd and field in self._fields_to_adjust() else 
+                         if to_usd and field in self._fields_to_adjust() else
                          getattr(self.ciqpriceequity, field.value)).label(field.value) for field in fields]
 
         with self._db_connection_provider.Session.begin() as session:
-            
+
             historical_bars = session.query(self.ciqpriceequity.tradingitemid,
                                             self.ciqpriceequity.pricingdate,
                                             *fields_query) \
@@ -232,7 +234,7 @@ class SPDataProvider(AbstractPriceDataProvider, SPDAO):
             if self.use_adjusted_prices:
                 dfs = []
                 tids_and_dates = self._get_corporate_actions_dates(session, tickers, [20, 31],
-                                                                  start_datetime, end_datetime)
+                                                                   start_datetime, end_datetime)
                 tids_with_corporate_actions = {t for t, _ in tids_and_dates}
 
                 # Adjust pricing data of tickers with corporate actions
@@ -280,8 +282,8 @@ class SPDataProvider(AbstractPriceDataProvider, SPDAO):
                                                                                 func.current_date())),
                                       divexrate.pricedate == self.ciqpriceequity.pricingdate)) \
                 .filter(self.ciqtradingitem.tradingitemid.in_(tickers)) \
-                .filter(peexrate.snapid == 6) \
-                .filter(divexrate.snapid == 6) \
+                .filter(peexrate.snapid == self.exchange_rate_snap_id) \
+                .filter(divexrate.snapid == self.exchange_rate_snap_id) \
                 .filter(self.ciqpriceequity.pricingdate.between(start_datetime.date(), end_datetime.date())) \
                 .order_by(self.ciqpriceequity.tradingitemid, self.ciqpriceequity.pricingdate,
                           self.ciqiadividendchain.startdate).statement
@@ -343,8 +345,6 @@ class SPDataProvider(AbstractPriceDataProvider, SPDAO):
             .order_by(self.ciqpriceequitydivadjfactor.fromdate, self.ciqpriceequitydivadjfactor.tradingitemid).statement
 
         return pd.read_sql(query_adj_factor, con=session.bind, index_col=['tradingitemid', 'fromdate', ])
-
-
 
     @property
     def _supported_tables(self) -> list[str]:

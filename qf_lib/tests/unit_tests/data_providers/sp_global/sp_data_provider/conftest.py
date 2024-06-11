@@ -11,9 +11,8 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-from datetime import datetime
+from datetime import datetime, date
 
-import numpy as np
 import pytest
 
 from qf_lib.data_providers.sp_global.sp_data_provider import SPDataProvider
@@ -57,15 +56,13 @@ def fill_ciqexchangerate(session, Base):
 @pytest.fixture
 def fill_ciqtradingitem(session, Base):
     ciqtradingitem = Base.classes.ciqtradingitem
-    rng = np.random.default_rng(0)
-
-    session.bulk_save_objects(
-        [ciqtradingitem(tradingitemid=n, currencyid=rng.choice([79, 160, None])) for n in range(1, 1501)])
 
     session.add(ciqtradingitem(tradingitemid=2001, currencyid=79))
     session.add(ciqtradingitem(tradingitemid=2002, currencyid=None))
-    session.add(ciqtradingitem(tradingitemid=2003, currencyid=160))
-    session.add(ciqtradingitem(tradingitemid=3000, currencyid=160))
+    session.add(ciqtradingitem(tradingitemid=2008, currencyid=160))
+
+    usd_tickers = [ciqtradingitem(tradingitemid=tid, currencyid=160) for tid in range(2003, 2007)]
+    session.bulk_save_objects(usd_tickers)
 
     session.commit()
 
@@ -74,64 +71,80 @@ def fill_ciqtradingitem(session, Base):
 def fill_ciqpriceequity(session, Base):
     ciqpriceequity = Base.classes.ciqpriceequity
 
-    # Add pricing data for a trading item id, which does not have a corresponding currency id and no corporate actions
-    prices_tid_2002 = [
-        ciqpriceequity(tradingitemid=2002, pricingdate=datetime(2011, 1, 1), priceclose=15.0, pricebid=14.5,
-                       volume=100, pacvertofeedpop=561),
-        ciqpriceequity(tradingitemid=2002, pricingdate=datetime(2011, 1, 2), priceclose=16.0, pricebid=15.5,
-                       pacvertofeedpop=561),
-        ciqpriceequity(tradingitemid=2002, pricingdate=datetime(2011, 1, 4), priceclose=17.0, pricebid=None,
-                       volume=300, pacvertofeedpop=561),
-        ciqpriceequity(tradingitemid=2002, pricingdate=datetime(2011, 1, 5), priceclose=18.0, pricebid=17.5,
-                       volume=400, pacvertofeedpop=561)
-    ]
+    # Add pricing data for a trading item id, which does not have a corresponding currency id
+    for tid in range(2001, 2008):
+        prices = [
+            ciqpriceequity(tradingitemid=tid, pricingdate=date(2011, 1, 1), priceclose=20.0, volume=100.0,
+                           pacvertofeedpop=561),
+            ciqpriceequity(tradingitemid=tid, pricingdate=date(2011, 1, 2), priceclose=21.0,
+                           pacvertofeedpop=561),
+            ciqpriceequity(tradingitemid=tid, pricingdate=date(2011, 1, 4), priceclose=22.0, volume=300.0,
+                           pacvertofeedpop=561),
+            ciqpriceequity(tradingitemid=tid, pricingdate=date(2011, 1, 5), priceclose=23.0, volume=400.0,
+                           pacvertofeedpop=561)
+        ]
 
-    # Add pricing data for a trading item id, with currency = USD, with no corresponding corporate actions
-    prices_tid_2003 = [
-        ciqpriceequity(tradingitemid=2003, pricingdate=datetime(2011, 1, 1), priceclose=20.0,
-                       volume=100, pacvertofeedpop=561),
-        ciqpriceequity(tradingitemid=2003, pricingdate=datetime(2011, 1, 2), priceclose=21.0,
-                       pacvertofeedpop=561),
-        ciqpriceequity(tradingitemid=2003, pricingdate=datetime(2011, 1, 4), priceclose=22.0,
-                       volume=300, pacvertofeedpop=561),
-        ciqpriceequity(tradingitemid=2003, pricingdate=datetime(2011, 1, 5), priceclose=23.0,
-                       volume=400, pacvertofeedpop=561)
-    ]
-
-    # Add pricing data for a trading item id, with currency = JPY, with no corresponding corporate actions
-    prices_tid_2001 = [
-        ciqpriceequity(tradingitemid=2001, pricingdate=datetime(2011, 1, 1), priceclose=20.0,
-                       volume=100, pacvertofeedpop=561),
-        ciqpriceequity(tradingitemid=2001, pricingdate=datetime(2011, 1, 2), priceclose=21.0,
-                       pacvertofeedpop=561),
-        ciqpriceequity(tradingitemid=2001, pricingdate=datetime(2011, 1, 4), priceclose=22.0,
-                       volume=300, pacvertofeedpop=561),
-        ciqpriceequity(tradingitemid=2001, pricingdate=datetime(2011, 1, 5), priceclose=23.0,
-                       volume=400, pacvertofeedpop=561)
-    ]
-
-    # Add pricing data for a trading item id, with currency = USD, with corresponding corporate actions
-    prices_tid_3000 = [
-        ciqpriceequity(tradingitemid=3000, pricingdate=datetime(2011, 1, 1), priceclose=20.0,
-                       volume=100, pacvertofeedpop=561),
-        ciqpriceequity(tradingitemid=3000, pricingdate=datetime(2011, 1, 2), priceclose=21.0,
-                       pacvertofeedpop=561),
-        ciqpriceequity(tradingitemid=3000, pricingdate=datetime(2011, 1, 4), priceclose=22.0,
-                       volume=300, pacvertofeedpop=561),
-        ciqpriceequity(tradingitemid=3000, pricingdate=datetime(2011, 1, 5), priceclose=23.0,
-                       volume=400, pacvertofeedpop=561)
-    ]
-
-    session.bulk_save_objects(prices_tid_2002)
-    session.bulk_save_objects(prices_tid_2003)
-    session.bulk_save_objects(prices_tid_2001)
-    session.bulk_save_objects(prices_tid_3000)
+        session.bulk_save_objects(prices)
 
     session.commit()
 
 
 @pytest.fixture
-def fill_dummy_data(fill_ciqcurrency, fill_ciqtradingitem, fill_ciqpriceequity, fill_ciqexchangerate):
+def fill_ciqiadividendchain(session, Base):
+    ciqiadividendchain = Base.classes.ciqiadividendchain
+
+    # Dividends with currency (USD)
+    dividends_2003 = [
+        ciqiadividendchain(tradingitemid=2003, startdate=date(2011, 1, 4), enddate=None, dataitemvalue=50,
+                           currencyid=160),
+        ciqiadividendchain(tradingitemid=2003, startdate=date(2001, 1, 4), enddate=date(2011, 1, 4), dataitemvalue=10,
+                           currencyid=160)
+    ]
+
+    # Dividends with currency (USD)
+    dividends_2001 = [
+        ciqiadividendchain(tradingitemid=2001, startdate=date(2011, 1, 4), enddate=None, dataitemvalue=50,
+                           currencyid=160),
+        ciqiadividendchain(tradingitemid=2001, startdate=date(2001, 1, 4), enddate=date(2011, 1, 4), dataitemvalue=10,
+                           currencyid=160)
+    ]
+
+    # Dividends with currency (JPY)
+    dividends_2004 = [
+        ciqiadividendchain(tradingitemid=2004, startdate=date(2011, 1, 4), enddate=None, dataitemvalue=50,
+                           currencyid=79),
+        ciqiadividendchain(tradingitemid=2004, startdate=date(2001, 1, 4), enddate=date(2011, 1, 4), dataitemvalue=10,
+                           currencyid=79)
+    ]
+
+    # Dividends with a gap
+    dividends_2005 = [
+        ciqiadividendchain(tradingitemid=2005, startdate=date(2011, 1, 4), enddate=None, dataitemvalue=50,
+                           currencyid=79),
+        ciqiadividendchain(tradingitemid=2005, startdate=date(2001, 1, 4), enddate=date(2011, 1, 1), dataitemvalue=10,
+                           currencyid=79)
+    ]
+
+    # Dividends with mixed currencies
+    dividends_2006 = [
+        ciqiadividendchain(tradingitemid=2006, startdate=date(2011, 1, 4), enddate=None, dataitemvalue=50,
+                           currencyid=79),
+        ciqiadividendchain(tradingitemid=2006, startdate=date(2001, 1, 4), enddate=date(2011, 1, 4), dataitemvalue=10,
+                           currencyid=160)
+    ]
+
+    session.bulk_save_objects(dividends_2001)
+    session.bulk_save_objects(dividends_2003)
+    session.bulk_save_objects(dividends_2004)
+    session.bulk_save_objects(dividends_2005)
+    session.bulk_save_objects(dividends_2006)
+
+    session.commit()
+
+
+@pytest.fixture
+def fill_dummy_data(fill_ciqcurrency, fill_ciqtradingitem, fill_ciqpriceequity, fill_ciqexchangerate,
+                    fill_ciqiadividendchain):
     yield
 
 

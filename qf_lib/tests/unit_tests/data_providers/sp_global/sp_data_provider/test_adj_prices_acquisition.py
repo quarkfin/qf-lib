@@ -30,13 +30,13 @@ def test_adjustment__volume(sp_data_provider, session, Base):
     ciqpriceequitydivadjfactor = Base.classes.ciqpriceequitydivadjfactor
 
     corporate_actions_and_adjustment_2002 = [
-        ciqdividend(dividendid=1, exdate=datetime(2011, 1, 2), tradingitemid=2002, dividendtypeid=20),
-        ciqdividend(dividendid=2, exdate=datetime(2018, 1, 2), tradingitemid=2002, dividendtypeid=20),
-        ciqpriceequitydivadjfactor(tradingitemid=2002, fromdate=datetime(2011, 1, 4), todate=None,
+        ciqdividend(dividendid=1, exdate=datetime(2011, 1, 2), tradingitemid=2008, dividendtypeid=20),
+        ciqdividend(dividendid=2, exdate=datetime(2018, 1, 2), tradingitemid=2008, dividendtypeid=20),
+        ciqpriceequitydivadjfactor(tradingitemid=2008, fromdate=datetime(2011, 1, 4), todate=None,
                                    divadjfactor=1, pacvertofeedpop=561),
-        ciqpriceequitydivadjfactor(tradingitemid=2002, fromdate=datetime(2011, 1, 2), todate=datetime(2011, 1, 3),
+        ciqpriceequitydivadjfactor(tradingitemid=2008, fromdate=datetime(2011, 1, 2), todate=datetime(2011, 1, 3),
                                    divadjfactor=0.95, pacvertofeedpop=561),
-        ciqpriceequitydivadjfactor(tradingitemid=2002, fromdate=datetime(2010, 1, 2), todate=datetime(2011, 1, 1),
+        ciqpriceequitydivadjfactor(tradingitemid=2008, fromdate=datetime(2010, 1, 2), todate=datetime(2011, 1, 1),
                                    divadjfactor=0.85, pacvertofeedpop=561),
     ]
 
@@ -110,7 +110,7 @@ def test_adjustment__single_ticker_single_field_2(sp_data_provider, session, Bas
     prices = sp_data_provider.get_history(SPTicker(2002), SPField.ClosePrice, datetime(2011, 1, 1),
                                           datetime(2011, 1, 5))
     index = DatetimeIndex(['2011-01-01', '2011-01-02', '2011-01-04', '2011-01-05'], name="dates")
-    expected_prices = QFSeries([15.0 / ratio, 16.0, 17.0, 18.0], index, name="2002")
+    expected_prices = QFSeries([20.0 / ratio, 21.0, 22.0, 23.0], index, name="2002")
     assert_series_equal(prices, expected_prices)
 
 
@@ -148,7 +148,7 @@ def test_adjustment__single_ticker_single_field_3(sp_data_provider, session, Bas
     prices = sp_data_provider.get_history(SPTicker(2002), SPField.ClosePrice, datetime(2011, 1, 1),
                                           datetime(2011, 1, 5))
     index = DatetimeIndex(['2011-01-01', '2011-01-02', '2011-01-04', '2011-01-05'], name="dates")
-    expected_prices = QFSeries([15.0 / ratio, 16.0, 17.0, 18.0], index, name="2002")
+    expected_prices = QFSeries([20.0 / ratio, 21.0, 22.0, 23.0], index, name="2002")
     assert_series_equal(prices, expected_prices)
 
 
@@ -188,5 +188,5 @@ def test_adjustment__single_ticker_single_field_4(sp_data_provider, session, Bas
     prices = sp_data_provider.get_history(SPTicker(2002), SPField.ClosePrice, datetime(2011, 1, 1),
                                           datetime(2011, 1, 5))
     index = DatetimeIndex(['2011-01-01', '2011-01-02', '2011-01-04', '2011-01-05'], name="dates")
-    expected_prices = QFSeries([15.0 / ratio1, 16.0 / (ratio1 * ratio2), 17.0, 18.0], index, name="2002")
+    expected_prices = QFSeries([20.0 / ratio1, 21.0 / (ratio1 * ratio2), 22.0, 23.0], index, name="2002")
     assert_series_equal(prices, expected_prices)
