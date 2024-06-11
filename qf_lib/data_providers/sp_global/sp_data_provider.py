@@ -75,7 +75,7 @@ class SPDataProvider(AbstractPriceDataProvider, SPDAO):
     @property
     def supported_fields(self) -> list[SPField]:
         return [SPField.AskPrice, SPField.BidPrice, SPField.LowPrice, SPField.HighPrice, SPField.OpenPrice,
-                SPField.ClosePrice, SPField.Volume, SPField.DivYield, SPField.Currency]
+                SPField.ClosePrice, SPField.Volume, SPField.DivYield]
 
     def price_field_to_str_map(self) -> Dict[PriceField, SPField]:
         return {
@@ -113,6 +113,11 @@ class SPDataProvider(AbstractPriceDataProvider, SPDAO):
         if frequency != Frequency.DAILY:
             raise NotImplementedError("SPDataProvider get_history() supports currently only daily frequency.")
 
+        _unsupported_fields = [f for f in fields if f not in self.supported_fields]
+        if any(_unsupported_fields):
+            raise ValueError(f"Unsupported fields {_unsupported_fields}. To view the list of fields supported by "
+                             f"{self.__class__.__name__} please refer to the output of supported_fields() function.")
+
         tickers, got_single_ticker = convert_to_list(tickers, SPTicker)
         tid_to_tickers = {t.tradingitem_id: t for t in tickers}
         fields, got_single_field = convert_to_list(fields, SPField)
@@ -128,7 +133,7 @@ class SPDataProvider(AbstractPriceDataProvider, SPDAO):
                                                to_usd)
             dfs.append(_prices)
 
-        # Fetch all remaining fields            
+        # Fetch all remaining fields
         field_to_fetching_method = {
             SPField.DivYield: self._fetch_dividend_yield(tid_to_tickers.keys(), start_datetime, end_datetime),
         }
@@ -137,7 +142,8 @@ class SPDataProvider(AbstractPriceDataProvider, SPDAO):
             try:
                 dfs.append(field_to_fetching_method[field])
             except KeyError:
-                raise ValueError(f"Field {field} is not supported by the SPDataProvider.") from None
+                # TODO will be removed in the future
+                raise NotImplementedError(f"Field {field} is not supported by the SPDataProvider.") from None
 
         grouped = pd.concat(dfs, axis=1).groupby(level=0)
         tickers_dict = {tid_to_tickers[tid]: group.droplevel(0) for tid, group in grouped}

@@ -25,7 +25,6 @@ class SPField(Enum):
     LowPrice = 'pricelow'
     HighPrice = 'pricehigh'
     Volume = 'volume'
-    Currency = 'currency'
 
     @staticmethod
     def price_fields() -> list["SPField"]:
