@@ -54,7 +54,7 @@ setup(
         "documentation": ["autodocsumm==0.2.9", "sphinx_rtd_theme==1.2.0", "Sphinx==5.0"],
         "interactive brokers": ["ibapi"],
         "bloomberg_beap_hapi": ["PyJWT>=0.2.3,<2.0.0", "retrying>=1.3.3", "beap-lib==0.0.1"],
-        "blpapi": ["blpapi>=3.16.2,<=3.20.1"],
+        "blpapi": ["blpapi>=3.16.2,<=3.21.0"],
         "quandl": ["quandl>=3.6.1,<=3.7.0"],
         "sp_global": ["sqlalchemy>=1.4.0,<2.0.0"]
     },
