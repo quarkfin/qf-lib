@@ -22,7 +22,6 @@ jobs:
         python-version: "3.11"
     - name: Install dependencies
       run: |
-        ping pypi.org
         python -m pip install --upgrade pip
         pip install flake8==5.0.4 pytest
     - name: Style check
@@ -33,6 +32,9 @@ jobs:
     needs: style_check
     steps:
     - uses: actions/checkout@v3
+    - name: Check connection
+      run: |
+        ping pypi.org
     - name: Set up Python 3.11
       uses: actions/setup-python@v3
       with:
