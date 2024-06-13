@@ -22,6 +22,7 @@ jobs:
         python-version: "3.11"
     - name: Install dependencies
       run: |
+        ping pypi.org
         python -m pip install --upgrade pip
         pip install flake8==5.0.4 pytest
     - name: Style check
