@@ -26,3 +26,7 @@ class SPField(Enum):
     HighPrice = 'pricehigh'
     Volume = 'volume'
     Currency = 'currency'
+
+    # Estimates Data
+    LongTermGrowth = '100168'
+    RevenueConsensus = '100180'
