@@ -14,6 +14,8 @@
 
 from datetime import datetime
 from typing import Sequence
+import numpy as np
+import pandas as pd
 from sqlalchemy import or_
 
 from qf_lib.common.enums.frequency import Frequency
@@ -57,11 +59,12 @@ class SPFinancials(SPDAO):
         actual_tickers_to_sp_id = {t: t.tradingitem_id for t in tickers}
         with self._db_connection_provider.Session.begin() as session:
             query = session \
-                .query(self.ciqfininstance.filingdate, self.ciqfininstance.periodenddate,
-                       self.ciqfincollectiondata.dataitemid, self.ciqfincollectiondata.dataitemvalue) \
+                .query(self.ciqtradingitem.tradingitemid, self.ciqfininstance.filingdate,
+                       self.ciqfininstance.periodenddate, self.ciqfincollectiondata.dataitemid,
+                       self.ciqfincollectiondata.dataitemvalue) \
                 .filter(self.ciqfininstance.periodenddate >= start_date.date()) \
                 .filter(self.ciqfininstance.periodenddate <= end_date.date()) \
-                .filter(self.ciqfininstance.restatementtypeid == 2)
+                .filter(self.ciqfininstance.restatementtypeid == 2)  # TODO = What is this
             # Get only the specified periodtypeid
             query = query \
                 .join(self.ciqfinperiod, self.ciqfinperiod.financialperiodid ==
@@ -85,18 +88,25 @@ class SPFinancials(SPDAO):
                 .filter(self.ciqfincollectiondata.dataitemid.in_(
                                                 [field.value for field in fields]))
 
-            tickers_with_currency = [
-                actual_tickers_to_sp_id[ticker] for ticker in tickers if ticker.currency is not None]
-            if sp_ticker.currency is not None:
+            # TODO - Currencies
+            tickers_to_currencies = {
+                actual_tickers_to_sp_id[ticker]: ticker.currency for ticker in tickers if ticker.currency is not None}
+            if not len(tickers_to_currencies) == 0:
                 query = query.join(self.ciqcurrency, self.ciqcurrency.currencyid == self.ciqfincollection.currencyid)
-                query = query.filter(
-                    or_(self.ciqcurrency.isocode == sp_ticker.currency, self.ciqcurrency.isocode.is_(None)))
-            else:
-                self.logger.warning(f"Ticker {sp_ticker.as_string()} doesn't have any corresponding currency. "
-                                    f"The fundamental data returned might contain various currency data items.")
-            # Get currency
-            query = query.join(self.ciqcurrency, self.ciqcurrency.currencyid ==
-                               self.ciqfincollection.currencyid) \
+
+            query.order_by(self.ciqfininstance.periodenddate, self.ciqfininstance.filingdate,
+                           self.ciqfincollectiondata.financialcollectionid)
+
+            df = QFDataFrame(pd.read_sql(query.statement, con=session.bind)).replace([None], np.nan)
+            df['preferred_currency'] = df['tradingitemid'].map(tickers_to_currencies)
+            df = df[df['currencyid'] == df['preferred_currency']].drop(columns=['preferred_currency'])
+
+            aggfunc = np.mean if sp_date_type == SPDateType.periodenddate else 'last'
+            pivoted_df = pd.pivot_table(df, aggfunc=aggfunc, index=['tradingitemid', 'filingdate', 'periodenddate'],
+                                        values='dataitemvalue', columns='dataitemid')
+            pivoted_df = pivoted_df.rename(columns=self._map_str_to_spfield).reindex(fields, axis=1)
+
+            df.reset_index()
 
         return
 
