@@ -16,3 +16,4 @@ WeasyPrint==52.5
 Jinja2==2.11.3
 arch==4.19
 requests>=2.25.1,<=2.31.0
+sqlalchemy==1.4.16
