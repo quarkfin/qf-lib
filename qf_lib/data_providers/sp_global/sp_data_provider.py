@@ -113,6 +113,7 @@ class SPDataProvider(AbstractPriceDataProvider, SPDAO):
         if frequency != Frequency.DAILY:
             raise NotImplementedError("SPDataProvider get_history() supports currently only daily frequency.")
 
+        fields, got_single_field = convert_to_list(fields, SPField)
         _unsupported_fields = [f for f in fields if f not in self.supported_fields]
         if any(_unsupported_fields):
             raise ValueError(f"Unsupported fields {_unsupported_fields}. To view the list of fields supported by "
@@ -120,7 +121,6 @@ class SPDataProvider(AbstractPriceDataProvider, SPDAO):
 
         tickers, got_single_ticker = convert_to_list(tickers, SPTicker)
         tid_to_tickers = {t.tradingitem_id: t for t in tickers}
-        fields, got_single_field = convert_to_list(fields, SPField)
         start_datetime = self._adjust_start_date(start_datetime, frequency)
         got_single_date = self._got_single_date(start_datetime, end_datetime, frequency)
 
