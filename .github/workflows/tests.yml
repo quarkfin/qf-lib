@@ -39,8 +39,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -e ".[sp_global]"
-        pip install -e ".[blpapi]" --extra-index-url https://blpapi.bloomberg.com/repository/releases/python/simple
+        pip install -e ".[blpapi, sp_global]" --extra-index-url https://blpapi.bloomberg.com/repository/releases/python/simple
         pip install --force-reinstall MarkupSafe==2.0.1
         pip install flake8==5.0.4 pytest
         pip install coverage
