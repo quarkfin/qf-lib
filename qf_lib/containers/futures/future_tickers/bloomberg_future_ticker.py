@@ -12,10 +12,11 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 import re
-from typing import Type
+from typing import Optional, Type
 
 from pandas import to_datetime
 
+from qf_lib.common.enums.currency import Currency
 from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.tickers.tickers import BloombergTicker, Ticker
@@ -59,13 +60,19 @@ class BloombergFutureTicker(FutureTicker, BloombergTicker):
         parameter value equal to "HMUZ", would restrict the future chain to only the contracts, which expire in
         March, June, September and December, even if contracts for any other months exist and are returned by the
         DataProvider get_futures_chain_tickers function.
+    security_type: SecurityType
+        Enum which denotes the type of the security.
+    currency: Currency
+        Enum which denotes the currency of the security. For example 'Currency.USD'.
     """
     def __init__(self, name: str, family_id: str, N: int, days_before_exp_date: int, point_value: int = 1,
-                 designated_contracts: str = "FGHJKMNQUVXZ", security_type: SecurityType = SecurityType.FUTURE):
+                 designated_contracts: str = "FGHJKMNQUVXZ", security_type: SecurityType = SecurityType.FUTURE,
+                 currency: Optional[Currency] = None):
         if not len(designated_contracts) > 0:
             raise ValueError("At least one month code should be provided.")
 
-        super().__init__(name, family_id, N, days_before_exp_date, point_value, designated_contracts, security_type)
+        super().__init__(name, family_id, N, days_before_exp_date, point_value,
+                         designated_contracts, security_type, currency)
 
     def get_active_ticker(self) -> BloombergTicker:
         """ Returns the active ticker. """
@@ -89,7 +96,8 @@ class BloombergFutureTicker(FutureTicker, BloombergTicker):
         designated_contracts = futures_chain_tickers_series.index[
             futures_chain_tickers_series.index.map(lambda t: bool(re.search(f"^{contracts_pattern}$", t.as_string())))]
         futures_chain_tickers_series = futures_chain_tickers_series.loc[designated_contracts]
-
+        for t in futures_chain_tickers_series.index:
+            t.set_currency(self.currency)
         futures_chain_tickers = QFSeries(futures_chain_tickers_series.index, futures_chain_tickers_series.values)
         futures_chain_tickers.index = to_datetime(futures_chain_tickers.index)
         return futures_chain_tickers
