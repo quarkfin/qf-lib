@@ -41,3 +41,8 @@ class SPField(Enum):
     TotalAssetTurnover = '4177'
     EBITDA = '4051'  # Earnings Before Interest Taxes Depreciation and Amortization
     NetIncome = '15'
+
+
+class SPDateType(Enum):
+    periodenddate = 'periodenddate'
+    filingdate = 'filingdate'
