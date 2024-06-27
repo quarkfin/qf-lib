@@ -11,22 +11,3 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-from enum import Enum
-
-
-class SPField(Enum):
-
-    # Market Data
-    DivYield = 'divyield'
-    BidPrice = 'pricebid'
-    AskPrice = 'priceask'
-    ClosePrice = 'priceclose'
-    OpenPrice = 'priceopen'
-    LowPrice = 'pricelow'
-    HighPrice = 'pricehigh'
-    Volume = 'volume'
-
-    @staticmethod
-    def price_fields() -> list["SPField"]:
-        return [SPField.BidPrice, SPField.AskPrice, SPField.ClosePrice, SPField.OpenPrice, SPField.LowPrice,
-                SPField.HighPrice, SPField.Volume]

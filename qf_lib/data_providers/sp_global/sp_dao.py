@@ -30,6 +30,7 @@ from qf_lib.data_providers.sp_global.sp_field import SPField
 class SPDAO(metaclass=ABCMeta):
     def __init__(self, db_connection_provider: DBConnectionProvider):
         self._db_connection_provider = db_connection_provider
+        self._automap_tables()
 
     @property
     @abstractmethod
@@ -44,12 +45,13 @@ class SPDAO(metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def _supported_tables(self) -> list[SPField]:
+    def _supported_tables(self) -> list[str]:
         raise NotImplementedError
 
     def _automap_tables(self):
         metadata = MetaData()
-        metadata.reflect(self._db_connection_provider.engine, only=self._supported_tables)
+        metadata.reflect(self._db_connection_provider.engine, schema=self._db_connection_provider.schema,
+                         only=self._supported_tables)
         base = automap_base(metadata=metadata)
         base.prepare()
         for table in self._supported_tables:
