@@ -21,6 +21,7 @@ import pandas as pd
 
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.data_providers.db_connection_providers import DBConnectionProvider
+from qf_lib.data_providers.sp_global.exchange_rates import SPExchangeRate
 from qf_lib.data_providers.sp_global.sp_dao import SPDAO
 from qf_lib.data_providers.sp_global.sp_field import SPField
 
@@ -41,7 +42,7 @@ from sqlalchemy.orm import Session, aliased
 
 class SPDataProvider(AbstractPriceDataProvider, SPDAO):
     def __init__(self, db_connection_provider: DBConnectionProvider, use_adjusted_prices: bool = True,
-                 exchange_rate_snap_id: int = 6):
+                 exchange_rate_snap: SPExchangeRate = SPExchangeRate.LondonClose):
         """
         Class responsible for fetching the market data from S&P Global. Requires the Market Data package.
 
@@ -51,26 +52,17 @@ class SPDataProvider(AbstractPriceDataProvider, SPDAO):
             Adjust the prices for corporate actions (mergers, spin-offs). The adjustment is always applied as
             of end_datetime. If a corporate action occurred afterwards, it is not taken into account when computing
             prices adjustment. By default True.
-        exchange_rate_snap_id: int
-            ID corresponding to the snapshot of the exchange rates used. Available values are:
-                1	- Sydney Midday
-                2	- Tokyo Midday
-                3	- Sydney Close
-                4	- Tokyo Close
-                5	- London Midday
-                6	- London Close
-                7	- New York Midday
-                8	- New York Close
-            Default value is set to 6 (London Close).
+        exchange_rate_snap: SPExchangeRate
+            snapshot of the exchange rates used. Default value is set to London Close.
         """
         AbstractPriceDataProvider.__init__(self)
         SPDAO.__init__(self, db_connection_provider)
 
         self.use_adjusted_prices = use_adjusted_prices
-        if exchange_rate_snap_id not in range(1, 9):
-            raise ValueError(f"Incorrect Snapshot ID {exchange_rate_snap_id}. Possible values are integers between "
+        if exchange_rate_snap.value not in range(1, 9):
+            raise ValueError(f"Incorrect Snapshot ID {exchange_rate_snap}. Possible values are integers between "
                              f"1 and 8. Consult the documentation to see what each snapshot ID corresponds to.")
-        self.exchange_rate_snap_id = exchange_rate_snap_id
+        self.exchange_rate_snap = exchange_rate_snap
 
     @property
     def supported_fields(self) -> list[SPField]:
@@ -110,19 +102,19 @@ class SPDataProvider(AbstractPriceDataProvider, SPDAO):
             flag indicating whether all pricing data should be converted to USD (by default False)
 
         """
+        tickers, got_single_ticker = convert_to_list(tickers, SPTicker)
+        tid_to_tickers = {t.tradingitem_id: t for t in tickers}
+        fields, got_single_field = convert_to_list(fields, SPField)
+        start_datetime = self._adjust_start_date(start_datetime, frequency)
+        got_single_date = self._got_single_date(start_datetime, end_datetime, frequency)
+
         if frequency != Frequency.DAILY:
             raise NotImplementedError("SPDataProvider get_history() supports currently only daily frequency.")
 
-        fields, got_single_field = convert_to_list(fields, SPField)
         _unsupported_fields = [f for f in fields if f not in self.supported_fields]
         if any(_unsupported_fields):
             raise ValueError(f"Unsupported fields {_unsupported_fields}. To view the list of fields supported by "
                              f"{self.__class__.__name__} please refer to the output of supported_fields() function.")
-
-        tickers, got_single_ticker = convert_to_list(tickers, SPTicker)
-        tid_to_tickers = {t.tradingitem_id: t for t in tickers}
-        start_datetime = self._adjust_start_date(start_datetime, frequency)
-        got_single_date = self._got_single_date(start_datetime, end_datetime, frequency)
 
         dfs = []
 
@@ -226,7 +218,7 @@ class SPDataProvider(AbstractPriceDataProvider, SPDAO):
                       isouter=True) \
                 .filter(self.ciqpriceequity.tradingitemid.in_(tickers)) \
                 .filter(self.ciqpriceequity.pricingdate.between(start_datetime.date(), end_datetime.date())) \
-                .filter(or_(self.ciqexchangerate.snapid == self.exchange_rate_snap_id,
+                .filter(or_(self.ciqexchangerate.snapid == self.exchange_rate_snap.value,
                             self.ciqexchangerate.snapid.is_(None))) \
                 .order_by(self.ciqpriceequity.pricingdate, self.ciqpriceequity.tradingitemid).statement
 
@@ -288,8 +280,8 @@ class SPDataProvider(AbstractPriceDataProvider, SPDAO):
                                                                                 func.current_date())),
                                       divexrate.pricedate == self.ciqpriceequity.pricingdate)) \
                 .filter(self.ciqtradingitem.tradingitemid.in_(tickers)) \
-                .filter(peexrate.snapid == self.exchange_rate_snap_id) \
-                .filter(divexrate.snapid == self.exchange_rate_snap_id) \
+                .filter(peexrate.snapid == self.exchange_rate_snap.value) \
+                .filter(divexrate.snapid == self.exchange_rate_snap.value) \
                 .filter(self.ciqpriceequity.pricingdate.between(start_datetime.date(), end_datetime.date())) \
                 .order_by(self.ciqpriceequity.tradingitemid, self.ciqpriceequity.pricingdate,
                           self.ciqiadividendchain.startdate).statement

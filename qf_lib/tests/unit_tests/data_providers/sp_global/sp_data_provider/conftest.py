@@ -15,6 +15,7 @@ from datetime import datetime, date
 
 import pytest
 
+from qf_lib.data_providers.sp_global.exchange_rates import SPExchangeRate
 from qf_lib.data_providers.sp_global.sp_data_provider import SPDataProvider
 
 
@@ -150,4 +151,4 @@ def fill_dummy_data(fill_ciqcurrency, fill_ciqtradingitem, fill_ciqpriceequity, 
 
 @pytest.fixture
 def sp_data_provider(db_conn_provider, fill_dummy_data):
-    return SPDataProvider(db_conn_provider, True, 6)
+    return SPDataProvider(db_conn_provider, True, SPExchangeRate.LondonClose)
