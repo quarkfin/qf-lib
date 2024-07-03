@@ -13,11 +13,11 @@
 #     limitations under the License.
 
 from datetime import datetime
-from functools import wraps
 from typing import Sequence, Dict, Union, Set, Type, List
 
 import numpy as np
 import pandas as pd
+from pandas import concat
 
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.data_providers.db_connection_providers import DBConnectionProvider
@@ -38,6 +38,8 @@ from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceData
 from qf_lib.data_providers.helpers import tickers_dict_to_data_array, normalize_data_array
 from sqlalchemy import and_, or_, func
 from sqlalchemy.orm import Session, aliased
+
+from qf_lib.data_providers.sp_global.utils import fetch_in_chunks
 
 
 class SPDataProvider(AbstractPriceDataProvider, SPDAO):
@@ -120,19 +122,21 @@ class SPDataProvider(AbstractPriceDataProvider, SPDAO):
 
         # Fetch prices
         price_fields = [f for f in fields if f in SPField.price_fields()]
+        tradingitem_ids = list(tid_to_tickers.keys())
         if price_fields:
-            _prices = self._fetch_pricing_data(tid_to_tickers.keys(), price_fields, start_datetime, end_datetime,
-                                               to_usd)
-            dfs.append(_prices)
+            _prices = self._fetch_pricing_data(tradingitem_ids, price_fields, start_datetime, end_datetime, to_usd)
+            dfs.append(concat(_prices))
 
         # Fetch all remaining fields
         field_to_fetching_method = {
-            SPField.DivYield: self._fetch_dividend_yield(tid_to_tickers.keys(), start_datetime, end_datetime),
+            SPField.DivYield: lambda: self._fetch_dividend_yield(tradingitem_ids, start_datetime, end_datetime),
         }
 
         for field in [f for f in fields if f not in price_fields]:
             try:
-                dfs.append(field_to_fetching_method[field])
+                fetched_results = field_to_fetching_method[field]()
+                fetched_results = concat(fetched_results)
+                dfs.append(fetched_results)
             except KeyError:
                 # TODO will be removed in the future
                 raise NotImplementedError(f"Field {field} is not supported by the SPDataProvider.") from None
@@ -172,34 +176,14 @@ class SPDataProvider(AbstractPriceDataProvider, SPDAO):
                 currency = currency.rename(index=sp_id_to_ticker)
                 currencies = pd.concat([currencies, currency])
 
+        # Replace nan values with None (to always return either a string or None object for a given ticker)
         currencies = currencies.reindex(tickers).replace({np.nan: None})
         return currencies[0] if got_single_ticker else currencies
 
     def supported_ticker_types(self) -> Set[Type[Ticker]]:
         return {SPTicker}
 
-    def _fetch_in_chunks(fetch_func):
-        """
-        Utility decorator, which batches the tickers before entering the querying function, maps all the fields
-        into SPField objects and returns a list of all dataframes. It is assumed that the decorated function
-        returns a dataframe.
-        """
-
-        @wraps(fetch_func)
-        def wrapper(self, tickers, *args, **kwargs):
-            # Expecting identifiers to be the first argument
-            results = []
-            for ticker_group in grouper(1000, tickers):
-                data_frame = fetch_func(self, ticker_group, *args, **kwargs)
-                data_frame = data_frame.rename(columns={f.value: f for f in self.supported_fields})
-                results.append(data_frame)
-            return pd.concat(results)
-
-        return wrapper
-
-    _fetch_in_chunks = staticmethod(_fetch_in_chunks)
-
-    @_fetch_in_chunks
+    @fetch_in_chunks('tickers')
     def _fetch_pricing_data(self, tickers: Sequence[int], fields: Sequence[SPField], start_datetime: datetime,
                             end_datetime: datetime, to_usd: bool) -> QFDataFrame:
 
@@ -251,9 +235,10 @@ class SPDataProvider(AbstractPriceDataProvider, SPDAO):
 
                 data_frame = pd.concat(dfs)
 
+        data_frame = data_frame.rename(columns={f.value: f for f in self.supported_fields})
         return data_frame
 
-    @_fetch_in_chunks
+    @fetch_in_chunks('tickers')
     def _fetch_dividend_yield(self, tickers: Sequence[int], start_datetime: datetime, end_datetime: datetime):
         """
         Get dividend yield for a given SPTicker. On the day when new Dividend Yield value appears, the latter (last)
@@ -288,11 +273,14 @@ class SPDataProvider(AbstractPriceDataProvider, SPDAO):
 
             timestamp_string = self.ciqpriceequity.pricingdate.key
             data_frame = QFDataFrame(pd.read_sql(query, con=session.bind))
+            # Replace empty values with numerical nan
             data_frame = data_frame.replace([None], np.nan)
             data_frame = data_frame.drop_duplicates(subset=["tradingitemid", timestamp_string], keep="last")
             data_frame[timestamp_string] = pd.to_datetime(data_frame[timestamp_string])
             data_frame = data_frame.set_index(["tradingitemid", timestamp_string])
-        return data_frame
+            data_frame = data_frame.rename(columns={f.value: f for f in self.supported_fields})
+
+            return data_frame
 
     def _fields_to_adjust(self) -> Set[SPField]:
         """
