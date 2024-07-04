@@ -12,17 +12,22 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 from functools import wraps
-
-from pandas import concat
-
 from qf_lib.common.utils.helpers import grouper
 
 
-def fetch_in_chunks(arg_name, chunk_size: int = 1000):
+def fetch_in_chunks(arg_name: str, chunk_size: int = 1000):
     """
     Utility decorator, which takes a function and a given argument (identified by arg_name) representing a list,
     divides the list into chunks of the given size (chunk_size), executes the wrapped function separately for each
     chunk and returns the result for each chunk in form of a list.
+
+    Parameters
+    ----------
+    arg_name: str
+        The name of the parameter passed to the wrapped function, which should be divided into chunks. Must be of
+        list type.
+    chunk_size: int
+        The size of the chunks
     """
     def decorator(fetch_func):
         @wraps(fetch_func)
@@ -30,6 +35,8 @@ def fetch_in_chunks(arg_name, chunk_size: int = 1000):
             # Extract all the arguments and search the one by which the query should be grouped
             arg_dict = dict(zip(fetch_func.__code__.co_varnames, args))
             target_list = arg_dict.get(arg_name) or kwargs.get(arg_name)
+            if target_list is None:
+                raise ValueError(f"The argument '{arg_name}' is not a valid parameter of {fetch_func.__name__}.")
             if not isinstance(target_list, list):
                 raise ValueError(f"The argument '{arg_name}' must be a list.")
 

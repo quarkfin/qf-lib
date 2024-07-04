@@ -106,6 +106,7 @@ class SPDataProvider(AbstractPriceDataProvider, SPDAO):
         """
         tickers, got_single_ticker = convert_to_list(tickers, SPTicker)
         tid_to_tickers = {t.tradingitem_id: t for t in tickers}
+        tradingitem_ids = list(tid_to_tickers.keys())
         fields, got_single_field = convert_to_list(fields, SPField)
         start_datetime = self._adjust_start_date(start_datetime, frequency)
         got_single_date = self._got_single_date(start_datetime, end_datetime, frequency)
@@ -118,14 +119,13 @@ class SPDataProvider(AbstractPriceDataProvider, SPDAO):
             raise ValueError(f"Unsupported fields {_unsupported_fields}. To view the list of fields supported by "
                              f"{self.__class__.__name__} please refer to the output of supported_fields() function.")
 
-        dfs = []
+        all_data_dfs = []
 
-        # Fetch prices
+        # Fetch pricing data
         price_fields = [f for f in fields if f in SPField.price_fields()]
-        tradingitem_ids = list(tid_to_tickers.keys())
         if price_fields:
             _prices = self._fetch_pricing_data(tradingitem_ids, price_fields, start_datetime, end_datetime, to_usd)
-            dfs.append(concat(_prices))
+            all_data_dfs.append(concat(_prices))
 
         # Fetch all remaining fields
         field_to_fetching_method = {
@@ -136,12 +136,13 @@ class SPDataProvider(AbstractPriceDataProvider, SPDAO):
             try:
                 fetched_results = field_to_fetching_method[field]()
                 fetched_results = concat(fetched_results)
-                dfs.append(fetched_results)
+                all_data_dfs.append(fetched_results)
             except KeyError:
                 # TODO will be removed in the future
                 raise NotImplementedError(f"Field {field} is not supported by the SPDataProvider.") from None
 
-        grouped = pd.concat(dfs, axis=1).groupby(level=0)
+        # Concatenate and reshape all fetched data into a desired structure (data array, data frame, series)
+        grouped = pd.concat(all_data_dfs, axis=1).groupby(level=0)
         tickers_dict = {tid_to_tickers[tid]: group.droplevel(0) for tid, group in grouped}
         data_array = tickers_dict_to_data_array(tickers_dict, tickers, fields)
         return normalize_data_array(data_array, tickers, fields, got_single_date, got_single_ticker, got_single_field)
@@ -180,6 +181,7 @@ class SPDataProvider(AbstractPriceDataProvider, SPDAO):
         currencies = currencies.reindex(tickers).replace({np.nan: None})
         return currencies[0] if got_single_ticker else currencies
 
+    @property
     def supported_ticker_types(self) -> Set[Type[Ticker]]:
         return {SPTicker}
 
@@ -273,7 +275,7 @@ class SPDataProvider(AbstractPriceDataProvider, SPDAO):
 
             timestamp_string = self.ciqpriceequity.pricingdate.key
             data_frame = QFDataFrame(pd.read_sql(query, con=session.bind))
-            # Replace empty values with numerical nan
+            # Replace empty values with numerical nan as dividend yield should be always a numeric value
             data_frame = data_frame.replace([None], np.nan)
             data_frame = data_frame.drop_duplicates(subset=["tradingitemid", timestamp_string], keep="last")
             data_frame[timestamp_string] = pd.to_datetime(data_frame[timestamp_string])
