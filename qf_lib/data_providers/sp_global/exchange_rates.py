@@ -14,19 +14,13 @@
 from enum import Enum
 
 
-class SPField(Enum):
-
-    # Market Data
-    DivYield = 'divyield'
-    BidPrice = 'pricebid'
-    AskPrice = 'priceask'
-    ClosePrice = 'priceclose'
-    OpenPrice = 'priceopen'
-    LowPrice = 'pricelow'
-    HighPrice = 'pricehigh'
-    Volume = 'volume'
-
-    @staticmethod
-    def price_fields() -> list["SPField"]:
-        return [SPField.BidPrice, SPField.AskPrice, SPField.ClosePrice, SPField.OpenPrice, SPField.LowPrice,
-                SPField.HighPrice, SPField.Volume]
+class SPExchangeRate(Enum):
+    """ Enum with all available exchange rate snapshots, used by S&P Global. """
+    SydneyMidday = 1
+    TokyoMidday = 2
+    SydneyClose = 3
+    TokyoClose = 4
+    LondonMidday = 5
+    LondonClose = 6
+    NewYorkMidday = 7
+    NewYorkClose = 8

@@ -13,6 +13,7 @@
 #     limitations under the License.
 import logging
 from abc import ABCMeta, abstractmethod
+from typing import Optional
 
 from sqlalchemy.orm import sessionmaker
 
@@ -22,7 +23,8 @@ from qf_lib.settings import Settings
 class DBConnectionProvider(metaclass=ABCMeta):
     """Factory class which produces database Connection objects."""
 
-    def __init__(self, settings: Settings, **kwargs):
+    def __init__(self, settings: Settings, schema: Optional[str] = None, **kwargs):
+        self.schema = schema
         self.engine = self._create_engine(settings, **kwargs)
         self.Session = sessionmaker(bind=self.engine)
         self.logger = logging.getLogger(self.__class__.__name__)
