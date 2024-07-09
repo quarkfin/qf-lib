@@ -18,9 +18,7 @@ import pandas as pd
 
 from qf_lib.common.enums.axis import Axis
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
-from qf_lib.plotting.charts.heatmap.color_bar import ColorBar
-from qf_lib.plotting.charts.heatmap.heatmap_chart import HeatMapChart
-from qf_lib.plotting.charts.heatmap.values_annotations import ValuesAnnotations
+from qf_lib.plotting.charts.heatmap_chart import HeatMapChart
 from qf_lib.plotting.decorators.axis_tick_labels_decorator import AxisTickLabelsDecorator
 
 
@@ -31,12 +29,10 @@ def main():
     cols = ['2014', '2015', '2017', '2018', '2019']
 
     sample_df = QFDataFrame(data=sample_values, index=pd.Index(rows), columns=pd.Index(cols))
-    chart = HeatMapChart(data=sample_df, min_value=-half_range, max_value=half_range)
+    chart = HeatMapChart(data=sample_df, min_value=-half_range, max_value=half_range, annotations=True, cbar=True)
 
     chart.add_decorator(AxisTickLabelsDecorator(labels=cols, axis=Axis.X, rotation='auto'))
     chart.add_decorator(AxisTickLabelsDecorator(labels=list(reversed(rows)), axis=Axis.Y))
-    chart.add_decorator(ValuesAnnotations())
-    chart.add_decorator(ColorBar())
 
     chart.plot()
     chart.figure.tight_layout()

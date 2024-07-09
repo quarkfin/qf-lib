@@ -37,8 +37,7 @@ from qf_lib.documents_utils.document_exporting.element.new_page import NewPageEl
 from qf_lib.documents_utils.document_exporting.element.page_header import PageHeaderElement
 from qf_lib.documents_utils.document_exporting.element.paragraph import ParagraphElement
 from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
-from qf_lib.plotting.charts.heatmap.heatmap_chart import HeatMapChart
-from qf_lib.plotting.charts.heatmap.values_annotations import ValuesAnnotations
+from qf_lib.plotting.charts.heatmap_chart import HeatMapChart
 from qf_lib.plotting.charts.line_chart import LineChart
 from qf_lib.plotting.decorators.axes_label_decorator import AxesLabelDecorator
 from qf_lib.plotting.decorators.axes_position_decorator import AxesPositionDecorator
@@ -241,7 +240,6 @@ class ModelParamsEvaluationDocument:
         chart = HeatMapChart(data=result_df, color_map=plt.get_cmap("coolwarm"))
         chart.add_decorator(AxisTickLabelsDecorator(labels=list(result_df.columns), axis=Axis.X))
         chart.add_decorator(AxisTickLabelsDecorator(labels=list(reversed(result_df.index)), axis=Axis.Y))
-        chart.add_decorator(ValuesAnnotations())
         param_names = self._get_param_names()
         chart.add_decorator(AxesLabelDecorator(x_label=param_names[1], y_label=param_names[0]))
         chart.add_decorator(TitleDecorator(title))
