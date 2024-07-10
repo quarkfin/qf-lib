@@ -44,6 +44,7 @@ class HeatMapChart(Chart):
     cbar: bool
         Whether to draw a colorbar, by default equal to False.
     """
+
     def __init__(self, data: QFDataFrame, color_map=None, min_value: float = None, max_value: float = None,
                  start_x: Any = None, end_x: Any = None, annotations: bool = True, cbar: bool = False):
         super().__init__(start_x, end_x)
@@ -52,7 +53,7 @@ class HeatMapChart(Chart):
         self.min_value = min_value
         self.max_value = max_value
         self.annotations = annotations
-        self.cbar = False
+        self.cbar = cbar
 
         self.color_mesh_ = None
         """ Mesh generated during plotting. """
@@ -66,7 +67,8 @@ class HeatMapChart(Chart):
 
     def _draw_heatmap(self):
         self.color_mesh_ = heatmap(self.data, cmap=self.color_map, vmin=self.min_value, vmax=self.max_value,
-                                   annot=self.annotations, cbar=self.cbar)
+                                   annot=self.annotations, cbar=self.cbar,
+                                   cbar_kws=dict(use_gridspec=False, location="right", pad=0.05))
 
     def _set_ticks(self):
         columns_number = self.data.shape[1]
