@@ -15,6 +15,7 @@
 from typing import Any, Tuple
 
 import matplotlib as mpl
+from seaborn import heatmap
 
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.plotting.charts.chart import Chart
@@ -38,14 +39,21 @@ class HeatMapChart(Chart):
         see: Chart__init__#start_x
     end_x: Any
         see: Chart__init__#end_x
+    annotations: bool
+        If True, write the data value in each cell.
+    cbar: bool
+        Whether to draw a colorbar, by default equal to False.
     """
+
     def __init__(self, data: QFDataFrame, color_map=None, min_value: float = None, max_value: float = None,
-                 start_x: Any = None, end_x: Any = None):
+                 start_x: Any = None, end_x: Any = None, annotations: bool = True, cbar: bool = False):
         super().__init__(start_x, end_x)
         self.data = data[::-1]  # for proper plotting the matrix needs to be reversed
         self.color_map = color_map if color_map is not None else mpl.cm.Blues
         self.min_value = min_value
         self.max_value = max_value
+        self.annotations = annotations
+        self.cbar = cbar
 
         self.color_mesh_ = None
         """ Mesh generated during plotting. """
@@ -58,9 +66,9 @@ class HeatMapChart(Chart):
         self._apply_decorators()
 
     def _draw_heatmap(self):
-        self.color_mesh_ = self.axes.pcolormesh(
-            self.data, cmap=self.color_map, vmin=self.min_value, vmax=self.max_value)
-        self.color_mesh_.update_scalarmappable()  # update info about colors in the mesh
+        self.color_mesh_ = heatmap(self.data, cmap=self.color_map, vmin=self.min_value, vmax=self.max_value,
+                                   annot=self.annotations, cbar=self.cbar,
+                                   cbar_kws=dict(use_gridspec=False, location="right", pad=0.05))
 
     def _set_ticks(self):
         columns_number = self.data.shape[1]

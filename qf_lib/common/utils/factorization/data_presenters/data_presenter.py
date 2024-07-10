@@ -32,9 +32,7 @@ from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
 from qf_lib.plotting.charts.bar_chart import BarChart
 from qf_lib.plotting.charts.chart import Chart
-from qf_lib.plotting.charts.heatmap.color_bar import ColorBar
-from qf_lib.plotting.charts.heatmap.heatmap_chart import HeatMapChart
-from qf_lib.plotting.charts.heatmap.values_annotations import ValuesAnnotations
+from qf_lib.plotting.charts.heatmap_chart import HeatMapChart
 from qf_lib.plotting.charts.line_chart import LineChart
 from qf_lib.plotting.decorators.axes_formatter_decorator import AxesFormatterDecorator, PercentageFormatter
 from qf_lib.plotting.decorators.axes_label_decorator import AxesLabelDecorator
@@ -272,12 +270,10 @@ class DataPresenter:
     def correlation_matrix_chart(self) -> HeatMapChart:
         data = self.model.correlation_matrix
         names = [self._get_security_name(ticker) for ticker in self.model.correlation_matrix.columns.values]
-        heatmap_chart = HeatMapChart(data, min_value=-1, max_value=1)
+        heatmap_chart = HeatMapChart(data, min_value=-1, max_value=1, cbar=True)
 
         heatmap_chart.add_decorator(AxisTickLabelsDecorator(axis=Axis.X, labels=names))
         heatmap_chart.add_decorator(AxisTickLabelsDecorator(axis=Axis.Y, labels=reversed(names)))
-        heatmap_chart.add_decorator(ValuesAnnotations())
-        heatmap_chart.add_decorator(ColorBar())
         heatmap_chart.add_decorator(TitleDecorator("Correlation matrix"))
 
         return heatmap_chart
