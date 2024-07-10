@@ -50,9 +50,10 @@ class TestBloombergTickerMapper(TestCase):
     def test_figi_to_ticker__no_data_preloading(self):
         mapper = BloombergTickerMapper(data_caching=False)
 
-        figis = ["BBG000H4FSM0", "BBG000BDTBL9", "BBG0013HFN45"]
+        figis = ["BBG000H4FSM0", "BBG000BDTBL9", "BBG0013HQFX8", "BBG0013HFN45"]
         expected_tickers = [BloombergTicker("SPX Index", SecurityType.INDEX),
                             BloombergTicker("SPY US Equity", SecurityType.STOCK),
+                            BloombergTicker("EURCHF Curncy", SecurityType.FX),
                             BloombergTicker("USDCHF Curncy", SecurityType.FX)]
 
         for figi, ticker in zip(figis, expected_tickers):
