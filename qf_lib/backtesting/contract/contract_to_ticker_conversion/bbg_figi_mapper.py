@@ -174,8 +174,8 @@ class BloombergTickerMapper(ContractTickerMapper):
             'Equity': (SecurityType.STOCK, ['ticker', 'exchCode', 'marketSector']),
             'Mutual Fund': (SecurityType.STOCK, ['ticker', 'exchCode', 'marketSector']),
             'Future': (SecurityType.FUTURE, ['ticker', 'marketSector']),
-            'CROSS': (SecurityType.FX, ['ticker', 'marketSector']),
-            'SPOT': (SecurityType.FX, ['ticker', 'marketSector']),
+            'CROSS': (SecurityType.FX, ['securityDescription']),
+            'SPOT': (SecurityType.FX, ['securityDescription']),
         }
 
         try:
