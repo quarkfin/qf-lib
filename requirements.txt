@@ -14,5 +14,5 @@ cvxopt>=1.2.7,<=1.3.2
 openpyxl>=3.0.7,<=3.0.9
 WeasyPrint==52.5
 Jinja2==2.11.3
-arch==5.4
+arch>=5.4,<=7.0
 requests>=2.25.1,<=2.31.0
