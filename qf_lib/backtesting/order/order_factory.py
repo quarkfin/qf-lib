@@ -208,8 +208,7 @@ class OrderFactory:
         """
         self._log_function_call(vars())
         self._check_tickers_type(list(percentages.keys()))
-        portfolio_value = self.broker.get_portfolio_value()
-        values = {ticker: portfolio_value * fraction for ticker, fraction in percentages.items()}
+        values = {ticker: self.broker.get_portfolio_value(ticker.currency) * fraction for ticker, fraction in percentages.items()}
 
         return self.value_orders(values, execution_style, time_in_force, frequency)
 
@@ -291,9 +290,8 @@ class OrderFactory:
         assert 0.0 <= tolerance_percentage < 1.0, "The tolerance_percentage should belong to [0, 1) interval"
         self._check_tickers_type(list(target_percentages.keys()))
 
-        portfolio_value = self.broker.get_portfolio_value()
         target_values = {
-            ticker: portfolio_value * target_percent for ticker, target_percent in target_percentages.items()
+            ticker: self.broker.get_portfolio_value(ticker.currency) * target_percent for ticker, target_percent in target_percentages.items()
         }
         return self.target_value_orders(target_values, execution_style, time_in_force, tolerance_percentage, frequency)
 
@@ -322,7 +320,7 @@ class OrderFactory:
             current_price = current_prices.loc[ticker]
 
             divisor = (current_price * ticker.point_value)
-            target_quantity = amount_of_money / divisor  # type: float
+            target_quantity = amount_of_money / (divisor + 1e-14)  # type: float
             target_quantities[ticker] = target_quantity
 
             tolerance_quantity = target_quantity * tolerance_percentage

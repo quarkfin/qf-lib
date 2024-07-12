@@ -17,7 +17,6 @@ from typing import Optional, Type
 
 import pandas as pd
 
-from qf_lib.common.enums.currency import Currency
 from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.exceptions.future_contracts_exceptions import NoValidTickerException
 from qf_lib.common.tickers.tickers import Ticker
@@ -68,12 +67,12 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
         DataProvider get_futures_chain_tickers function.
     security_type: SecurityType
         Enum which denotes the type of the security. Defaults to SecurityType.FUTURE.
-    currency: Currency
-        Enum which denotes the currency of the security. For example 'Currency.USD'.
+    currency: str
+        ISO code of the currency of the ticker. Example "USD".
     """
     def __init__(self, name: str, family_id: str, N: int, days_before_exp_date: int, point_value: int = 1,
                  designated_contracts: Optional[str] = None, security_type: SecurityType = SecurityType.FUTURE,
-                 currency: Optional[Currency] = None):
+                 currency: Optional[str] = None):
         super().__init__(family_id, security_type, point_value)
         self._name = name
         self.family_id = family_id

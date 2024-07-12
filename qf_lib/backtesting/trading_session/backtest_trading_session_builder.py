@@ -41,7 +41,6 @@ from qf_lib.backtesting.position_sizer.simple_position_sizer import SimplePositi
 from qf_lib.backtesting.signals.backtest_signals_register import BacktestSignalsRegister
 from qf_lib.backtesting.signals.signals_register import SignalsRegister
 from qf_lib.backtesting.trading_session.backtest_trading_session import BacktestTradingSession
-from qf_lib.common.enums.currency import Currency
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.utils.config_exporter import ConfigExporter
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
@@ -83,10 +82,11 @@ class BacktestTradingSessionBuilder:
 
         self._backtest_name = "Backtest Results"
         self._initial_cash = 10000000
-        self._currency = Currency.USD
+        self._currency = "USD"
         self._initial_risk = None
         self._benchmark_tms = None
         self._monitor_settings = None
+        self.currency_exchange_tickers = None
 
         self._contract_ticker_mapper = SimulatedContractTickerMapper()
 
@@ -414,7 +414,8 @@ class BacktestTradingSessionBuilder:
         self._data_handler = self._create_data_handler(self._data_provider, self._timer)
         signals_register = self._signals_register if self._signals_register else BacktestSignalsRegister()
 
-        self._portfolio = Portfolio(self._data_handler, self._initial_cash, self._timer, self._currency, self.currency_exchange_tickers)
+        self._portfolio = Portfolio(self._data_handler, self._initial_cash, self._timer,
+                                    self._currency, self.currency_exchange_tickers)
 
         self._backtest_result = BacktestResult(self._portfolio, signals_register, self._backtest_name, start_date,
                                                end_date, self._initial_risk)

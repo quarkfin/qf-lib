@@ -20,7 +20,6 @@ from qf_lib.backtesting.execution_handler.execution_handler import ExecutionHand
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.backtesting.portfolio.position import Position
-from qf_lib.common.enums.currency import Currency
 
 
 class BacktestBroker(Broker):
@@ -30,11 +29,11 @@ class BacktestBroker(Broker):
         self.portfolio = portfolio
         self.execution_handler = execution_handler
 
-    def get_portfolio_value(self) -> Optional[float]:
-        return self.portfolio.net_liquidation
-
-    def get_portfolio_value_in_currency(self, currency: Currency):
-        return self.portfolio.net_liquidation_in_currency(currency)
+    def get_portfolio_value(self, currency: str = None) -> Optional[float]:
+        if currency:
+            return self.portfolio.net_liquidation_in_currency(currency)
+        else:
+            return self.portfolio.net_liquidation
 
     def get_positions(self) -> List[Position]:
         return list(self.portfolio.open_positions_dict.values())

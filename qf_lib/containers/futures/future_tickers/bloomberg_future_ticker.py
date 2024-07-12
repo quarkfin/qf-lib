@@ -16,7 +16,6 @@ from typing import Optional, Type
 
 from pandas import to_datetime
 
-from qf_lib.common.enums.currency import Currency
 from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.tickers.tickers import BloombergTicker, Ticker
@@ -62,12 +61,12 @@ class BloombergFutureTicker(FutureTicker, BloombergTicker):
         DataProvider get_futures_chain_tickers function.
     security_type: SecurityType
         Enum which denotes the type of the security.
-    currency: Currency
-        Enum which denotes the currency of the security. For example 'Currency.USD'.
+    currency: str
+        ISO code of the currency of the ticker. Example "USD".
     """
     def __init__(self, name: str, family_id: str, N: int, days_before_exp_date: int, point_value: int = 1,
                  designated_contracts: str = "FGHJKMNQUVXZ", security_type: SecurityType = SecurityType.FUTURE,
-                 currency: Optional[Currency] = None):
+                 currency: Optional[str] = None):
         if not len(designated_contracts) > 0:
             raise ValueError("At least one month code should be provided.")
 

@@ -18,7 +18,6 @@ from typing import List, Optional, Sequence
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.portfolio.position import Position
-from qf_lib.common.enums.currency import Currency
 
 
 class Broker(metaclass=ABCMeta):
@@ -38,11 +37,7 @@ class Broker(metaclass=ABCMeta):
         self.contract_ticker_mapper = contract_ticker_mapper
 
     @abstractmethod
-    def get_portfolio_value(self) -> float:
-        pass
-
-    @abstractmethod
-    def get_portfolio_value_in_currency(self, currency: Currency) -> float:
+    def get_portfolio_value(self, currency: str = None) -> float:
         pass
 
     @abstractmethod

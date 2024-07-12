@@ -16,7 +16,6 @@ from abc import abstractmethod, ABCMeta
 from functools import total_ordering
 from typing import Optional, Union, Sequence
 
-from qf_lib.common.enums.currency import Currency
 from qf_lib.common.enums.quandl_db_type import QuandlDBType
 from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
@@ -35,10 +34,10 @@ class Ticker(metaclass=ABCMeta):
         SecurityType.FUTURE for a futures contract etc.
     point_value: int
         size of the contract as given by the ticker's Data Provider.
-    currency: Currency
-        enum which denotes the currency of the ticker. Example Currency.USD.
+    currency: str
+        ISO code of the currency of the ticker. Example "USD".
     """
-    def __init__(self, ticker: str, security_type: SecurityType, point_value: int, currency: Optional[Currency] = None):
+    def __init__(self, ticker: str, security_type: SecurityType, point_value: int, currency: Optional[str] = None):
         self.ticker = ticker
         self.security_type = security_type
         self.point_value = point_value
@@ -75,7 +74,7 @@ class Ticker(metaclass=ABCMeta):
         transactions, portfolio etc. """
         self._name = name
 
-    def set_currency(self, currency: Currency):
+    def set_currency(self, currency: str):
         self.currency = currency
 
     @abstractmethod
@@ -123,16 +122,16 @@ class BloombergTicker(Ticker):
     point_value: int
         size of the contract as given by the ticker's Data Provider. Used mostly by tickers of security_type FUTURE and
         by default equals 1.
-    currency: Currency
-        enum which denotes the currency of the ticker. Example Currency.USD.
+    currency: str
+        ISO code of the currency of the ticker. Example "USD".
     """
     def __init__(self, ticker: str, security_type: SecurityType = SecurityType.STOCK,
-                 point_value: int = 1, currency: Optional[Currency] = None):
+                 point_value: int = 1, currency: Optional[str] = None):
         super().__init__(ticker, security_type, point_value, currency)
 
     @classmethod
     def from_string(cls, ticker_str: Union[str, Sequence[str]], security_type: SecurityType = SecurityType.STOCK,
-                    point_value: int = 1, currency: Optional[Currency] = None) -> Union["BloombergTicker", Sequence["BloombergTicker"]]:
+                    point_value: int = 1, currency: Optional[str] = None) -> Union["BloombergTicker", Sequence["BloombergTicker"]]:
         """
         Example: BloombergTicker.from_string('SPX Index')
         """
@@ -156,14 +155,14 @@ class PortaraTicker(Ticker):
     point_value: int
         size of the contract as given by the Portara (e.g. 50 for Silver future contracts).
     currency: Currency
-        enum which denotes the currency of the ticker. Example Currency.USD.
+        ISO code of the currency of the ticker. Example "USD".
     """
-    def __init__(self, ticker: str, security_type: SecurityType, point_value, currency: Optional[Currency] = None):
+    def __init__(self, ticker: str, security_type: SecurityType, point_value, currency: Optional[str] = None):
         super().__init__(ticker, security_type, point_value, currency)
 
     @classmethod
     def from_string(cls, ticker_str: Union[str, Sequence[str]], security_type: SecurityType = SecurityType.STOCK,
-                    point_value: int = 1, currency: Optional[Currency] = None) -> Union["PortaraTicker", Sequence["PortaraTicker"]]:
+                    point_value: int = 1, currency: Optional[str] = None) -> Union["PortaraTicker", Sequence["PortaraTicker"]]:
         if isinstance(ticker_str, str):
             return PortaraTicker(ticker_str, security_type, point_value, currency)
         else:
@@ -233,11 +232,11 @@ class HaverTicker(Ticker):
     point_value: int
         size of the contract as given by the ticker's Data Provider. Used mostly by tickers of security_type FUTURE and
         by default equals 1.
-    currency: Currency
-        enum which denotes the currency of the ticker. Example Currency.USD.
+    currency: str
+        ISO code of the currency of the ticker. Example "USD".
     """
     def __init__(self, ticker: str, database_name: str, security_type: SecurityType = SecurityType.STOCK,
-                 point_value: int = 1, currency: Optional[Currency] = None):
+                 point_value: int = 1, currency: Optional[str] = None):
         super().__init__(ticker, security_type, point_value, currency)
         self.database_name = database_name
 
@@ -249,7 +248,7 @@ class HaverTicker(Ticker):
 
     @classmethod
     def from_string(cls, ticker_str: Union[str, Sequence[str]], security_type: SecurityType = SecurityType.STOCK,
-                    point_value: int = 1, currency: Optional[Currency] = None) -> Union["HaverTicker", Sequence["HaverTicker"]]:
+                    point_value: int = 1, currency: Optional[str] = None) -> Union["HaverTicker", Sequence["HaverTicker"]]:
         """ Example: HaverTicker.from_string('RECESSQ2@USECON') """
 
         def to_ticker(ticker_string: str):
@@ -279,11 +278,11 @@ class QuandlTicker(Ticker):
     point_value: int
         size of the contract as given by the ticker's Data Provider. Used mostly by tickers of security_type FUTURE and
         by default equals 1.
-    currency: Currency
-        enum which denotes the currency of the ticker. Example Currency.USD.
+    currency: str
+        ISO code of the currency of the ticker. Example "USD".
     """
     def __init__(self, ticker: str, database_name: str, database_type: QuandlDBType = QuandlDBType.Timeseries,
-                 security_type: SecurityType = SecurityType.STOCK, point_value: int = 1, currency: Optional[Currency] = None):
+                 security_type: SecurityType = SecurityType.STOCK, point_value: int = 1, currency: Optional[str] = None):
         super().__init__(ticker, security_type, point_value, currency)
         self.database_name = database_name
         self.database_type = database_type
@@ -303,7 +302,7 @@ class QuandlTicker(Ticker):
     @classmethod
     def from_string(cls, ticker_str: Union[str, Sequence[str]], db_type: QuandlDBType = QuandlDBType.Timeseries,
                     security_type: SecurityType = SecurityType.STOCK, point_value: int = 1,
-                    currency: Optional[Currency] = None) -> Union["QuandlTicker", Sequence["QuandlTicker"]]:
+                    currency: Optional[str] = None) -> Union["QuandlTicker", Sequence["QuandlTicker"]]:
         """
         Example: QuandlTicker.from_string('WIKI/MSFT')
         Note: this method supports only the Timeseries tickers at the moment.
@@ -311,7 +310,8 @@ class QuandlTicker(Ticker):
 
         def to_ticker(ticker_string: str):
             db_name, ticker = ticker_string.rsplit('/', 1)
-            return QuandlTicker(ticker, db_name, db_type, security_type=security_type, point_value=point_value)
+            return QuandlTicker(ticker, db_name, db_type, security_type=security_type,
+                                point_value=point_value, currency=currency)
 
         if isinstance(ticker_str, str):
             return to_ticker(ticker_str)
@@ -332,16 +332,16 @@ class CcyTicker(Ticker):
     point_value: int
         size of the contract as given by the ticker's Data Provider. Used mostly by tickers of security_type FUTURE and
         by default equals 1.
-    currency: Currency
-        enum which denotes the currency of the ticker. Example Currency.USD.
+    currency: str
+        ISO code of the currency of the ticker. Example "USD".
     """
     def __init__(self, ticker: str, security_type: SecurityType = SecurityType.CRYPTO, point_value: int = 1,
-                 currency: Optional[Currency] = None):
+                 currency: Optional[str] = None):
         super().__init__(ticker, security_type, point_value, currency)
 
     @classmethod
     def from_string(cls, ticker_str: Union[str, Sequence[str]], security_type: SecurityType = SecurityType.CRYPTO,
-                    point_value: int = 1, currency: Optional[Currency] = None) -> Union["CcyTicker", Sequence["CcyTicker"]]:
+                    point_value: int = 1, currency: Optional[str] = None) -> Union["CcyTicker", Sequence["CcyTicker"]]:
         """ Example: CcyTicker.from_string('Bitcoin'). """
 
         def to_ticker(ticker_string: str,):
