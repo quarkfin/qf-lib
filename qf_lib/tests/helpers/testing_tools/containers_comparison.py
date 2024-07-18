@@ -13,7 +13,7 @@
 #     limitations under the License.
 
 import numbers
-from typing import Sequence, TypeVar
+from typing import Sequence, TypeVar, List
 
 import numpy as np
 import pandas as pd
