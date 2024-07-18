@@ -218,7 +218,7 @@ def assert_dataarrays_equal(expected_dataarray: xr.DataArray, actual_dataarray: 
     index = actual_dataarray[dimension].to_index()
 
     for i in index:
-        expected_df = actual_dataarray.loc[i].to_pandas()
+        expected_df = expected_dataarray.loc[i].to_pandas()
         actual_df = actual_dataarray.loc[i].to_pandas()
 
         assert_dataframes_equal(expected_df, actual_df,
