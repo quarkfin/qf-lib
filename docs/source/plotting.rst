@@ -10,9 +10,7 @@ charts
 	:toctree: _autosummary
 	:template: short_class.rst
 	
-	heatmap.heatmap_chart.HeatMapChart
-	heatmap.values_annotations.ValuesAnnotations
-	heatmap.heatmap_chart_decorator.HeatMapChartDecorator
+	heatmap_chart.HeatMapChart
 	annual_returns_bar_chart.AnnualReturnsBarChart
 	bar_chart.BarChart
 	boxplot_chart.BoxplotChart
