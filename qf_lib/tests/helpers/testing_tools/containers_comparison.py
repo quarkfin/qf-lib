@@ -218,11 +218,11 @@ def assert_dataarrays_equal(expected_dataarray: xr.DataArray, actual_dataarray: 
     index = actual_dataarray[dimension].to_index()
 
     for i in index:
-        expected_df = actual_dataarray.loc[i].to_pandas()
-        actual_df = actual_dataarray.loc[i].to_pandas()
+        expected_container = actual_dataarray.loc[i].to_pandas()
+        actual_container = actual_dataarray.loc[i].to_pandas()
 
-        if isinstance(expected_df, pd.Series):
-            assert_series_equal(expected_df, actual_df,
+        if isinstance(expected_container, pd.Series):
+            assert_series_equal(expected_container, actual_container,
                                 check_series_type=check_dataarray_type,
                                 check_dtype=check_dtype,
                                 check_index_type=check_index_type,
@@ -230,7 +230,7 @@ def assert_dataarrays_equal(expected_dataarray: xr.DataArray, actual_dataarray: 
                                 absolute_tolerance=absolute_tolerance,
                                 relative_tolerance=relative_tolerance)
         else:
-            assert_dataframes_equal(expected_df, actual_df,
+            assert_dataframes_equal(expected_container, actual_container,
                                     check_frame_type=check_dataarray_type,
                                     check_dtype=check_dtype,
                                     check_index_type=check_index_type,
