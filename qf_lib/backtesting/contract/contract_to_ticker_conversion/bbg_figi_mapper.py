@@ -70,15 +70,21 @@ class BloombergTickerMapper(ContractTickerMapper):
         -----------
         tickers: Union[Sequence[BloombergTicker], BloombergTicker]
             ticker(s) for which the mapping should be fetched and saved
+
+        Returns
+        --------
+        results: List[Dict]
+            returns a list of dictionaries, containing
         """
         tickers, _ = convert_to_list(tickers, BloombergTicker)
 
         requests = [self._ticker_into_openfigi_requests(ticker) for ticker in tickers]
-        results = asyncio.run(self._distribute_mapping_requests(requests))
+        results = list(asyncio.run(self._distribute_mapping_requests(requests)))
         figi_values = map(lambda r: r.get('figi', None), itertools.chain(*results))
 
         self.ticker_to_contract_data.update(dict(zip(tickers, figi_values)))
         self.contract_data_to_ticker.update(dict(zip(figi_values, tickers)))
+        return results
 
     def preload_figi_mapping(self, figis: Union[Sequence[str], str]):
         """
@@ -94,11 +100,12 @@ class BloombergTickerMapper(ContractTickerMapper):
         figis, _ = convert_to_list(figis, str)
 
         requests = [{"idType": "ID_BB_GLOBAL", "idValue": f} for f in figis]
-        results = itertools.chain(*asyncio.run(self._distribute_mapping_requests(requests)))
+        results = list(itertools.chain(*asyncio.run(self._distribute_mapping_requests(requests))))
         mapping = dict(self._ticker_from_openfigi_response(r, f) for (r, f) in zip(results, figis))
 
         self.ticker_to_contract_data.update(mapping)
         self.contract_data_to_ticker.update({val: key for key, val in mapping.items()})
+        return results
 
     def contract_to_ticker(self, figi: str) -> BloombergTicker:
         """ Maps Broker specific contract objects onto corresponding Tickers.
@@ -175,14 +182,15 @@ class BloombergTickerMapper(ContractTickerMapper):
         security_type_map = {
             'Index': (SecurityType.INDEX, ['ticker']),
             'Equity': (SecurityType.STOCK, ['ticker', 'exchCode', 'marketSector']),
-            'Mutual Fund': (SecurityType.STOCK, ['ticker', 'exchCode', 'marketSector']),
-            'Future': (SecurityType.FUTURE, ['ticker', 'marketSector']),
-            'CROSS': (SecurityType.FX, ['securityDescription']),
-            'SPOT': (SecurityType.FX, ['securityDescription']),
+            'Comdty': (SecurityType.FUTURE, ['ticker', 'marketSector']),
+            'Curncy': (SecurityType.FX, ['securityDescription']),
+            'Corp': (SecurityType.STOCK, ['securityDescription', 'marketSector']),
+            'Govt': (SecurityType.STOCK, ['securityDescription']),
+            'Pfd': (SecurityType.STOCK, ['securityDescription']),
         }
 
         try:
-            security_type, fields = security_type_map[contract_data.get('securityType2', '')]
+            security_type, fields = security_type_map[contract_data.get('marketSector', '')]
             fields_data = [contract_data.get(f) for f in fields if contract_data.get(f)]
             ticker_str = " ".join(fields_data)
 
