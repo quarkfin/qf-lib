@@ -74,7 +74,7 @@ class BloombergTickerMapper(ContractTickerMapper):
         Returns
         --------
         results: List[Dict]
-            returns a list of dictionaries, containing
+            returns a list of dictionaries, containing all data extracted from openfigi for additional reference
         """
         tickers, _ = convert_to_list(tickers, BloombergTicker)
 
@@ -96,6 +96,11 @@ class BloombergTickerMapper(ContractTickerMapper):
         -----------
         figis: Union[Sequence[str], str]
             FIGI(s) for which the mapping should be fetched and saved
+
+        Returns
+        --------
+        results: List[Dict]
+            returns a list of dictionaries, containing all data extracted from openfigi for additional reference
         """
         figis, _ = convert_to_list(figis, str)
 
