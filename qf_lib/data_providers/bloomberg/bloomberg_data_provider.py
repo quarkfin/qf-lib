@@ -108,8 +108,8 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
         self.connected = True
 
     def _get_futures_chain_dict(self, tickers: Union[BloombergFutureTicker, Sequence[BloombergFutureTicker]],
-                                expiration_date_fields: Union[str, Sequence[str]]) -> Dict[
-        BloombergFutureTicker, QFDataFrame]:
+                                expiration_date_fields: Union[str, Sequence[str]]) -> (
+            Dict)[BloombergFutureTicker, QFDataFrame]:
         """
         Returns tickers of futures contracts, which belong to the same futures contract chain as the provided ticker
         (tickers), along with their expiration dates.
