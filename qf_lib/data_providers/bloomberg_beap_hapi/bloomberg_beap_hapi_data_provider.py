@@ -273,23 +273,21 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
 
         MAX_PAGE_NUMBER = 7
         MAX_MEMBERS_PER_PAGE = 3000
-
-        page_no = 1
         universe = []
-        tickers_chunk = []
 
         def str_to_bbg_ticker(data: str, figi: bool):
             identifier = data.split(";")[0]
             ticker_str = f"/bbgid/{identifier}" if figi else f"{identifier} Equity"
             return BloombergTicker(ticker_str, SecurityType.STOCK, 1)
 
-        while page_no <= MAX_PAGE_NUMBER and len(tickers_chunk) % MAX_MEMBERS_PER_PAGE == 0:
+        for page_no in range(1, MAX_PAGE_NUMBER + 1):
             ticker_data = self.get_current_values(universe_ticker, field, fields_overrides=[
                 ("DISPLAY_ID_BB_GLOBAL_OVERRIDE", "Y" if display_figi else "N"),
                 ("PAGE_NUMBER_OVERRIDE", str(page_no))])
             tickers_chunk = [str_to_bbg_ticker(data, display_figi) for data in ticker_data]
             universe.extend(tickers_chunk)
-            page_no += 1
+            if len(tickers_chunk) < MAX_MEMBERS_PER_PAGE:
+                break
 
         return universe
 

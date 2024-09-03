@@ -313,23 +313,21 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
 
         MAX_PAGE_NUMBER = 7
         MAX_MEMBERS_PER_PAGE = 3000
-
-        page_no = 1
         universe = []
-        tickers_chunk = []
 
         def str_to_bbg_ticker(identifier: str, figi: bool):
             ticker_str = f"/bbgid/{identifier}" if figi else f"{identifier} Equity"
             return BloombergTicker(ticker_str, SecurityType.STOCK, 1)
 
-        while page_no <= MAX_PAGE_NUMBER and len(tickers_chunk) % MAX_MEMBERS_PER_PAGE == 0:
+        for page_no in range(1, MAX_PAGE_NUMBER + 1):
             ticker_data = self.get_tabular_data(universe_ticker, field,
                                                 ["END_DT", "PAGE_NUMBER_OVERRIDE", "DISPLAY_ID_BB_GLOBAL_OVERRIDE"],
                                                 [convert_to_bloomberg_date(date), page_no,
                                                  "Y" if display_figi else "N"])
             tickers_chunk = [str_to_bbg_ticker(fields['Index Member'], display_figi) for fields in ticker_data]
             universe.extend(tickers_chunk)
-            page_no += 1
+            if len(tickers_chunk) < MAX_MEMBERS_PER_PAGE:
+                break
 
         return universe
 

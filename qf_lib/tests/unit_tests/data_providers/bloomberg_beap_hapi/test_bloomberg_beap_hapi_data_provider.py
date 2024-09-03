@@ -33,14 +33,14 @@ class TestBloombergBeapHapiDataProvider(TestCase):
 
     def test_get_tickers_universe__valid_ticker(self):
         self.data_provider.parser.get_current_values.return_value = QFDataFrame.from_records(
-            [(BloombergTicker("SPX Index"), ["Member1", "Member2"]), ], columns=["Ticker", "INDX_MEMBERS"]).set_index("Ticker")
+            [(BloombergTicker("SPX Index"), ["Member1", "Member2"]), ], columns=["Ticker", "INDEX_MEMBERS_WEIGHTS"]).set_index("Ticker")
 
         universe = self.data_provider.get_tickers_universe(BloombergTicker("SPX Index"))
         self.assertCountEqual(universe, [BloombergTicker("Member1 Equity"), BloombergTicker("Member2 Equity")])
 
     def test_get_tickers_universe__invalid_ticker(self):
         self.data_provider.parser.get_current_values.return_value = QFDataFrame.from_records(
-            [(BloombergTicker("Invalid Index"), []), ], columns=["Ticker", "INDX_MEMBERS"]).set_index("Ticker")
+            [(BloombergTicker("Invalid Index"), []), ], columns=["Ticker", "INDEX_MEMBERS_WEIGHTS"]).set_index("Ticker")
 
         universe = self.data_provider.get_tickers_universe(BloombergTicker("Invalid Index"))
         self.assertCountEqual(universe, [])

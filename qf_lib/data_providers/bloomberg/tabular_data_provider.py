@@ -14,7 +14,9 @@
 
 from typing import List
 
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.data_providers.bloomberg.bloomberg_names import FIELD_DATA, REF_DATA_SERVICE_URI
+from qf_lib.data_providers.bloomberg.exceptions import BloombergError
 from qf_lib.data_providers.bloomberg.helpers import get_response_events, check_event_for_errors, extract_security_data, \
     check_security_data_for_errors, set_tickers, set_fields
 
@@ -30,6 +32,7 @@ class TabularDataProvider:
 
     def __init__(self, session):
         self._session = session
+        self.logger = qf_logger.getChild(self.__class__.__name__)
 
     def get(self, tickers, fields, override_names, override_values) -> List:
         ref_data_service = self._session.getService(REF_DATA_SERVICE_URI)
@@ -53,24 +56,27 @@ class TabularDataProvider:
         elements = []
 
         for ev in response_events:
-            check_event_for_errors(ev)
-            security_data_array = extract_security_data(ev)
-            check_security_data_for_errors(security_data_array)
+            try:
+                check_event_for_errors(ev)
+                security_data_array = extract_security_data(ev)
+                check_security_data_for_errors(security_data_array)
 
-            for i in range(security_data_array.numValues()):
-                security_data = security_data_array.getValueAsElement(i)
-                check_security_data_for_errors(security_data)
+                for i in range(security_data_array.numValues()):
+                    security_data = security_data_array.getValueAsElement(i)
+                    check_security_data_for_errors(security_data)
 
-                field_data_array = security_data.getElement(FIELD_DATA)
+                    field_data_array = security_data.getElement(FIELD_DATA)
 
-                for field_name in fields:
-                    array = field_data_array.getElement(field_name)
-                    for element in array.values():
-                        keys_values_dict = {}
-                        for elem in element.elements():
-                            key = elem.name().__str__()
-                            value = element.getElementAsString(key)
-                            keys_values_dict[key] = value
-                        elements.append(keys_values_dict)
+                    for field_name in fields:
+                        array = field_data_array.getElement(field_name)
+                        for element in array.values():
+                            keys_values_dict = {}
+                            for elem in element.elements():
+                                key = elem.name().__str__()
+                                value = element.getElementAsString(key)
+                                keys_values_dict[key] = value
+                            elements.append(keys_values_dict)
+            except BloombergError as e:
+                self.logger.error(e)
 
         return elements
