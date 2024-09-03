@@ -431,7 +431,7 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
             else squeezed_result
 
     def _get_universe_id(self, tickers: Sequence[BloombergTicker], creation_time: Optional[datetime] = None,
-                         overrides: Optional = None):
+                         overrides: Optional[List[Tuple]] = None):
         universe_creation_time = creation_time or datetime.now()
         universe_id = f'uni{universe_creation_time:%m%d%H%M%S%f}'
 
