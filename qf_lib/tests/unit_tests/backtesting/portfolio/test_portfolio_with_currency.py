@@ -23,7 +23,7 @@ from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.tests.helpers.testing_tools.containers_comparison import assert_series_equal
-from qf_lib.tests.unit_tests.backtesting.portfolio.dummy_ticker import DummyTicker
+from qf_lib.tests.unit_tests.backtesting.portfolio.dummy_ticker import DummyExchangeTicker, DummyTicker
 from qf_lib.tests.unit_tests.backtesting.portfolio.test_portfolio import TestPortfolio
 
 
@@ -34,7 +34,7 @@ class TestPortfolioWithCurrency(TestPortfolio):
         super().setUpClass()
         cls.currency = "CHF"
         cls.currency_exchange_tickers = [
-            CurrencyExchangeTicker("USDCHF Curncy", from_currency="USD", to_currency="CHF")]
+            DummyExchangeTicker("USDCHF Curncy", from_currency="USD", to_currency="CHF")]
 
         cls.ticker = DummyTicker('AAPL US Equity', SecurityType.STOCK, currency="USD")
         cls.fut_ticker = DummyTicker('CTZ9 Comdty', SecurityType.FUTURE, cls.point_value, "USD")
