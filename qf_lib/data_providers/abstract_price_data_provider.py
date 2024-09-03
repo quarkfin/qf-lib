@@ -42,8 +42,8 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
                   start_date: datetime, end_date: datetime = None, frequency: Frequency = Frequency.DAILY, **kwargs) -> \
             Union[None, PricesSeries, PricesDataFrame, QFDataArray]:
 
-        if end_date:
-            end_date = end_date + RelativeDelta(second=0, microsecond=0)
+        end_date = end_date or datetime.now()
+        end_date = end_date + RelativeDelta(second=0, microsecond=0)
         start_date = self._adjust_start_date(start_date, frequency)
         got_single_date = self._got_single_date(start_date, end_date, frequency)
 
