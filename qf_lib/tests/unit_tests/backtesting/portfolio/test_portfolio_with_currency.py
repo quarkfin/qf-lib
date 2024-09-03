@@ -14,34 +14,41 @@
 
 import unittest
 from unittest.mock import Mock
+from qf_lib.analysis.trade_analysis.trades_generator import TradesGenerator
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.backtesting.portfolio.transaction import Transaction
 from qf_lib.common.enums.security_type import SecurityType
+from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
+from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.tests.helpers.testing_tools.containers_comparison import assert_series_equal
 from qf_lib.tests.unit_tests.backtesting.portfolio.dummy_ticker import DummyExchangeTicker, DummyTicker
-from qf_lib.tests.unit_tests.backtesting.portfolio.test_portfolio import TestPortfolio
 
 
-class TestPortfolioWithCurrency(TestPortfolio):
+class TestPortfolioWithCurrency(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        super().setUpClass()
+        cls.initial_cash = 1000000  # 1M
         cls.currency = "CHF"
         cls.currency_exchange_tickers = [
             DummyExchangeTicker("USDCHF Curncy", from_currency="USD", to_currency="CHF")]
 
         cls.ticker = DummyTicker('AAPL US Equity', SecurityType.STOCK, currency="USD")
+        cls.point_value = 75
         cls.fut_ticker = DummyTicker('CTZ9 Comdty', SecurityType.FUTURE, cls.point_value, "USD")
 
         tickers = [cls.ticker, cls.fut_ticker, cls.currency_exchange_tickers[0]]
         cls.prices_series = QFSeries(data=[120, 250, 0.95], index=tickers)
         cls.prices_up = QFSeries(data=[130, 270, 0.98], index=tickers)
         cls.prices_down = QFSeries(data=[100, 210, 0.98], index=tickers)
+
+        cls.start_time = str_to_date('2017-01-01')
+        cls.random_time = str_to_date('2017-02-02')
+        cls.trades_generator = TradesGenerator()
 
     def setUp(self) -> None:
         self.data_handler_prices = None
@@ -57,6 +64,15 @@ class TestPortfolioWithCurrency(TestPortfolio):
         portfolio = Portfolio(data_handler, self.initial_cash, timer, currency=self.currency,
                               currency_exchange_tickers=self.currency_exchange_tickers)
         return portfolio, data_handler, timer
+
+    @staticmethod
+    def _shift_timer_to_next_day(timer: SettableTimer):
+        new_time = timer.time + RelativeDelta(days=1)
+        timer.set_current_time(new_time)
+
+    @staticmethod
+    def _cash_move(transaction: Transaction):
+        return -1 * transaction.price * transaction.quantity * transaction.ticker.point_value - transaction.commission
 
     def test_transact_transaction_1(self):
         portfolio, data_handler, _ = self.get_portfolio_and_data_handler()
