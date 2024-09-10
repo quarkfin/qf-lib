@@ -91,6 +91,28 @@ class TestPortfolioWithCurrency(unittest.TestCase):
         self.assertEqual(portfolio.current_cash, self.initial_cash + cash_move_1)
         self.assertEqual(len(portfolio.open_positions_dict), 1)
 
+    def test_net_liquidation_in_currency(self):
+
+        portfolio, _, _ = self.get_portfolio_and_data_handler()
+        portfolio.update(record=True)
+        self.data_handler_prices = self.prices_series
+
+        portfolio_value_USD = portfolio.net_liquidation_in_currency(currency="USD")
+        portfolio_value_CHF = portfolio.net_liquidation_in_currency(currency="CHF")
+
+        assert portfolio_value_USD == 1000000 / 0.95
+        assert portfolio_value_CHF == 1000000
+
+    def test_net_liquidation_no_currency(self):
+
+        portfolio, _, _ = self.get_portfolio_and_data_handler()
+        portfolio.update(record=True)
+        portfolio.currency = None
+        self.data_handler_prices = self.prices_series
+
+        with self.assertRaises(ValueError):
+            portfolio.net_liquidation_in_currency(currency="USD")
+
     def test_portfolio_eod_series(self):
         expected_portfolio_eod_series = PricesSeries()
 
