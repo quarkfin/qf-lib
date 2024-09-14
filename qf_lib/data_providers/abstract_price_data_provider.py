@@ -33,10 +33,21 @@ from qf_lib.data_providers.helpers import normalize_data_array
 
 class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
     """
-    An interface for data providers containing historical data of stocks, indices, futures
-    and other asset classes. This is a base class of any simple data provider (a data provider that is associated with
-    single data base, for example: Quandl, Bloomberg, Yahoo.)
+    Interface for data providers that supply historical data for various asset classes, including stocks, indices, and futures.
+    
+    This base class is designed for simple data providers, which are linked to a single data source (e.g., Quandl, Bloomberg, Yahoo). 
+    It defines the standard structure and methods that any specific data provider implementation must adhere to in order to access and retrieve historical market data.
+    
+    Notes:
+        - When implementing the get_history method (which drivers a large portion of backtesting capabilities) careful consideration must be taken
+        to ensure the data is returned in the expected format depending on the specific input tickers and fields. 
+        For Example:
+            - isinstance(tickers, str) and isinstance(fields, str) it is expected to return a PriceSeries object
+            - isinstance(tickers, str) and isinstance(fields, list) it is expected to return a PricesDataframe object
+            - otherwise it is expected to return a QFDataArray object
+            
     """
+
 
     def get_price(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
                   start_date: datetime, end_date: datetime = None, frequency: Frequency = Frequency.DAILY, **kwargs) -> \
