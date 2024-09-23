@@ -13,9 +13,9 @@
 #     limitations under the License.
 
 """
-This module offers a comprehensive set of containers for financial data analysis, including series, dataframes, data arrays, and futures-related objects. 
+This module offers a comprehensive set of containers for financial data analysis, including series, dataframes, data arrays, and futures-related objects.
 
-Each container type is designed with specialized classes to handle various aspects of financial data, such as price series, return calculations, and futures contract management. 
+Each container type is designed with specialized classes to handle various aspects of financial data, such as price series, return calculations, and futures contract management.
 These classes streamline the processing and analysis of complex financial datasets, providing a robust framework for quantitative finance research.
 
 Notes:
