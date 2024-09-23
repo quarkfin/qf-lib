@@ -11,15 +11,17 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-from typing import Union, Sequence
+from typing import Optional, Union, Sequence
 
 from qf_lib.common.enums.security_type import SecurityType
+from qf_lib.common.tickers.exchange_rate_ticker import CurrencyExchangeTicker
 from qf_lib.common.tickers.tickers import Ticker
 
 
 class DummyTicker(Ticker):
-    def __init__(self, ticker: str, security_type=SecurityType.STOCK, point_value=1):
-        super().__init__(ticker, security_type, point_value)
+    def __init__(self, ticker: str, security_type=SecurityType.STOCK, point_value=1,
+                 currency: Optional[str] = None):
+        super().__init__(ticker, security_type, point_value, currency)
 
     @classmethod
     def from_string(cls, ticker_str: Union[str, Sequence[str]]) \
@@ -31,3 +33,15 @@ class DummyTicker(Ticker):
             return DummyTicker(ticker_str)
         else:
             return [DummyTicker(t) for t in ticker_str]
+
+
+class DummyExchangeTicker(CurrencyExchangeTicker):
+    def __init__(self, ticker: str, from_currency: str, to_currency: str, point_value: int = 1,
+                 security_type: SecurityType = SecurityType.FX):
+        super().__init__(ticker, from_currency, to_currency, point_value, security_type)
+
+    def from_string(cls, ticker_str: Union[str, Sequence[str]], security_type: SecurityType = SecurityType.FX,
+                    point_value: int = 1, currency: Optional[str] = None
+                    ) -> Union["CurrencyExchangeTicker", Sequence["CurrencyExchangeTicker"]]:
+        if isinstance(ticker_str, str):
+            return CurrencyExchangeTicker(ticker_str, ticker_str[:3], ticker_str[3:6], security_type, point_value, currency)
