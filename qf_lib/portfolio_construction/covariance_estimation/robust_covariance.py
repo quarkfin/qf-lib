@@ -21,8 +21,11 @@ from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 
 class RobustCovariance:
     """
-    Creates a class used for vol forecasting and covariance matrix estimation
-    NOTE: this method has a tendency to make decrease the volatility
+    Class for volatility forecasting and covariance matrix estimation.
+
+    This class provides methods for estimating future volatility and the covariance matrix
+    of financial assets. Note that the forecasting methods implemented here may have a tendency
+    to reduce the estimated volatility.
 
     Parameters
     ----------
