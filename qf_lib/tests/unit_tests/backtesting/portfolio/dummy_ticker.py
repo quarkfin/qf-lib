@@ -14,7 +14,6 @@
 from typing import Optional, Union, Sequence
 
 from qf_lib.common.enums.security_type import SecurityType
-from qf_lib.common.tickers.exchange_rate_ticker import CurrencyExchangeTicker
 from qf_lib.common.tickers.tickers import Ticker
 
 
@@ -33,8 +32,3 @@ class DummyTicker(Ticker):
             return DummyTicker(ticker_str)
         else:
             return [DummyTicker(t) for t in ticker_str]
-
-
-class DummyExchangeTicker(CurrencyExchangeTicker):
-    def __init__(self, ticker: DummyTicker, base_currency: str, quote_currency: str, quote_factor: int = 1):
-        super().__init__(ticker, base_currency, quote_currency, quote_factor)
