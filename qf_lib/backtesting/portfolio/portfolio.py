@@ -42,7 +42,7 @@ class Portfolio:
 
         if self.currency is not None:
             assert currency_exchange_tickers is not None
-            self.currency_exchange_tickers = {(t.from_currency, t.to_currency): t for t in currency_exchange_tickers}
+            self.currency_exchange_tickers = {(t.base_currency, t.quote_currency): t for t in currency_exchange_tickers}
 
         self.net_liquidation = initial_cash
         """ Cash value includes futures P&L + stock value + securities options value + bond value + fund value. """
@@ -71,17 +71,17 @@ class Portfolio:
 
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
-    def _get_currency_ticker(self, from_currency: str, to_currency: str) -> CurrencyExchangeTicker:
-        ticker = self.currency_exchange_tickers.get((from_currency, to_currency))
-        if not ticker:
-            raise ValueError(f"No currency exchange ticker found from {from_currency} to {to_currency}.")
-        return ticker
+    def _get_currency_exchange_ticker(self, base_currency: str, quote_currency: str) -> CurrencyExchangeTicker:
+        exchange_ticker = self.currency_exchange_tickers.get((base_currency, quote_currency))
+        if not exchange_ticker:
+            raise ValueError(f"No currency exchange ticker found from {base_currency} to {quote_currency}.")
+        return exchange_ticker
 
     def _current_exchange_rate(self, currency: str) -> float:
         """Last available exchange rate from the specified currency to the portfolio currency."""
         if currency != self.currency:
-            currency_ticker = self._get_currency_ticker(from_currency=currency, to_currency=self.currency)
-            return self.data_handler.get_last_available_price(tickers=currency_ticker)/currency_ticker.point_value
+            exchange_ticker = self._get_currency_exchange_ticker(base_currency=currency, quote_currency=self.currency)
+            return self.data_handler.get_last_available_price(tickers=exchange_ticker.ticker)/exchange_ticker.quote_factor
         return 1.
 
     def net_liquidation_in_currency(self, currency: str = None) -> float:

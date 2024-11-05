@@ -36,12 +36,5 @@ class DummyTicker(Ticker):
 
 
 class DummyExchangeTicker(CurrencyExchangeTicker):
-    def __init__(self, ticker: str, from_currency: str, to_currency: str, point_value: int = 1,
-                 security_type: SecurityType = SecurityType.FX):
-        super().__init__(ticker, from_currency, to_currency, point_value, security_type)
-
-    def from_string(cls, ticker_str: Union[str, Sequence[str]], security_type: SecurityType = SecurityType.FX,
-                    point_value: int = 1, currency: Optional[str] = None
-                    ) -> Union["CurrencyExchangeTicker", Sequence["CurrencyExchangeTicker"]]:
-        if isinstance(ticker_str, str):
-            return CurrencyExchangeTicker(ticker_str, ticker_str[:3], ticker_str[3:6], security_type, point_value, currency)
+    def __init__(self, ticker: DummyTicker, base_currency: str, quote_currency: str, quote_factor: int = 1):
+        super().__init__(ticker, base_currency, quote_currency, quote_factor)

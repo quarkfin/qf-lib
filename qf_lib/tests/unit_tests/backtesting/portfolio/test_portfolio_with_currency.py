@@ -35,7 +35,7 @@ class TestPortfolioWithCurrency(unittest.TestCase):
         cls.initial_cash = 1000000  # 1M
         cls.currency = "CHF"
         cls.currency_exchange_tickers = [
-            DummyExchangeTicker("USDCHF Curncy", from_currency="USD", to_currency="CHF")]
+            DummyExchangeTicker(DummyTicker.from_string("USDCHF Curncy"), base_currency="USD", quote_currency="CHF")]
 
         cls.ticker = DummyTicker('AAPL US Equity', SecurityType.STOCK, currency="USD")
         cls.point_value = 75
