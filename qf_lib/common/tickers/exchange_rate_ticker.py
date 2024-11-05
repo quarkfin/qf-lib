@@ -14,7 +14,7 @@ class CurrencyExchangeTicker:
         The ISO code of the quote currency in the exchange rate.
     quote_factor: int
         Factor of the conversion, i.e. a quote factor of a 100 means the currency conversion shows
-        the value of a 100 units of the quote currency. 
+        the value of a 100 units of the quote currency.
 
     """
     def __init__(self, ticker: Ticker, base_currency: str, quote_currency: str, quote_factor: int = 1):
