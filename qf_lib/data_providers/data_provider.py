@@ -219,27 +219,6 @@ class DataProvider(object, metaclass=ABCMeta):
         else:
             return container.tail(nr_of_bars)
 
-    @abstractmethod
-    def get_last_available_exchange_rate(self, base_currency: str, quote_currency: str, frequency: Frequency) -> float:
-        """
-        Get last available exchange rate from the base currency to the quote currency in the provided frequency.
-
-        Parameters
-        -----------
-        base_currency: str
-            ISO code of the base currency (ex. 'USD' for US Dollar)
-        quote_currency: str
-            ISO code of the quote currency (ex. 'EUR' for Euro)
-        frequency: Frequency
-            frequency of the returned data
-
-        Returns
-        -------
-        float
-            last available exchange rate
-        """
-        pass
-
     def get_last_available_price(self, tickers: Union[Ticker, Sequence[Ticker]], frequency: Frequency,
                                  end_time: Optional[datetime] = None) -> Union[float, QFSeries]:
         """
