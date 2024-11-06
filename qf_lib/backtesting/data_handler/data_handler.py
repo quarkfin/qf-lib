@@ -193,6 +193,10 @@ class DataHandler(DataProvider):
     def supported_ticker_types(self):
         return self.data_provider.supported_ticker_types()
 
+    def get_last_available_exchange_rate(self, base_currency: str, quote_currency: str,
+                                         frequency: Frequency = Frequency.DAILY):
+        return self.data_provider.get_last_available_exchange_rate(base_currency, quote_currency, frequency)
+
     @abstractmethod
     def get_last_available_price(self, tickers: Union[Ticker, Sequence[Ticker]], frequency: Frequency = None,
                                  end_time: Optional[datetime] = None) -> Union[float, QFSeries]:

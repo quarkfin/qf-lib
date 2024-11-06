@@ -46,7 +46,6 @@ from qf_lib.common.utils.config_exporter import ConfigExporter
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
-from qf_lib.common.tickers.exchange_rate_ticker import CurrencyExchangeTicker
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.data_provider import DataProvider
 from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
@@ -335,9 +334,6 @@ class BacktestTradingSessionBuilder:
             self._position_sizer_kwargs = kwargs
         except TypeError as e:
             self._logger.error("The Position Sizer could not be set correctly - {}".format(e))
-
-    def set_currency_exchange_tickers(self, currency_exchange_tickers: List[CurrencyExchangeTicker]):
-        self.currency_exchange_tickers = currency_exchange_tickers
 
     @ConfigExporter.append_config
     def add_orders_filter(self, orders_filter_type: Type[OrdersFilter], **kwargs):

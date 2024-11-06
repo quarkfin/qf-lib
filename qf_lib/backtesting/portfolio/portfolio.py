@@ -19,7 +19,7 @@ from qf_lib.backtesting.portfolio.backtest_position import BacktestPosition, Bac
 from qf_lib.backtesting.portfolio.position_factory import BacktestPositionFactory
 from qf_lib.backtesting.portfolio.transaction import Transaction
 from qf_lib.backtesting.portfolio.utils import split_transaction_if_needed
-from qf_lib.common.tickers.exchange_rate_ticker import CurrencyExchangeTicker
+from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
@@ -29,8 +29,7 @@ from qf_lib.containers.series.qf_series import QFSeries
 
 
 class Portfolio:
-    def __init__(self, data_handler: DataHandler, initial_cash: float, timer: Timer,
-                 currency: str = None, currency_exchange_tickers: List[CurrencyExchangeTicker] = None):
+    def __init__(self, data_handler: DataHandler, initial_cash: float, timer: Timer, currency: str = None):
         """
         On creation, the Portfolio object contains no positions and all values are "reset" to the initial
         cash, with no PnL.
@@ -39,10 +38,6 @@ class Portfolio:
         self.data_handler = data_handler
         self.timer = timer
         self.currency = currency
-
-        if self.currency is not None:
-            assert currency_exchange_tickers is not None
-            self.currency_exchange_tickers = {(t.base_currency, t.quote_currency): t for t in currency_exchange_tickers}
 
         self.net_liquidation = initial_cash
         """ Cash value includes futures P&L + stock value + securities options value + bond value + fund value. """
@@ -71,22 +66,15 @@ class Portfolio:
 
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
-    def _get_currency_exchange_ticker(self, base_currency: str, quote_currency: str) -> CurrencyExchangeTicker:
-        exchange_ticker = self.currency_exchange_tickers.get((base_currency, quote_currency))
-        if not exchange_ticker:
-            raise ValueError(f"No currency exchange ticker found from {base_currency} to {quote_currency}.")
-        return exchange_ticker
-
     def _current_exchange_rate(self, currency: str) -> float:
         """Last available exchange rate from the specified currency to the portfolio currency."""
-        if currency != self.currency:
-            exchange_ticker = self._get_currency_exchange_ticker(base_currency=currency, quote_currency=self.currency)
-            return self.data_handler.get_last_available_price(tickers=exchange_ticker.ticker)/exchange_ticker.quote_factor
-        return 1.
+        return self.data_handler.get_last_available_exchange_rate(currency, self.currency, frequency=Frequency.DAILY)
 
     def net_liquidation_in_currency(self, currency: str = None) -> float:
         """Converts the current net liquidation from the portfolio currency into the specified currency"""
-        if self.currency is not None:
+        if currency == self.currency:
+            return self.net_liquidation
+        elif self.currency is not None:
             return self.net_liquidation/self._current_exchange_rate(currency)
         else:
             raise ValueError("Portfolio currency is not specified.")
