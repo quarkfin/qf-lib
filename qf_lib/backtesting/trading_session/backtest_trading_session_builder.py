@@ -85,7 +85,6 @@ class BacktestTradingSessionBuilder:
         self._initial_risk = None
         self._benchmark_tms = None
         self._monitor_settings = None
-        self.currency_exchange_tickers = None
 
         self._contract_ticker_mapper = SimulatedContractTickerMapper()
 
@@ -198,6 +197,17 @@ class BacktestTradingSessionBuilder:
         """
         assert type(initial_cash) is int and initial_cash > 0
         self._initial_cash = initial_cash
+
+    @ConfigExporter.update_config
+    def set_portfolio_currency(self, currency: str):
+        """Sets the portfolio currency.
+
+        Parameters
+        -----------
+        currency: str
+            ISO code of the portfolio currency (Ex. 'EUR' for Euro)
+        """
+        self._currency = currency
 
     @ConfigExporter.update_config
     def set_initial_risk(self, initial_risk: float):
@@ -410,8 +420,7 @@ class BacktestTradingSessionBuilder:
         self._data_handler = self._create_data_handler(self._data_provider, self._timer)
         signals_register = self._signals_register if self._signals_register else BacktestSignalsRegister()
 
-        self._portfolio = Portfolio(self._data_handler, self._initial_cash, self._timer,
-                                    self._currency, self.currency_exchange_tickers)
+        self._portfolio = Portfolio(self._data_handler, self._initial_cash, self._timer, self._currency)
 
         self._backtest_result = BacktestResult(self._portfolio, signals_register, self._backtest_name, start_date,
                                                end_date, self._initial_risk)

@@ -82,6 +82,15 @@ class BacktestTradingSession(TradingSession):
         # The tickers and price fields are sorted in order to always return the same hash of the data bundle for
         # the same set of tickers and fields
         tickers, _ = convert_to_list(tickers, Ticker)
+
+        if self.portfolio.currency is not None:
+            currencies = set([ticker.currency for ticker in tickers])
+            if any(currency != self.portfolio.currency for currency in currencies):
+                currencies.discard(self.portfolio.currency)
+                tickers += [
+                    self.data_provider.create_exchange_ticker(currency, self.portfolio.currency) for currency in currencies
+                ]
+
         self.data_handler.use_data_bundle(sorted(tickers), sorted(PriceField.ohlcv()), data_start, self.end_date,
                                           self.frequency)
         self._hash_of_data_bundle = compute_container_hash(self.data_handler.data_provider.data_bundle)

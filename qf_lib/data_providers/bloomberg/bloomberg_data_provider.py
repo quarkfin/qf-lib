@@ -207,6 +207,9 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
 
         return casted_result
 
+    def create_exchange_rate_ticker(self, base_currency: str, quote_currency: str):
+        return BloombergTicker.from_string(f'{base_currency}{quote_currency} Curncy')
+
     def get_last_available_exchange_rate(self, base_currency: str, quote_currency: str,
                                          frequency: Frequency = Frequency.DAILY):
         """
@@ -226,7 +229,7 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
         float
             last available exchange rate
         """
-        currency_ticker = BloombergTicker.from_string(f'{base_currency}{quote_currency} Curncy')
+        currency_ticker = self.create_exchange_rate_ticker(base_currency, quote_currency)
         quote_factor = self.get_current_values(currency_ticker, fields="QUOTE_FACTOR")
         return self.get_last_available_price(currency_ticker, frequency=frequency)/quote_factor
 
