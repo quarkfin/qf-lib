@@ -88,7 +88,7 @@ class BacktestTradingSession(TradingSession):
             if any(currency != self.portfolio.currency for currency in currencies):
                 currencies.discard(self.portfolio.currency)
                 tickers += [
-                    self.data_provider.create_exchange_ticker(currency, self.portfolio.currency) for currency in currencies
+                    self.data_handler.data_provider.create_exchange_rate_ticker(currency, self.portfolio.currency) for currency in currencies
                 ]
 
         self.data_handler.use_data_bundle(sorted(tickers), sorted(PriceField.ohlcv()), data_start, self.end_date,
