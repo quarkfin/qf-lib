@@ -78,6 +78,9 @@ class PrefetchingDataProvider(PresetDataProvider):
 
         data_array = data_provider.get_price(all_tickers, fields, start_date, end_date, frequency)
 
+        if hasattr(data_provider, 'get_last_available_exchange_rate') and callable(data_provider.get_last_available_exchange_rate):
+            self.get_last_available_exchange_rate = lambda base_currency, quote_currency, frequency: data_provider.get_last_available_exchange_rate(base_currency, quote_currency, frequency)
+
         super().__init__(data=data_array,
                          exp_dates=exp_dates,
                          start_date=start_date,

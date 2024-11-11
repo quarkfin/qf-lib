@@ -11,6 +11,7 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
+import copy
 from typing import Union, Sequence
 
 from qf_lib.backtesting.broker.backtest_broker import BacktestBroker
@@ -87,7 +88,7 @@ class BacktestTradingSession(TradingSession):
             currencies = set([ticker.currency for ticker in tickers])
             if any(currency != self.portfolio.currency for currency in currencies):
                 currencies.discard(self.portfolio.currency)
-                tickers += [
+                tickers = tickers + [
                     self.data_handler.data_provider.create_exchange_rate_ticker(currency, self.portfolio.currency) for currency in currencies
                 ]
 
