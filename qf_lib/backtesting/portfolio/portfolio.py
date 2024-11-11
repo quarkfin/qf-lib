@@ -68,6 +68,8 @@ class Portfolio:
 
     def _current_exchange_rate(self, currency: str) -> float:
         """Last available exchange rate from the specified currency to the portfolio currency."""
+        if currency == self.currency:
+            return 1.
         return self.data_handler.get_last_available_exchange_rate(currency, self.currency, frequency=Frequency.DAILY)
 
     def net_liquidation_in_currency(self, currency: str = None) -> float:
