@@ -53,7 +53,6 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
 
     """
 
-
     def get_price(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
                   start_date: datetime, end_date: datetime = None, frequency: Frequency = Frequency.DAILY, **kwargs) -> \
             Union[None, PricesSeries, PricesDataFrame, QFDataArray]:
@@ -185,7 +184,6 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
             exp_dates_dict[future_ticker] = exp_dates
 
         return exp_dates_dict
-
 
     def historical_price(self, tickers: Union[Ticker, Sequence[Ticker]],
                          fields: Union[PriceField, Sequence[PriceField]],

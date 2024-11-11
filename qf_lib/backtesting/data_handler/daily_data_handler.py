@@ -13,7 +13,7 @@
 #     limitations under the License.
 
 from datetime import datetime
-from typing import Optional, Union, Sequence, Type, Dict
+from typing import Optional, Union, Sequence, Type
 
 from numpy import nan
 from pandas import concat

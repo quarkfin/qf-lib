@@ -37,7 +37,6 @@ from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
-from qf_lib.data_providers.data_provider import DataProvider
 from qf_lib.data_providers.helpers import normalize_data_array
 from qf_lib.tests.helpers.testing_tools.containers_comparison import assert_series_equal, assert_dataframes_equal, \
     assert_dataarrays_equal

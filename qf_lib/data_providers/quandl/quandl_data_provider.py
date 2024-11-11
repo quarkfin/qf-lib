@@ -308,7 +308,6 @@ class QuandlDataProvider(AbstractPriceDataProvider):
     def expiration_date_field_str_map(self, ticker: Ticker = None) -> Dict[ExpirationDateField, str]:
         pass
 
-
     def price_field_to_str_map(self) -> Dict[PriceField, str]:
         pass
 

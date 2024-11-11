@@ -211,7 +211,6 @@ class GeneralPriceProvider(AbstractPriceDataProvider):
 
         return data_provider
 
-
     def price_field_to_str_map(self) -> Dict[PriceField, str]:
         raise NotImplementedError("price_field_to_str_map is not supported by the GeneralPriceProvider.")
 

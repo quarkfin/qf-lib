@@ -92,7 +92,7 @@ class DataHandler(AbstractPriceDataProvider):
         self.default_frequency = frequency
 
         self.data_provider = PrefetchingDataProvider(self.data_provider, tickers, fields, start_date,
-                                                           end_date, frequency)
+                                                     end_date, frequency)
         self.is_optimised = True
 
     def historical_price(self, tickers: Union[Ticker, Sequence[Ticker]],
@@ -145,12 +145,12 @@ class DataHandler(AbstractPriceDataProvider):
             prices_data = self._empty_container(tickers, fields, start_date, end_date, frequency)
         elif got_single_date != got_single_date_without_look_ahead:
             prices_data = self.data_provider.get_price(tickers, fields, start_date,
-                                                             end_date_without_look_ahead + frequency.time_delta(),
-                                                             frequency)
+                                                       end_date_without_look_ahead + frequency.time_delta(),
+                                                       frequency)
             prices_data = prices_data.loc[start_date:end_date_without_look_ahead]
         else:
             prices_data = self.data_provider.get_price(tickers, fields, start_date, end_date_without_look_ahead,
-                                                             frequency)
+                                                       frequency)
 
         return prices_data
 
@@ -178,11 +178,11 @@ class DataHandler(AbstractPriceDataProvider):
             data = self._empty_container(tickers, fields, start_date, end_date, frequency)
         elif start_date.date() == end_date_without_look_ahead.date() and not single_date:
             data = self.data_provider.get_history(tickers, fields, start_date,
-                                                        end_date_without_look_ahead + frequency.time_delta(), frequency)
+                                                  end_date_without_look_ahead + frequency.time_delta(), frequency)
             data = data.loc[start_date:end_date_without_look_ahead]
         else:
             data = self.data_provider.get_history(tickers, fields, start_date, end_date_without_look_ahead,
-                                                        frequency)
+                                                  frequency)
 
         return data
 
