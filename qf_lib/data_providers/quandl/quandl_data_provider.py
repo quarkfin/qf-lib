@@ -30,9 +30,9 @@ from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.qf_series import QFSeries
+from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 from qf_lib.data_providers.helpers import tickers_dict_to_data_array, \
     normalize_data_array, get_fields_from_tickers_data_dict
-from qf_lib.data_providers.data_provider import DataProvider
 from qf_lib.settings import Settings
 
 try:
@@ -43,7 +43,7 @@ except ImportError:
     warnings.warn("No quandl installed. If you would like to use QuandlDataProvider first install the quandl library.")
 
 
-class QuandlDataProvider(DataProvider):
+class QuandlDataProvider(AbstractPriceDataProvider):
     """
     Class providing the Quandl data.
     The table database: WIKI/PRICES offers stock prices, dividends and splits for 3000 US publicly-traded companies.
@@ -306,4 +306,12 @@ class QuandlDataProvider(DataProvider):
         raise NotImplementedError("Downloading Future Chain Tickers in QuandlDataProvider is not supported yet")
 
     def expiration_date_field_str_map(self, ticker: Ticker = None) -> Dict[ExpirationDateField, str]:
+        pass
+
+
+    def price_field_to_str_map(self) -> Dict[PriceField, str]:
+        pass
+
+    def _get_futures_chain_dict(self, tickers: Union[FutureTicker, Sequence[FutureTicker]],
+                                expiration_date_fields: Union[str, Sequence[str]]) -> Dict[FutureTicker, QFDataFrame]:
         pass

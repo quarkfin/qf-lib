@@ -26,7 +26,7 @@ from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.prices_series import PricesSeries
-from qf_lib.data_providers.data_provider import DataProvider
+from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 from qf_lib.data_providers.helpers import normalize_data_array
 from qf_lib.tests.helpers.testing_tools.containers_comparison import assert_series_equal, assert_dataframes_equal
 
@@ -34,22 +34,22 @@ from qf_lib.tests.helpers.testing_tools.containers_comparison import assert_seri
 class TestDataProvider(TestCase):
 
     @classmethod
-    @patch.multiple(DataProvider, __abstractmethods__=set())
+    @patch.multiple(AbstractPriceDataProvider, __abstractmethods__=set())
     def setUpClass(cls) -> None:
         cls.ticker_1 = BloombergTicker("Example Index")
         cls.ticker_2 = BloombergTicker("Example Comdty")
 
-        cls.data_provider = DataProvider()
+        cls.data_provider = AbstractPriceDataProvider()
 
     def setUp(self) -> None:
         self.current_time = None
 
-        datetime_patcher = patch('qf_lib.data_providers.data_provider.datetime')
+        datetime_patcher = patch('qf_lib.data_providers.abstract_price_data_provider.datetime')
         datetime_mock = datetime_patcher.start()
         datetime_mock.now.side_effect = lambda: self.current_time
         self.addCleanup(datetime_patcher.stop)
 
-        get_price_patcher = patch.object(DataProvider, 'get_price')
+        get_price_patcher = patch.object(AbstractPriceDataProvider, 'get_price')
         mocked_get_price = get_price_patcher.start()
         mocked_get_price.side_effect = self._mock_get_price
         self.addCleanup(get_price_patcher.stop)

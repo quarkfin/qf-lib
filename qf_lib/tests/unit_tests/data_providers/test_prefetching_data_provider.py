@@ -27,8 +27,8 @@ from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.dimension_names import DATES, TICKERS, FIELDS
 from qf_lib.containers.qf_data_array import QFDataArray
+from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 from qf_lib.data_providers.prefetching_data_provider import PrefetchingDataProvider
-from qf_lib.data_providers.data_provider import DataProvider
 
 
 class TestPrefetchingDataProvider(unittest.TestCase):
@@ -52,8 +52,8 @@ class TestPrefetchingDataProvider(unittest.TestCase):
             self.data_provider, self.cached_tickers, self.cached_fields, self.start_date, self.end_date, self.frequency
         )
 
-    def mock_data_provider(self) -> DataProvider:
-        data_provider = Mock(spec=DataProvider)
+    def mock_data_provider(self) -> AbstractPriceDataProvider:
+        data_provider = Mock(spec=AbstractPriceDataProvider)
         data_provider.get_price.return_value = QFDataArray.create(
             data=np.full((len(self.cached_dates_idx), len(self.cached_tickers), len(self.cached_fields)), 0),
             dates=self.cached_dates_idx,

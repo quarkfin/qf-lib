@@ -30,14 +30,14 @@ from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
+from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 from qf_lib.data_providers.haver import HaverDataProvider
 from qf_lib.data_providers.helpers import normalize_data_array
-from qf_lib.data_providers.data_provider import DataProvider
 from qf_lib.data_providers.quandl.quandl_data_provider import QuandlDataProvider
 from qf_lib.data_providers.bloomberg.bloomberg_data_provider import BloombergDataProvider
 
 
-class GeneralPriceProvider(DataProvider):
+class GeneralPriceProvider(AbstractPriceDataProvider):
     """
     The main class that should be used in order to access prices of financial instruments.
     """
@@ -45,7 +45,7 @@ class GeneralPriceProvider(DataProvider):
     def __init__(self, bloomberg: BloombergDataProvider = None, quandl: QuandlDataProvider = None,
                  haver: HaverDataProvider = None):
         super().__init__()
-        self._ticker_type_to_data_provider_dict = {}  # type: Dict[Type[Ticker], DataProvider]
+        self._ticker_type_to_data_provider_dict = {}  # type: Dict[Type[Ticker], AbstractPriceDataProvider]
 
         for provider in [bloomberg, quandl, haver]:
             if provider is not None:
@@ -86,7 +86,7 @@ class GeneralPriceProvider(DataProvider):
             self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[str, Sequence[str]], start_date: datetime,
             end_date: datetime = None, frequency: Frequency = Frequency.DAILY, **kwargs) -> Union[QFSeries, QFDataFrame, QFDataArray]:
         """
-        Implements the functionality of DataProvider using duck-typing.
+        Implements the functionality of AbstractPriceDataProvider using duck-typing.
 
         Parameters
         ----------
@@ -122,7 +122,7 @@ class GeneralPriceProvider(DataProvider):
                                   expiration_date_fields: Union[ExpirationDateField, Sequence[ExpirationDateField]]) \
             -> Dict[FutureTicker, Union[QFSeries, QFDataFrame]]:
         """
-        Implements the functionality of DataProvider using duck-typing.
+        Implements the functionality of AbstractPriceDataProvider using duck-typing.
 
         Returns tickers of futures contracts, which belong to the same futures contract chain as the provided ticker
         (tickers), along with their expiration dates in form of a QFSeries.
@@ -143,7 +143,7 @@ class GeneralPriceProvider(DataProvider):
         tickers, got_single_ticker = convert_to_list(tickers, Ticker)
         results = {}
 
-        def get_data_func(data_prov: DataProvider, tickers_for_single_data_provider) -> Dict[FutureTicker, QFSeries]:
+        def get_data_func(data_prov: AbstractPriceDataProvider, tickers_for_single_data_provider) -> Dict[FutureTicker, QFSeries]:
             return data_prov.get_futures_chain_tickers(tickers_for_single_data_provider, ExpirationDateField.all_dates())
 
         for ticker_class, ticker_group in groupby(tickers, lambda t: type(t)):
@@ -161,14 +161,14 @@ class GeneralPriceProvider(DataProvider):
         if use_prices_types:
             type_of_field = PriceField
 
-            def get_data_func(data_prov: DataProvider, tickers_for_single_data_provider):
+            def get_data_func(data_prov: AbstractPriceDataProvider, tickers_for_single_data_provider):
                 prices = data_prov.get_price(tickers_for_single_data_provider, fields, start_date, end_date,
                                              frequency)
                 return prices
         else:
             type_of_field = str
 
-            def get_data_func(data_prov: DataProvider, tickers_for_single_data_provider):
+            def get_data_func(data_prov: AbstractPriceDataProvider, tickers_for_single_data_provider):
                 prices = data_prov.get_history(tickers_for_single_data_provider, fields, start_date, end_date,
                                                frequency)
                 return prices
@@ -196,11 +196,11 @@ class GeneralPriceProvider(DataProvider):
 
         return result
 
-    def _register_data_provider(self, price_provider: DataProvider):
+    def _register_data_provider(self, price_provider: AbstractPriceDataProvider):
         for ticker_class in price_provider.supported_ticker_types():
             self._ticker_type_to_data_provider_dict[ticker_class] = price_provider
 
-    def _identify_data_provider(self, ticker_class: Type[Ticker]) -> DataProvider:
+    def _identify_data_provider(self, ticker_class: Type[Ticker]) -> AbstractPriceDataProvider:
         """
         Defines the association between ticker type and data provider.
         """
@@ -210,3 +210,14 @@ class GeneralPriceProvider(DataProvider):
                 "Unknown ticker type: {}. No appropriate data provider found".format(str(ticker_class)))
 
         return data_provider
+
+
+    def price_field_to_str_map(self) -> Dict[PriceField, str]:
+        raise NotImplementedError("price_field_to_str_map is not supported by the GeneralPriceProvider.")
+
+    def expiration_date_field_str_map(self, ticker: Ticker = None) -> Dict[ExpirationDateField, str]:
+        raise NotImplementedError("expiration_date_field_str_map is not supported by the GeneralPriceProvider.")
+
+    def _get_futures_chain_dict(self, tickers: Union[FutureTicker, Sequence[FutureTicker]],
+                                expiration_date_fields: Union[str, Sequence[str]]) -> Dict[FutureTicker, QFDataFrame]:
+        pass

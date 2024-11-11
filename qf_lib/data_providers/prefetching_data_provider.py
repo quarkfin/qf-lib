@@ -21,9 +21,9 @@ from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
+from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 from qf_lib.data_providers.helpers import chain_tickers_within_range
 from qf_lib.data_providers.preset_data_provider import PresetDataProvider
-from qf_lib.data_providers.data_provider import DataProvider
 
 
 class PrefetchingDataProvider(PresetDataProvider):
@@ -34,7 +34,7 @@ class PrefetchingDataProvider(PresetDataProvider):
 
     Parameters
     -----------
-    data_provider: DataProvider
+    price_data_provider: AbstractPriceDataProvider
         data provider used to download the data
     tickers: Ticker, Sequence[Ticker]
         one or a list of tickers, used further to download the futures contracts related data.
@@ -51,7 +51,7 @@ class PrefetchingDataProvider(PresetDataProvider):
         frequency of the data
     """
 
-    def __init__(self, data_provider: DataProvider,
+    def __init__(self, price_data_provider: AbstractPriceDataProvider,
                  tickers: Union[Ticker, Sequence[Ticker]],
                  fields: Union[PriceField, Sequence[PriceField]],
                  start_date: datetime, end_date: datetime,
@@ -70,13 +70,13 @@ class PrefetchingDataProvider(PresetDataProvider):
         all_tickers = non_future_tickers
 
         if future_tickers:
-            exp_dates = data_provider.get_futures_chain_tickers(future_tickers, ExpirationDateField.all_dates())
+            exp_dates = price_data_provider.get_futures_chain_tickers(future_tickers, ExpirationDateField.all_dates())
 
             # Filter out all theses specific future contracts, which expired before start_date
             for ft in future_tickers:
                 all_tickers.extend(chain_tickers_within_range(ft, exp_dates[ft], start_date, end_date))
 
-        data_array = data_provider.get_price(all_tickers, fields, start_date, end_date, frequency)
+        data_array = price_data_provider.get_price(all_tickers, fields, start_date, end_date, frequency)
 
         super().__init__(data=data_array,
                          exp_dates=exp_dates,

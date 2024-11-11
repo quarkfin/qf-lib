@@ -13,7 +13,7 @@
 #     limitations under the License.
 
 from datetime import datetime
-from typing import Optional, Union, Sequence, Type
+from typing import Optional, Union, Sequence, Type, Dict
 
 from numpy import nan
 from pandas import concat
@@ -30,11 +30,11 @@ from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
-from qf_lib.data_providers.data_provider import DataProvider
+from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 
 
 class DailyDataHandler(DataHandler):
-    def __init__(self, data_provider: DataProvider, timer: Timer):
+    def __init__(self, data_provider: AbstractPriceDataProvider, timer: Timer):
         super().__init__(data_provider, timer)
         self.default_frequency = data_provider.frequency if data_provider.frequency is not None else Frequency.DAILY
 

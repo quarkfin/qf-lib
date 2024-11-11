@@ -38,7 +38,7 @@ from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.containers.series.qf_series import QFSeries
-from qf_lib.data_providers.data_provider import DataProvider
+from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 from qf_lib.tests.helpers.testing_tools.containers_comparison import assert_lists_equal
 
 
@@ -57,7 +57,7 @@ class TestMarketOnOpenExecutionStyle(TestCase):
 
         self.data_handler = Mock(spec=DataHandler)
         self.data_handler.frequency = Frequency.DAILY
-        self.data_handler.data_provider = Mock(spec=DataProvider)
+        self.data_handler.data_provider = Mock(spec=AbstractPriceDataProvider)
 
         self.scheduler = Mock(spec=Scheduler)
 

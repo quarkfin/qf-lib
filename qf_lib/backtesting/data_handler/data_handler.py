@@ -29,12 +29,12 @@ from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
-from qf_lib.data_providers.data_provider import DataProvider
+from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 from qf_lib.data_providers.helpers import normalize_data_array
 from qf_lib.data_providers.prefetching_data_provider import PrefetchingDataProvider
 
 
-class DataHandler(DataProvider):
+class DataHandler(AbstractPriceDataProvider):
     """
     DataHandler is a wrapper which can be used with any AbstractPriceDataProvider in both live and backtest
     environment. It makes sure that data "from the future" is not passed into components in the backtest environment.
@@ -47,18 +47,18 @@ class DataHandler(DataProvider):
 
     Parameters
     -----------
-    data_provider: DataProvider
+    price_data_provider: AbstractPriceDataProvider
         the underlying data provider
     timer: Timer
         timer used to keep track of the data "from the future"
     """
 
-    def __init__(self, data_provider: DataProvider, timer: Timer):
+    def __init__(self, price_data_provider: AbstractPriceDataProvider, timer: Timer):
         super().__init__()
-        self.data_provider = data_provider
+        self.data_provider = price_data_provider
 
-        self._check_frequency(data_provider.frequency)
-        self.default_frequency = data_provider.frequency  # type: Frequency
+        self._check_frequency(price_data_provider.frequency)
+        self.default_frequency = price_data_provider.frequency  # type: Frequency
 
         self.timer = timer
         self.is_optimised = False
@@ -91,8 +91,8 @@ class DataHandler(DataProvider):
         self._check_frequency(frequency)
         self.default_frequency = frequency
 
-        self.data_provider = PrefetchingDataProvider(self.data_provider, tickers, fields, start_date, end_date,
-                                                     frequency)
+        self.data_provider = PrefetchingDataProvider(self.data_provider, tickers, fields, start_date,
+                                                           end_date, frequency)
         self.is_optimised = True
 
     def historical_price(self, tickers: Union[Ticker, Sequence[Ticker]],
@@ -114,7 +114,7 @@ class DataHandler(DataProvider):
 
         Parameters
         ----------
-        tickers: Ticker, Sequence[Ticker]
+        tickers: Union[Ticker, Sequence[Ticker]]
             tickers for securities which should be retrieved
         fields: PriceField, Sequence[PriceField]
             fields of securities which should be retrieved
@@ -145,11 +145,12 @@ class DataHandler(DataProvider):
             prices_data = self._empty_container(tickers, fields, start_date, end_date, frequency)
         elif got_single_date != got_single_date_without_look_ahead:
             prices_data = self.data_provider.get_price(tickers, fields, start_date,
-                                                       end_date_without_look_ahead + frequency.time_delta(), frequency)
+                                                             end_date_without_look_ahead + frequency.time_delta(),
+                                                             frequency)
             prices_data = prices_data.loc[start_date:end_date_without_look_ahead]
         else:
             prices_data = self.data_provider.get_price(tickers, fields, start_date, end_date_without_look_ahead,
-                                                       frequency)
+                                                             frequency)
 
         return prices_data
 
@@ -177,11 +178,11 @@ class DataHandler(DataProvider):
             data = self._empty_container(tickers, fields, start_date, end_date, frequency)
         elif start_date.date() == end_date_without_look_ahead.date() and not single_date:
             data = self.data_provider.get_history(tickers, fields, start_date,
-                                                  end_date_without_look_ahead + frequency.time_delta(), frequency)
+                                                        end_date_without_look_ahead + frequency.time_delta(), frequency)
             data = data.loc[start_date:end_date_without_look_ahead]
         else:
             data = self.data_provider.get_history(tickers, fields, start_date, end_date_without_look_ahead,
-                                                  frequency)
+                                                        frequency)
 
         return data
 
@@ -189,6 +190,16 @@ class DataHandler(DataProvider):
                                   expiration_date_fields: Union[ExpirationDateField, Sequence[ExpirationDateField]]) \
             -> Dict[FutureTicker, Union[QFSeries, QFDataFrame]]:
         return self.data_provider.get_futures_chain_tickers(tickers, expiration_date_fields)
+
+    def price_field_to_str_map(self) -> Dict[PriceField, str]:
+        return self.data_provider.price_field_to_str_map()
+
+    def expiration_date_field_str_map(self, ticker: Ticker = None) -> Dict[ExpirationDateField, str]:
+        return self.data_provider.expiration_date_field_str_map(ticker)
+
+    def _get_futures_chain_dict(self, tickers: Union[FutureTicker, Sequence[FutureTicker]],
+                                expiration_date_fields: Union[str, Sequence[str]]) -> Dict[FutureTicker, QFDataFrame]:
+        pass
 
     def supported_ticker_types(self):
         return self.data_provider.supported_ticker_types()

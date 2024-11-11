@@ -36,7 +36,7 @@ from qf_lib.containers.dimension_names import TICKERS, DATES, FIELDS
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
-from qf_lib.data_providers.data_provider import DataProvider
+from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 from qf_lib.data_providers.helpers import normalize_data_array
 from qf_lib.tests.helpers.testing_tools.containers_comparison import assert_series_equal, assert_dataframes_equal, \
     assert_dataarrays_equal
@@ -817,7 +817,7 @@ class TestIntradayDataHandler(TestCase):
             prices = prices.loc[:end_date + freq.time_delta() + RelativeDelta(microseconds=-1)]
             return prices.iloc[-1] if not prices.empty else PricesSeries(index=t, data=nan)
 
-        price_data_provider_mock = Mock(spec=DataProvider, frequency=frequency)
+        price_data_provider_mock = Mock(spec=AbstractPriceDataProvider, frequency=frequency)
         price_data_provider_mock.get_price.side_effect = get_price
         price_data_provider_mock.get_last_available_price.side_effect = get_last_available_price
         return price_data_provider_mock
