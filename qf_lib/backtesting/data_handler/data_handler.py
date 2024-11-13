@@ -17,6 +17,7 @@ from typing import Union, Sequence, Optional, Dict
 
 from pandas import date_range
 
+from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
@@ -24,15 +25,17 @@ from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
+from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
+from qf_lib.data_providers.futures_data_provider import FuturesDataProvider
 from qf_lib.data_providers.helpers import normalize_data_array
 from qf_lib.data_providers.prefetching_data_provider import PrefetchingDataProvider
 
 
-class DataHandler(AbstractPriceDataProvider):
+class DataHandler(AbstractPriceDataProvider, FuturesDataProvider):
     """
     DataHandler is a wrapper which can be used with any AbstractPriceDataProvider in both live and backtest
     environment. It makes sure that data "from the future" is not passed into components in the backtest environment.
@@ -213,3 +216,11 @@ class DataHandler(AbstractPriceDataProvider):
         data_array = QFDataArray.create(dates, tickers, fields, data=None)
         return normalize_data_array(data_array, tickers, fields, got_single_date, got_single_ticker,
                                     got_single_field, True)
+
+    def expiration_date_field_str_map(self, *args, **kwargs) -> Dict[ExpirationDateField, str]:
+        return self.data_provider.expiration_date_field_str_map(*args, **kwargs) \
+            if isinstance(self.data_provider, FuturesDataProvider) else {}
+
+    def _get_futures_chain_dict(self, *args, **kwargs) -> Dict[FutureTicker, QFDataFrame]:
+        return self.data_provider._get_futures_chain_dict(*args, **kwargs) \
+            if isinstance(self.data_provider, FuturesDataProvider) else {}

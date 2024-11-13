@@ -13,7 +13,7 @@
 #     limitations under the License.
 
 from datetime import datetime
-from typing import Optional, Union, Sequence, Type
+from typing import Optional, Union, Sequence, Type, Dict
 
 from numpy import nan
 from pandas import concat
@@ -22,6 +22,7 @@ from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.events.time_event.regular_time_event.regular_market_event import RegularMarketEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
+from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker

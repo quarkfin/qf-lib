@@ -15,6 +15,7 @@
 from datetime import datetime
 from itertools import groupby
 from typing import Sequence, Union, Dict, Type
+from warnings import warn
 
 import pandas as pd
 
@@ -31,20 +32,25 @@ from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
+from qf_lib.data_providers.futures_data_provider import FuturesDataProvider
 from qf_lib.data_providers.haver import HaverDataProvider
 from qf_lib.data_providers.helpers import normalize_data_array
 from qf_lib.data_providers.quandl.quandl_data_provider import QuandlDataProvider
 from qf_lib.data_providers.bloomberg.bloomberg_data_provider import BloombergDataProvider
 
 
-class GeneralPriceProvider(AbstractPriceDataProvider):
+class GeneralPriceProvider(AbstractPriceDataProvider, FuturesDataProvider):
     """
     The main class that should be used in order to access prices of financial instruments.
+    Deprecated.
     """
 
     def __init__(self, bloomberg: BloombergDataProvider = None, quandl: QuandlDataProvider = None,
                  haver: HaverDataProvider = None):
         super().__init__()
+        warn('GeneralPriceProvider is deprecated and will be removed in a future version of qf_lib',
+             DeprecationWarning, stacklevel=2)
+
         self._ticker_type_to_data_provider_dict = {}  # type: Dict[Type[Ticker], AbstractPriceDataProvider]
 
         for provider in [bloomberg, quandl, haver]:
