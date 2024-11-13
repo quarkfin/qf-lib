@@ -30,6 +30,7 @@ from qf_lib.containers.futures.future_tickers.bloomberg_future_ticker import Blo
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
+from qf_lib.data_providers.futures_data_provider import FuturesDataProvider
 from qf_lib.data_providers.helpers import normalize_data_array, cast_dataframe_to_proper_type
 from qf_lib.data_providers.tickers_universe_provider import TickersUniverseProvider
 from qf_lib.settings import Settings
@@ -37,7 +38,7 @@ from qf_lib.settings import Settings
 try:
     import blpapi
 
-    from qf_lib.data_providers.bloomberg.futures_data_provider import FuturesDataProvider
+    from qf_lib.data_providers.bloomberg.futures_data_provider import BloombergFuturesDataProvider
     from qf_lib.data_providers.bloomberg.historical_data_provider import HistoricalDataProvider
     from qf_lib.data_providers.bloomberg.reference_data_provider import ReferenceDataProvider
     from qf_lib.data_providers.bloomberg.tabular_data_provider import TabularDataProvider
@@ -52,7 +53,7 @@ except ImportError:
                   " library")
 
 
-class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
+class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider, FuturesDataProvider):
     """
     Data Provider which provides financial data from Bloomberg.
     """
@@ -75,7 +76,7 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
             self._historical_data_provider = HistoricalDataProvider(self.session)
             self._reference_data_provider = ReferenceDataProvider(self.session)
             self._tabular_data_provider = TabularDataProvider(self.session)
-            self._futures_data_provider = FuturesDataProvider(self.session)
+            self._futures_data_provider = BloombergFuturesDataProvider(self.session)
         else:
             self.session = None
             self._historical_data_provider = None

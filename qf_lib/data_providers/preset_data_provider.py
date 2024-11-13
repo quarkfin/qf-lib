@@ -32,10 +32,11 @@ from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
+from qf_lib.data_providers.futures_data_provider import FuturesDataProvider
 from qf_lib.data_providers.helpers import normalize_data_array
 
 
-class PresetDataProvider(AbstractPriceDataProvider):
+class PresetDataProvider(AbstractPriceDataProvider, FuturesDataProvider):
     """
     Wrapper on QFDataArray which makes it a DataProvider.
 

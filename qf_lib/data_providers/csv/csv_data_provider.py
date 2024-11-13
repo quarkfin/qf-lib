@@ -99,6 +99,7 @@ class CSVDataProvider(PresetDataProvider):
         data_provider = CSVDataProvider(path, tickers, index_column, field_to_price_field_dict, start_date,
                                         end_date, Frequency.MIN_1)
     """
+
     def __init__(self, path: str, tickers: Union[Ticker, Sequence[Ticker]], index_col: str,
                  field_to_price_field_dict: Optional[Dict[str, PriceField]] = None,
                  fields: Optional[Union[str, List[str]]] = None, start_date: Optional[datetime] = None,

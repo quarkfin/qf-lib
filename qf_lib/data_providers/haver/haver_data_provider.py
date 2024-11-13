@@ -51,10 +51,9 @@ class HaverDataProvider(AbstractPriceDataProvider):
     get_lock = threading.Lock()
 
     def __init__(self, settings: Settings):
+        super().__init__()
         self.db_location = settings.haver_path
         self.connected = False
-
-        self.logger = qf_logger.getChild(self.__class__.__name__)
 
     def get_history(self, tickers: Union[HaverTicker, Sequence[HaverTicker]], fields=None, start_date: datetime = None,
                     end_date: datetime = None, **kwargs) -> Union[QFSeries, QFDataFrame]:
@@ -143,10 +142,3 @@ class HaverDataProvider(AbstractPriceDataProvider):
 
         if not self.connected:
             raise ConnectionError("No Haver connection.")
-
-    def _get_futures_chain_dict(self, tickers: Union[FutureTicker, Sequence[FutureTicker]],
-                                expiration_date_fields: Union[str, Sequence[str]]) -> Dict[FutureTicker, QFDataFrame]:
-        raise NotImplementedError("Downloading Future Chain Tickers in HaverDataProvider is not supported yet")
-
-    def expiration_date_field_str_map(self, ticker: Ticker = None) -> Dict[ExpirationDateField, str]:
-        pass
