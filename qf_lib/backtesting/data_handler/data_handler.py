@@ -17,7 +17,6 @@ from typing import Union, Sequence, Optional, Dict
 
 from pandas import date_range
 
-from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
@@ -25,7 +24,6 @@ from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
-from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
@@ -186,20 +184,8 @@ class DataHandler(AbstractPriceDataProvider):
 
         return data
 
-    def get_futures_chain_tickers(self, tickers: Union[FutureTicker, Sequence[FutureTicker]],
-                                  expiration_date_fields: Union[ExpirationDateField, Sequence[ExpirationDateField]]) \
-            -> Dict[FutureTicker, Union[QFSeries, QFDataFrame]]:
-        return self.data_provider.get_futures_chain_tickers(tickers, expiration_date_fields)
-
     def price_field_to_str_map(self) -> Dict[PriceField, str]:
         return self.data_provider.price_field_to_str_map()
-
-    def expiration_date_field_str_map(self, ticker: Ticker = None) -> Dict[ExpirationDateField, str]:
-        return self.data_provider.expiration_date_field_str_map(ticker)
-
-    def _get_futures_chain_dict(self, tickers: Union[FutureTicker, Sequence[FutureTicker]],
-                                expiration_date_fields: Union[str, Sequence[str]]) -> Dict[FutureTicker, QFDataFrame]:
-        pass
 
     def supported_ticker_types(self):
         return self.data_provider.supported_ticker_types()
