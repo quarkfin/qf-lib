@@ -36,10 +36,12 @@ from qf_lib.data_providers.csv.csv_data_provider import CSVDataProvider
 
 try:
     from binance import Client
+
     is_binance_installed = True
 except ImportError:
     is_binance_installed = False
-    warnings.warn("No binance installed. If you would like to use BinanceDataProvider first install the binance library.")
+    warnings.warn(
+        "No binance installed. If you would like to use BinanceDataProvider first install the binance library.")
 
 
 class BinanceDataProvider(CSVDataProvider):
@@ -90,7 +92,6 @@ class BinanceDataProvider(CSVDataProvider):
         fields = ['Open', 'High', 'Low', 'Close', 'Volume']
         ticker_col = 'Ticker'
 
-
         filepath = os.path.join(path, filename)
 
         if is_binance_installed:
@@ -101,7 +102,6 @@ class BinanceDataProvider(CSVDataProvider):
                              frequency, ticker_col=ticker_col)
         else:
             self.logger.warning("Couldn't import the Binance API. Check if the necessary dependencies are installed.")
-
 
     def _load_data(self, filepath, tickers, fields, start_date, end_date, frequency, index_col, ticker_col):
         if not os.path.isfile(filepath):

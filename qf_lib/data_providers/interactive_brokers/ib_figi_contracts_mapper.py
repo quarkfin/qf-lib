@@ -27,8 +27,8 @@ try:
     is_ibapi_installed = True
 except ImportError:
     is_ibapi_installed = False
-    warnings.warn("No ibapi installed. If you would like to use IBFIGItoIBContractMapper first install the ibapi library.")
-
+    warnings.warn(
+        "No ibapi installed. If you would like to use IBFIGItoIBContractMapper first install the ibapi library.")
 
 
 class IBFIGItoIBContractMapper:
@@ -67,7 +67,8 @@ class IBFIGItoIBContractMapper:
 
         if is_ibapi_installed:
             self.action_event_lock = Event()
-            self.wrapper = IBWrapper(self.action_event_lock, IBContractTickerMapper({}))  # not necessary to have configured IBContractTickerMapper for FIGI contracts mapping
+            self.wrapper = IBWrapper(self.action_event_lock, IBContractTickerMapper(
+                {}))  # not necessary to have configured IBContractTickerMapper for FIGI contracts mapping
             self.client = EClient(wrapper=self.wrapper)
             self.clientId = clientId
             self.client.connect(host, port, self.clientId)
@@ -86,7 +87,8 @@ class IBFIGItoIBContractMapper:
         else:
             self.logger.warning("Couldn't import the IB API. Check if the necessary dependencies are installed.")
 
-    def get_ticker_to_contract_mapping_from_figi_contracts(self, ticker_to_contract: Dict[Ticker, IBContract]) -> Dict[Ticker, IBContract]:
+    def get_ticker_to_contract_mapping_from_figi_contracts(self, ticker_to_contract: Dict[Ticker, IBContract]) -> Dict[
+        Ticker, IBContract]:
         """"
         Function to map dictionary:
             ticker -> ib_figi_contract
