@@ -30,6 +30,7 @@ from qf_lib.containers.futures.future_tickers.bloomberg_future_ticker import Blo
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
+from qf_lib.data_providers.exchange_rate_provider import ExchangeRateProvider
 from qf_lib.data_providers.helpers import normalize_data_array, cast_dataframe_to_proper_type
 from qf_lib.data_providers.tickers_universe_provider import TickersUniverseProvider
 from qf_lib.settings import Settings
@@ -52,7 +53,7 @@ except ImportError:
                   " library")
 
 
-class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
+class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider, ExchangeRateProvider):
     """
     Data Provider which provides financial data from Bloomberg.
     """
@@ -207,8 +208,8 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
 
         return casted_result
 
-    def create_exchange_rate_ticker(self, base_currency: str, quote_currency: str):
-        return BloombergTicker.from_string(f'{base_currency}{quote_currency} Curncy')
+    def create_exchange_rate_ticker(self, base_currency: str, quote_currency: str) -> BloombergTicker:
+        return BloombergTicker.from_string(f'{base_currency}{quote_currency} Curncy', security_type=SecurityType.FX)
 
     def get_last_available_exchange_rate(self, base_currency: str, quote_currency: str,
                                          frequency: Frequency = Frequency.DAILY):

@@ -12,14 +12,13 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 from datetime import datetime
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.portfolio.backtest_position import BacktestPosition, BacktestPositionSummary
 from qf_lib.backtesting.portfolio.position_factory import BacktestPositionFactory
 from qf_lib.backtesting.portfolio.transaction import Transaction
 from qf_lib.backtesting.portfolio.utils import split_transaction_if_needed
-from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
@@ -29,7 +28,7 @@ from qf_lib.containers.series.qf_series import QFSeries
 
 
 class Portfolio:
-    def __init__(self, data_handler: DataHandler, initial_cash: float, timer: Timer, currency: str = None):
+    def __init__(self, data_handler: DataHandler, initial_cash: float, timer: Timer, currency: Optional[str] = None):
         """
         On creation, the Portfolio object contains no positions and all values are "reset" to the initial
         cash, with no PnL.
@@ -70,7 +69,8 @@ class Portfolio:
         """Last available exchange rate from the specified currency to the portfolio currency."""
         if currency == self.currency:
             return 1.
-        return self.data_handler.get_last_available_exchange_rate(currency, self.currency, frequency=Frequency.DAILY)
+        return self.data_handler.get_last_available_exchange_rate(currency, self.currency,
+                                                                  frequency=self.data_handler.default_frequency)
 
     def net_liquidation_in_currency(self, currency: str = None) -> float:
         """Converts the current net liquidation from the portfolio currency into the specified currency"""

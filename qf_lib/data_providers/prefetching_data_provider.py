@@ -21,6 +21,7 @@ from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
+from qf_lib.data_providers.exchange_rate_provider import ExchangeRateProvider
 from qf_lib.data_providers.helpers import chain_tickers_within_range
 from qf_lib.data_providers.preset_data_provider import PresetDataProvider
 from qf_lib.data_providers.data_provider import DataProvider
@@ -78,8 +79,9 @@ class PrefetchingDataProvider(PresetDataProvider):
 
         data_array = data_provider.get_price(all_tickers, fields, start_date, end_date, frequency)
 
-        if hasattr(data_provider, 'get_last_available_exchange_rate') and callable(data_provider.get_last_available_exchange_rate):
-            self.get_last_available_exchange_rate = lambda base_currency, quote_currency, frequency: data_provider.get_last_available_exchange_rate(base_currency, quote_currency, frequency)
+        if isinstance(data_provider, ExchangeRateProvider):
+            self.get_last_available_exchange_rate = lambda base_currency, quote_currency, frequency: \
+                data_provider.get_last_available_exchange_rate(base_currency, quote_currency, frequency)
 
         super().__init__(data=data_array,
                          exp_dates=exp_dates,

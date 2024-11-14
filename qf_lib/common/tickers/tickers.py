@@ -34,7 +34,7 @@ class Ticker(metaclass=ABCMeta):
         SecurityType.FUTURE for a futures contract etc.
     point_value: int
         size of the contract as given by the ticker's Data Provider.
-    currency: str
+    currency: Optional[str]
         ISO code of the currency of the ticker. Example "USD".
     """
     def __init__(self, ticker: str, security_type: SecurityType, point_value: int, currency: Optional[str] = None):

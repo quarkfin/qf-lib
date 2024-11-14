@@ -30,6 +30,7 @@ from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.data_provider import DataProvider
+from qf_lib.data_providers.exchange_rate_provider import ExchangeRateProvider
 from qf_lib.data_providers.helpers import normalize_data_array
 from qf_lib.data_providers.prefetching_data_provider import PrefetchingDataProvider
 
@@ -195,7 +196,10 @@ class DataHandler(DataProvider):
 
     def get_last_available_exchange_rate(self, base_currency: str, quote_currency: str,
                                          frequency: Frequency = Frequency.DAILY):
-        return self.data_provider.get_last_available_exchange_rate(base_currency, quote_currency, frequency)
+        if isinstance(self.data_provider, ExchangeRateProvider):
+            return self.data_provider.get_last_available_exchange_rate(base_currency, quote_currency, frequency)
+        else:
+            raise NotImplementedError(f"{type(self.data_provider)} does not implement get_last_available_exchange_rate")
 
     @abstractmethod
     def get_last_available_price(self, tickers: Union[Ticker, Sequence[Ticker]], frequency: Frequency = None,

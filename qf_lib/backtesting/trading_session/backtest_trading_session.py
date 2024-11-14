@@ -84,9 +84,9 @@ class BacktestTradingSession(TradingSession):
         tickers, _ = convert_to_list(tickers, Ticker)
 
         if self.portfolio.currency is not None:
-            currencies = set([ticker.currency for ticker in tickers])
-            if any(currency != self.portfolio.currency for currency in currencies):
-                currencies.discard(self.portfolio.currency)
+            currencies = set(ticker.currency for ticker in tickers)
+            currencies.discard(self.portfolio.currency)
+            if currencies:
                 tickers = tickers + [
                     self.data_handler.data_provider.create_exchange_rate_ticker(currency, self.portfolio.currency) for currency in currencies
                 ]
