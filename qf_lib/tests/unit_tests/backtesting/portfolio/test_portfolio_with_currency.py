@@ -55,6 +55,7 @@ class TestPortfolioWithCurrency(unittest.TestCase):
 
     def get_portfolio_and_data_handler(self):
         data_handler = Mock(spec=DataHandler)
+        data_handler.default_frequency = Frequency.DAILY
         data_handler.get_last_available_price.side_effect = lambda tickers: self.data_handler_prices[tickers] \
             if tickers else None
         data_handler.get_last_available_exchange_rate.side_effect = \
