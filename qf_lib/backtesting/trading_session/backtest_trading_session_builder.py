@@ -81,7 +81,7 @@ class BacktestTradingSessionBuilder:
 
         self._backtest_name = "Backtest Results"
         self._initial_cash = 10000000
-        self._currency = "USD"
+        self._currency = None
         self._initial_risk = None
         self._benchmark_tms = None
         self._monitor_settings = None
