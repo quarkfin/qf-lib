@@ -11,31 +11,23 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
+import inspect
 from abc import abstractmethod
 from datetime import datetime
-from typing import Union, Sequence, Optional, Dict
+from typing import Union, Sequence, Optional
 
-from pandas import date_range
-
-from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
-from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
-from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
-from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
-from qf_lib.containers.qf_data_array import QFDataArray
-from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
-from qf_lib.data_providers.futures_data_provider import FuturesDataProvider
-from qf_lib.data_providers.helpers import normalize_data_array
+from qf_lib.data_providers.data_provider import DataProvider
 from qf_lib.data_providers.prefetching_data_provider import PrefetchingDataProvider
 
 
-class DataHandler(AbstractPriceDataProvider, FuturesDataProvider):
+class DataHandler:
     """
     DataHandler is a wrapper which can be used with any AbstractPriceDataProvider in both live and backtest
     environment. It makes sure that data "from the future" is not passed into components in the backtest environment.
@@ -48,21 +40,27 @@ class DataHandler(AbstractPriceDataProvider, FuturesDataProvider):
 
     Parameters
     -----------
-    price_data_provider: AbstractPriceDataProvider
+    data_provider: AbstractPriceDataProvider
         the underlying data provider
     timer: Timer
         timer used to keep track of the data "from the future"
     """
+    frequency = None
 
-    def __init__(self, price_data_provider: AbstractPriceDataProvider, timer: Timer):
-        super().__init__()
-        self.data_provider = price_data_provider
+    def __init__(self, data_provider: DataProvider, timer: Timer):
 
-        self._check_frequency(price_data_provider.frequency)
-        self.default_frequency = price_data_provider.frequency  # type: Frequency
+        self._data_provider = data_provider
+        self.__dict__['timer'] = timer
 
-        self.timer = timer
+        self._check_frequency(data_provider.frequency)
+        self.default_frequency = data_provider.frequency  # type: Frequency
+
         self.is_optimised = False
+
+    @property
+    def data_provider(self) -> DataProvider:
+        """Property necessary to implement the look-ahead bias decorator functionality."""
+        return self._data_provider
 
     def use_data_bundle(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
                         start_date: datetime, end_date: datetime, frequency: Frequency = Frequency.DAILY):
@@ -92,106 +90,40 @@ class DataHandler(AbstractPriceDataProvider, FuturesDataProvider):
         self._check_frequency(frequency)
         self.default_frequency = frequency
 
-        self.data_provider = PrefetchingDataProvider(self.data_provider, tickers, fields, start_date,
+        self._data_provider = PrefetchingDataProvider(self.data_provider, tickers, fields, start_date,
                                                      end_date, frequency)
         self.is_optimised = True
 
-    def historical_price(self, tickers: Union[Ticker, Sequence[Ticker]],
-                         fields: Union[PriceField, Sequence[PriceField]],
-                         nr_of_bars: int, end_date: Optional[datetime] = None, frequency: Frequency = None) -> \
-            Union[PricesSeries, PricesDataFrame, QFDataArray]:
+    def __getattr__(self, attr):
+        original_attr = self.data_provider.__getattribute__(attr)
 
-        frequency = frequency or self.default_frequency
-        end_date = self._get_end_date_without_look_ahead(end_date, frequency)
-        return self.data_provider.historical_price(tickers, fields, nr_of_bars, end_date, frequency)
+        # Check if method is marked for date filtering
+        if callable(original_attr) and hasattr(original_attr, 'date_parameters_to_adjust'):
+            # Wrap only methods with _filter_dates specified
+            def wrapper(*args, **kwargs):
+                # Get the method signature to inspect parameter types
+                sig = inspect.signature(original_attr)
+                bound_args = sig.bind(*args, **kwargs)
+                bound_args.apply_defaults()
+                data_handler_variables = {}
 
-    def get_price(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
-                  start_date: datetime, end_date: datetime = None, frequency: Frequency = None, **kwargs) -> \
-            Union[PricesSeries, PricesDataFrame, QFDataArray]:
-        """
-        Runs DataProvider.get_price(...) but before makes sure that the query doesn't concern data from
-        the future. It always returns the fully available bars (e.g. it will return a full bar for a day only after
-        the market close).
+                # Retrieve the specific parameters to check from the decorator
+                param_names_to_filter = original_attr.date_parameters_to_adjust
 
-        Parameters
-        ----------
-        tickers: Union[Ticker, Sequence[Ticker]]
-            tickers for securities which should be retrieved
-        fields: PriceField, Sequence[PriceField]
-            fields of securities which should be retrieved
-        start_date: datetime
-            date representing the beginning of historical period from which data should be retrieved
-        end_date: datetime
-            date representing the end of historical period from which data should be retrieved;
-            if no end_date was provided, by default the current date will be used
-        frequency: Frequency
-            frequency of the data
+                # Go through each specified argument and apply date filtering
+                for param_name in param_names_to_filter:
+                    if param_name in bound_args.arguments:
+                        param_value = bound_args.arguments[param_name]
+                        data_handler_variables[f"__original_{param_name}"] = param_value
+                        param_value = self._get_end_date_without_look_ahead(param_value, self.frequency)
+                        bound_args.arguments[param_name] = param_value
 
-        Returns
-        -------
-        None, PricesSeries, PricesDataFrame, QFDataArray
-        :param **kwargs:
-        """
-        frequency = frequency or self.default_frequency
-        assert frequency is not None, "Frequency cannot be equal to None"
+                # Call the original method with filtered arguments
+                return original_attr(*bound_args.args, **bound_args.kwargs, **data_handler_variables)
 
-        start_date = self._adjust_start_date(start_date, frequency)
-        end_date = end_date or self.timer.now()
-        got_single_date = self._got_single_date(start_date, end_date, frequency)
-
-        end_date_without_look_ahead = self._get_end_date_without_look_ahead(end_date, frequency)
-        got_single_date_without_look_ahead = self._got_single_date(start_date, end_date_without_look_ahead, frequency)
-
-        if start_date > end_date_without_look_ahead:
-            prices_data = self._empty_container(tickers, fields, start_date, end_date, frequency)
-        elif got_single_date != got_single_date_without_look_ahead:
-            prices_data = self.data_provider.get_price(tickers, fields, start_date,
-                                                       end_date_without_look_ahead + frequency.time_delta(),
-                                                       frequency)
-            prices_data = prices_data.loc[start_date:end_date_without_look_ahead]
+            return wrapper
         else:
-            prices_data = self.data_provider.get_price(tickers, fields, start_date, end_date_without_look_ahead,
-                                                       frequency)
-
-        return prices_data
-
-    def get_history(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[str, Sequence[str]],
-                    start_date: datetime, end_date: datetime = None, frequency: Frequency = None, **kwargs) -> \
-            Union[QFSeries, QFDataFrame, QFDataArray]:
-        """
-        Runs DataProvider.get_history(...) but before makes sure that the query doesn't concern data from the future.
-
-        It accesses the latest fully available bar as of "today", that is: if a bar wasn't closed for today yet,
-        then all the PriceFields (e.g. OPEN) will concern data from yesterday.
-
-        See Also
-        --------
-        DataProvider.get_history
-        """
-        frequency = frequency or self.default_frequency
-        assert frequency is not None, "Frequency cannot be equal to None"
-
-        start_date = self._adjust_start_date(start_date, frequency)
-        single_date = self._got_single_date(start_date, end_date, frequency)
-        end_date_without_look_ahead = self._get_end_date_without_look_ahead(end_date, frequency)
-
-        if start_date > end_date_without_look_ahead:
-            data = self._empty_container(tickers, fields, start_date, end_date, frequency)
-        elif start_date.date() == end_date_without_look_ahead.date() and not single_date:
-            data = self.data_provider.get_history(tickers, fields, start_date,
-                                                  end_date_without_look_ahead + frequency.time_delta(), frequency)
-            data = data.loc[start_date:end_date_without_look_ahead]
-        else:
-            data = self.data_provider.get_history(tickers, fields, start_date, end_date_without_look_ahead,
-                                                  frequency)
-
-        return data
-
-    def price_field_to_str_map(self) -> Dict[PriceField, str]:
-        return self.data_provider.price_field_to_str_map()
-
-    def supported_ticker_types(self):
-        return self.data_provider.supported_ticker_types()
+            return original_attr
 
     @abstractmethod
     def get_last_available_price(self, tickers: Union[Ticker, Sequence[Ticker]], frequency: Frequency = None,
@@ -206,21 +138,3 @@ class DataHandler(AbstractPriceDataProvider, FuturesDataProvider):
     def _check_frequency(self, frequency):
         """ Verify if the provided frequency is compliant with the type of Data Handler used. """
         pass
-
-    def _empty_container(self, tickers, fields, start_date, end_date, frequency):
-        tickers, got_single_ticker = convert_to_list(tickers, Ticker)
-        fields, got_single_field = convert_to_list(fields, (str, PriceField))
-        got_single_date = self._got_single_date(start_date, end_date, frequency)
-
-        dates = date_range(start_date, end_date, freq=frequency.to_pandas_freq())
-        data_array = QFDataArray.create(dates, tickers, fields, data=None)
-        return normalize_data_array(data_array, tickers, fields, got_single_date, got_single_ticker,
-                                    got_single_field, True)
-
-    def expiration_date_field_str_map(self, *args, **kwargs) -> Dict[ExpirationDateField, str]:
-        return self.data_provider.expiration_date_field_str_map(*args, **kwargs) \
-            if isinstance(self.data_provider, FuturesDataProvider) else {}
-
-    def _get_futures_chain_dict(self, *args, **kwargs) -> Dict[FutureTicker, QFDataFrame]:
-        return self.data_provider._get_futures_chain_dict(*args, **kwargs) \
-            if isinstance(self.data_provider, FuturesDataProvider) else {}

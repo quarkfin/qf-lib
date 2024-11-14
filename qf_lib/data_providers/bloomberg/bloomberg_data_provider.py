@@ -31,7 +31,7 @@ from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 from qf_lib.data_providers.futures_data_provider import FuturesDataProvider
-from qf_lib.data_providers.helpers import normalize_data_array, cast_dataframe_to_proper_type
+from qf_lib.data_providers.helpers import normalize_data_array, cast_dataframe_to_proper_type, look_ahead_bias
 from qf_lib.data_providers.tickers_universe_provider import TickersUniverseProvider
 from qf_lib.settings import Settings
 
@@ -210,9 +210,10 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider, 
 
         return casted_result
 
+    @look_ahead_bias("end_date")
     def get_history(self, tickers: Union[BloombergTicker, Sequence[BloombergTicker]], fields: Union[str, Sequence[str]],
-                    start_date: datetime, end_date: datetime = None, frequency: Frequency = Frequency.DAILY,
-                    currency: str = None, override_name: str = None, override_value: str = None) \
+                    start_date: datetime, end_date: datetime = None, frequency: Frequency = None,
+                    currency: str = None, override_name: str = None, override_value: str = None, **kwargs) \
             -> Union[QFSeries, QFDataFrame, QFDataArray]:
         """
         Gets historical data from Bloomberg from the (start_date - end_date) time range. In case of frequency, which is
@@ -232,7 +233,7 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider, 
             date representing the end of historical period from which data should be retrieved;
             if no end_date was provided, by default the current date will be used
         frequency: Frequency
-            frequency of the data
+            frequency of the data. It defaults to DAILY.
         currency: str
         override_name: str
         override_value: str
@@ -253,11 +254,14 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider, 
         self._connect_if_needed()
         self._assert_is_connected()
 
+        frequency = frequency or self.frequency or Frequency.DAILY
         end_date = end_date or datetime.now()
         end_date = end_date + RelativeDelta(second=0, microsecond=0)
         start_date = self._adjust_start_date(start_date, frequency)
 
-        got_single_date = self._got_single_date(start_date, end_date, frequency)
+        _original_end_date = kwargs.get('__original_end_date', end_date) or end_date
+        got_single_date = self._got_single_date(start_date, _original_end_date, frequency)
+
         tickers, got_single_ticker = convert_to_list(tickers, BloombergTicker)
         fields, got_single_field = convert_to_list(fields, (PriceField, str))
 

@@ -23,7 +23,6 @@ from qf_lib.backtesting.position_sizer.initial_risk_with_volume_position_sizer i
 from qf_lib.backtesting.signals.backtest_signals_register import BacktestSignalsRegister
 from qf_lib.backtesting.signals.signal import Signal
 from qf_lib.backtesting.broker.broker import Broker
-from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.order.execution_style import MarketOrder, StopOrder
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.order_factory import OrderFactory
@@ -64,7 +63,7 @@ class TestPositionSizer(unittest.TestCase):
         self.broker.get_positions.return_value = [position, crypto_position]
         self.broker.get_portfolio_value.return_value = self.portfolio_value
 
-        data_handler = Mock(spec=DataHandler, timer=self.timer)
+        data_handler = Mock(timer=self.timer)
         data_handler.get_last_available_price.side_effect = lambda _: self.last_price
         data_handler.get_price.return_value = self.volume
 

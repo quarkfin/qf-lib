@@ -87,14 +87,14 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
         self._last_cached_datetime = None
         self._expiration_hour = RelativeDelta(hour=0, minute=0, second=0, microsecond=0)
 
-    def initialize_data_provider(self, timer: Timer, data_provider: "DataProvider"):
+    def initialize_data_provider(self, timer: Timer, data_provider: "FuturesDataProvider"):
         """ Initialize the future ticker with data provider and ticker.
 
         Parameters
         ----------
         timer: Timer
             Timer which is used further when computing the current ticker.
-        data_provider: DataProvider
+        data_provider: FuturesDataProvider
             Data provider which is used to download symbols of tickers, belonging to the given future ticker family
         """
         if self._ticker_initialized:

@@ -17,7 +17,7 @@ from unittest import TestCase
 from unittest.mock import Mock
 
 from numpy import nan, concatenate
-from pandas import date_range, isnull, concat, Index, DatetimeIndex
+from pandas import date_range, isnull, concat, Index, DatetimeIndex, to_datetime
 
 from qf_lib.backtesting.data_handler.intraday_data_handler import IntradayDataHandler
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
@@ -38,6 +38,7 @@ from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 from qf_lib.data_providers.helpers import normalize_data_array
+from qf_lib.data_providers.preset_data_provider import PresetDataProvider
 from qf_lib.tests.helpers.testing_tools.containers_comparison import assert_series_equal, assert_dataframes_equal, \
     assert_dataarrays_equal
 
@@ -798,30 +799,4 @@ class TestIntradayDataHandler(TestCase):
             ]
         )
 
-        def get_price(t, fields, start_date, end_date, frequency):
-            got_single_date = start_date + frequency.time_delta() > end_date
-            fields, got_single_field = convert_to_list(fields, PriceField)
-            t, got_single_ticker = convert_to_list(t, Ticker)
-
-            return normalize_data_array(mock_data_array.loc[start_date:end_date, t, fields], t, fields,
-                                        got_single_date, got_single_ticker, got_single_field, use_prices_types=True)
-
-        def get_last_available_price(t, freq, end_time: datetime = None):
-            open_prices = mock_data_array.loc[:, t, PriceField.Open].to_pandas()
-            open_prices.index = [ind for ind in open_prices.index]
-            close_prices = mock_data_array.loc[:, t, PriceField.Close].to_pandas()
-            close_prices.index = [ind + freq.time_delta() + RelativeDelta(microseconds=-1) for ind in close_prices.index]
-            prices = PricesDataFrame(concat([open_prices, close_prices])).sort_index().ffill()
-
-            end_date = end_time + RelativeDelta(second=0, microsecond=0)
-            prices = prices.loc[:end_date + freq.time_delta() + RelativeDelta(microseconds=-1)]
-            return prices.iloc[-1] if not prices.empty else PricesSeries(index=t, data=nan)
-
-        price_data_provider_mock = Mock(spec=AbstractPriceDataProvider, frequency=frequency)
-        price_data_provider_mock.get_price.side_effect = get_price
-        price_data_provider_mock.get_last_available_price.side_effect = get_last_available_price
-        return price_data_provider_mock
-
-
-if __name__ == '__main__':
-    unittest.main()
+        return PresetDataProvider(mock_data_array, datetime(2009, 12, 30), datetime(2009, 12, 31, 23, 59), frequency)

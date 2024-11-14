@@ -33,7 +33,7 @@ from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 from qf_lib.data_providers.futures_data_provider import FuturesDataProvider
-from qf_lib.data_providers.helpers import normalize_data_array
+from qf_lib.data_providers.helpers import normalize_data_array, look_ahead_bias
 
 
 class PresetDataProvider(AbstractPriceDataProvider, FuturesDataProvider):
@@ -105,11 +105,13 @@ class PresetDataProvider(AbstractPriceDataProvider, FuturesDataProvider):
     def supported_ticker_types(self) -> Set[Type[Ticker]]:
         return self._ticker_types
 
+    @look_ahead_bias("end_date")
     def get_price(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
-                  start_date: datetime, end_date: datetime = None, frequency: Frequency = Frequency.DAILY, **kwargs) -> \
+                  start_date: datetime, end_date: datetime = None, frequency: Frequency = None, **kwargs) -> \
             Union[None, PricesSeries, PricesDataFrame, QFDataArray]:
         # The passed desired data frequency should be at most equal to the frequency of the initially loaded data
         # (in case of downsampling the data may be aggregated, but no data upsampling is supported).
+        frequency = frequency or self._frequency or Frequency.DAILY
         assert frequency <= self._frequency, "The passed data frequency should be at most equal to the frequency of " \
                                              "the initially loaded data"
         # The PresetDataProvider does not support data aggregation for frequency lower than daily frequency
@@ -123,7 +125,9 @@ class PresetDataProvider(AbstractPriceDataProvider, FuturesDataProvider):
 
         tickers, specific_tickers, tickers_mapping, got_single_ticker = self._tickers_mapping(tickers)
         fields, got_single_field = convert_to_list(fields, PriceField)
-        got_single_date = self._got_single_date(start_date, end_date, frequency)
+
+        _original_end_date = kwargs.get('__original_end_date', end_date) or end_date
+        got_single_date = self._got_single_date(start_date, _original_end_date, frequency)
 
         self._check_if_cached_data_available(specific_tickers, fields, start_date, end_date)
         data_array = self._data_bundle.loc[start_date:end_date, specific_tickers, fields]
@@ -141,11 +145,12 @@ class PresetDataProvider(AbstractPriceDataProvider, FuturesDataProvider):
 
         return normalized_result
 
+    @look_ahead_bias("end_date")
     def historical_price(self, tickers: Union[Ticker, Sequence[Ticker]],
                          fields: Union[PriceField, Sequence[PriceField]],
                          nr_of_bars: int, end_date: Optional[datetime] = None,
-                         frequency: Frequency = None) -> Union[PricesSeries, PricesDataFrame, QFDataArray]:
-
+                         frequency: Frequency = None, **kwargs) -> Union[PricesSeries, PricesDataFrame, QFDataArray]:
+        frequency = frequency or self.frequency or Frequency.DAILY
         assert nr_of_bars > 0, "Numbers of data samples should be a positive integer"
         end_date = datetime.now() if end_date is None else end_date
 
@@ -170,6 +175,7 @@ class PresetDataProvider(AbstractPriceDataProvider, FuturesDataProvider):
         self._check_data_availibility(normalized_result, end_date, nr_of_bars, tickers)
         return normalized_result
 
+    @look_ahead_bias("end_date")
     def get_last_available_price(self, tickers: Union[Ticker, Sequence[Ticker]], frequency: Frequency,
                                  end_time: Optional[datetime] = None) -> Union[float, PricesSeries]:
         end_time = datetime.now() if end_time is None else end_time
@@ -245,11 +251,13 @@ class PresetDataProvider(AbstractPriceDataProvider, FuturesDataProvider):
             raise ValueError("Requested end date {} is after data bundle end date {}".
                              format(end_date, self._end_date))
 
+    @look_ahead_bias("end_date")
     def get_history(self, tickers: Union[Ticker, Sequence[Ticker]],
                     fields: Union[Any, Sequence[Any]],
-                    start_date: datetime, end_date: datetime = None, frequency: Frequency = Frequency.DAILY, **kwargs
+                    start_date: datetime, end_date: datetime = None, frequency: Frequency = None, **kwargs
                     ) -> Union[QFSeries, QFDataFrame, QFDataArray]:
 
+        frequency = frequency or self._frequency or Frequency.DAILY
         # Verify whether the passed frequency parameter is correct and can be used with the preset data
         assert frequency == self._frequency, "Currently, for the get history does not support data sampling"
 
@@ -266,6 +274,8 @@ class PresetDataProvider(AbstractPriceDataProvider, FuturesDataProvider):
 
         fields_type = {type(field) for field in fields} if isinstance(fields, Sequence) else {type(fields)}
         fields, got_single_field = convert_to_list(fields, tuple(fields_type))
+
+        _original_end_date = kwargs.get('__original_end_date', end_date) or end_date
         got_single_date = self._got_single_date(start_date, end_date, frequency)
 
         self._check_if_cached_data_available(specific_tickers, fields, start_date, end_date)

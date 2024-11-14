@@ -27,7 +27,6 @@ from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
-from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
 from qf_lib.tests.helpers.testing_tools.containers_comparison import assert_series_equal
 from qf_lib.tests.integration_tests.backtesting.trading_session_for_tests import TradingSessionForTests
 from qf_lib.tests.integration_tests.connect_to_data_provider import get_data_provider
@@ -69,16 +68,15 @@ class TestBacktester(TestCase):
     def test_backtester_with_buy_and_hold_strategy(self):
         start_date = str_to_date("2010-01-01")
         end_date = str_to_date("2010-02-01")
-        data_provider = GeneralPriceProvider(self.data_provider, None, None)
 
-        msft_prices = data_provider.get_price(
+        msft_prices = self.data_provider.get_price(
             BuyAndHoldStrategy.MICROSOFT_TICKER, fields=[PriceField.Open, PriceField.Close],
             start_date=str_to_date("2009-12-28"), end_date=str_to_date("2010-02-01")
         )
 
         first_trade_date = str_to_date("2010-01-04")
         initial_cash = msft_prices.loc[first_trade_date, PriceField.Open]
-        ts = TradingSessionForTests(data_provider, start_date, end_date, initial_cash, frequency=Frequency.DAILY)
+        ts = TradingSessionForTests(self.data_provider, start_date, end_date, initial_cash, frequency=Frequency.DAILY)
 
         strategy = BuyAndHoldStrategy(ts)
 

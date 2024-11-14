@@ -34,6 +34,8 @@ from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceData
 
 
 class DailyDataHandler(DataHandler):
+    frequency = Frequency.DAILY
+
     def __init__(self, data_provider: AbstractPriceDataProvider, timer: Timer):
         super().__init__(data_provider, timer)
         self.default_frequency = data_provider.frequency if data_provider.frequency is not None else Frequency.DAILY
@@ -42,7 +44,7 @@ class DailyDataHandler(DataHandler):
         if frequency and frequency > Frequency.DAILY:
             raise ValueError("Frequency higher than daily is not supported by DailyDataHandler.")
 
-    def _get_end_date_without_look_ahead(self, end_date: Optional[datetime], frequency: Frequency):
+    def _get_end_date_without_look_ahead(self, end_date: Optional[datetime], frequency: Frequency = Frequency.DAILY):
         """ Points always to the latest market close for which the data could be retrieved. """
         return self._get_last_available_market_event(end_date, MarketCloseEvent)
 
@@ -67,7 +69,7 @@ class DailyDataHandler(DataHandler):
 
         frequency = frequency or self.default_frequency
         end_time = end_time or self.timer.now()
-        end_date_without_look_ahead = self._get_end_date_without_look_ahead(end_time, frequency)
+        end_date_without_look_ahead = self._get_end_date_without_look_ahead(end_time)
 
         last_prices = self.data_provider.get_last_available_price(tickers, frequency, end_date_without_look_ahead)
 

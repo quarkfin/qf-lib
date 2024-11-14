@@ -58,9 +58,7 @@ class TestStopLossExecutionStyle(TestCase):
         self.msft_ticker = BloombergTicker(self.MSFT_TICKER_STR)
 
         self.timer = SettableTimer(initial_time=before_close)
-
-        self.data_handler = Mock(spec=DataHandler)
-        self.data_handler.data_provider = Mock(spec=AbstractPriceDataProvider)
+        self.data_handler = Mock()
 
         scheduler = Mock(spec=Scheduler)
         ScheduleOrderExecutionEvent.clear()

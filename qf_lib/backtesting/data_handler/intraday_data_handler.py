@@ -33,6 +33,8 @@ from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceData
 
 
 class IntradayDataHandler(DataHandler):
+    frequency = Frequency.MIN_1
+
     def __init__(self, data_provider: AbstractPriceDataProvider, timer: Timer):
         super().__init__(data_provider, timer)
         self.default_frequency = data_provider.frequency if data_provider.frequency is not None else Frequency.MIN_1
@@ -73,10 +75,10 @@ class IntradayDataHandler(DataHandler):
         end_date = end_date or current_time
         end_date += RelativeDelta(second=0, microsecond=0)
 
-        frequency_delta = to_offset(frequency.to_pandas_freq()).delta.value
+        frequency_delta = to_offset(self.default_frequency.to_pandas_freq()).delta.value
         if current_time <= end_date:
             end_date_without_lookahead = Timestamp(math.floor(Timestamp(current_time).value / frequency_delta) *
-                                                   frequency_delta).to_pydatetime() - frequency.time_delta()
+                                                   frequency_delta).to_pydatetime() - self.default_frequency.time_delta()
         else:
             end_date_without_lookahead = Timestamp(math.floor(Timestamp(end_date).value / frequency_delta) *
                                                    frequency_delta).to_pydatetime()

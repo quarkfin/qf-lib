@@ -38,8 +38,10 @@ from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 from qf_lib.data_providers.helpers import normalize_data_array
+from qf_lib.data_providers.preset_data_provider import PresetDataProvider
 from qf_lib.tests.helpers.testing_tools.containers_comparison import assert_series_equal, assert_dataframes_equal, \
     assert_dataarrays_equal
+from qf_lib.tests.integration_tests.data_providers.futures.test_general_price_provider import data_provider
 
 
 class TestDailyDataHandler(TestCase):
@@ -649,27 +651,4 @@ class TestDailyDataHandler(TestCase):
             ]
         )
 
-        def get_price(t, fields, start_time, end_time, _):
-            got_single_date = start_time.date() == end_time.date()
-            fields, got_single_field = convert_to_list(fields, PriceField)
-            t, got_single_ticker = convert_to_list(t, Ticker)
-
-            return normalize_data_array(mock_data_array.loc[start_time:end_time, t, fields], t, fields,
-                                        got_single_date, got_single_ticker, got_single_field, use_prices_types=True)
-
-        def get_last_available_price(t, _, end_time: datetime = None):
-            open_prices = mock_data_array.loc[:, t, PriceField.Open].to_pandas()
-            open_prices.index = [ind + MarketOpenEvent.trigger_time() for ind in open_prices.index]
-            close_prices = mock_data_array.loc[:, t, PriceField.Close].to_pandas()
-            close_prices.index = [ind + MarketCloseEvent.trigger_time() for ind in close_prices.index]
-            prices = PricesDataFrame(concat([open_prices, close_prices])).sort_index().ffill()
-
-            end_date = end_time + RelativeDelta(days=1, hour=0, minute=0, second=0, microsecond=0, microseconds=-1)
-            prices = prices.loc[:end_date]
-            return prices.iloc[-1] if not prices.empty else PricesSeries(index=t, data=nan)
-
-        price_data_provider_mock = Mock(spec=AbstractPriceDataProvider, frequency=Frequency.DAILY)
-        price_data_provider_mock.get_price.side_effect = get_price
-        price_data_provider_mock.get_last_available_price.side_effect = get_last_available_price
-
-        return price_data_provider_mock
+        return PresetDataProvider(mock_data_array, datetime(2009, 12, 28), datetime(2010, 1, 2), Frequency.DAILY)
