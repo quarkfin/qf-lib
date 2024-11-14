@@ -276,7 +276,7 @@ class PresetDataProvider(AbstractPriceDataProvider, FuturesDataProvider):
         fields, got_single_field = convert_to_list(fields, tuple(fields_type))
 
         _original_end_date = kwargs.get('__original_end_date', end_date) or end_date
-        got_single_date = self._got_single_date(start_date, end_date, frequency)
+        got_single_date = self._got_single_date(start_date, _original_end_date, frequency)
 
         self._check_if_cached_data_available(specific_tickers, fields, start_date, end_date)
         data_array = self._data_bundle.loc[start_date:end_date, specific_tickers, fields]

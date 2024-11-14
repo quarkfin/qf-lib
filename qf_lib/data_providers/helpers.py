@@ -82,7 +82,6 @@ def normalize_data_array(
 
 def squeeze_data_array_and_cast_to_proper_type(original_data_array: QFDataArray, got_single_date: bool,
                                                got_single_ticker: bool, got_single_field: bool, use_prices_types: bool):
-
     if isinstance(original_data_array, DataArray) and not isinstance(original_data_array, QFDataArray):
         warnings.warn("data_array to be normalized should be a QFDataFrame instance. "
                       "Transforming data_array to QFDataArray. Please check types in the future.")
@@ -251,6 +250,7 @@ def chain_tickers_within_range(future_ticker: FutureTicker, exp_dates: QFDataFra
     exp_dates = exp_dates[exp_dates <= end_date + RelativeDelta(years=future_ticker.N)].dropna()
     return exp_dates.index.tolist()
 
+
 def look_ahead_bias(*param_names):
     """
     Decorator to mark functions inside DataProvider, which if wrapped with DataHandler, would be cropped up until
@@ -258,10 +258,13 @@ def look_ahead_bias(*param_names):
     pass as a kwargs parameter of name __original_ + name of the original parameter. If one wishes to use both values,
     it is necessary to include **kwargs in the signature of the decorated function.
     """
+
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
             return func(*args, **kwargs)
+
         wrapper.date_parameters_to_adjust = param_names
         return wrapper
+
     return decorator

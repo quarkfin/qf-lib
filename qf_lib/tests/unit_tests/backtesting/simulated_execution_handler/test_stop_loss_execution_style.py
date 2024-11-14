@@ -17,7 +17,6 @@ from unittest.mock import Mock, call
 
 import pandas as pd
 
-from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.events.time_event.periodic_event.intraday_bar_event import IntradayBarEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
@@ -40,7 +39,6 @@ from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
-from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 from qf_lib.tests.helpers.testing_tools.containers_comparison import assert_lists_equal
 
 

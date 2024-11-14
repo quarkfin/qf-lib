@@ -25,7 +25,6 @@ from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.numberutils.is_finite_number import is_finite_number
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
-from qf_lib.data_providers.data_provider import DataProvider
 
 
 class VolumeOrdersFilter(OrdersFilter):

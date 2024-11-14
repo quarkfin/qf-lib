@@ -22,7 +22,6 @@ from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.series.qf_series import QFSeries
-from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 from qf_lib.data_providers.data_provider import DataProvider
 from qf_lib.data_providers.prefetching_data_provider import PrefetchingDataProvider
 
@@ -90,8 +89,8 @@ class DataHandler:
         self._check_frequency(frequency)
         self.default_frequency = frequency
 
-        self._data_provider = PrefetchingDataProvider(self.data_provider, tickers, fields, start_date,
-                                                     end_date, frequency)
+        self._data_provider = PrefetchingDataProvider(self.data_provider, tickers, fields, start_date, end_date,
+                                                      frequency)
         self.is_optimised = True
 
     def __getattr__(self, attr):
