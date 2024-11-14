@@ -87,8 +87,8 @@ class IBFIGItoIBContractMapper:
         else:
             self.logger.warning("Couldn't import the IB API. Check if the necessary dependencies are installed.")
 
-    def get_ticker_to_contract_mapping_from_figi_contracts(self, ticker_to_contract: Dict[Ticker, IBContract]) -> Dict[
-        Ticker, IBContract]:
+    def get_ticker_to_contract_mapping_from_figi_contracts(self, ticker_to_contract: Dict[Ticker, IBContract]) -> (
+            Dict)[Ticker, IBContract]:
         """"
         Function to map dictionary:
             ticker -> ib_figi_contract
