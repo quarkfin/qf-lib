@@ -21,7 +21,6 @@ from pandas import date_range
 from qf_lib.analysis.common.abstract_document import AbstractDocument
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
-from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
 from qf_lib.common.enums.frequency import Frequency
@@ -35,6 +34,7 @@ from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 from qf_lib.containers.futures.futures_adjustment_method import FuturesAdjustmentMethod
 from qf_lib.containers.futures.futures_chain import FuturesChain
 from qf_lib.containers.series.qf_series import QFSeries
+from qf_lib.data_providers.data_provider import DataProvider
 from qf_lib.documents_utils.document_exporting.element.chart import ChartElement
 from qf_lib.documents_utils.document_exporting.element.custom import CustomElement
 from qf_lib.documents_utils.document_exporting.element.heading import HeadingElement
@@ -69,8 +69,8 @@ class SignalsPlotter(AbstractDocument):
         starting date of the prices data frame
     end_date: datetime
         last date of the prices data frame
-    data_handler: DataHandler
-        data handler used to download prices
+    data_provider: DataProvider
+        data provider used to download prices
     alpha_models: AlphaModel, Sequence[AlphaModel]
         instances of alpha models which signals will be evaluated. Each plot in the document is described using the
         alpha_models __str__ function.
@@ -87,7 +87,7 @@ class SignalsPlotter(AbstractDocument):
     """
 
     def __init__(self, tickers: Union[Ticker, Sequence[Ticker]], start_date: datetime, end_date: datetime,
-                 data_handler: DataHandler, alpha_models: Union[AlphaModel, Sequence[AlphaModel]], settings: Settings,
+                 data_provider: DataProvider, alpha_models: Union[AlphaModel, Sequence[AlphaModel]], settings: Settings,
                  pdf_exporter: PDFExporter, title: str = "Signals Plotter",
                  signal_frequency: Frequency = Frequency.DAILY, data_frequency: Frequency = Frequency.DAILY):
 
@@ -99,10 +99,10 @@ class SignalsPlotter(AbstractDocument):
         self.start_date = start_date
         self.end_date = end_date
 
-        self.data_handler = data_handler
+        self.data_provider = data_provider
 
-        assert isinstance(self.data_handler.timer, SettableTimer)
-        self.timer: SettableTimer = self.data_handler.timer
+        assert isinstance(self.data_provider.timer, SettableTimer)
+        self.timer: SettableTimer = self.data_provider.timer
 
         self.signal_frequency = signal_frequency
         self.data_frequency = data_frequency
@@ -110,7 +110,7 @@ class SignalsPlotter(AbstractDocument):
         for ticker in self.tickers:
             if isinstance(ticker, FutureTicker):
                 # use a new timer that allows to look until the end date
-                ticker.initialize_data_provider(SettableTimer(end_date), self.data_handler.data_provider)
+                ticker.initialize_data_provider(SettableTimer(end_date), self.data_provider)
 
     def build_document(self):
         self._add_header()
@@ -174,13 +174,13 @@ class SignalsPlotter(AbstractDocument):
         Here we can use data provider as we do not worry about look-ahead
         """
         if isinstance(ticker, FutureTicker):
-            futures_chain = FuturesChain(ticker, self.data_handler.data_provider, FuturesAdjustmentMethod.NTH_NEAREST)
+            futures_chain = FuturesChain(ticker, self.data_provider, FuturesAdjustmentMethod.NTH_NEAREST)
             prices_df = futures_chain.get_price(PriceField.ohlc(),
                                                 start_date=self.start_date,
                                                 end_date=self.end_date,
                                                 frequency=self.data_frequency)
         else:
-            prices_df = self.data_handler.data_provider.get_price(ticker,
+            prices_df = self.data_provider.get_price(ticker,
                                                                   PriceField.ohlc(),
                                                                   start_date=self.start_date,
                                                                   end_date=self.end_date,

@@ -15,7 +15,6 @@ from typing import Union, Sequence
 
 from qf_lib.backtesting.broker.backtest_broker import BacktestBroker
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.base import ContractTickerMapper
-from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.events.event_manager import EventManager
 from qf_lib.backtesting.events.notifiers import Notifiers
 from qf_lib.backtesting.monitoring.backtest_monitor import BacktestMonitor
@@ -29,10 +28,11 @@ from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
-from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.helpers import compute_container_hash
+from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
+from qf_lib.data_providers.prefetching_data_provider import PrefetchingDataProvider
 
 
 class BacktestTradingSession(TradingSession):
@@ -41,10 +41,10 @@ class BacktestTradingSession(TradingSession):
     """
 
     def __init__(self, contract_ticker_mapper: ContractTickerMapper, start_date, end_date,
-                 position_sizer: PositionSizer, orders_filters: Sequence[OrdersFilter], data_handler: DataHandler,
-                 timer: SettableTimer, notifiers: Notifiers, portfolio: Portfolio, events_manager: EventManager,
-                 monitor: BacktestMonitor, broker: BacktestBroker, order_factory: OrderFactory, frequency: Frequency,
-                 backtest_result: BacktestResult):
+                 position_sizer: PositionSizer, orders_filters: Sequence[OrdersFilter],
+                 data_provider: AbstractPriceDataProvider, notifiers: Notifiers,
+                 portfolio: Portfolio, events_manager: EventManager, monitor: BacktestMonitor, broker: BacktestBroker,
+                 order_factory: OrderFactory, frequency: Frequency, backtest_result: BacktestResult):
         """
         Set up the backtest variables according to what has been passed in.
         The data_provider parameter of the BacktestTradingSession points to a Data Handler object.
@@ -59,14 +59,12 @@ class BacktestTradingSession(TradingSession):
         self.notifiers = notifiers
 
         self.event_manager = events_manager
-        self.data_handler = data_handler
-        self.data_provider = data_handler  # type: DataHandler
+        self.data_provider = data_provider
 
         self.portfolio = portfolio
         self.position_sizer = position_sizer
         self.orders_filters = orders_filters
         self.monitor = monitor
-        self.timer = timer
         self.order_factory = order_factory
         self.broker = broker
         self.frequency = frequency
@@ -82,9 +80,11 @@ class BacktestTradingSession(TradingSession):
         # The tickers and price fields are sorted in order to always return the same hash of the data bundle for
         # the same set of tickers and fields
         tickers, _ = convert_to_list(tickers, Ticker)
-        self.data_handler.use_data_bundle(sorted(tickers), sorted(PriceField.ohlcv()), data_start, self.end_date,
-                                          self.frequency)
-        self._hash_of_data_bundle = compute_container_hash(self.data_handler.data_provider.data_bundle)
+
+        self.data_provider = PrefetchingDataProvider(self.data_provider, sorted(tickers), sorted(PriceField.ohlcv()),
+                                                     data_start, self.end_date, self.frequency)
+
+        self._hash_of_data_bundle = compute_container_hash(self.data_provider.data_bundle)
         self.logger.info("Preloaded data hash value {}".format(self._hash_of_data_bundle))
 
     def get_preloaded_data_checksum(self) -> str:

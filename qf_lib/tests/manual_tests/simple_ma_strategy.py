@@ -48,9 +48,8 @@ class SimpleMAStrategy(AbstractStrategy):
         super().__init__(ts)
         self.broker = ts.broker
         self.order_factory = ts.order_factory
-        self.data_handler = ts.data_handler
+        self.data_provider = ts.data_provider
         self.position_sizer = ts.position_sizer
-        self.timer = ts.timer
 
     def calculate_and_place_orders(self):
         self.calculate_signals()
@@ -59,7 +58,7 @@ class SimpleMAStrategy(AbstractStrategy):
         long_ma_len = 20
         short_ma_len = 5
 
-        long_ma_series = self.data_handler.historical_price(self.ticker, PriceField.Close, long_ma_len)
+        long_ma_series = self.data_provider.historical_price(self.ticker, PriceField.Close, long_ma_len)
         long_ma_price = long_ma_series.mean()
 
         short_ma_series = long_ma_series.tail(short_ma_len)

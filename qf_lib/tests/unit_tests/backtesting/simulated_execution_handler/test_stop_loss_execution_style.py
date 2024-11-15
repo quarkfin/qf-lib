@@ -56,7 +56,7 @@ class TestStopLossExecutionStyle(TestCase):
         self.msft_ticker = BloombergTicker(self.MSFT_TICKER_STR)
 
         self.timer = SettableTimer(initial_time=before_close)
-        self.data_handler = Mock()
+        self.data_provider = Mock(timer=self.timer)
 
         scheduler = Mock(spec=Scheduler)
         ScheduleOrderExecutionEvent.clear()
@@ -69,8 +69,8 @@ class TestStopLossExecutionStyle(TestCase):
         self.portfolio = Mock(spec=Portfolio)
         self.portfolio.open_positions_dict = {}
 
-        slippage_model = PriceBasedSlippage(0.0, self.data_handler)
-        self.exec_handler = SimulatedExecutionHandler(self.data_handler, self.timer, scheduler, self.monitor,
+        slippage_model = PriceBasedSlippage(0.0, self.data_provider)
+        self.exec_handler = SimulatedExecutionHandler(self.data_provider, scheduler, self.monitor,
                                                       commission_model, self.portfolio, slippage_model,
                                                       RelativeDelta(minutes=self.number_of_minutes))
 
@@ -231,8 +231,8 @@ class TestStopLossExecutionStyle(TestCase):
             else:
                 return QFSeries()
 
-        self.data_handler.get_last_available_price.side_effect = result
+        self.data_provider.get_last_available_price.side_effect = result
 
     def _set_bar_for_today(self, open_price, high_price, low_price, close_price, volume):
-        self.data_handler.get_price.side_effect = lambda tickers, fields, start_date, end_date, frequency: \
+        self.data_provider.get_price.side_effect = lambda tickers, fields, start_date, end_date, frequency: \
             QFDataFrame(index=tickers, columns=fields, data=[[open_price, high_price, low_price, close_price, volume]])

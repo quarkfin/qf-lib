@@ -24,7 +24,7 @@ from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.miscellaneous.average_true_range import average_true_range
-from qf_lib.data_providers.data_provider import DataProvider
+from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 
 
 class AlphaModel(metaclass=ABCMeta):
@@ -36,12 +36,11 @@ class AlphaModel(metaclass=ABCMeta):
     risk_estimation_factor
         float value which estimates the risk level of the specific AlphaModel. Corresponds to the level at which
         the stop-loss should be placed.
-    data_provider: DataProvider
-        DataProvider which provides data for the ticker. For the backtesting purposes, in order to avoid looking into
-        the future, use DataHandler wrapper.
+    data_provider: AbstractPriceDataProvider
+        DataProvider which provides data for the ticker.
     """
 
-    def __init__(self, risk_estimation_factor: float, data_provider: DataProvider):
+    def __init__(self, risk_estimation_factor: float, data_provider: AbstractPriceDataProvider):
         self.risk_estimation_factor = risk_estimation_factor
         self.data_provider = data_provider
         self.logger = qf_logger.getChild(self.__class__.__name__)
@@ -83,7 +82,7 @@ class AlphaModel(metaclass=ABCMeta):
         """
         Returns the expected Exposure, which is the key part of a generated Signal. Exposure suggests the trend
         direction for managing the trading position.
-        Uses DataHandler passed when the AlphaModel (child) is initialized - all required data is provided in the child
+        Uses DataProvider passed when the AlphaModel (child) is initialized - all required data is provided in the child
         class.
 
         Parameters

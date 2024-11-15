@@ -17,7 +17,6 @@ from unittest import TestCase
 from numpy import nan, concatenate
 from pandas import date_range, isnull, Index, DatetimeIndex
 
-from qf_lib.backtesting.data_handler.intraday_data_handler import IntradayDataHandler
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
 from qf_lib.common.enums.frequency import Frequency
@@ -38,21 +37,17 @@ from qf_lib.tests.helpers.testing_tools.containers_comparison import assert_seri
     assert_dataarrays_equal
 
 
-class TestIntradayDataHandler(TestCase):
+class TestDataProviderIntradayForLookaheadBias(TestCase):
     def setUp(self):
         self.timer = SettableTimer()
         self.tickers = [QuandlTicker("MSFT", "WIKI"), QuandlTicker("AAPL", "WIKI")]
-        price_data_provider_mock_MIN_1 = self._create_price_provider_mock(self.tickers, frequency=Frequency.MIN_1)
-        price_data_provider_mock_MIN_5 = self._create_price_provider_mock(self.tickers, frequency=Frequency.MIN_5)
-        price_data_provider_mock_MIN_60 = self._create_price_provider_mock(self.tickers, frequency=Frequency.MIN_60)
+        self.data_provider_MIN_1 = self._create_price_provider_mock(self.tickers, Frequency.MIN_1, self.timer)
+        self.data_provider_MIN_5 = self._create_price_provider_mock(self.tickers, Frequency.MIN_5, self.timer)
+        self.data_provider_MIN_60 = self._create_price_provider_mock(self.tickers, Frequency.MIN_60, self.timer)
 
-        self.data_handler_MIN_1 = IntradayDataHandler(price_data_provider_mock_MIN_1, self.timer)
-        self.data_handler_MIN_5 = IntradayDataHandler(price_data_provider_mock_MIN_5, self.timer)
-        self.data_handler_MIN_60 = IntradayDataHandler(price_data_provider_mock_MIN_60, self.timer)
-
-        self.data_handlers = {Frequency.MIN_1: self.data_handler_MIN_1,
-                              Frequency.MIN_5: self.data_handler_MIN_5,
-                              Frequency.MIN_60: self.data_handler_MIN_60}
+        self.data_providers = {Frequency.MIN_1: self.data_provider_MIN_1,
+                              Frequency.MIN_5: self.data_provider_MIN_5,
+                              Frequency.MIN_60: self.data_provider_MIN_60}
 
         MarketOpenEvent.set_trigger_time({"hour": 8, "minute": 0, "second": 0, "microsecond": 0})
         MarketCloseEvent.set_trigger_time({"hour": 16, "minute": 0, "second": 0, "microsecond": 0})
@@ -650,7 +645,7 @@ class TestIntradayDataHandler(TestCase):
         current_time = str_to_date(curr_time_str, DateFormat.FULL_ISO)
         self.timer.set_current_time(current_time)
         expected_series = PricesSeries(data=expected_values, index=self.tickers)
-        actual_series = self.data_handlers[frequency].get_last_available_price(self.tickers)
+        actual_series = self.data_providers[frequency].get_last_available_price(self.tickers)
         assert_series_equal(expected_series, actual_series, check_names=False)
 
     def _assert_last_prices_are_correct_with_end_date(self, curr_time_str, end_date, expected_values, frequency):
@@ -658,13 +653,13 @@ class TestIntradayDataHandler(TestCase):
         end_date = str_to_date(end_date, DateFormat.FULL_ISO)
         self.timer.set_current_time(current_time)
         expected_series = PricesSeries(data=expected_values, index=self.tickers)
-        actual_series = self.data_handlers[frequency].get_last_available_price(self.tickers, end_time=end_date)
+        actual_series = self.data_providers[frequency].get_last_available_price(self.tickers, end_time=end_date)
         assert_series_equal(expected_series, actual_series, check_names=False)
 
     def _assert_get_prices_are_correct(self, curr_time_str, start_date, end_date, tickers, fields, expected_result, frequency):
         current_time = str_to_date(curr_time_str, DateFormat.FULL_ISO)
         self.timer.set_current_time(current_time)
-        actual_prices = self.data_handlers[frequency].get_price(tickers, fields, start_date, end_date)
+        actual_prices = self.data_providers[frequency].get_price(tickers, fields, start_date, end_date)
         self.assertEqual(type(expected_result), type(actual_prices))
 
         if isinstance(expected_result, QFSeries):
@@ -678,7 +673,7 @@ class TestIntradayDataHandler(TestCase):
         else:
             self.assertEqual(expected_result, actual_prices)
 
-    def _create_price_provider_mock(self, tickers, frequency):
+    def _create_price_provider_mock(self, tickers, frequency, timer):
 
         if frequency == Frequency.MIN_1:
             dates = concatenate([
@@ -794,4 +789,5 @@ class TestIntradayDataHandler(TestCase):
             ]
         )
 
-        return PresetDataProvider(mock_data_array, datetime(2009, 12, 30), datetime(2009, 12, 31, 23, 59), frequency)
+        return PresetDataProvider(mock_data_array, datetime(2009, 12, 1), datetime(2009, 12, 31, 23, 59), frequency,
+                                  timer=timer)

@@ -40,11 +40,15 @@ class DataProvider(metaclass=ABCMeta):
         self.logger = qf_logger.getChild(self.__class__.__name__)
         self.timer = timer or RealTimer()
 
+    def set_timer(self, timer: Timer):
+        self.timer = timer
+
     @abstractmethod
     def get_history(
             self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[None, str, Sequence[str]],
-            start_date: datetime, end_date: datetime = None, frequency: Frequency = None, **kwargs) -> Union[
-                QFSeries, QFDataFrame, QFDataArray]:
+            start_date: datetime, end_date: datetime = None, frequency: Frequency = None, look_ahead_bias: bool = False,
+            **kwargs) -> Union[
+        QFSeries, QFDataFrame, QFDataArray]:
         """
         Gets historical attributes (fields) of different securities (tickers).
 
@@ -70,6 +74,8 @@ class DataProvider(metaclass=ABCMeta):
             if no end_date was provided, by default the current date will be used
         frequency: Frequency
             frequency of the data
+        look_ahead_bias: bool
+            if set to False, the look-ahead bias will be taken care of to make sure no future data is returned
         kwargs
             kwargs should not be used on the level of AbstractDataProvider. They are here to provide a common interface
             for all data providers since some of the specific data providers accept additional arguments
@@ -119,7 +125,8 @@ class DataProvider(metaclass=ABCMeta):
         return datetime(latest_market_event.year, latest_market_event.month, latest_market_event.day)
 
     def _get_end_date_without_look_ahead_intraday(self, end_date: Optional[datetime], frequency: Frequency):
-        """ If end_date is None, current time is taken as end_date. The function returns the end of latest full bar
+        """
+        If end_date is None, current time is taken as end_date. The function returns the end of latest full bar
         (get_price, get_history etc. functions always include the end_date e.g. in case of 1 minute frequency:
         current_time = 16:20 and end_date = 16:06 the latest returned bar is the [16:06, 16:07)).
 
@@ -158,7 +165,6 @@ class DataProvider(metaclass=ABCMeta):
             end_date_without_lookahead = Timestamp(math.floor(Timestamp(end_date).value / frequency_delta) *
                                                    frequency_delta).to_pydatetime()
         return end_date_without_lookahead
-
 
     def __str__(self):
         return self.__class__.__name__

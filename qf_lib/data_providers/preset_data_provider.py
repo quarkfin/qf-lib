@@ -23,6 +23,7 @@ from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
+from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
@@ -33,7 +34,7 @@ from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 from qf_lib.data_providers.futures_data_provider import FuturesDataProvider
-from qf_lib.data_providers.helpers import normalize_data_array, look_ahead_bias
+from qf_lib.data_providers.helpers import normalize_data_array
 
 
 class PresetDataProvider(AbstractPriceDataProvider, FuturesDataProvider):
@@ -56,8 +57,8 @@ class PresetDataProvider(AbstractPriceDataProvider, FuturesDataProvider):
     """
 
     def __init__(self, data: QFDataArray, start_date: datetime, end_date: datetime, frequency: Frequency,
-                 exp_dates: Dict[FutureTicker, QFDataFrame] = None):
-        super().__init__()
+                 exp_dates: Dict[FutureTicker, QFDataFrame] = None, timer: Optional[Timer] = None):
+        super().__init__(timer)
         self._data_bundle = data
         self._frequency = frequency
         self._exp_dates = exp_dates
@@ -106,7 +107,8 @@ class PresetDataProvider(AbstractPriceDataProvider, FuturesDataProvider):
         return self._ticker_types
 
     def get_price(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
-                  start_date: datetime, end_date: datetime = None, frequency: Frequency = None, **kwargs) -> \
+                  start_date: datetime, end_date: datetime = None, frequency: Frequency = None,
+                  look_ahead_bias: bool = False, **kwargs) -> \
             Union[None, PricesSeries, PricesDataFrame, QFDataArray]:
         # The passed desired data frequency should be at most equal to the frequency of the initially loaded data
         # (in case of downsampling the data may be aggregated, but no data upsampling is supported).
@@ -119,14 +121,13 @@ class PresetDataProvider(AbstractPriceDataProvider, FuturesDataProvider):
                                 "underlying intrady data and might not be identical to getting daily data form the "
                                 "data provider.")
 
+        original_end_date = (end_date or self.timer.now()) + RelativeDelta(second=0, microsecond=0)
         start_date = self._adjust_start_date(start_date, frequency)
-        end_date = self._adjust_end_date(end_date)
+        end_date = end_date if look_ahead_bias else self.get_end_date_without_look_ahead(end_date, frequency)
+        got_single_date = self._got_single_date(start_date, original_end_date, frequency)
 
         tickers, specific_tickers, tickers_mapping, got_single_ticker = self._tickers_mapping(tickers)
         fields, got_single_field = convert_to_list(fields, PriceField)
-
-        _original_end_date = kwargs.get('__original_end_date', end_date) or end_date
-        got_single_date = self._got_single_date(start_date, _original_end_date, frequency)
 
         self._check_if_cached_data_available(specific_tickers, fields, start_date, end_date)
         data_array = self._data_bundle.loc[start_date:end_date, specific_tickers, fields]
@@ -150,7 +151,7 @@ class PresetDataProvider(AbstractPriceDataProvider, FuturesDataProvider):
                          frequency: Frequency = None, **kwargs) -> Union[PricesSeries, PricesDataFrame, QFDataArray]:
         frequency = frequency or self.frequency or Frequency.DAILY
         assert nr_of_bars > 0, "Numbers of data samples should be a positive integer"
-        end_date = datetime.now() if end_date is None else end_date
+        end_date = self.get_end_date_without_look_ahead(end_date, frequency)
 
         tickers, specific_tickers, tickers_mapping, got_single_ticker = self._tickers_mapping(tickers)
         fields, got_single_field = convert_to_list(fields, PriceField)
@@ -173,11 +174,10 @@ class PresetDataProvider(AbstractPriceDataProvider, FuturesDataProvider):
         self._check_data_availibility(normalized_result, end_date, nr_of_bars, tickers)
         return normalized_result
 
-    def get_last_available_price(self, tickers: Union[Ticker, Sequence[Ticker]], frequency: Frequency,
+    def _last_available_price(self, tickers: Union[Ticker, Sequence[Ticker]], frequency: Optional[Frequency] = None,
                                  end_time: Optional[datetime] = None) -> Union[float, PricesSeries]:
-        end_time = datetime.now() if end_time is None else end_time
-        end_time += RelativeDelta(second=0, microsecond=0)
-
+        frequency = frequency or self.frequency or Frequency.DAILY
+        end_time = self.get_end_date_without_look_ahead(end_time, frequency)
         assert frequency >= Frequency.DAILY, "Frequency lower then daily is not supported by the " \
                                              "get_last_available_price function"
 
@@ -210,7 +210,8 @@ class PresetDataProvider(AbstractPriceDataProvider, FuturesDataProvider):
         latest_available_prices_series = self._get_valid_latest_available_prices(start_date, specific_tickers,
                                                                                  open_prices, close_prices)
 
-        latest_available_prices_series = self._map_normalized_result(latest_available_prices_series, tickers_mapping, tickers)
+        latest_available_prices_series = self._map_normalized_result(latest_available_prices_series, tickers_mapping,
+                                                                     tickers)
         return latest_available_prices_series.iloc[0] if got_single_ticker else latest_available_prices_series
 
     def _tickers_mapping(self, tickers: Union[Ticker, Sequence[Ticker]]) -> \
@@ -250,7 +251,8 @@ class PresetDataProvider(AbstractPriceDataProvider, FuturesDataProvider):
 
     def get_history(self, tickers: Union[Ticker, Sequence[Ticker]],
                     fields: Union[Any, Sequence[Any]],
-                    start_date: datetime, end_date: datetime = None, frequency: Frequency = None, **kwargs
+                    start_date: datetime, end_date: datetime = None, frequency: Frequency = None,
+                    look_ahead_bias: bool = False, **kwargs
                     ) -> Union[QFSeries, QFDataFrame, QFDataArray]:
 
         frequency = frequency or self._frequency or Frequency.DAILY
@@ -258,7 +260,9 @@ class PresetDataProvider(AbstractPriceDataProvider, FuturesDataProvider):
         assert frequency == self._frequency, "Currently, for the get history does not support data sampling"
 
         start_date = self._adjust_start_date(start_date, frequency)
-        end_date = self._adjust_end_date(end_date)
+        original_end_date = (end_date or self.timer.now()) + RelativeDelta(second=0, microsecond=0)
+        end_date = original_end_date if look_ahead_bias else self.get_end_date_without_look_ahead(original_end_date, frequency)
+        got_single_date = self._got_single_date(start_date, original_end_date, frequency)
 
         # In order to be able to return data for FutureTickers create a mapping between tickers and corresponding
         # specific tickers (in case of non FutureTickers it will be an identity mapping)
@@ -270,9 +274,6 @@ class PresetDataProvider(AbstractPriceDataProvider, FuturesDataProvider):
 
         fields_type = {type(field) for field in fields} if isinstance(fields, Sequence) else {type(fields)}
         fields, got_single_field = convert_to_list(fields, tuple(fields_type))
-
-        _original_end_date = kwargs.get('__original_end_date', end_date) or end_date
-        got_single_date = self._got_single_date(start_date, _original_end_date, frequency)
 
         self._check_if_cached_data_available(specific_tickers, fields, start_date, end_date)
         data_array = self._data_bundle.loc[start_date:end_date, specific_tickers, fields]

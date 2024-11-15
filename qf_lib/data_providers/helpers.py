@@ -250,21 +250,3 @@ def chain_tickers_within_range(future_ticker: FutureTicker, exp_dates: QFDataFra
     exp_dates = exp_dates[exp_dates <= end_date + RelativeDelta(years=future_ticker.N)].dropna()
     return exp_dates.index.tolist()
 
-
-def look_ahead_bias(*param_names):
-    """
-    Decorator to mark functions inside DataProvider, which if wrapped with DataHandler, would be cropped up until
-    DataHandler.timer.now(), avoiding looking into the future. The original parameter value will be available and
-    pass as a kwargs parameter of name __original_ + name of the original parameter. If one wishes to use both values,
-    it is necessary to include **kwargs in the signature of the decorated function.
-    """
-
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            return func(*args, **kwargs)
-
-        wrapper.date_parameters_to_adjust = param_names
-        return wrapper
-
-    return decorator

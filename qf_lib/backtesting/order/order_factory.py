@@ -38,7 +38,7 @@ class OrderFactory:
     broker: Broker
         broker used to access the portfolio
     data_provider: DataProvider
-        data provider used to download prices. In case of backtesting, the DataHandler wrapper should be used.
+        data provider used to download prices.
     """
 
     def __init__(self, broker: Broker, data_provider: DataProvider):

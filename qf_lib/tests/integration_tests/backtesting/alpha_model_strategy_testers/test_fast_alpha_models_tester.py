@@ -23,8 +23,6 @@ from pandas.tseries.offsets import Day
 
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
-from qf_lib.backtesting.data_handler.daily_data_handler import DailyDataHandler
-from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
 from qf_lib.backtesting.fast_alpha_model_tester.fast_alpha_models_tester import FastAlphaModelTester, \
@@ -37,6 +35,7 @@ from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
+from qf_lib.data_providers.data_provider import DataProvider
 from qf_lib.data_providers.preset_data_provider import PresetDataProvider
 from qf_lib.tests.helpers.testing_tools.containers_comparison import assert_series_equal
 
@@ -61,10 +60,9 @@ class TestFastAlphaModelsTester(TestCase):
         all_fields = PriceField.ohlcv()
 
         self._mocked_prices_arr = self._make_mock_data_array(self.tickers, all_fields)
-        price_provider_mock = PresetDataProvider(self._mocked_prices_arr, self.data_start_date,
-                                                 self.data_end_date, self.frequency)
         self.timer = SettableTimer()
-        self.data_handler = DailyDataHandler(price_provider_mock, self.timer)
+        self.data_provider = PresetDataProvider(self._mocked_prices_arr, self.data_start_date,
+                                                 self.data_end_date, self.frequency, timer=self.timer)
         self.alpha_model_type = DummyAlphaModel
 
     @classmethod
@@ -88,7 +86,7 @@ class TestFastAlphaModelsTester(TestCase):
     def test_alpha_models_tester(self):
         first_param_set = (10, Exposure.LONG)
         second_param_set = (5, Exposure.SHORT)
-        data_handler = self.data_handler
+        data_provider = self.data_provider
 
         params = [FastAlphaModelTesterConfig(self.alpha_model_type,
                                              {"period_length": 10, "first_suggested_exposure": Exposure.LONG,
@@ -99,7 +97,7 @@ class TestFastAlphaModelsTester(TestCase):
                                               "risk_estimation_factor": None},
                                              ("period_length", "first_suggested_exposure"))]
 
-        tester = FastAlphaModelTester(params, self.tickers, self.test_start_date, self.test_end_date, data_handler,
+        tester = FastAlphaModelTester(params, self.tickers, self.test_start_date, self.test_end_date, data_provider,
                                       self.timer)
 
         backtest_summary = tester.test_alpha_models()
@@ -175,7 +173,7 @@ class TestFastAlphaModelsTester(TestCase):
 
 class DummyAlphaModel(AlphaModel):
     def __init__(self, period_length: int, first_suggested_exposure: Exposure,
-                 risk_estimation_factor: float, data_provider: DataHandler = None):
+                 risk_estimation_factor: float, data_provider: DataProvider = None):
         super().__init__(risk_estimation_factor, data_provider)
 
         assert first_suggested_exposure != Exposure.OUT

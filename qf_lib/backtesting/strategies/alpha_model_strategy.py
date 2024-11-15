@@ -65,13 +65,15 @@ class AlphaModelStrategy(AbstractStrategy):
                               for ticker in tickers_for_model if isinstance(ticker, FutureTicker)]
 
         self._futures_rolling_orders_generator = self._get_futures_rolling_orders_generator(all_future_tickers,
-                                                                                            ts.timer, ts.data_provider,
+                                                                                            ts.data_provider.timer,
+                                                                                            ts.data_provider,
                                                                                             ts.broker, ts.order_factory)
         self._broker = ts.broker
         self._order_factory = ts.order_factory
         self._position_sizer = ts.position_sizer
         self._orders_filters = ts.orders_filters
         self._frequency = ts.frequency
+        self.timer = ts.data_provider.timer
 
         assert ts.frequency is not None, "Trading Session does not have the frequency parameter set. You need to set " \
                                          "it before using the Alpha Model Strategy."

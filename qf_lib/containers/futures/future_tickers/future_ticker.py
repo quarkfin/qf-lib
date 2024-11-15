@@ -30,7 +30,7 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
 
     The FutureTicker class extends the standard Ticker class. It allows the user to use only a Ticker abstraction,
     which provides all of the standard Ticker functionalities (e.g. just as standard tickers, it can be used along with
-    DataHandler functions get_price, get_last_available_price, get_current_price etc.), without the need to manually
+    DataProvider functions get_price, get_last_available_price, get_current_price etc.), without the need to manually
     manage the rolling of the contracts or to select a certain specific Ticker.
 
     Notes
@@ -97,6 +97,7 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
         data_provider: FuturesDataProvider
             Data provider which is used to download symbols of tickers, belonging to the given future ticker family
         """
+        # TODO change initialization to provide only the dataprovider
         if self._ticker_initialized:
             self.logger.warning(f"The FutureTicker {self._name} has been already initialized with Timer and Data "
                                 f"Provider. The previous Timer and Data Provider references will be overwritten")

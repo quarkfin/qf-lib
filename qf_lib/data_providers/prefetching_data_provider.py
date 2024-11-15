@@ -12,13 +12,14 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 from datetime import datetime
-from typing import Sequence, Union
+from typing import Sequence, Union, Optional
 
 from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
+from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
@@ -57,7 +58,7 @@ class PrefetchingDataProvider(PresetDataProvider):
                  tickers: Union[Ticker, Sequence[Ticker]],
                  fields: Union[PriceField, Sequence[PriceField]],
                  start_date: datetime, end_date: datetime,
-                 frequency: Frequency):
+                 frequency: Frequency, timer: Optional[Timer] = None):
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
         # Convert fields into list in order to return a QFDataArray as the result of get_price function
@@ -90,4 +91,5 @@ class PrefetchingDataProvider(PresetDataProvider):
                          exp_dates=exp_dates,
                          start_date=start_date,
                          end_date=end_date,
-                         frequency=frequency)
+                         frequency=frequency,
+                         timer=timer)

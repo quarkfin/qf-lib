@@ -17,13 +17,16 @@ from datetime import datetime
 from typing import Union, Sequence, Dict, Optional
 
 from numpy import nan
+from pandas import concat
 from pandas._libs.tslibs.offsets import to_offset
 from pandas._libs.tslibs.timestamps import Timestamp
 
+from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
+from qf_lib.common.utils.dateutils.timer import RealTimer, SettableTimer
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
@@ -31,7 +34,7 @@ from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.data_provider import DataProvider
-from qf_lib.data_providers.helpers import normalize_data_array, look_ahead_bias
+from qf_lib.data_providers.helpers import normalize_data_array
 
 
 class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
@@ -52,7 +55,8 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
     """
 
     def get_price(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
-                  start_date: datetime, end_date: datetime = None, frequency: Frequency = Frequency.DAILY, **kwargs) -> \
+                  start_date: datetime, end_date: datetime = None, frequency: Frequency = Frequency.DAILY,
+                  look_ahead_bias: Optional[bool] = False, **kwargs) -> \
             Union[None, PricesSeries, PricesDataFrame, QFDataArray]:
         """
         Gets adjusted historical Prices (Open, High, Low, Close) and Volume
@@ -70,6 +74,8 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
             if no end_date was provided, by default the current date will be used
         frequency: Frequency
             frequency of the data
+        look_ahead_bias: False
+            if set to False, no future data will be ever returned
 
         Returns
         -------
@@ -81,19 +87,16 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
             with 1 dimension: dates. All the containers will be indexed with PriceField whenever possible
             (for example: instead of 'Close' column in the PricesDataFrame there will be PriceField.Close)
         """
-        original_end_date = end_date or self.timer.now()
-        original_end_date = original_end_date + RelativeDelta(second=0, microsecond=0)
+        end_date = (end_date or self.timer.now()) + RelativeDelta(second=0, microsecond=0)
         start_date = self._adjust_start_date(start_date, frequency)
-
-        got_single_date = self._got_single_date(start_date, original_end_date, frequency)
+        got_single_date = self._got_single_date(start_date, end_date, frequency)
 
         tickers, got_single_ticker = convert_to_list(tickers, Ticker)
         fields, got_single_field = convert_to_list(fields, PriceField)
 
         fields_str = self._map_field_to_str(fields)
-        container = self.get_history(tickers, fields_str, start_date, original_end_date, frequency, **kwargs)
-        # TODO verify lookahead bias
-
+        container = self.get_history(tickers, fields_str, start_date, end_date, frequency,
+                                     look_ahead_bias=look_ahead_bias, **kwargs)
         str_to_field_dict = self.str_to_price_field_map()
 
         # Map the specific fields onto the fields given by the str_to_field_dict
@@ -191,7 +194,7 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
         else:
             return container.tail(nr_of_bars)
 
-    def get_last_available_price(self, tickers: Union[Ticker, Sequence[Ticker]], frequency: Frequency,
+    def get_last_available_price(self, tickers: Union[Ticker, Sequence[Ticker]], frequency: Optional[Frequency] = None,
                                  end_time: Optional[datetime] = None) -> Union[float, QFSeries]:
         """
         Gets the latest available price for given assets as of end_time.
@@ -214,25 +217,20 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
             - last_prices.index contains tickers
             - last_prices.data contains latest available prices for given tickers
         """
-        # TODO rethink this one
-        end_time = end_time or self.timer.now()
+        frequency = frequency or self.frequency
+        if isinstance(self.timer, RealTimer):
+            return self._last_available_price(tickers, frequency, end_time)
 
-        tickers, got_single_ticker = convert_to_list(tickers, Ticker)
-        if not tickers:
-            return nan if got_single_ticker else PricesSeries()
+        if frequency is None:
+            raise AttributeError(f"Data provider {self.__class__.__name__} has no set frequency. Please set it before "
+                                 f"running a simulation with SettableTimer.")
 
-        assert frequency >= Frequency.DAILY, "Frequency lower then daily is not supported by the " \
-                                             "get_last_available_price function"
-
-        start_date = self._compute_start_date(5, end_time, frequency)
-        start_date = self._adjust_start_date(start_date, frequency)
-
-        open_prices = self.get_price(tickers, PriceField.Open, start_date, end_time, frequency)
-        close_prices = self.get_price(tickers, PriceField.Close, start_date, end_time, frequency)
-
-        latest_available_prices_series = self._get_valid_latest_available_prices(start_date, tickers, open_prices,
-                                                                                 close_prices)
-        return latest_available_prices_series.iloc[0] if got_single_ticker else latest_available_prices_series
+        if isinstance(self.timer, SettableTimer) and frequency == Frequency.DAILY:
+            return self._last_available_price_settable_timer_daily(tickers, frequency, end_time)
+        if isinstance(self.timer, SettableTimer) and frequency > Frequency.DAILY:
+            return self._last_available_price_settable_timer_intraday(tickers, frequency, end_time)
+        else:
+            raise NotImplementedError("TODO")
 
     def str_to_price_field_map(self) -> Dict[str, PriceField]:
         """
@@ -340,3 +338,78 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
     @staticmethod
     def _is_single_price_field(fields: Union[None, PriceField, Sequence[PriceField]]):
         return fields is not None and isinstance(fields, PriceField)
+
+    def _last_available_price(self, tickers: Union[Ticker, Sequence[Ticker]], frequency: Frequency,
+                              end_time: Optional[datetime] = None):
+
+        end_time = self.get_end_date_without_look_ahead(end_time, frequency)
+        tickers, got_single_ticker = convert_to_list(tickers, Ticker)
+        if not tickers:
+            return nan if got_single_ticker else PricesSeries()
+
+        frequency = frequency or Frequency.DAILY
+        assert frequency >= Frequency.DAILY, "Frequency lower then daily is not supported by the " \
+                                             "get_last_available_price function"
+
+        start_date = self._compute_start_date(5, end_time, frequency)
+        start_date = self._adjust_start_date(start_date, frequency)
+
+        open_prices = self.get_price(tickers, PriceField.Open, start_date, end_time, frequency)
+        close_prices = self.get_price(tickers, PriceField.Close, start_date, end_time, frequency)
+
+        latest_available_prices_series = self._get_valid_latest_available_prices(start_date, tickers, open_prices,
+                                                                                 close_prices)
+        return latest_available_prices_series.iloc[0] if got_single_ticker else latest_available_prices_series
+
+    def _last_available_price_settable_timer_daily(self, tickers: Union[Ticker, Sequence[Ticker]],
+                                                   frequency: Frequency = None,
+                                                   end_time: Optional[datetime] = None) -> Union[float, QFSeries]:
+        tickers, got_single_ticker = convert_to_list(tickers, Ticker)
+        if not tickers:
+            return nan if got_single_ticker else PricesSeries()
+
+        frequency = frequency or Frequency.DAILY
+        end_time = end_time or self.timer.now()
+        end_date_without_look_ahead = self.get_end_date_without_look_ahead(end_time, frequency)
+
+        last_prices = self._last_available_price(tickers, frequency, end_date_without_look_ahead)
+
+        latest_market_open = self._get_last_available_market_event(end_time, MarketOpenEvent)
+        if end_date_without_look_ahead < latest_market_open:
+            current_open_prices = self.get_price(tickers, PriceField.Open, latest_market_open,
+                                                               latest_market_open, frequency, look_ahead_bias=True)
+            last_prices = concat([last_prices, current_open_prices], axis=1).ffill(axis=1)
+            last_prices = last_prices.iloc[:, -1]
+
+        return last_prices.iloc[0] if got_single_ticker else last_prices
+
+    def _last_available_price_settable_timer_intraday(self, tickers: Union[Ticker, Sequence[Ticker]],
+                                                      frequency: Frequency = None,
+                                                      end_time: Optional[datetime] = None) -> Union[float, QFSeries]:
+
+        tickers, got_single_ticker = convert_to_list(tickers, Ticker)
+        if not tickers:
+            return nan if got_single_ticker else PricesSeries()
+        frequency = frequency or Frequency.MIN_1
+        current_time = self.timer.now() + RelativeDelta(second=0, microsecond=0)
+        end_time = end_time or current_time
+        end_date_without_look_ahead = self.get_end_date_without_look_ahead(end_time, frequency)
+
+        if current_time <= end_time:
+            last_prices = self._last_available_price(tickers, frequency, end_date_without_look_ahead)
+            current_open_prices = self.get_price(tickers, PriceField.Open,
+                                                 start_date=end_date_without_look_ahead + frequency.time_delta(),
+                                                 end_date=end_date_without_look_ahead + frequency.time_delta(),
+                                                 frequency=frequency, look_ahead_bias=True)
+        else:
+            last_prices = self._last_available_price(tickers, frequency,
+                                                     end_date_without_look_ahead - frequency.time_delta())
+            current_open_prices = self.get_price(tickers, PriceField.Open,
+                                                 start_date=end_date_without_look_ahead,
+                                                 end_date=end_date_without_look_ahead,
+                                                 frequency=frequency, look_ahead_bias=True)
+
+        last_prices = concat([last_prices, current_open_prices], axis=1).ffill(axis=1)
+        last_prices = last_prices.iloc[:, -1]
+
+        return last_prices.iloc[0] if got_single_ticker else last_prices

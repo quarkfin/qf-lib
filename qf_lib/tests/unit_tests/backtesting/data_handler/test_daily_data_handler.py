@@ -18,7 +18,6 @@ from unittest import TestCase
 from numpy import nan
 from pandas import date_range, isnull, Index, DatetimeIndex
 
-from qf_lib.backtesting.data_handler.daily_data_handler import DailyDataHandler
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
 from qf_lib.common.enums.frequency import Frequency
@@ -39,12 +38,11 @@ from qf_lib.tests.helpers.testing_tools.containers_comparison import assert_seri
     assert_dataarrays_equal
 
 
-class TestDailyDataHandler(TestCase):
+class TestDataProviderDailyFrequencyForLookaheadBias(TestCase):
     def setUp(self):
         self.timer = SettableTimer()
         self.tickers = [QuandlTicker("MSFT", "WIKI"), QuandlTicker("AAPL", "WIKI")]
-        price_data_provider_mock = self._create_price_provider_mock(self.tickers)
-        self.data_handler = DailyDataHandler(price_data_provider_mock, self.timer)
+        self.data_provider = self._create_price_provider_mock(self.tickers, self.timer)
 
         MarketOpenEvent.set_trigger_time({"hour": 13, "minute": 30, "second": 0, "microsecond": 0})
         MarketCloseEvent.set_trigger_time({"hour": 20, "minute": 0, "second": 0, "microsecond": 0})
@@ -580,14 +578,14 @@ class TestDailyDataHandler(TestCase):
         current_time = str_to_date(curr_time_str, DateFormat.FULL_ISO)
         self.timer.set_current_time(current_time)
         expected_series = PricesSeries(data=expected_values, index=self.tickers)
-        actual_series = self.data_handler.get_last_available_price(self.tickers)
+        actual_series = self.data_provider.get_last_available_price(self.tickers)
         assert_series_equal(expected_series, actual_series, check_names=False)
 
     def _assert_get_prices_are_correct(self, curr_time_str, start_date, end_date, tickers, fields, expected_result):
         current_time = str_to_date(curr_time_str, DateFormat.FULL_ISO)
         self.timer.set_current_time(current_time)
 
-        actual_prices = self.data_handler.get_price(tickers, fields, start_date, end_date)
+        actual_prices = self.data_provider.get_price(tickers, fields, start_date, end_date)
         self.assertEqual(type(expected_result), type(actual_prices))
 
         if isinstance(expected_result, QFSeries):
@@ -601,7 +599,7 @@ class TestDailyDataHandler(TestCase):
         else:
             self.assertEqual(expected_result, actual_prices)
 
-    def _create_price_provider_mock(self, tickers):
+    def _create_price_provider_mock(self, tickers, timer):
         mock_data_array = QFDataArray.create(
             dates=date_range(start='2009-12-28', end='2010-01-02', freq='D'),
             tickers=tickers,
@@ -646,4 +644,4 @@ class TestDailyDataHandler(TestCase):
             ]
         )
 
-        return PresetDataProvider(mock_data_array, datetime(2009, 12, 28), datetime(2010, 1, 2), Frequency.DAILY)
+        return PresetDataProvider(mock_data_array, datetime(2009, 12, 1), datetime(2010, 1, 2), Frequency.DAILY, timer=timer)
