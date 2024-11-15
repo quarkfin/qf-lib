@@ -33,3 +33,4 @@ class ExchangeRateProvider(object, metaclass=ABCMeta):
         float
             last available exchange rate
         """
+        pass
