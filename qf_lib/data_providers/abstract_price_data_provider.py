@@ -51,7 +51,6 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
 
     """
 
-    @look_ahead_bias("end_date")
     def get_price(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
                   start_date: datetime, end_date: datetime = None, frequency: Frequency = Frequency.DAILY, **kwargs) -> \
             Union[None, PricesSeries, PricesDataFrame, QFDataArray]:
@@ -82,19 +81,18 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
             with 1 dimension: dates. All the containers will be indexed with PriceField whenever possible
             (for example: instead of 'Close' column in the PricesDataFrame there will be PriceField.Close)
         """
-
-        end_date = end_date or datetime.now()
-        end_date = end_date + RelativeDelta(second=0, microsecond=0)
+        original_end_date = end_date or self.timer.now()
+        original_end_date = original_end_date + RelativeDelta(second=0, microsecond=0)
         start_date = self._adjust_start_date(start_date, frequency)
 
-        _original_end_date = kwargs.get('__original_end_date', end_date) or end_date
-        got_single_date = self._got_single_date(start_date, _original_end_date, frequency)
+        got_single_date = self._got_single_date(start_date, original_end_date, frequency)
 
         tickers, got_single_ticker = convert_to_list(tickers, Ticker)
         fields, got_single_field = convert_to_list(fields, PriceField)
 
         fields_str = self._map_field_to_str(fields)
-        container = self.get_history(tickers, fields_str, start_date, end_date, frequency, **kwargs)
+        container = self.get_history(tickers, fields_str, start_date, original_end_date, frequency, **kwargs)
+        # TODO verify lookahead bias
 
         str_to_field_dict = self.str_to_price_field_map()
 
@@ -128,7 +126,6 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
         """
         raise NotImplementedError()
 
-    @look_ahead_bias("end_date")
     def historical_price(self, tickers: Union[Ticker, Sequence[Ticker]],
                          fields: Union[PriceField, Sequence[PriceField]],
                          nr_of_bars: int, end_date: Optional[datetime] = None,
@@ -165,7 +162,7 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
         frequency = frequency or self.frequency or Frequency.DAILY
         assert frequency >= Frequency.DAILY, "Frequency lower than daily is not supported by the Data Provider"
         assert nr_of_bars > 0, "Numbers of data samples should be a positive integer"
-        end_date = datetime.now() if end_date is None else end_date
+        end_date = self.get_end_date_without_look_ahead(end_date, frequency)
 
         # Add additional days to ensure that any data absence will not impact the number of bars which will be returned
         start_date = self._compute_start_date(nr_of_bars, end_date, frequency)
@@ -194,7 +191,6 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
         else:
             return container.tail(nr_of_bars)
 
-    @look_ahead_bias("end_date")
     def get_last_available_price(self, tickers: Union[Ticker, Sequence[Ticker]], frequency: Frequency,
                                  end_time: Optional[datetime] = None) -> Union[float, QFSeries]:
         """
@@ -218,7 +214,9 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
             - last_prices.index contains tickers
             - last_prices.data contains latest available prices for given tickers
         """
-        end_time = datetime.now() if end_time is None else end_time
+        # TODO rethink this one
+        end_time = end_time or self.timer.now()
+
         tickers, got_single_ticker = convert_to_list(tickers, Ticker)
         if not tickers:
             return nan if got_single_ticker else PricesSeries()
@@ -342,17 +340,3 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
     @staticmethod
     def _is_single_price_field(fields: Union[None, PriceField, Sequence[PriceField]]):
         return fields is not None and isinstance(fields, PriceField)
-
-    @staticmethod
-    def _is_single_ticker(value):
-        if isinstance(value, Ticker):
-            return True
-
-        return False
-
-    def _get_first_ticker(self, tickers):
-        if self._is_single_ticker(tickers):
-            ticker = tickers
-        else:
-            ticker = tickers[0]
-        return ticker

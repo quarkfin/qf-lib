@@ -105,7 +105,6 @@ class PresetDataProvider(AbstractPriceDataProvider, FuturesDataProvider):
     def supported_ticker_types(self) -> Set[Type[Ticker]]:
         return self._ticker_types
 
-    @look_ahead_bias("end_date")
     def get_price(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, Sequence[PriceField]],
                   start_date: datetime, end_date: datetime = None, frequency: Frequency = None, **kwargs) -> \
             Union[None, PricesSeries, PricesDataFrame, QFDataArray]:
@@ -145,7 +144,6 @@ class PresetDataProvider(AbstractPriceDataProvider, FuturesDataProvider):
 
         return normalized_result
 
-    @look_ahead_bias("end_date")
     def historical_price(self, tickers: Union[Ticker, Sequence[Ticker]],
                          fields: Union[PriceField, Sequence[PriceField]],
                          nr_of_bars: int, end_date: Optional[datetime] = None,
@@ -175,7 +173,6 @@ class PresetDataProvider(AbstractPriceDataProvider, FuturesDataProvider):
         self._check_data_availibility(normalized_result, end_date, nr_of_bars, tickers)
         return normalized_result
 
-    @look_ahead_bias("end_date")
     def get_last_available_price(self, tickers: Union[Ticker, Sequence[Ticker]], frequency: Frequency,
                                  end_time: Optional[datetime] = None) -> Union[float, PricesSeries]:
         end_time = datetime.now() if end_time is None else end_time
@@ -251,7 +248,6 @@ class PresetDataProvider(AbstractPriceDataProvider, FuturesDataProvider):
             raise ValueError("Requested end date {} is after data bundle end date {}".
                              format(end_date, self._end_date))
 
-    @look_ahead_bias("end_date")
     def get_history(self, tickers: Union[Ticker, Sequence[Ticker]],
                     fields: Union[Any, Sequence[Any]],
                     start_date: datetime, end_date: datetime = None, frequency: Frequency = None, **kwargs

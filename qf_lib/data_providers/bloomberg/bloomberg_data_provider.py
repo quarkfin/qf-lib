@@ -23,6 +23,7 @@ from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.tickers.tickers import BloombergTicker, Ticker
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
+from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
@@ -58,8 +59,8 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider, 
     Data Provider which provides financial data from Bloomberg.
     """
 
-    def __init__(self, settings: Settings):
-        super().__init__()
+    def __init__(self, settings: Settings, timer: Optional[Timer] = None):
+        super().__init__(timer)
         self.settings = settings
 
         self.host = settings.bloomberg.host
@@ -210,7 +211,6 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider, 
 
         return casted_result
 
-    @look_ahead_bias("end_date")
     def get_history(self, tickers: Union[BloombergTicker, Sequence[BloombergTicker]], fields: Union[str, Sequence[str]],
                     start_date: datetime, end_date: datetime = None, frequency: Frequency = None,
                     currency: str = None, override_name: str = None, override_value: str = None, **kwargs) \
@@ -255,12 +255,12 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider, 
         self._assert_is_connected()
 
         frequency = frequency or self.frequency or Frequency.DAILY
-        end_date = end_date or datetime.now()
-        end_date = end_date + RelativeDelta(second=0, microsecond=0)
+        original_end_date = end_date or self.timer.now()
+        original_end_date = original_end_date + RelativeDelta(second=0, microsecond=0)
+        end_date = self.get_end_date_without_look_ahead(original_end_date, frequency)
         start_date = self._adjust_start_date(start_date, frequency)
 
-        _original_end_date = kwargs.get('__original_end_date', end_date) or end_date
-        got_single_date = self._got_single_date(start_date, _original_end_date, frequency)
+        got_single_date = self._got_single_date(start_date, original_end_date, frequency)
 
         tickers, got_single_ticker = convert_to_list(tickers, BloombergTicker)
         fields, got_single_field = convert_to_list(fields, (PriceField, str))

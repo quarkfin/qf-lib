@@ -14,7 +14,6 @@
 from datetime import datetime
 from unittest import TestCase
 
-from qf_lib.backtesting.data_handler.daily_data_handler import DailyDataHandler
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
 from qf_lib.common.enums.price_field import PriceField
@@ -30,9 +29,8 @@ class TestBloombergDataHandler(TestCase):
 
     def setUp(self) -> None:
         try:
-            bbg_provider = get_data_provider()
             self.timer = SettableTimer()
-            self.daily_data_handler = DailyDataHandler(bbg_provider, self.timer)
+            self.daily_data_handler = get_data_provider(self.timer)
 
             MarketOpenEvent.set_trigger_time({"hour": 8, "minute": 30, "second": 0, "microsecond": 0})
             MarketCloseEvent.set_trigger_time({"hour": 16, "minute": 0, "second": 0, "microsecond": 0})
