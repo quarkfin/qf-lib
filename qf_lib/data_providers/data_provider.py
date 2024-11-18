@@ -47,8 +47,7 @@ class DataProvider(metaclass=ABCMeta):
     def get_history(
             self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[None, str, Sequence[str]],
             start_date: datetime, end_date: datetime = None, frequency: Frequency = None, look_ahead_bias: bool = False,
-            **kwargs) -> Union[
-        QFSeries, QFDataFrame, QFDataArray]:
+            **kwargs) -> Union[QFSeries, QFDataFrame, QFDataArray]:
         """
         Gets historical attributes (fields) of different securities (tickers).
 
