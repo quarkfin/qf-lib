@@ -140,7 +140,7 @@ class SignalsPlotter(AbstractDocument):
             for date in self._get_signals_dates():
                 try:
                     self.timer.set_current_time(date)
-                    new_exposure = alpha_model.get_signal(ticker, prev_exposure, date, self.data_frequency)\
+                    new_exposure = alpha_model.get_signal(ticker, prev_exposure, date, self.data_frequency) \
                         .suggested_exposure
                     exposures.append(new_exposure.value)
                     dates.append(date)
@@ -181,10 +181,10 @@ class SignalsPlotter(AbstractDocument):
                                                 frequency=self.data_frequency)
         else:
             prices_df = self.data_provider.get_price(ticker,
-                                                                  PriceField.ohlc(),
-                                                                  start_date=self.start_date,
-                                                                  end_date=self.end_date,
-                                                                  frequency=self.data_frequency)
+                                                     PriceField.ohlc(),
+                                                     start_date=self.start_date,
+                                                     end_date=self.end_date,
+                                                     frequency=self.data_frequency)
         return prices_df
 
     def add_models_implementation(self):

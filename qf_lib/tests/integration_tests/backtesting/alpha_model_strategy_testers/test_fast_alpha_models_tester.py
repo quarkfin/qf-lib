@@ -62,7 +62,7 @@ class TestFastAlphaModelsTester(TestCase):
         self._mocked_prices_arr = self._make_mock_data_array(self.tickers, all_fields)
         self.timer = SettableTimer()
         self.data_provider = PresetDataProvider(self._mocked_prices_arr, self.data_start_date,
-                                                 self.data_end_date, self.frequency, timer=self.timer)
+                                                self.data_end_date, self.frequency, timer=self.timer)
         self.alpha_model_type = DummyAlphaModel
 
     @classmethod

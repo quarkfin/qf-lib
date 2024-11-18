@@ -82,7 +82,8 @@ class BacktestTradingSession(TradingSession):
         tickers, _ = convert_to_list(tickers, Ticker)
 
         self.data_provider = PrefetchingDataProvider(self.data_provider, sorted(tickers), sorted(PriceField.ohlcv()),
-                                                     data_start, self.end_date, self.frequency)
+                                                     data_start, self.end_date, self.frequency,
+                                                     timer=self.data_provider.timer)
 
         self._hash_of_data_bundle = compute_container_hash(self.data_provider.data_bundle)
         self.logger.info("Preloaded data hash value {}".format(self._hash_of_data_bundle))

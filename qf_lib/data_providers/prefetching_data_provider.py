@@ -85,7 +85,7 @@ class PrefetchingDataProvider(PresetDataProvider):
                 for ft in future_tickers:
                     all_tickers.extend(chain_tickers_within_range(ft, exp_dates[ft], start_date, end_date))
 
-        data_array = data_provider.get_price(all_tickers, fields, start_date, end_date, frequency)
+        data_array = data_provider.get_price(all_tickers, fields, start_date, end_date, frequency, timer)
 
         super().__init__(data=data_array,
                          exp_dates=exp_dates,

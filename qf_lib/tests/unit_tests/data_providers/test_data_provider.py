@@ -212,7 +212,7 @@ class TestAbstractPriceDataProvider(TestCase):
         else:
             self.assertEqual(expected_value, actual_value)
 
-    def _mock_get_price(self, tickers, fields, start_date, end_date, frequency, look_ahead_bias = False):
+    def _mock_get_price(self, tickers, fields, start_date, end_date, frequency, look_ahead_bias=False):
         tickers, got_single_ticker = convert_to_list(tickers, Ticker)
         fields, got_single_field = convert_to_list(fields, PriceField)
 

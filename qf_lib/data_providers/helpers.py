@@ -13,7 +13,6 @@
 #     limitations under the License.
 import warnings
 from datetime import datetime
-from functools import wraps
 from typing import Union, Dict, Sequence, Any
 import pandas as pd
 from pandas import DatetimeIndex
@@ -249,4 +248,3 @@ def chain_tickers_within_range(future_ticker: FutureTicker, exp_dates: QFDataFra
     exp_dates = exp_dates[exp_dates >= start_date].dropna()
     exp_dates = exp_dates[exp_dates <= end_date + RelativeDelta(years=future_ticker.N)].dropna()
     return exp_dates.index.tolist()
-

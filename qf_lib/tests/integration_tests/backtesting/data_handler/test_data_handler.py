@@ -59,7 +59,7 @@ class TestDataProviderForLookaheadBias(TestCase):
     def test_get_price_when_end_date_is_in_the_past(self):
         self.timer.set_current_time(str_to_date("2018-02-12 00:00:00.000000", DateFormat.FULL_ISO))
         prices_tms = self.data_provider.get_price(self.spx_index_ticker, PriceField.Close, self.start_date,
-                                                 self.end_date)
+                                                  self.end_date)
 
         self.assertEqual(self.start_date, prices_tms.index[0].to_pydatetime())
         self.assertEqual(self.end_date, prices_tms.index[-1].to_pydatetime())
@@ -68,7 +68,7 @@ class TestDataProviderForLookaheadBias(TestCase):
         self.timer.set_current_time(
             str_to_date("2018-01-31") + MarketCloseEvent.trigger_time() + RelativeDelta(hours=1))
         prices_tms = self.data_provider.get_price(self.spx_index_ticker, PriceField.Close, self.start_date,
-                                                 self.end_date)
+                                                  self.end_date)
 
         self.assertEqual(self.start_date, prices_tms.index[0].to_pydatetime())
         self.assertEqual(self.end_date, prices_tms.index[-1].to_pydatetime())
@@ -76,7 +76,7 @@ class TestDataProviderForLookaheadBias(TestCase):
     def test_get_price_when_end_date_is_today_before_market_close(self):
         self.timer.set_current_time(str_to_date("2018-01-31") + MarketOpenEvent.trigger_time() + RelativeDelta(hours=1))
         close_prices_tms = self.data_provider.get_price(self.spx_index_ticker, PriceField.Close, self.start_date,
-                                                       self.end_date)
+                                                        self.end_date)
 
         self.assertEqual(self.start_date, close_prices_tms.index[0].to_pydatetime())
         self.assertEqual(self.end_date_trimmed, close_prices_tms.index[-1].to_pydatetime())
@@ -100,7 +100,7 @@ class TestDataProviderForLookaheadBias(TestCase):
         self.timer.set_current_time(
             str_to_date("2018-01-30") + MarketCloseEvent.trigger_time() + RelativeDelta(hours=1))
         prices_tms = self.data_provider.get_price(self.spx_index_ticker, PriceField.Close, self.start_date,
-                                                 self.end_date_trimmed)
+                                                  self.end_date_trimmed)
 
         self.assertEqual(self.start_date, prices_tms.index[0].to_pydatetime())
         self.assertEqual(self.end_date_trimmed, prices_tms.index[-1].to_pydatetime())
@@ -120,7 +120,8 @@ class TestDataProviderForLookaheadBias(TestCase):
             self.assertEqual(single_price, at_market_open[0])
 
         with self.subTest("Test during the trading session"):
-            self.timer.set_current_time(str_to_date("2018-01-31") + MarketOpenEvent.trigger_time() + RelativeDelta(hours=1))
+            self.timer.set_current_time(
+                str_to_date("2018-01-31") + MarketOpenEvent.trigger_time() + RelativeDelta(hours=1))
             during_the_day_last_prices = self.data_provider.get_last_available_price([self.spx_index_ticker])
 
             self.assertEqual(self.spx_index_ticker, during_the_day_last_prices.index[0])
@@ -135,7 +136,8 @@ class TestDataProviderForLookaheadBias(TestCase):
             self.assertNotEqual(during_the_day_last_prices[0], after_close_last_prices[0])
 
         with self.subTest("Test before the trading session"):
-            self.timer.set_current_time(str_to_date("2018-01-31") + MarketOpenEvent.trigger_time() - RelativeDelta(hours=1))
+            self.timer.set_current_time(
+                str_to_date("2018-01-31") + MarketOpenEvent.trigger_time() - RelativeDelta(hours=1))
             before_trading_session_prices = self.data_provider.get_last_available_price([self.spx_index_ticker])
 
             self.assertEqual(self.spx_index_ticker, before_trading_session_prices.index[0])
@@ -157,7 +159,7 @@ class TestDataProviderForLookaheadBias(TestCase):
     def test_get_history_when_end_date_is_in_the_past(self):
         self.timer.set_current_time(str_to_date("2018-02-12 00:00:00.000000", DateFormat.FULL_ISO))
         prices_tms = self.data_provider.get_history(self.spx_index_ticker, self.get_history_field,
-                                                   self.start_date, self.end_date)
+                                                    self.start_date, self.end_date)
 
         self.assertEqual(self.start_date, prices_tms.index[0].to_pydatetime())
         self.assertEqual(self.end_date, prices_tms.index[-1].to_pydatetime())
@@ -166,7 +168,7 @@ class TestDataProviderForLookaheadBias(TestCase):
         self.timer.set_current_time(
             str_to_date("2018-01-31") + MarketCloseEvent.trigger_time() + RelativeDelta(hours=1))
         prices_tms = self.data_provider.get_history(self.spx_index_ticker, self.get_history_field,
-                                                   self.start_date, self.end_date)
+                                                    self.start_date, self.end_date)
 
         self.assertEqual(self.start_date, prices_tms.index[0].to_pydatetime())
         self.assertEqual(self.end_date, prices_tms.index[-1].to_pydatetime())
@@ -174,7 +176,7 @@ class TestDataProviderForLookaheadBias(TestCase):
     def test_get_history_when_end_date_is_today_before_market_close(self):
         self.timer.set_current_time(str_to_date("2018-01-31") + MarketOpenEvent.trigger_time() + RelativeDelta(hours=1))
         prices_tms = self.data_provider.get_history(self.spx_index_ticker, self.get_history_field,
-                                                   self.start_date, self.end_date)
+                                                    self.start_date, self.end_date)
 
         self.assertEqual(self.start_date, prices_tms.index[0].to_pydatetime())
         self.assertEqual(self.end_date_trimmed, prices_tms.index[-1].to_pydatetime())
@@ -183,7 +185,7 @@ class TestDataProviderForLookaheadBias(TestCase):
         self.timer.set_current_time(
             str_to_date("2018-01-30") + MarketCloseEvent.trigger_time() + RelativeDelta(hours=1))
         prices_tms = self.data_provider.get_history(self.spx_index_ticker, self.get_history_field,
-                                                   self.start_date, self.end_date_trimmed)
+                                                    self.start_date, self.end_date_trimmed)
 
         self.assertEqual(self.start_date, prices_tms.index[0].to_pydatetime())
         self.assertEqual(self.end_date_trimmed, prices_tms.index[-1].to_pydatetime())
@@ -191,7 +193,7 @@ class TestDataProviderForLookaheadBias(TestCase):
     def test_get_history_with_multiple_tickers(self):
         self.timer.set_current_time(str_to_date("2018-01-31") + MarketOpenEvent.trigger_time() + RelativeDelta(hours=1))
         resilt_df = self.data_provider.get_history([self.microsoft_ticker, self.google_ticker], self.get_history_field,
-                                                  self.start_date, self.end_date_trimmed)
+                                                   self.start_date, self.end_date_trimmed)
 
         self.assertEqual(self.microsoft_ticker, resilt_df.columns[0])
         self.assertEqual(self.google_ticker, resilt_df.columns[1])
@@ -202,7 +204,7 @@ class TestDataProviderForLookaheadBias(TestCase):
     def test_historical_price_many_tickers_many_fields(self):
         self.timer.set_current_time(str_to_date("2018-01-31") + MarketOpenEvent.trigger_time() + RelativeDelta(hours=1))
         result_array = self.data_provider.historical_price([self.microsoft_ticker], [PriceField.Open, PriceField.Close],
-                                                          nr_of_bars=5)
+                                                           nr_of_bars=5)
 
         self.assertEqual(QFDataArray, type(result_array))
         self.assertEqual((5, 1, 2), result_array.shape)

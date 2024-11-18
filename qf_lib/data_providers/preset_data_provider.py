@@ -175,7 +175,7 @@ class PresetDataProvider(AbstractPriceDataProvider, FuturesDataProvider):
         return normalized_result
 
     def _last_available_price(self, tickers: Union[Ticker, Sequence[Ticker]], frequency: Optional[Frequency] = None,
-                                 end_time: Optional[datetime] = None) -> Union[float, PricesSeries]:
+                              end_time: Optional[datetime] = None) -> Union[float, PricesSeries]:
         frequency = frequency or self.frequency or Frequency.DAILY
         end_time = self.get_end_date_without_look_ahead(end_time, frequency)
         assert frequency >= Frequency.DAILY, "Frequency lower then daily is not supported by the " \
@@ -261,7 +261,8 @@ class PresetDataProvider(AbstractPriceDataProvider, FuturesDataProvider):
 
         start_date = self._adjust_start_date(start_date, frequency)
         original_end_date = (end_date or self.timer.now()) + RelativeDelta(second=0, microsecond=0)
-        end_date = original_end_date if look_ahead_bias else self.get_end_date_without_look_ahead(original_end_date, frequency)
+        end_date = original_end_date if look_ahead_bias else self.get_end_date_without_look_ahead(original_end_date,
+                                                                                                  frequency)
         got_single_date = self._got_single_date(start_date, original_end_date, frequency)
 
         # In order to be able to return data for FutureTickers create a mapping between tickers and corresponding

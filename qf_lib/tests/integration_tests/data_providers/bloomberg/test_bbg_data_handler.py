@@ -41,7 +41,7 @@ class TestBloombergDataProvider(TestCase):
     def test_market_open_price_before_market_open(self):
         self.timer.set_current_time(datetime(2022, 4, 26, 1))
         prices = self.daily_data_provider.get_price(BloombergTicker("SPX Index"), PriceField.ohlcv(),
-                                                   datetime(2022, 4, 24), datetime(2022, 4, 26))
+                                                    datetime(2022, 4, 24), datetime(2022, 4, 26))
 
         self.assertTrue(is_finite_number(prices.loc[datetime(2022, 4, 25), PriceField.Open]))
         self.assertTrue(is_finite_number(prices.loc[datetime(2022, 4, 25), PriceField.Close]))
@@ -50,25 +50,26 @@ class TestBloombergDataProvider(TestCase):
 
     def test_market_open_price_before_market_open__single_date(self):
         self.timer.set_current_time(datetime(2022, 4, 26, 1))
-        prices = self.daily_data_provider.get_price(BloombergTicker("SPX Index"), PriceField.Open, datetime(2022, 4, 26),
-                                                   datetime(2022, 4, 26))
+        prices = self.daily_data_provider.get_price(BloombergTicker("SPX Index"), PriceField.Open,
+                                                    datetime(2022, 4, 26),
+                                                    datetime(2022, 4, 26))
         self.assertFalse(is_finite_number(prices))
 
     def test_market_open_price_before_market_close__single_date(self):
         self.timer.set_current_time(datetime(2022, 4, 26, 15))
         prices = self.daily_data_provider.get_price(BloombergTicker("SPX Index"), [PriceField.Open, PriceField.Close],
-                                                   datetime(2022, 4, 26), datetime(2022, 4, 26))
+                                                    datetime(2022, 4, 26), datetime(2022, 4, 26))
         self.assertTrue(all(prices.isna()))
 
         self.timer.set_current_time(datetime(2022, 4, 29, 15))
         prices = self.daily_data_provider.get_price(BloombergTicker("SPX Index"), [PriceField.Open, PriceField.Close],
-                                                   datetime(2022, 4, 29), datetime(2022, 4, 30))
+                                                    datetime(2022, 4, 29), datetime(2022, 4, 30))
         self.assertTrue(prices.empty)
 
     def test_market_open_price_after_market_close__single_date(self):
         self.timer.set_current_time(datetime(2022, 4, 26, 23))
         prices = self.daily_data_provider.get_price(BloombergTicker("SPX Index"), [PriceField.Open, PriceField.Close],
-                                                   datetime(2022, 4, 26), datetime(2022, 4, 26))
+                                                    datetime(2022, 4, 26), datetime(2022, 4, 26))
         self.assertTrue(is_finite_number(prices.loc[PriceField.Open]))
         self.assertTrue(is_finite_number(prices.loc[PriceField.Close]))
 
@@ -79,7 +80,7 @@ class TestBloombergDataProvider(TestCase):
 
         self.timer.set_current_time(datetime(2022, 4, 26, 15))
         prices = self.daily_data_provider.get_price(BloombergTicker("SPX Index"), PriceField.ohlcv(),
-                                                   datetime(2022, 4, 25), datetime(2022, 4, 26))
+                                                    datetime(2022, 4, 25), datetime(2022, 4, 26))
 
         self.assertEqual(prices.index[-1], datetime(2022, 4, 25))
         self.assertEqual(type(prices), PricesDataFrame)
@@ -87,7 +88,7 @@ class TestBloombergDataProvider(TestCase):
     def test_market_open_price_after_market_close(self):
         self.timer.set_current_time(datetime(2022, 4, 26, 23))
         prices = self.daily_data_provider.get_price(BloombergTicker("SPX Index"), PriceField.ohlcv(),
-                                                   datetime(2022, 4, 25), datetime(2022, 4, 26))
+                                                    datetime(2022, 4, 25), datetime(2022, 4, 26))
 
         self.assertTrue(is_finite_number(prices.loc[datetime(2022, 4, 26), PriceField.Open]))
         self.assertTrue(is_finite_number(prices.loc[datetime(2022, 4, 26), PriceField.Close]))
@@ -100,13 +101,13 @@ class TestBloombergDataProvider(TestCase):
 
         self.timer.set_current_time(datetime(2022, 4, 26, 15))
         prices = self.daily_data_provider.get_price(BloombergTicker("SPX Index"), PriceField.ohlcv(),
-                                                   datetime(2022, 4, 25), datetime(2022, 4, 30))
+                                                    datetime(2022, 4, 25), datetime(2022, 4, 30))
         self.assertEqual(prices.index[-1], datetime(2022, 4, 25))
         self.assertEqual(type(prices), PricesDataFrame)
 
     def test_day_without_data__single_date(self):
         self.timer.set_current_time(datetime(2022, 4, 30, 15))
         prices = self.daily_data_provider.get_price(BloombergTicker("SPX Index"), [PriceField.Open, PriceField.Close],
-                                                   datetime(2022, 4, 30), datetime(2022, 4, 30))
+                                                    datetime(2022, 4, 30), datetime(2022, 4, 30))
         self.assertFalse(is_finite_number(prices.loc[PriceField.Open]))
         self.assertFalse(is_finite_number(prices.loc[PriceField.Close]))

@@ -47,12 +47,12 @@ class TestPresetDataProviderWithFutures(unittest.TestCase):
         self.TICKER_1.initialize_data_provider(self.timer, self.data_provider)
         self.TICKER_2.initialize_data_provider(self.timer, self.data_provider)
         self.data_provider = PrefetchingDataProvider(self.data_provider,
-                                                self.TICKER_2,
-                                                PriceField.ohlcv(),
-                                                self.start_date,
-                                                self.end_date,
-                                                self.frequency,
-                                                timer=self.timer)
+                                                     self.TICKER_2,
+                                                     PriceField.ohlcv(),
+                                                     self.start_date,
+                                                     self.end_date,
+                                                     self.frequency,
+                                                     timer=self.timer)
 
         self.timer.set_current_time(self.end_date)
 

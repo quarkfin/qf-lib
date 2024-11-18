@@ -39,7 +39,6 @@ from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 from qf_lib.tests.helpers.testing_tools.containers_comparison import assert_lists_equal
-from qf_lib.tests.integration_tests.data_providers.futures.test_general_price_provider import timer
 
 
 class TestMarketOnOpenExecutionStyle(TestCase):
@@ -232,7 +231,7 @@ class TestMarketOnOpenExecutionStyle(TestCase):
 
     def _set_last_available_price(self, price):
         self.data_provider.get_last_available_price.side_effect = lambda t: QFSeries([price],
-                                                                                    index=pd.Index([self.msft_ticker]))
+                                                                                     index=pd.Index([self.msft_ticker]))
 
     def _set_current_price(self, price):
         self.data_provider.get_price.side_effect = lambda a, b, c, d, e, look_ahead_bias: \

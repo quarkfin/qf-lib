@@ -377,7 +377,7 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
         latest_market_open = self._get_last_available_market_event(end_time, MarketOpenEvent)
         if end_date_without_look_ahead < latest_market_open:
             current_open_prices = self.get_price(tickers, PriceField.Open, latest_market_open,
-                                                               latest_market_open, frequency, look_ahead_bias=True)
+                                                 latest_market_open, frequency, look_ahead_bias=True)
             last_prices = concat([last_prices, current_open_prices], axis=1).ffill(axis=1)
             last_prices = last_prices.iloc[:, -1]
 

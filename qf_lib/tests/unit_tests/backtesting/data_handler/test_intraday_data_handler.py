@@ -46,8 +46,8 @@ class TestDataProviderIntradayForLookaheadBias(TestCase):
         self.data_provider_MIN_60 = self._create_price_provider_mock(self.tickers, Frequency.MIN_60, self.timer)
 
         self.data_providers = {Frequency.MIN_1: self.data_provider_MIN_1,
-                              Frequency.MIN_5: self.data_provider_MIN_5,
-                              Frequency.MIN_60: self.data_provider_MIN_60}
+                               Frequency.MIN_5: self.data_provider_MIN_5,
+                               Frequency.MIN_60: self.data_provider_MIN_60}
 
         MarketOpenEvent.set_trigger_time({"hour": 8, "minute": 0, "second": 0, "microsecond": 0})
         MarketCloseEvent.set_trigger_time({"hour": 16, "minute": 0, "second": 0, "microsecond": 0})
@@ -241,7 +241,8 @@ class TestDataProviderIntradayForLookaheadBias(TestCase):
         self._assert_get_prices_are_correct("2009-12-30 16:03:00.000000", start_date, end_date, self.tickers,
                                             PriceField.Open, expected_result, frequency=Frequency.MIN_1)
 
-        expected_result = PricesSeries(index=Index(self.tickers, name=TICKERS), name=PriceField.Close, data=[45.65, nan])
+        expected_result = PricesSeries(index=Index(self.tickers, name=TICKERS), name=PriceField.Close,
+                                       data=[45.65, nan])
         self._assert_get_prices_are_correct("2009-12-30 16:03:00.000000", start_date, end_date, self.tickers,
                                             PriceField.Close, expected_result, frequency=Frequency.MIN_1)
 
@@ -261,7 +262,8 @@ class TestDataProviderIntradayForLookaheadBias(TestCase):
         self._assert_get_prices_are_correct("2009-12-30 15:56:00.100000", start_date, end_date, self.tickers,
                                             PriceField.Open, expected_result, frequency=Frequency.MIN_1)
 
-    def test_get_price_before_market_close_during_bar_single_date_single_field_multiple_tickers_empty_container_freq5(self):
+    def test_get_price_before_market_close_during_bar_single_date_single_field_multiple_tickers_empty_container_freq5(
+            self):
         start_date = datetime(2009, 12, 30, 15, 56)
         end_date = datetime(2009, 12, 30, 15, 56)
 
@@ -269,7 +271,8 @@ class TestDataProviderIntradayForLookaheadBias(TestCase):
         self._assert_get_prices_are_correct("2009-12-30 15:57:00.100000", start_date, end_date, self.tickers,
                                             PriceField.Open, expected_result, frequency=Frequency.MIN_5)
 
-    def test_get_price_before_market_close_during_bar_single_date_single_field_multiple_tickers_empty_container_freq60(self):
+    def test_get_price_before_market_close_during_bar_single_date_single_field_multiple_tickers_empty_container_freq60(
+            self):
         start_date = datetime(2009, 12, 30, 15, 56)
         end_date = datetime(2009, 12, 30, 15, 56)
 
@@ -294,7 +297,8 @@ class TestDataProviderIntradayForLookaheadBias(TestCase):
         expected_result = PricesSeries(index=Index([PriceField.Open, PriceField.Close], name=FIELDS),
                                        name=self.tickers[0].as_string(), data=[45.1, 45.3])
         self._assert_get_prices_are_correct("2009-12-30 15:58:00.000000", start_date, end_date, self.tickers[0],
-                                            [PriceField.Open, PriceField.Close], expected_result, frequency=Frequency.MIN_1)
+                                            [PriceField.Open, PriceField.Close], expected_result,
+                                            frequency=Frequency.MIN_1)
 
     def test_get_price_after_market_close_single_date_multiple_fields_single_ticker(self):
         start_date = datetime(2009, 12, 30, 16, 2)
@@ -303,7 +307,8 @@ class TestDataProviderIntradayForLookaheadBias(TestCase):
         expected_result = PricesSeries(index=Index([PriceField.Open, PriceField.Close], name=FIELDS),
                                        name=self.tickers[0].as_string(), data=[45.7, 45.65])
         self._assert_get_prices_are_correct("2009-12-30 16:03:00.000000", start_date, end_date, self.tickers[0],
-                                            [PriceField.Open, PriceField.Close], expected_result, frequency=Frequency.MIN_1)
+                                            [PriceField.Open, PriceField.Close], expected_result,
+                                            frequency=Frequency.MIN_1)
 
     def test_get_price_after_market_close_single_date_multiple_fields_single_ticker_empty_container(self):
         start_date = datetime(2009, 12, 30, 16, 4)
@@ -312,7 +317,8 @@ class TestDataProviderIntradayForLookaheadBias(TestCase):
         expected_result = PricesSeries(index=Index([PriceField.Open, PriceField.Close], name=FIELDS),
                                        name=self.tickers[0].as_string())
         self._assert_get_prices_are_correct("2009-12-30 16:04:00.000000", start_date, end_date, self.tickers[0],
-                                            [PriceField.Open, PriceField.Close], expected_result, frequency=Frequency.MIN_1)
+                                            [PriceField.Open, PriceField.Close], expected_result,
+                                            frequency=Frequency.MIN_1)
 
     """ Test get_price function - single date, multiple fields, multiple tickers """
 
@@ -324,7 +330,8 @@ class TestDataProviderIntradayForLookaheadBias(TestCase):
                                           index=Index(self.tickers, name=TICKERS),
                                           data=[[45.1, 45.3], [nan, nan]])
         self._assert_get_prices_are_correct("2009-12-30 15:58:00.000000", start_date, end_date, self.tickers,
-                                            [PriceField.Open, PriceField.Close], expected_result, frequency=Frequency.MIN_1)
+                                            [PriceField.Open, PriceField.Close], expected_result,
+                                            frequency=Frequency.MIN_1)
 
     def test_get_price_before_market_close_single_date_multiple_fields_multiple_tickers_empty_container(self):
         start_date = datetime(2009, 12, 30, 16, 4)
@@ -334,7 +341,8 @@ class TestDataProviderIntradayForLookaheadBias(TestCase):
                                           index=Index(self.tickers, name=TICKERS),
                                           data=None)
         self._assert_get_prices_are_correct("2009-12-30 16:04:00.000000", start_date, end_date, self.tickers,
-                                            [PriceField.Open, PriceField.Close], expected_result, frequency=Frequency.MIN_1)
+                                            [PriceField.Open, PriceField.Close], expected_result,
+                                            frequency=Frequency.MIN_1)
 
     def test_get_price_after_market_close_single_date_multiple_fields_multiple_tickers(self):
         start_date = datetime(2009, 12, 30, 16, 2)
@@ -344,7 +352,8 @@ class TestDataProviderIntradayForLookaheadBias(TestCase):
                                           index=Index(self.tickers, name=TICKERS),
                                           data=[[45.7, 45.65], [nan, nan]])
         self._assert_get_prices_are_correct("2009-12-30 16:03:00.000000", start_date, end_date, self.tickers,
-                                            [PriceField.Open, PriceField.Close], expected_result, frequency=Frequency.MIN_1)
+                                            [PriceField.Open, PriceField.Close], expected_result,
+                                            frequency=Frequency.MIN_1)
 
     def test_get_price_after_market_close_during_bar_single_date_multiple_fields_multiple_tickers(self):
         start_date = datetime(2009, 12, 30, 16, 2)
@@ -354,7 +363,8 @@ class TestDataProviderIntradayForLookaheadBias(TestCase):
                                           index=Index(self.tickers, name=TICKERS),
                                           data=[[45.7, 45.65], [nan, nan]])
         self._assert_get_prices_are_correct("2009-12-30 16:03:00.100000", start_date, end_date, self.tickers,
-                                            [PriceField.Open, PriceField.Close], expected_result, frequency=Frequency.MIN_1)
+                                            [PriceField.Open, PriceField.Close], expected_result,
+                                            frequency=Frequency.MIN_1)
 
     def test_get_price_after_market_close_during_bar_single_date_multiple_fields_multiple_tickers_freq5(self):
         start_date = datetime(2009, 12, 30, 16, 10)
@@ -364,7 +374,8 @@ class TestDataProviderIntradayForLookaheadBias(TestCase):
                                           index=Index(self.tickers, name=TICKERS),
                                           data=[[45.7, 45.65], [nan, nan]])
         self._assert_get_prices_are_correct("2009-12-30 16:15:00.100000", start_date, end_date, self.tickers,
-                                            [PriceField.Open, PriceField.Close], expected_result, frequency=Frequency.MIN_5)
+                                            [PriceField.Open, PriceField.Close], expected_result,
+                                            frequency=Frequency.MIN_5)
 
     def test_get_price_after_market_close_during_bar_single_date_multiple_fields_multiple_tickers_freq60(self):
         start_date = datetime(2009, 12, 30, 17)
@@ -374,7 +385,8 @@ class TestDataProviderIntradayForLookaheadBias(TestCase):
                                           index=Index(self.tickers, name=TICKERS),
                                           data=[[45.6, 46.2], [30.1, 30.3]])
         self._assert_get_prices_are_correct("2009-12-30 18:00:00.100000", start_date, end_date, self.tickers,
-                                            [PriceField.Open, PriceField.Close], expected_result, frequency=Frequency.MIN_60)
+                                            [PriceField.Open, PriceField.Close], expected_result,
+                                            frequency=Frequency.MIN_60)
 
     def test_get_price_after_market_close_single_date_multiple_fields_multiple_tickers_empty_container(self):
         start_date = datetime(2009, 12, 30, 16, 4)
@@ -384,7 +396,8 @@ class TestDataProviderIntradayForLookaheadBias(TestCase):
                                           index=Index(self.tickers, name=TICKERS),
                                           data=None)
         self._assert_get_prices_are_correct("2009-12-30 16:04:00.000000", start_date, end_date, self.tickers,
-                                            [PriceField.Open, PriceField.Close], expected_result, frequency=Frequency.MIN_1)
+                                            [PriceField.Open, PriceField.Close], expected_result,
+                                            frequency=Frequency.MIN_1)
 
     """ Test get_price function - multiple dates, single field, single ticker """
 
@@ -493,7 +506,8 @@ class TestDataProviderIntradayForLookaheadBias(TestCase):
         end_date = datetime(2009, 12, 30, 16, 10)
 
         fields = PriceField.Open
-        expected_result = PricesDataFrame(columns=Index(self.tickers, name=TICKERS), index=DatetimeIndex([], name=DATES))
+        expected_result = PricesDataFrame(columns=Index(self.tickers, name=TICKERS),
+                                          index=DatetimeIndex([], name=DATES))
         expected_result.name = fields
         self._assert_get_prices_are_correct("2009-12-30 16:15:00.000000", start_date, end_date, self.tickers, fields,
                                             expected_result, frequency=Frequency.MIN_1)
@@ -518,7 +532,8 @@ class TestDataProviderIntradayForLookaheadBias(TestCase):
         end_date = datetime(2009, 12, 30, 16, 0)
 
         expected_result = PricesDataFrame(columns=Index([PriceField.Open], name=FIELDS),
-                                          index=DatetimeIndex([datetime(2009, 12, 30, 15, 57)], name=DATES), data=[45.1])
+                                          index=DatetimeIndex([datetime(2009, 12, 30, 15, 57)], name=DATES),
+                                          data=[45.1])
         expected_result.name = self.tickers[0].as_string()
         self._assert_get_prices_are_correct("2009-12-30 15:58:59.000000", start_date, end_date, self.tickers[0],
                                             [PriceField.Open], expected_result, frequency=Frequency.MIN_1)
@@ -528,7 +543,8 @@ class TestDataProviderIntradayForLookaheadBias(TestCase):
         end_date = datetime(2009, 12, 30, 16, 0)
 
         expected_result = PricesDataFrame(columns=Index([PriceField.Open], name=FIELDS),
-                                          index=DatetimeIndex([datetime(2009, 12, 30, 15, 45)], name=DATES), data=[45.1])
+                                          index=DatetimeIndex([datetime(2009, 12, 30, 15, 45)], name=DATES),
+                                          data=[45.1])
         expected_result.name = self.tickers[0].as_string()
         self._assert_get_prices_are_correct("2009-12-30 15:51:59.000000", start_date, end_date, self.tickers[0],
                                             [PriceField.Open], expected_result, frequency=Frequency.MIN_5)
@@ -656,7 +672,8 @@ class TestDataProviderIntradayForLookaheadBias(TestCase):
         actual_series = self.data_providers[frequency].get_last_available_price(self.tickers, end_time=end_date)
         assert_series_equal(expected_series, actual_series, check_names=False)
 
-    def _assert_get_prices_are_correct(self, curr_time_str, start_date, end_date, tickers, fields, expected_result, frequency):
+    def _assert_get_prices_are_correct(self, curr_time_str, start_date, end_date, tickers, fields, expected_result,
+                                       frequency):
         current_time = str_to_date(curr_time_str, DateFormat.FULL_ISO)
         self.timer.set_current_time(current_time)
         actual_prices = self.data_providers[frequency].get_price(tickers, fields, start_date, end_date)
