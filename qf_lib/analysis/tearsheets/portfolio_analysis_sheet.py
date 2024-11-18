@@ -238,7 +238,7 @@ class PortfolioAnalysisSheet(AbstractDocument):
         self.document.add_element(HeadingElement(level=2, text="Average time in the market per asset"))
 
         start_time = self.backtest_result.start_date
-        end_time = self.backtest_result.portfolio.timer.now()
+        end_time = self.backtest_result.portfolio.data_provider.timer.now()
         backtest_duration = pd.Timedelta(end_time - start_time) / pd.Timedelta(minutes=1)  # backtest duration in min
         positions_list = self.backtest_result.portfolio.closed_positions() + \
             list(self.backtest_result.portfolio.open_positions_dict.values())
