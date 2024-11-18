@@ -72,7 +72,7 @@ class TestSlippage(TestCase):
             )]
 
     def _create_data_provider_mock(self):
-        def get_price(tickers, fields, start_date, end_date, _):
+        def get_price(tickers, fields, start_date, end_date, frequency, look_ahead_bias = False):
             prices_bar = [5.0, 10.0, 1.0, 4.0, 50]  # Open, High, Low, Close, Volume
 
             dates_index = pd.date_range(start_date, end_date, freq='B')
