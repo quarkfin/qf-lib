@@ -60,7 +60,6 @@ class TestPresetDataProviderWithFutures(unittest.TestCase):
 
         self.data_provider.timer.set_current_time(self.end_date)
 
-
     def test_data_provider_init(self):
         self.assertCountEqual(self.data_provider.supported_ticker_types(),
                               {BloombergTicker})

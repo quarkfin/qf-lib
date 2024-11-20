@@ -28,7 +28,6 @@ from qf_lib.backtesting.strategies.abstract_strategy import AbstractStrategy
 from qf_lib.backtesting.trading_session.trading_session import TradingSession
 from qf_lib.common.exceptions.future_contracts_exceptions import NoValidTickerException
 from qf_lib.common.tickers.tickers import Ticker
-from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 from qf_lib.containers.futures.futures_rolling_orders_generator import FuturesRollingOrdersGenerator

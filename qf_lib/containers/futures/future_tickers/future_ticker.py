@@ -21,7 +21,6 @@ from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.exceptions.future_contracts_exceptions import NoValidTickerException
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
-from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.containers.series.qf_series import QFSeries
 
 
