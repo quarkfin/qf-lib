@@ -13,6 +13,8 @@
 #     limitations under the License.
 import unittest
 
+from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
+from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
 from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
@@ -32,8 +34,6 @@ class TestPresetDataProviderWithFutures(unittest.TestCase):
         cls.end_date = str_to_date('2015-10-08')
         cls.start_date = cls.end_date - RelativeDelta(years=2)
 
-        cls.timer = SettableTimer(cls.end_date)
-
         cls.frequency = Frequency.DAILY
         cls.TICKER_1 = BloombergFutureTicker("Cotton", "CT{} Comdty", 1, 3)
         cls.TICKER_2 = BloombergFutureTicker("Corn", 'C {} Comdty', 1, 5)
@@ -41,20 +41,25 @@ class TestPresetDataProviderWithFutures(unittest.TestCase):
     def setUp(self):
         try:
             self.data_provider = get_data_provider()
+            self.data_provider.set_timer(SettableTimer(self.end_date))
         except Exception as e:
             raise self.skipTest(e)
 
-        self.TICKER_1.initialize_data_provider(self.timer, self.data_provider)
-        self.TICKER_2.initialize_data_provider(self.timer, self.data_provider)
+        self.TICKER_1.initialize_data_provider(self.data_provider)
+        self.TICKER_2.initialize_data_provider(self.data_provider)
+
+        MarketOpenEvent.set_trigger_time({"hour": 13, "minute": 30, "second": 0, "microsecond": 0})
+        MarketCloseEvent.set_trigger_time({"hour": 20, "minute": 0, "second": 0, "microsecond": 0})
+
         self.data_provider = PrefetchingDataProvider(self.data_provider,
                                                      self.TICKER_2,
                                                      PriceField.ohlcv(),
                                                      self.start_date,
                                                      self.end_date,
-                                                     self.frequency,
-                                                     timer=self.timer)
+                                                     self.frequency, timer=SettableTimer())
 
-        self.timer.set_current_time(self.end_date)
+        self.data_provider.timer.set_current_time(self.end_date)
+
 
     def test_data_provider_init(self):
         self.assertCountEqual(self.data_provider.supported_ticker_types(),

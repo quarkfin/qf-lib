@@ -15,7 +15,6 @@ from datetime import datetime
 from unittest import TestCase
 
 import pandas as pd
-from lxml.html.builder import FRAME
 
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent

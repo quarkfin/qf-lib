@@ -133,7 +133,7 @@ class FastAlphaModelTester:
         self._start_date = start_date
         self._end_date = end_date
         self._data_provider = data_provider
-        self._timer = SettableTimer(start_date) if timer is None else timer
+        self._data_provider.set_timer(SettableTimer(start_date))
         self._n_jobs = n_jobs
         self._frequency = frequency
         self._start_time = start_time
@@ -176,7 +176,7 @@ class FastAlphaModelTester:
         for ticker in original_ticker:
             try:
                 if isinstance(ticker, FutureTicker):
-                    ticker.initialize_data_provider(self._timer, self._data_provider)
+                    ticker.initialize_data_provider(self._data_provider)
                     ticker = ticker.get_current_specific_ticker()
                 tickers.append(ticker)
             except NoValidTickerException:
@@ -189,7 +189,7 @@ class FastAlphaModelTester:
         Creates a QFDataArray containing OHLCV values for all tickers passes to Fast Alpha Models Tester.
         """
         self.logger.info("\nLoading all price values of tickers:")
-        self._timer.set_current_time(self._end_date)
+        self._data_provider.timer.set_current_time(self._end_date)
         tickers_dict = {}
 
         for ticker in self._tickers:
@@ -428,14 +428,14 @@ class FastAlphaModelTester:
             if isinstance(ticker, FutureTicker):
                 # Even if the tickers were already initialized, during pickling process, the data provider and timer
                 # information is lost
-                ticker.initialize_data_provider(self._timer, data_provider)
+                ticker.initialize_data_provider(data_provider)
 
         for i, curr_datetime in enumerate(backtest_dates.index):
             if i % 1000 == 0:
                 self.logger.info('{} / {} of Exposure dates processed'.format(i, len(backtest_dates)))
 
             new_exposures = QFSeries(index=tickers)
-            self._timer.set_current_time(curr_datetime)
+            self._data_provider.timer.set_current_time(curr_datetime)
 
             for j, ticker, curr_exp_value in zip(count(), tickers, current_exposures_values):
                 curr_exp = Exposure(curr_exp_value) if is_finite_number(curr_exp_value) else Exposure.OUT

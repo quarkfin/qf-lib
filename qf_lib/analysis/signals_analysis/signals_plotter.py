@@ -100,9 +100,7 @@ class SignalsPlotter(AbstractDocument):
         self.end_date = end_date
 
         self.data_provider = data_provider
-
-        assert isinstance(self.data_provider.timer, SettableTimer)
-        self.timer: SettableTimer = self.data_provider.timer
+        self.data_provider.set_timer(SettableTimer(end_date))
 
         self.signal_frequency = signal_frequency
         self.data_frequency = data_frequency
@@ -110,7 +108,7 @@ class SignalsPlotter(AbstractDocument):
         for ticker in self.tickers:
             if isinstance(ticker, FutureTicker):
                 # use a new timer that allows to look until the end date
-                ticker.initialize_data_provider(SettableTimer(end_date), self.data_provider)
+                ticker.initialize_data_provider(self.data_provider)
 
     def build_document(self):
         self._add_header()
@@ -139,7 +137,7 @@ class SignalsPlotter(AbstractDocument):
             prev_exposure = Exposure.OUT
             for date in self._get_signals_dates():
                 try:
-                    self.timer.set_current_time(date)
+                    self.data_provider.set_current_time(date)
                     new_exposure = alpha_model.get_signal(ticker, prev_exposure, date, self.data_frequency) \
                         .suggested_exposure
                     exposures.append(new_exposure.value)
