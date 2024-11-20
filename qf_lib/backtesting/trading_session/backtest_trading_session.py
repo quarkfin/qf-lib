@@ -47,7 +47,6 @@ class BacktestTradingSession(TradingSession):
                  order_factory: OrderFactory, frequency: Frequency, backtest_result: BacktestResult):
         """
         Set up the backtest variables according to what has been passed in.
-        The data_provider parameter of the BacktestTradingSession points to a Data Handler object.
         """
         super().__init__()
         self.logger = qf_logger.getChild(self.__class__.__name__)

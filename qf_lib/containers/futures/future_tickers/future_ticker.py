@@ -204,7 +204,7 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
     def get_expiration_dates(self) -> QFSeries:
         """
         Returns QFSeries containing the list of specific future contracts Tickers, indexed by their expiration
-        dates. The index contains original expiration dates, as returned by the data handler, without shifting it by the
+        dates. The index contains original expiration dates, as returned by the data provider, without shifting it by the
         days_before_exp_date days (it is important to store the original values, instead of shifted ones, as this
         function is public and used by multiple other components).
 

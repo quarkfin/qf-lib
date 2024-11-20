@@ -71,8 +71,8 @@ class MarketOrdersExecutor(SimulatedExecutor):
     def _get_current_prices(self, tickers: Sequence[Ticker]):
         """
         Function used to obtain the current prices for the tickers in order to further calculate fill prices for orders.
-        The function uses data provider and not data handler, as it is necessary to get the current bar at each point
-        in time to compute the fill prices.
+        The function uses data provider with look ahead bias = True, as it is necessary to get the current bar at each
+        point in time to compute the fill prices.
         """
         if not tickers:
             return QFSeries()

@@ -305,7 +305,7 @@ class BacktestTradingSessionBuilder:
     @ConfigExporter.update_config
     def set_position_sizer(self, position_sizer_type: Type[PositionSizer], **kwargs):
         """Sets the position sizer. The parameters to initialize the PositionSizer should be passed as keyword
-        arguments. Parameters corresponding to the broker, data handler, contract ticker mapper or signals register
+        arguments. Parameters corresponding to the broker, data provider, contract ticker mapper or signals register
         should not be provided, as all these parameters are setup by the backtest trading session builder.
         For example to set position sizer with initial risk = 0.3 and tolerance percentage = 0.1 the following command
         should be called on the session builder:
@@ -334,7 +334,7 @@ class BacktestTradingSessionBuilder:
     @ConfigExporter.append_config
     def add_orders_filter(self, orders_filter_type: Type[OrdersFilter], **kwargs):
         """Adds orders filter to the pipeline. Ths parameters to initialize the OrdersFilter should be passed as keyword
-        arguments. Parameters corresponding to data handler and contract ticker mapper should not be provided, as
+        arguments. Parameters corresponding to data provider and contract ticker mapper should not be provided, as
         they are setup by the backtest trading session builder. For example to set orders filter with
         volume_percentage_limit = 0.3 the following command should be called on the session builder:
 
@@ -430,7 +430,7 @@ class BacktestTradingSessionBuilder:
             "\n".join([
                 "Configuration of components:",
                 "\tPosition sizer: {:s}".format(self._position_sizer.__class__.__name__),
-                "\tData Handler: {:s}".format(self._data_provider.__class__.__name__),
+                "\tData Provider: {:s}".format(self._data_provider.__class__.__name__),
                 "\tBacktest Result: {:s}".format(self._backtest_result.__class__.__name__),
                 "\tMonitor: {:s}".format(self._monitor.__class__.__name__),
                 "\tExecution Handler: {:s}".format(self._execution_handler.__class__.__name__),
