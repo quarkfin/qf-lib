@@ -34,7 +34,7 @@ class ReferenceDataProvider:
         self._session = session
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
-    def get(self, tickers: Sequence[BloombergTicker], fields,  override_name: str = None, override_value: Any = None):
+    def get(self, tickers: Sequence[BloombergTicker], fields, override_name: str = None, override_value: Any = None):
         ref_data_service = self._session.getService(REF_DATA_SERVICE_URI)
         request = ref_data_service.createRequest("ReferenceDataRequest")
 
@@ -101,8 +101,10 @@ class ReferenceDataProvider:
                 value = field_element.getValueAsInteger()
             elif element_data_type is DataType.BOOL:
                 value = field_element.getValueAsBool()
-            elif element_data_type in (DataType.DATETIME, DataType.TIME, DataType.DATE):
+            elif element_data_type in (DataType.DATETIME, DataType.DATE):
                 value = to_datetime(field_element.getValueAsDatetime())
+            elif element_data_type in DataType.TIME:
+                value = field_element.getValueAsDatetime()
             else:
                 value = field_element.getValueAsString()
         except blpapi.exception.NotFoundException:
