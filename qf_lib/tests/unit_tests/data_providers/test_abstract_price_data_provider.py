@@ -49,10 +49,15 @@ class TestAbstractPriceDataProvider(TestCase):
         MarketOpenEvent.set_trigger_time({"hour": 13, "minute": 0, "second": 0, "microsecond": 0})
 
     def setUp(self) -> None:
-        get_price_patcher = patch.object(AbstractPriceDataProvider, 'get_price')
-        mocked_get_price = get_price_patcher.start()
-        mocked_get_price.side_effect = self._mock_get_price
-        self.addCleanup(get_price_patcher.stop)
+        get_history_patcher = patch.object(AbstractPriceDataProvider, 'get_history')
+        mocked_get_history = get_history_patcher.start()
+        mocked_get_history.side_effect = self._mock_get_history
+        self.addCleanup(get_history_patcher.stop)
+
+        price_field_to_str_map_patcher = patch.object(AbstractPriceDataProvider, 'price_field_to_str_map')
+        mocked_price_field_to_str_map = price_field_to_str_map_patcher.start()
+        mocked_price_field_to_str_map.side_effect = self._mock_price_field_to_str_map
+        self.addCleanup(price_field_to_str_map_patcher.stop)
 
     def test_get_last_available_price__before_data_starts__daily(self):
         # Check if the correct output is returned in case if a single ticker is provided
@@ -196,6 +201,12 @@ class TestAbstractPriceDataProvider(TestCase):
 
             self.data_provider.historical_price(self.ticker_1, PriceField.ohlcv(), 1, frequency=Frequency.DAILY)
 
+    def test_str_to_price_field_map(self):
+        self.assertCountEqual(self.data_provider.str_to_price_field_map(), {
+            'Close': PriceField.Close, 'Open': PriceField.Open, 'Low': PriceField.Low,
+            'High': PriceField.High, 'Volume': PriceField.Volume
+        })
+
     def _assert_last_prices_are_correct(self, curr_time_str, expected_values, frequency):
         current_time = str_to_date(curr_time_str, DateFormat.FULL_ISO)
         self.timer.set_current_time(current_time)
@@ -212,14 +223,14 @@ class TestAbstractPriceDataProvider(TestCase):
         else:
             self.assertEqual(expected_value, actual_value)
 
-    def _mock_get_price(self, tickers, fields, start_date, end_date, frequency, look_ahead_bias=False):
+    def _mock_get_history(self, tickers, fields, start_date, end_date, frequency, look_ahead_bias=False):
         tickers, got_single_ticker = convert_to_list(tickers, Ticker)
-        fields, got_single_field = convert_to_list(fields, PriceField)
+        fields, got_single_field = convert_to_list(fields, str)
 
         mock_daily_data = QFDataArray.create(
             dates=date_range(start='2021-05-01', end='2021-05-06', freq='D'),
             tickers=[self.ticker_1, self.ticker_2],
-            fields=PriceField.ohlcv(),
+            fields=["Open", "High", "Low", "Close", "Volume"],
             data=[
                 # 2021-05-01
                 [
@@ -263,7 +274,7 @@ class TestAbstractPriceDataProvider(TestCase):
         mock_intraday_data = QFDataArray.create(
             dates=date_range(start='2021-05-01', end='2021-05-06', freq='D'),
             tickers=[self.ticker_1, self.ticker_2],
-            fields=PriceField.ohlcv(),
+            fields=["Open", "High", "Low", "Close", "Volume"],
             data=[
                 # 2021-05-01
                 [
@@ -309,3 +320,12 @@ class TestAbstractPriceDataProvider(TestCase):
 
         got_single_date = start_date == end_date if frequency == Frequency.DAILY else False
         return normalize_data_array(data, tickers, fields, got_single_date, got_single_ticker, got_single_field, True)
+
+    def _mock_price_field_to_str_map(self):
+        return {
+            PriceField.Close: "Close",
+            PriceField.Open: "Open",
+            PriceField.Low: "Low",
+            PriceField.High: "High",
+            PriceField.Volume: "Volume"
+        }
