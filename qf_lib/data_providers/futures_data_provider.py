@@ -63,7 +63,7 @@ class FuturesDataProvider(metaclass=ABCMeta):
         Returns
         -------
         Dict[FutureTicker, QFDataFrame]
-            Returns a dictionary, which maps Tickers to QFSeries, consisting of the expiration dates of Future
+            Returns a dictionary, which maps Tickers to QFDataFrame, consisting of the expiration dates of Future
             Contracts: Dict[FutureTicker, QFDataFrame]]. The QFDataFrames contain the
             specific Tickers, which belong to the corresponding futures family, same as the FutureTicker, and are
             indexed by the expiration dates of the specific future contracts.
@@ -80,8 +80,6 @@ class FuturesDataProvider(metaclass=ABCMeta):
                 ticker.security_type = future_ticker.security_type
                 ticker.point_value = future_ticker.point_value
                 ticker.set_name(future_ticker.name)
-            if got_single_expiration_date_field:
-                exp_dates = exp_dates.squeeze()
             exp_dates_dict[future_ticker] = exp_dates
 
         return exp_dates_dict
@@ -91,15 +89,15 @@ class FuturesDataProvider(metaclass=ABCMeta):
         Inverse of str_to_expiration_date_field_map.
         """
         field_str_dict = self.expiration_date_field_str_map(ticker)
-        inv_dict = {v: k for k, v in field_str_dict.items()}
-        return inv_dict
+        return {v: k for k, v in field_str_dict.items()}
 
     @abstractmethod
     def _get_futures_chain_dict(self, tickers: Union[FutureTicker, Sequence[FutureTicker]],
                                 expiration_date_fields: Union[str, Sequence[str]]) -> Dict[FutureTicker, QFDataFrame]:
         """
-        Returns a dictionary, which maps Tickers to QFSeries, consisting of the expiration dates of Future
-        Contracts: Dict[FutureTicker, Union[QFSeries, QFDataFrame]]].
+        Returns a dictionary, which maps Tickers to QFDataFrame, consisting of the expiration date(s) of Future
+        Contracts: Dict[FutureTicker, QFDataFrame]]. The frame is indexed by the specific
+        tickers belonging to the futures family.
 
         Parameters
         ----------
