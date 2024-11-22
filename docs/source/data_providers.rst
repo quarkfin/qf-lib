@@ -11,6 +11,7 @@ data_providers
 
     data_provider.DataProvider
     abstract_price_data_provider.AbstractPriceDataProvider
+    futures_data_provider.FuturesDataProvider
     bloomberg.bloomberg_data_provider.BloombergDataProvider
     bloomberg_beap_hapi.bloomberg_beap_hapi_data_provider.BloombergBeapHapiDataProvider
     preset_data_provider.PresetDataProvider
