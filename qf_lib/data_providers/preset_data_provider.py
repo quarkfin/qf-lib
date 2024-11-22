@@ -60,7 +60,7 @@ class PresetDataProvider(AbstractPriceDataProvider, FuturesDataProvider):
                  exp_dates: Dict[FutureTicker, QFDataFrame] = None, timer: Optional[Timer] = None):
         super().__init__(timer)
         self._data_bundle = data
-        self._frequency = frequency
+        self.frequency = frequency
         self._exp_dates = exp_dates
 
         self._tickers_cached_set = frozenset(data.tickers.values)
@@ -74,10 +74,6 @@ class PresetDataProvider(AbstractPriceDataProvider, FuturesDataProvider):
     @property
     def data_bundle(self) -> QFDataArray:
         return self._data_bundle
-
-    @property
-    def frequency(self) -> Frequency:
-        return self._frequency
 
     @property
     def exp_dates(self) -> Dict[FutureTicker, QFDataFrame]:
@@ -112,11 +108,11 @@ class PresetDataProvider(AbstractPriceDataProvider, FuturesDataProvider):
             Union[None, PricesSeries, PricesDataFrame, QFDataArray]:
         # The passed desired data frequency should be at most equal to the frequency of the initially loaded data
         # (in case of downsampling the data may be aggregated, but no data upsampling is supported).
-        frequency = frequency or self._frequency or Frequency.DAILY
-        assert frequency <= self._frequency, "The passed data frequency should be at most equal to the frequency of " \
+        frequency = frequency or self.frequency or Frequency.DAILY
+        assert frequency <= self.frequency, "The passed data frequency should be at most equal to the frequency of " \
                                              "the initially loaded data"
         # The PresetDataProvider does not support data aggregation for frequency lower than daily frequency
-        if frequency < self._frequency and frequency <= Frequency.DAILY:
+        if frequency < self.frequency and frequency <= Frequency.DAILY:
             self.logger.warning("aggregating intraday data to frequency Daily or lower is based on the time of "
                                 "underlying intrady data and might not be identical to getting daily data form the "
                                 "data provider.")
@@ -133,7 +129,7 @@ class PresetDataProvider(AbstractPriceDataProvider, FuturesDataProvider):
         data_array = self._data_bundle.loc[start_date:end_date, specific_tickers, fields]
 
         # Data aggregation
-        if frequency < self._frequency and data_array.shape[0] > 0:
+        if frequency < self.frequency and data_array.shape[0] > 0:
             data_array = self._aggregate_bars(data_array, fields, frequency)
 
         normalized_result = normalize_data_array(
@@ -160,7 +156,7 @@ class PresetDataProvider(AbstractPriceDataProvider, FuturesDataProvider):
         start_date = self._compute_start_date(nr_of_bars, end_date, frequency)
         data_bundle = self._data_bundle.loc[start_date:end_date, specific_tickers, fields].dropna(DATES, how='all')
 
-        if frequency < self._frequency and data_bundle.shape[0] > 0:  # Aggregate bars to desired frequency
+        if frequency < self.frequency and data_bundle.shape[0] > 0:  # Aggregate bars to desired frequency
             data_bundle = self._aggregate_bars(data_bundle, fields, frequency)
 
         self._check_data_availibility(data_bundle, end_date, nr_of_bars, tickers)
@@ -237,13 +233,13 @@ class PresetDataProvider(AbstractPriceDataProvider, FuturesDataProvider):
         def remove_time_part(date: datetime):
             return datetime(date.year, date.month, date.day)
 
-        start_date_not_included = start_date < self._start_date if self._frequency > Frequency.DAILY else \
+        start_date_not_included = start_date < self._start_date if self.frequency > Frequency.DAILY else \
             remove_time_part(start_date) < remove_time_part(self._start_date)
         if start_date_not_included:
             raise ValueError("Requested start date {} is before data bundle start date {}".
                              format(start_date, self._start_date))
 
-        end_date_not_included = end_date > self._end_date if self._frequency > Frequency.DAILY else \
+        end_date_not_included = end_date > self._end_date if self.frequency > Frequency.DAILY else \
             remove_time_part(end_date) > remove_time_part(self._end_date)
         if end_date_not_included:
             raise ValueError("Requested end date {} is after data bundle end date {}".
@@ -255,9 +251,9 @@ class PresetDataProvider(AbstractPriceDataProvider, FuturesDataProvider):
                     look_ahead_bias: bool = False, **kwargs
                     ) -> Union[QFSeries, QFDataFrame, QFDataArray]:
 
-        frequency = frequency or self._frequency or Frequency.DAILY
+        frequency = frequency or self.frequency or Frequency.DAILY
         # Verify whether the passed frequency parameter is correct and can be used with the preset data
-        assert frequency == self._frequency, "Currently, for the get history does not support data sampling"
+        assert frequency == self.frequency, "Currently, for the get history does not support data sampling"
 
         start_date = self._adjust_start_date(start_date, frequency)
         original_end_date = (end_date or self.timer.now()) + RelativeDelta(second=0, microsecond=0)

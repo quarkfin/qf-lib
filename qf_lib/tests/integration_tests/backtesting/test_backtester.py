@@ -62,7 +62,7 @@ class TestBacktester(TestCase):
     def setUp(self):
         try:
             self.data_provider = get_data_provider()
-            self.data_provider.frequency = Frequency.DAILY
+            self.data_provider.set_frequency(Frequency.DAILY)
         except Exception as e:
             raise self.skipTest(e)
 

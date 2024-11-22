@@ -55,7 +55,7 @@ class TestMarketOnOpenExecutionStyle(TestCase):
         self.msft_ticker = BloombergTicker("MSFT US Equity")
 
         self.data_provider = Mock(spec=AbstractPriceDataProvider, timer=self.timer)
-        self.data_provider.frequency = Frequency.DAILY
+        self.data_provider.set_frequency(Frequency.DAILY)
 
         self.scheduler = Mock(spec=Scheduler)
 
