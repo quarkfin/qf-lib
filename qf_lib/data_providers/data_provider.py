@@ -43,6 +43,9 @@ class DataProvider(metaclass=ABCMeta):
     def set_timer(self, timer: Timer):
         self.timer = timer
 
+    def set_frequency(self, frequency):
+        self.frequency = frequency
+
     @abstractmethod
     def get_history(
             self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[None, str, Sequence[str]],
