@@ -110,7 +110,7 @@ class PresetDataProvider(AbstractPriceDataProvider, FuturesDataProvider):
         # (in case of downsampling the data may be aggregated, but no data upsampling is supported).
         frequency = frequency or self.frequency or Frequency.DAILY
         assert frequency <= self.frequency, "The passed data frequency should be at most equal to the frequency of " \
-                                             "the initially loaded data"
+                                            "the initially loaded data"
         # The PresetDataProvider does not support data aggregation for frequency lower than daily frequency
         if frequency < self.frequency and frequency <= Frequency.DAILY:
             self.logger.warning("aggregating intraday data to frequency Daily or lower is based on the time of "
