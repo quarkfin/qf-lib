@@ -15,7 +15,6 @@
 import unittest
 from unittest.mock import Mock
 from qf_lib.analysis.trade_analysis.trades_generator import TradesGenerator
-from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.backtesting.portfolio.transaction import Transaction
 from qf_lib.common.enums.frequency import Frequency
@@ -25,6 +24,7 @@ from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
+from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 from qf_lib.tests.helpers.testing_tools.containers_comparison import assert_series_equal
 from qf_lib.tests.unit_tests.backtesting.portfolio.dummy_ticker import DummyTicker
 
@@ -51,22 +51,22 @@ class TestPortfolioWithCurrency(unittest.TestCase):
         cls.trades_generator = TradesGenerator()
 
     def setUp(self) -> None:
-        self.data_handler_prices = None
+        self.data_provider_prices = None
 
-    def get_portfolio_and_data_handler(self):
-        data_handler = Mock(spec=DataHandler)
-        data_handler.default_frequency = Frequency.DAILY
-        data_handler.get_last_available_price.side_effect = lambda tickers: self.data_handler_prices[tickers] \
+    def get_portfolio_and_data_provider(self):
+        data_provider = Mock(spec=AbstractPriceDataProvider)
+        data_provider.default_frequency = Frequency.DAILY
+        data_provider.get_last_available_price.side_effect = lambda tickers: self.data_provider_prices[tickers] \
             if tickers else None
-        data_handler.get_last_available_exchange_rate.side_effect = \
-            lambda base_currency, quote_currency, frequency: self.data_handler_prices[DummyTicker(
+        data_provider.get_last_available_exchange_rate.side_effect = \
+            lambda base_currency, quote_currency, frequency: self.data_provider_prices[DummyTicker(
                 f'{base_currency}{quote_currency}', SecurityType.FX)]
 
         timer = SettableTimer()
         timer.set_current_time(self.start_time)
 
-        portfolio = Portfolio(data_handler, self.initial_cash, timer, currency=self.currency)
-        return portfolio, data_handler, timer
+        portfolio = Portfolio(data_provider, self.initial_cash, timer, currency=self.currency)
+        return portfolio, data_provider, timer
 
     @staticmethod
     def _shift_timer_to_next_day(timer: SettableTimer):
@@ -78,15 +78,15 @@ class TestPortfolioWithCurrency(unittest.TestCase):
         return -1 * transaction.price * transaction.quantity * transaction.ticker.point_value - transaction.commission
 
     def test_transact_transaction_1(self):
-        portfolio, data_handler, _ = self.get_portfolio_and_data_handler()
+        portfolio, data_provider, _ = self.get_portfolio_and_data_provider()
 
-        self.data_handler_prices = self.prices_series
+        self.data_provider_prices = self.prices_series
 
         transaction = Transaction(self.random_time, self.ticker, quantity=50, price=100, commission=5, )
         portfolio.transact_transaction(transaction)
 
         cash_move_1 = self._cash_move(transaction)
-        cash_move_1 *= data_handler.get_last_available_exchange_rate(self.ticker.currency, self.currency, Frequency.DAILY)
+        cash_move_1 *= data_provider.get_last_available_exchange_rate(self.ticker.currency, self.currency, Frequency.DAILY)
 
         self.assertEqual(portfolio.initial_cash, self.initial_cash)
         self.assertEqual(portfolio.net_liquidation, self.initial_cash)
@@ -96,9 +96,9 @@ class TestPortfolioWithCurrency(unittest.TestCase):
 
     def test_net_liquidation_in_currency(self):
 
-        portfolio, _, _ = self.get_portfolio_and_data_handler()
+        portfolio, _, _ = self.get_portfolio_and_data_provider()
         portfolio.update(record=True)
-        self.data_handler_prices = self.prices_series
+        self.data_provider_prices = self.prices_series
 
         portfolio_value_USD = portfolio.net_liquidation_in_currency(currency="USD")
         portfolio_value_CHF = portfolio.net_liquidation_in_currency(currency="CHF")
@@ -108,10 +108,10 @@ class TestPortfolioWithCurrency(unittest.TestCase):
 
     def test_net_liquidation_no_currency(self):
 
-        portfolio, _, _ = self.get_portfolio_and_data_handler()
+        portfolio, _, _ = self.get_portfolio_and_data_provider()
         portfolio.update(record=True)
         portfolio.currency = None
-        self.data_handler_prices = self.prices_series
+        self.data_provider_prices = self.prices_series
 
         with self.assertRaises(ValueError):
             portfolio.net_liquidation_in_currency(currency="USD")
@@ -120,11 +120,11 @@ class TestPortfolioWithCurrency(unittest.TestCase):
         expected_portfolio_eod_series = PricesSeries()
 
         # Empty portfolio
-        portfolio, data_handler, timer = self.get_portfolio_and_data_handler()
+        portfolio, data_provider, timer = self.get_portfolio_and_data_provider()
         portfolio.update(record=True)
         expected_portfolio_eod_series[timer.time] = self.initial_cash
 
-        self.data_handler_prices = self.prices_series
+        self.data_provider_prices = self.prices_series
 
         # Buy contract
         self._shift_timer_to_next_day(timer)
@@ -132,46 +132,46 @@ class TestPortfolioWithCurrency(unittest.TestCase):
         portfolio.transact_transaction(transaction_1)
         portfolio.update(record=True)
 
-        price_1 = data_handler.get_last_available_price(self.fut_ticker)
+        price_1 = data_provider.get_last_available_price(self.fut_ticker)
         pnl = self.fut_ticker.point_value * transaction_1.quantity * (price_1 - transaction_1.price) - transaction_1.commission
-        pnl *= data_handler.get_last_available_exchange_rate(self.ticker.currency, self.currency, Frequency.DAILY)
+        pnl *= data_provider.get_last_available_exchange_rate(self.ticker.currency, self.currency, Frequency.DAILY)
         nav = self.initial_cash + pnl
         expected_portfolio_eod_series[timer.time] = nav
 
         # Contract goes up in value
         self._shift_timer_to_next_day(timer)
-        self.data_handler_prices = self.prices_up
+        self.data_provider_prices = self.prices_up
         portfolio.update(record=True)
 
-        price_2 = data_handler.get_last_available_price(self.fut_ticker)  # == 270
+        price_2 = data_provider.get_last_available_price(self.fut_ticker)  # == 270
         pnl = self.fut_ticker.point_value * transaction_1.quantity * (price_2 - price_1)
-        pnl *= data_handler.get_last_available_exchange_rate(self.ticker.currency, self.currency, Frequency.DAILY)
+        pnl *= data_provider.get_last_available_exchange_rate(self.ticker.currency, self.currency, Frequency.DAILY)
         nav += pnl
         expected_portfolio_eod_series[timer.time] = nav
 
         # Sell part of the contract
         self._shift_timer_to_next_day(timer)
-        self.data_handler_prices = self.prices_up
+        self.data_provider_prices = self.prices_up
         transaction_2 = Transaction(timer.time, self.fut_ticker, quantity=-25, price=price_2, commission=19)
         portfolio.transact_transaction(transaction_2)
         portfolio.update(record=True)
 
         pnl = (transaction_2.price - price_2) * transaction_2.quantity * self.fut_ticker.point_value - \
             transaction_2.commission
-        pnl *= data_handler.get_last_available_exchange_rate(self.ticker.currency, self.currency, Frequency.DAILY)
+        pnl *= data_provider.get_last_available_exchange_rate(self.ticker.currency, self.currency, Frequency.DAILY)
         nav += pnl
         expected_portfolio_eod_series[timer.time] = nav
 
         # Price goes down
         self._shift_timer_to_next_day(timer)
-        self.data_handler_prices = self.prices_down
+        self.data_provider_prices = self.prices_down
         portfolio.update(record=True)
 
         position = portfolio.open_positions_dict[self.fut_ticker]
 
-        price_3 = data_handler.get_last_available_price(self.fut_ticker)  # == 210
+        price_3 = data_provider.get_last_available_price(self.fut_ticker)  # == 210
         pnl2 = self.fut_ticker.point_value * position.quantity() * (price_3 - price_2)
-        pnl2 *= data_handler.get_last_available_exchange_rate(self.ticker.currency, self.currency, Frequency.DAILY)
+        pnl2 *= data_provider.get_last_available_exchange_rate(self.ticker.currency, self.currency, Frequency.DAILY)
         nav += pnl2
         expected_portfolio_eod_series[timer.time] = nav
 
