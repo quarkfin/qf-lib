@@ -17,7 +17,6 @@ from unittest.mock import Mock
 
 import pandas as pd
 
-from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
 from qf_lib.backtesting.events.time_event.scheduler import Scheduler
@@ -38,7 +37,7 @@ from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.containers.series.qf_series import QFSeries
-from qf_lib.data_providers.data_provider import DataProvider
+from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 from qf_lib.tests.helpers.testing_tools.containers_comparison import assert_lists_equal
 
 
@@ -55,9 +54,8 @@ class TestMarketOnOpenExecutionStyle(TestCase):
 
         self.msft_ticker = BloombergTicker("MSFT US Equity")
 
-        self.data_handler = Mock(spec=DataHandler)
-        self.data_handler.frequency = Frequency.DAILY
-        self.data_handler.data_provider = Mock(spec=DataProvider)
+        self.data_provider = Mock(spec=AbstractPriceDataProvider, timer=self.timer)
+        self.data_provider.set_frequency(Frequency.DAILY)
 
         self.scheduler = Mock(spec=Scheduler)
 
@@ -66,8 +64,8 @@ class TestMarketOnOpenExecutionStyle(TestCase):
         self.portfolio = Mock(spec=Portfolio)
         self.portfolio.open_positions_dict = {}
 
-        slippage_model = PriceBasedSlippage(0.0, self.data_handler)
-        self.exec_handler = SimulatedExecutionHandler(self.data_handler, self.timer, self.scheduler, self.monitor,
+        slippage_model = PriceBasedSlippage(0.0, self.data_provider)
+        self.exec_handler = SimulatedExecutionHandler(self.data_provider, self.scheduler, self.monitor,
                                                       self.commission_model, self.portfolio, slippage_model,
                                                       RelativeDelta(minutes=self.scheduling_time_delay))
 
@@ -232,9 +230,9 @@ class TestMarketOnOpenExecutionStyle(TestCase):
         self.monitor.record_transaction.assert_not_called()
 
     def _set_last_available_price(self, price):
-        self.data_handler.get_last_available_price.side_effect = lambda t: QFSeries([price],
-                                                                                    index=pd.Index([self.msft_ticker]))
+        self.data_provider.get_last_available_price.side_effect = lambda t: QFSeries([price],
+                                                                                     index=pd.Index([self.msft_ticker]))
 
     def _set_current_price(self, price):
-        self.data_handler.data_provider.get_price.side_effect = lambda a, b, c, d, e: \
+        self.data_provider.get_price.side_effect = lambda a, b, c, d, e, look_ahead_bias: \
             QFSeries(data=[price], index=[self.msft_ticker])

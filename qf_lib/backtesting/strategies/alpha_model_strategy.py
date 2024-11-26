@@ -28,7 +28,6 @@ from qf_lib.backtesting.strategies.abstract_strategy import AbstractStrategy
 from qf_lib.backtesting.trading_session.trading_session import TradingSession
 from qf_lib.common.exceptions.future_contracts_exceptions import NoValidTickerException
 from qf_lib.common.tickers.tickers import Ticker
-from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 from qf_lib.containers.futures.futures_rolling_orders_generator import FuturesRollingOrdersGenerator
@@ -65,13 +64,14 @@ class AlphaModelStrategy(AbstractStrategy):
                               for ticker in tickers_for_model if isinstance(ticker, FutureTicker)]
 
         self._futures_rolling_orders_generator = self._get_futures_rolling_orders_generator(all_future_tickers,
-                                                                                            ts.timer, ts.data_provider,
+                                                                                            ts.data_provider,
                                                                                             ts.broker, ts.order_factory)
         self._broker = ts.broker
         self._order_factory = ts.order_factory
         self._position_sizer = ts.position_sizer
         self._orders_filters = ts.orders_filters
         self._frequency = ts.frequency
+        self.timer = ts.data_provider.timer
 
         assert ts.frequency is not None, "Trading Session does not have the frequency parameter set. You need to set " \
                                          "it before using the Alpha Model Strategy."
@@ -84,13 +84,13 @@ class AlphaModelStrategy(AbstractStrategy):
         self.logger = qf_logger.getChild(self.__class__.__name__)
         self._log_configuration()
 
-    def _get_futures_rolling_orders_generator(self, future_tickers: Sequence[FutureTicker], timer: Timer,
+    def _get_futures_rolling_orders_generator(self, future_tickers: Sequence[FutureTicker],
                                               data_provider: DataProvider, broker: Broker, order_factory: OrderFactory):
         # Initialize timer and data provider in case of FutureTickers
         for future_ticker in future_tickers:
-            future_ticker.initialize_data_provider(timer, data_provider)
+            future_ticker.initialize_data_provider(data_provider)
 
-        return FuturesRollingOrdersGenerator(future_tickers, timer, broker, order_factory)
+        return FuturesRollingOrdersGenerator(future_tickers, data_provider.timer, broker, order_factory)
 
     def calculate_and_place_orders(self):
         date = self.timer.now().date()

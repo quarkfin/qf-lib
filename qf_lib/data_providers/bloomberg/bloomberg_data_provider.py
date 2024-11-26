@@ -23,6 +23,7 @@ from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.tickers.tickers import BloombergTicker, Ticker
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
+from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
@@ -31,6 +32,7 @@ from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 from qf_lib.data_providers.exchange_rate_provider import ExchangeRateProvider
+from qf_lib.data_providers.futures_data_provider import FuturesDataProvider
 from qf_lib.data_providers.helpers import normalize_data_array, cast_dataframe_to_proper_type
 from qf_lib.data_providers.tickers_universe_provider import TickersUniverseProvider
 from qf_lib.settings import Settings
@@ -38,7 +40,7 @@ from qf_lib.settings import Settings
 try:
     import blpapi
 
-    from qf_lib.data_providers.bloomberg.futures_data_provider import FuturesDataProvider
+    from qf_lib.data_providers.bloomberg.futures_data_provider import BloombergFuturesDataProvider
     from qf_lib.data_providers.bloomberg.historical_data_provider import HistoricalDataProvider
     from qf_lib.data_providers.bloomberg.reference_data_provider import ReferenceDataProvider
     from qf_lib.data_providers.bloomberg.tabular_data_provider import TabularDataProvider
@@ -53,13 +55,14 @@ except ImportError:
                   " library")
 
 
-class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider, ExchangeRateProvider):
+class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider,
+                            FuturesDataProvider, ExchangeRateProvider):
     """
     Data Provider which provides financial data from Bloomberg.
     """
 
-    def __init__(self, settings: Settings):
-        super().__init__()
+    def __init__(self, settings: Settings, timer: Optional[Timer] = None):
+        super().__init__(timer)
         self.settings = settings
 
         self.host = settings.bloomberg.host
@@ -76,7 +79,7 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider, 
             self._historical_data_provider = HistoricalDataProvider(self.session)
             self._reference_data_provider = ReferenceDataProvider(self.session)
             self._tabular_data_provider = TabularDataProvider(self.session)
-            self._futures_data_provider = FuturesDataProvider(self.session)
+            self._futures_data_provider = BloombergFuturesDataProvider(self.session)
         else:
             self.session = None
             self._historical_data_provider = None
@@ -109,7 +112,8 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider, 
         self.connected = True
 
     def _get_futures_chain_dict(self, tickers: Union[BloombergFutureTicker, Sequence[BloombergFutureTicker]],
-                                expiration_date_fields: Union[str, Sequence[str]]) -> Dict[BloombergFutureTicker, QFDataFrame]:
+                                expiration_date_fields: Union[str, Sequence[str]]) -> (
+            Dict)[BloombergFutureTicker, QFDataFrame]:
         """
         Returns tickers of futures contracts, which belong to the same futures contract chain as the provided ticker
         (tickers), along with their expiration dates.
@@ -146,7 +150,8 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider, 
             self._futures_data_provider.get_list_of_tickers_in_the_future_chain(tickers)
         all_specific_tickers = [ticker for specific_tickers_list in future_ticker_to_chain_tickers_list.values()
                                 for ticker in specific_tickers_list]
-        futures_expiration_dates = self.get_current_values(all_specific_tickers, expiration_date_fields).dropna(how="all")
+        futures_expiration_dates = self.get_current_values(all_specific_tickers, expiration_date_fields).dropna(
+            how="all")
 
         def specific_futures_index(future_ticker) -> pd.Index:
             """
@@ -235,8 +240,9 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider, 
         return self.get_last_available_price(currency_ticker, frequency=frequency)/quote_factor
 
     def get_history(self, tickers: Union[BloombergTicker, Sequence[BloombergTicker]], fields: Union[str, Sequence[str]],
-                    start_date: datetime, end_date: datetime = None, frequency: Frequency = Frequency.DAILY,
-                    currency: str = None, override_name: str = None, override_value: str = None) \
+                    start_date: datetime, end_date: datetime = None, frequency: Frequency = None,
+                    currency: str = None, override_name: str = None, override_value: str = None,
+                    look_ahead_bias: bool = False, **kwargs) \
             -> Union[QFSeries, QFDataFrame, QFDataArray]:
         """
         Gets historical data from Bloomberg from the (start_date - end_date) time range. In case of frequency, which is
@@ -256,11 +262,11 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider, 
             date representing the end of historical period from which data should be retrieved;
             if no end_date was provided, by default the current date will be used
         frequency: Frequency
-            frequency of the data
+            frequency of the data. It defaults to DAILY.
         currency: str
         override_name: str
         override_value: str
-
+        look_ahead_bias: bool
         Returns
         -------
         QFSeries, QFDataFrame, QFDataArray
@@ -277,11 +283,13 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider, 
         self._connect_if_needed()
         self._assert_is_connected()
 
-        end_date = end_date or datetime.now()
-        end_date = end_date + RelativeDelta(second=0, microsecond=0)
+        frequency = frequency or self.frequency or Frequency.DAILY
+        original_end_date = (end_date or self.timer.now()) + RelativeDelta(second=0, microsecond=0)
+        end_date = original_end_date if look_ahead_bias else self.get_end_date_without_look_ahead(original_end_date, frequency)
         start_date = self._adjust_start_date(start_date, frequency)
 
-        got_single_date = self._got_single_date(start_date, end_date, frequency)
+        got_single_date = self._got_single_date(start_date, original_end_date, frequency)
+
         tickers, got_single_ticker = convert_to_list(tickers, BloombergTicker)
         fields, got_single_field = convert_to_list(fields, (PriceField, str))
 
@@ -318,12 +326,43 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider, 
         }
         return price_field_dict
 
-    def get_tickers_universe(self, universe_ticker: BloombergTicker, date: Optional[datetime] = None) -> List[BloombergTicker]:
+    def get_tickers_universe(self, universe_ticker: BloombergTicker, date: Optional[datetime] = None,
+                             display_figi: bool = False) -> List[BloombergTicker]:
+        """
+        Returns a list of all members of an index. It will not return any data for indices with more than
+        20,000 members.
+
+        Parameters
+        ----------
+        universe_ticker
+            ticker that describes a specific universe, which members will be returned
+        date
+            date for which current universe members' tickers will be returned
+        display_figi
+            the following flag can be used to have this field return Financial Instrument Global Identifiers (FIGI).
+        """
         date = date or datetime.now()
-        field = 'INDX_MWEIGHT_HIST'
-        ticker_data = self.get_tabular_data(universe_ticker, field, override_names="END_DT",
-                                            override_values=convert_to_bloomberg_date(date))
-        return [BloombergTicker(fields['Index Member'] + " Equity", SecurityType.STOCK, 1) for fields in ticker_data]
+        field = 'INDEX_MEMBERS_WEIGHTS'
+
+        MAX_PAGE_NUMBER = 7
+        MAX_MEMBERS_PER_PAGE = 3000
+        universe = []
+
+        def str_to_bbg_ticker(identifier: str, figi: bool):
+            ticker_str = f"/bbgid/{identifier}" if figi else f"{identifier} Equity"
+            return BloombergTicker(ticker_str, SecurityType.STOCK, 1)
+
+        for page_no in range(1, MAX_PAGE_NUMBER + 1):
+            ticker_data = self.get_tabular_data(universe_ticker, field,
+                                                ["END_DT", "PAGE_NUMBER_OVERRIDE", "DISPLAY_ID_BB_GLOBAL_OVERRIDE"],
+                                                [convert_to_bloomberg_date(date), page_no,
+                                                 "Y" if display_figi else "N"])
+            tickers_chunk = [str_to_bbg_ticker(fields['Index Member'], display_figi) for fields in ticker_data]
+            universe.extend(tickers_chunk)
+            if len(tickers_chunk) < MAX_MEMBERS_PER_PAGE:
+                break
+
+        return universe
 
     def get_unique_tickers(self, universe_ticker: Ticker) -> List[Ticker]:
         raise ValueError("BloombergDataProvider does not provide historical tickers_universe data")
@@ -360,7 +399,7 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider, 
         if override_names is not None:
             override_names, _ = convert_to_list(override_names, str)
         if override_values is not None:
-            override_values, _ = convert_to_list(override_values, str)
+            override_values, _ = convert_to_list(override_values, (str, int))
 
         tickers, got_single_ticker = convert_to_list(ticker, BloombergTicker)
         fields, got_single_field = convert_to_list(field, (PriceField, str))

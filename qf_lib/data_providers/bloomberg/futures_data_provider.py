@@ -25,7 +25,7 @@ from qf_lib.data_providers.bloomberg.helpers import set_tickers, set_fields, get
     FIELD_EXCEPTIONS, SECURITY_ERROR
 
 
-class FuturesDataProvider:
+class BloombergFuturesDataProvider:
 
     def __init__(self, session):
         self._session = session

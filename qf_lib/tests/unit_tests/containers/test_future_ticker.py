@@ -70,10 +70,11 @@ class TestSeries(unittest.TestCase):
         self.timer = SettableTimer(initial_time=str_to_date('2017-01-01'))
         settings = get_test_settings()
         self.bbg_provider = BloombergDataProvider(settings)
+        self.bbg_provider.set_timer(self.timer)
 
     def test_valid_ticker_1(self):
         future_ticker = CustomFutureTicker("Custom", "CT{} Custom", 1, 5, 500)
-        future_ticker.initialize_data_provider(self.timer, self.bbg_provider)
+        future_ticker.initialize_data_provider(self.bbg_provider)
 
         # '2017-12-15' is the official expiration date of CustomTicker:B, setting the days_before_exp_date equal to
         # 5 forces the expiration to occur on the 11th ('2017-12-15' - 5 days = '2017-12-10' is the last day of old
@@ -91,7 +92,7 @@ class TestSeries(unittest.TestCase):
         # Test the 2nd contract instead of front one
 
         future_ticker = CustomFutureTicker("Custom", "CT{} Custom", 2, 5, 500)
-        future_ticker.initialize_data_provider(self.timer, self.bbg_provider)
+        future_ticker.initialize_data_provider(self.bbg_provider)
 
         self.timer.set_current_time(str_to_date('2017-12-05'))
         self.assertEqual(future_ticker.get_current_specific_ticker(), CustomTicker("C"))
@@ -104,7 +105,7 @@ class TestSeries(unittest.TestCase):
 
     def test_valid_ticker_3(self):
         future_ticker = CustomFutureTicker("Custom", "CT{} Custom", 1, 45, 500)
-        future_ticker.initialize_data_provider(self.timer, self.bbg_provider)
+        future_ticker.initialize_data_provider(self.bbg_provider)
 
         self.timer.set_current_time(str_to_date('2017-11-28'))
         # '2017-11-28' + 45 days = '2018-01-12' - the front contract will be equal to CustomTicker:D
@@ -119,7 +120,7 @@ class TestSeries(unittest.TestCase):
 
     def test_valid_ticker_4(self):
         future_ticker = CustomFutureTicker("Custom", "CT{} Custom", 2, 45, 500)
-        future_ticker.initialize_data_provider(self.timer, self.bbg_provider)
+        future_ticker.initialize_data_provider(self.bbg_provider)
 
         self.timer.set_current_time(str_to_date('2017-11-28'))
         # '2017-11-28' + 45 days = '2018-01-12' - the front contract will be equal to CustomTicker:D
@@ -135,7 +136,7 @@ class TestSeries(unittest.TestCase):
     def test_set_expiration_hour__first_caching_before_exp_hour(self):
         """ Test set expiration hour when the first caching occurs on the expiration day, before expiration hour. """
         future_ticker = CustomFutureTicker("Custom", "CT{} Custom", 1, 5, 500)
-        future_ticker.initialize_data_provider(self.timer, self.bbg_provider)
+        future_ticker.initialize_data_provider(self.bbg_provider)
         future_ticker.set_expiration_hour(hour=8, minute=10)
 
         self.timer.set_current_time(str_to_date('2017-12-11 00:00:00.0', DateFormat.FULL_ISO))
@@ -157,7 +158,7 @@ class TestSeries(unittest.TestCase):
         """ Test set expiration hour when the first caching occurs a day before the expiration day, after
         expiration hour. """
         future_ticker = CustomFutureTicker("Custom", "CT{} Custom", 1, 5, 500)
-        future_ticker.initialize_data_provider(self.timer, self.bbg_provider)
+        future_ticker.initialize_data_provider(self.bbg_provider)
         future_ticker.set_expiration_hour(hour=10, minute=10)
 
         self.timer.set_current_time(str_to_date('2017-12-10 19:00:00.0', DateFormat.FULL_ISO))
@@ -173,7 +174,7 @@ class TestSeries(unittest.TestCase):
         """ Test set expiration hour when the first caching occurs a day before the expiration day, at
         expiration hour. """
         future_ticker = CustomFutureTicker("Custom", "CT{} Custom", 1, 5, 500)
-        future_ticker.initialize_data_provider(self.timer, self.bbg_provider)
+        future_ticker.initialize_data_provider(self.bbg_provider)
         future_ticker.set_expiration_hour(hour=8, minute=10)
 
         self.timer.set_current_time(str_to_date('2017-12-11 08:10:00.0', DateFormat.FULL_ISO))

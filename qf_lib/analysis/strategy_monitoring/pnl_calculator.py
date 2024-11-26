@@ -30,11 +30,11 @@ from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
-from qf_lib.data_providers.data_provider import DataProvider
+from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 
 
 class PnLCalculator:
-    def __init__(self, data_provider: DataProvider):
+    def __init__(self, data_provider: AbstractPriceDataProvider):
         """
         The purpose of this class is the computation of Profit and Loss for a given ticker, based on a list of
         Transaction objects. The PnL is computed every day, at the AfterMarketCloseEvent time. The calculation requires
@@ -45,10 +45,11 @@ class PnLCalculator:
 
         Parameters
         -----------
-        data_provider: DataProvider
+        data_provider: AbstractPriceDataProvider
             data provider used to download prices data
         """
         self._data_provider = data_provider
+        self._data_provider.set_timer(SettableTimer())
 
     def compute_pnl(self, ticker: Ticker, transactions: List[Transaction], start_date: datetime, end_date: datetime) \
             -> PricesSeries:
@@ -83,7 +84,9 @@ class PnLCalculator:
     def _get_prices_df(self, ticker: Ticker, start_date: datetime, end_date: datetime) -> PricesDataFrame:
         """ Returns non-adjusted open and close prices, indexed with the Market Open and Market Close time."""
         if isinstance(ticker, FutureTicker):
-            ticker.initialize_data_provider(SettableTimer(end_date), self._data_provider)
+            assert isinstance(self._data_provider.timer, SettableTimer)
+            self._data_provider.timer.set_current_time(end_date)
+            ticker.initialize_data_provider(self._data_provider)
             tickers_chain = ticker.get_expiration_dates()
 
             if start_date >= tickers_chain.index[-1] or end_date <= tickers_chain.index[0]:

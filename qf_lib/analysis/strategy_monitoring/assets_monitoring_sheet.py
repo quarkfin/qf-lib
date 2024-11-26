@@ -41,7 +41,7 @@ from qf_lib.containers.futures.futures_chain import FuturesChain
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
-from qf_lib.data_providers.data_provider import DataProvider
+from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 from qf_lib.documents_utils.document_exporting.element.df_table import DFTable
 from qf_lib.documents_utils.document_exporting.element.heading import HeadingElement
 from qf_lib.documents_utils.document_exporting.element.new_page import NewPageElement
@@ -70,7 +70,7 @@ class AssetPerfAndDrawdownSheet(AbstractDocument):
     start_date: datetime
     end_date: datetime
         Dates to used as start and end date for the statistics
-    data_provider: DataProvider
+    data_provider: AbstractPriceDataProvider
         Data provider used to download the prices and future contracts information, necessary to compute Buy and Hold
         benchmark performance
     settings: Settings
@@ -87,7 +87,7 @@ class AssetPerfAndDrawdownSheet(AbstractDocument):
     """
 
     def __init__(self, category_to_model_tickers: Dict[str, List[Ticker]], transactions: Union[List[Transaction], str],
-                 start_date: datetime, end_date: datetime, data_provider: DataProvider, settings: Settings,
+                 start_date: datetime, end_date: datetime, data_provider: AbstractPriceDataProvider, settings: Settings,
                  pdf_exporter: PDFExporter, title: str = "Assets Monitoring Sheet", initial_cash: int = 10000000,
                  frequency: Frequency = Frequency.YEARLY):
 
@@ -104,6 +104,7 @@ class AssetPerfAndDrawdownSheet(AbstractDocument):
         self._start_date = start_date
         self._end_date = end_date
         self._data_provider = data_provider
+        self._data_provider.set_timer(SettableTimer(self._end_date))
         self._initial_cash = initial_cash
 
         if frequency not in (Frequency.MONTHLY, Frequency.YEARLY):
@@ -190,7 +191,7 @@ class AssetPerfAndDrawdownSheet(AbstractDocument):
         """ Computes series of simple returns, which would be returned by the Buy and Hold strategy. """
         if isinstance(ticker, FutureTicker):
             try:
-                ticker.initialize_data_provider(SettableTimer(self._end_date), self._data_provider)
+                ticker.initialize_data_provider(self._data_provider)
                 futures_chain = FuturesChain(ticker, self._data_provider, FuturesAdjustmentMethod.BACK_ADJUSTED)
                 prices_series = futures_chain.get_price(PriceField.Close, self._start_date, self._end_date)
             except NoValidTickerException:

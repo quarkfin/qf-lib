@@ -11,14 +11,24 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
+import warnings
 from threading import Thread, Event, Lock
 from typing import Optional, Dict
-from ibapi.client import EClient
-from qf_lib.backtesting.contract.contract_to_ticker_conversion.ib_contract_ticker_mapper import IBContractTickerMapper
-from qf_lib.brokers.ib_broker.ib_contract import IBContract
 from qf_lib.common.tickers.tickers import Ticker
-from qf_lib.common.utils.logging.qf_parent_logger import ib_logger
-from qf_lib.brokers.ib_broker.ib_wrapper import IBWrapper
+
+try:
+    from ibapi.client import EClient
+    from qf_lib.brokers.ib_broker.ib_contract import IBContract
+    from qf_lib.common.utils.logging.qf_parent_logger import ib_logger
+    from qf_lib.brokers.ib_broker.ib_wrapper import IBWrapper
+    from qf_lib.backtesting.contract.contract_to_ticker_conversion.ib_contract_ticker_mapper import \
+        IBContractTickerMapper
+
+    is_ibapi_installed = True
+except ImportError:
+    is_ibapi_installed = False
+    warnings.warn(
+        "No ibapi installed. If you would like to use IBFIGItoIBContractMapper first install the ibapi library.")
 
 
 class IBFIGItoIBContractMapper:
@@ -54,25 +64,31 @@ class IBFIGItoIBContractMapper:
 
         self.waiting_time = 30  # expressed in seconds
         # Lock that informs us that wrapper received the response
-        self.action_event_lock = Event()
-        self.wrapper = IBWrapper(self.action_event_lock, IBContractTickerMapper({}))  # not necessary to have configured IBContractTickerMapper for FIGI contracts mapping
-        self.client = EClient(wrapper=self.wrapper)
-        self.clientId = clientId
-        self.client.connect(host, port, self.clientId)
 
-        # Run the client in the separate thread so that the execution of the program can go on
-        # now we will have 3 threads:
-        # - thread of the main program
-        # - thread of the client
-        # - thread of the wrapper
-        thread = Thread(target=self.client.run)
-        thread.start()
+        if is_ibapi_installed:
+            self.action_event_lock = Event()
+            self.wrapper = IBWrapper(self.action_event_lock, IBContractTickerMapper(
+                {}))  # not necessary to have configured IBContractTickerMapper for FIGI contracts mapping
+            self.client = EClient(wrapper=self.wrapper)
+            self.clientId = clientId
+            self.client.connect(host, port, self.clientId)
 
-        # This will be released after the client initialises and wrapper receives the nextValidOrderId
-        if not self._wait_for_results():
-            raise ConnectionError("IB IBFIGItoIBContractMapper was not initialized correctly")
+            # Run the client in the separate thread so that the execution of the program can go on
+            # now we will have 3 threads:
+            # - thread of the main program
+            # - thread of the client
+            # - thread of the wrapper
+            thread = Thread(target=self.client.run)
+            thread.start()
 
-    def get_ticker_to_contract_mapping_from_figi_contracts(self, ticker_to_contract: Dict[Ticker, IBContract]) -> Dict[Ticker, IBContract]:
+            # This will be released after the client initialises and wrapper receives the nextValidOrderId
+            if not self._wait_for_results():
+                raise ConnectionError("IB IBFIGItoIBContractMapper was not initialized correctly")
+        else:
+            self.logger.warning("Couldn't import the IB API. Check if the necessary dependencies are installed.")
+
+    def get_ticker_to_contract_mapping_from_figi_contracts(self, ticker_to_contract: Dict[Ticker, IBContract]) -> (
+            Dict)[Ticker, IBContract]:
         """"
         Function to map dictionary:
             ticker -> ib_figi_contract

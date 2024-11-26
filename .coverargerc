@@ -18,6 +18,7 @@ exclude_lines =
     # Don't complain about missing debug-only code:
     def __repr__
     def __str__
+    pass
 
     # Don't complain if abstractmethods are skipped
     @abstractmethod

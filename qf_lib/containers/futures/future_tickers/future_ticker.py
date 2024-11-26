@@ -21,7 +21,6 @@ from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.exceptions.future_contracts_exceptions import NoValidTickerException
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
-from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.containers.series.qf_series import QFSeries
 
 
@@ -30,7 +29,7 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
 
     The FutureTicker class extends the standard Ticker class. It allows the user to use only a Ticker abstraction,
     which provides all of the standard Ticker functionalities (e.g. just as standard tickers, it can be used along with
-    DataHandler functions get_price, get_last_available_price, get_current_price etc.), without the need to manually
+    DataProvider functions get_price, get_last_available_price, get_current_price etc.), without the need to manually
     manage the rolling of the contracts or to select a certain specific Ticker.
 
     Notes
@@ -70,6 +69,7 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
     currency: str
         ISO code of the currency of the ticker. Example "USD".
     """
+
     def __init__(self, name: str, family_id: str, N: int, days_before_exp_date: int, point_value: int = 1,
                  designated_contracts: Optional[str] = None, security_type: SecurityType = SecurityType.FUTURE,
                  currency: Optional[str] = None):
@@ -84,7 +84,6 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
         self._days_before_exp_date = days_before_exp_date
 
         self._exp_dates = None  # type: QFSeries
-        self._timer = None  # type: Timer
         self._data_provider = None  # type: "DataProvider"
         self._ticker_initialized = False  # type: bool
 
@@ -93,14 +92,14 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
         self._last_cached_datetime = None
         self._expiration_hour = RelativeDelta(hour=0, minute=0, second=0, microsecond=0)
 
-    def initialize_data_provider(self, timer: Timer, data_provider: "DataProvider"):
+    def initialize_data_provider(self, data_provider: "FuturesDataProvider"):
         """ Initialize the future ticker with data provider and ticker.
 
         Parameters
         ----------
         timer: Timer
             Timer which is used further when computing the current ticker.
-        data_provider: DataProvider
+        data_provider: FuturesDataProvider
             Data provider which is used to download symbols of tickers, belonging to the given future ticker family
         """
         if self._ticker_initialized:
@@ -108,7 +107,6 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
                                 f"Provider. The previous Timer and Data Provider references will be overwritten")
 
         self._data_provider = data_provider
-        self._timer = timer
 
         # Download and validate expiration dates for the future ticker
         exp_dates = self._get_futures_chain_tickers()
@@ -170,7 +168,7 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
                 _exp_dates = _exp_dates.sort_index()
                 date_index = _exp_dates.index - pd.Timedelta(days=self._days_before_exp_date - 1)
                 date_index = pd.DatetimeIndex([dt + self._expiration_hour for dt in date_index])
-                date_index_loc = date_index.get_indexer([self._timer.now()], method="pad")[0]
+                date_index_loc = date_index.get_indexer([self._data_provider.timer.now()], method="pad")[0]
                 return _exp_dates.iloc[date_index_loc:].iloc[self.N]
 
             def cached_ticker_still_valid(caching_time: datetime, current_time: datetime,
@@ -192,9 +190,10 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
 
                 return cached_time_start <= current_time < cached_time_end
 
-            if not cached_ticker_still_valid(self._last_cached_datetime, self._timer.now(), self._expiration_hour):
+            if not cached_ticker_still_valid(self._last_cached_datetime, self._data_provider.timer.now(),
+                                             self._expiration_hour):
                 self._ticker = _get_current_specific_ticker()
-                self._last_cached_datetime = self._timer.now()
+                self._last_cached_datetime = self._data_provider.timer.now()
             return self._ticker
 
         except (LookupError, ValueError):
@@ -204,12 +203,12 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
             # Therefore, in case if the data with expiration dates is not available for the current date, the
             # _get_current_specific_ticker function will raise a LookupError.
             raise NoValidTickerException(f"No valid ticker for the FutureTicker {self._name} found on "
-                                         f"{self._timer.now()}") from None
+                                         f"{self._data_provider.timer.now()}") from None
 
     def get_expiration_dates(self) -> QFSeries:
         """
         Returns QFSeries containing the list of specific future contracts Tickers, indexed by their expiration
-        dates. The index contains original expiration dates, as returned by the data handler, without shifting it by the
+        dates. The index contains original expiration dates, as returned by the data provider, without shifting it by the
         days_before_exp_date days (it is important to store the original values, instead of shifted ones, as this
         function is public and used by multiple other components).
 
@@ -322,7 +321,7 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
         other_class_name = other.__class__.__name__
 
         return (class_name, self._name, self.family_id, self.N, self._days_before_exp_date) < \
-               (other_class_name, other.name, other.family_id, other.get_N(), other.get_days_before_exp_date())
+            (other_class_name, other.name, other.family_id, other.get_N(), other.get_days_before_exp_date())
 
     def __getstate__(self):
         """
@@ -331,7 +330,7 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
         """
         self.logger = None
         self._data_provider = None
-        self._timer = None
+        self._data_provider.timer = None
         self._ticker_initialized = False
         return self.__dict__
 

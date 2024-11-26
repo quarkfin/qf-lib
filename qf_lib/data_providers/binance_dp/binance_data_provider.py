@@ -11,13 +11,14 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-
+import warnings
 from datetime import datetime
 from typing import Union, Sequence
 
+import os
+
 import pytz
 import pandas as pd
-from binance import Client
 from numpy import float64
 
 from qf_lib.brokers.binance_broker.binance_contract_ticker_mapper import BinanceContractTickerMapper
@@ -28,11 +29,19 @@ from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.date_format import DateFormat
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
-import os
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.data_providers.csv.csv_data_provider import CSVDataProvider
+
+try:
+    from binance import Client
+
+    is_binance_installed = True
+except ImportError:
+    is_binance_installed = False
+    warnings.warn(
+        "No binance installed. If you would like to use BinanceDataProvider first install the binance library.")
 
 
 class BinanceDataProvider(CSVDataProvider):
@@ -60,14 +69,16 @@ class BinanceDataProvider(CSVDataProvider):
         frequency of the data
     """
 
-    def __init__(self, path: str, filename: str, tickers: Union[Ticker, Sequence[Ticker]], start_date: datetime, end_date: datetime,
+    def __init__(self, path: str, filename: str, tickers: Union[Ticker, Sequence[Ticker]], start_date: datetime,
+                 end_date: datetime,
                  contract_ticker_mapper: BinanceContractTickerMapper, frequency: Frequency = Frequency.MIN_1):
+
+        self.logger = qf_logger.getChild(self.__class__.__name__)
 
         if frequency not in [Frequency.DAILY, Frequency.MIN_1]:
             raise NotImplementedError("Only 1m and DAILY freq is supported now")
 
         self.contract_ticker_mapper = contract_ticker_mapper
-
         tickers, _ = convert_to_list(tickers, Ticker)
 
         self.frequency_mapping = {
@@ -81,20 +92,21 @@ class BinanceDataProvider(CSVDataProvider):
         fields = ['Open', 'High', 'Low', 'Close', 'Volume']
         ticker_col = 'Ticker'
 
-        self.logger = qf_logger.getChild(self.__class__.__name__)
-
-        self.logger.info("creating BinanceDataProvider")
-        self.client = Client()
-
         filepath = os.path.join(path, filename)
 
-        self._load_data(filepath, tickers, fields, start_date, end_date, frequency, index_col, ticker_col)
+        if is_binance_installed:
+            self.client = Client()
 
-        super().__init__(filepath, tickers, index_col, field_to_price_field_dict, fields, start_date, end_date, frequency, ticker_col=ticker_col)
+            self._load_data(filepath, tickers, fields, start_date, end_date, frequency, index_col, ticker_col)
+            super().__init__(filepath, tickers, index_col, field_to_price_field_dict, fields, start_date, end_date,
+                             frequency, ticker_col=ticker_col)
+        else:
+            self.logger.warning("Couldn't import the Binance API. Check if the necessary dependencies are installed.")
 
     def _load_data(self, filepath, tickers, fields, start_date, end_date, frequency, index_col, ticker_col):
         if not os.path.isfile(filepath):
-            list_of_dfs = [self._download_binance_data_df(ticker, start_date, end_date, frequency, ticker_col) for ticker in tickers]
+            list_of_dfs = [self._download_binance_data_df(ticker, start_date, end_date, frequency, ticker_col) for
+                           ticker in tickers]
         else:
 
             list_of_dfs = []
@@ -103,7 +115,8 @@ class BinanceDataProvider(CSVDataProvider):
             infer_freq = Frequency.infer_freq(df.index)
 
             if infer_freq != frequency:
-                raise ValueError(f'Requested frequency: {frequency} is different from the one in the file: {infer_freq}')
+                raise ValueError(
+                    f'Requested frequency: {frequency} is different from the one in the file: {infer_freq}')
 
             for ticker in tickers:
 
@@ -120,14 +133,16 @@ class BinanceDataProvider(CSVDataProvider):
 
                 df_to_append = self._download_binance_data_df(ticker, current_end_date, end_date, frequency, ticker_col)
                 combined_df = pd.concat([current_df, df_to_append])
-                combined_df = combined_df[~combined_df.index.duplicated(keep='last')]  # to have the most recent bar data updated
+                combined_df = combined_df[
+                    ~combined_df.index.duplicated(keep='last')]  # to have the most recent bar data updated
                 list_of_dfs.append(combined_df)
 
         df = pd.concat(list_of_dfs)
         df[fields] = df[fields].astype(float64)
         df.to_csv(filepath)
 
-    def _download_binance_data_df(self, ticker, start_time: datetime, end_time: datetime, frequency, ticker_col) -> QFDataFrame:
+    def _download_binance_data_df(self, ticker, start_time: datetime, end_time: datetime, frequency,
+                                  ticker_col) -> QFDataFrame:
         start_time = start_time + RelativeDelta(second=0, microsecond=0)
         end_time = end_time + RelativeDelta(second=0, microsecond=0)
 
@@ -156,7 +171,8 @@ class BinanceDataProvider(CSVDataProvider):
         df = QFDataFrame(res_dict).set_index('Dates')
         df.index = pd.to_datetime(df.index, format=str(DateFormat.FULL_ISO))
 
-        missing_dates = pd.date_range(start=start_time, end=end_time, freq=frequency.to_pandas_freq()).difference(df.index)
+        missing_dates = pd.date_range(start=start_time, end=end_time, freq=frequency.to_pandas_freq()).difference(
+            df.index)
 
         if not missing_dates.empty:
             self.logger.info(f'Missing dates: {missing_dates} for ticker: {ticker}')

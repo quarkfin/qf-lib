@@ -48,6 +48,7 @@ class TestBloomberg(unittest.TestCase):
     def setUp(self):
         try:
             self.bbg_provider = get_data_provider()
+            self.bbg_provider.frequency = Frequency.DAILY
         except Exception as e:
             raise self.skipTest(e)
 

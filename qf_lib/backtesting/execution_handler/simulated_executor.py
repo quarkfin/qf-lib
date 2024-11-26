@@ -16,7 +16,6 @@ import abc
 from itertools import count
 from typing import List, Sequence, Optional, Dict, Tuple
 
-from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.execution_handler.commission_models.commission_model import CommissionModel
 from qf_lib.backtesting.execution_handler.slippage.base import Slippage
 from qf_lib.backtesting.monitoring.abstract_monitor import AbstractMonitor
@@ -25,22 +24,20 @@ from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.backtesting.portfolio.transaction import Transaction
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.tickers.tickers import Ticker
-from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.common.utils.numberutils.is_finite_number import is_finite_number
+from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 
 
 class SimulatedExecutor(metaclass=abc.ABCMeta):
-    def __init__(self, data_handler: DataHandler, monitor: AbstractMonitor, portfolio: Portfolio, timer: Timer,
+    def __init__(self, data_provider: AbstractPriceDataProvider, monitor: AbstractMonitor, portfolio: Portfolio,
                  order_id_generator: count, commission_model: CommissionModel, slippage_model: Slippage,
                  frequency: Frequency):
 
-        self._data_handler = data_handler
-        self._data_provider = data_handler.data_provider
+        self._data_provider = data_provider
         self._frequency = frequency
 
         self._monitor = monitor
         self._portfolio = portfolio
-        self._timer = timer
         self._order_id_generator = order_id_generator
         self._commission_model = commission_model
         self._slippage_model = slippage_model
@@ -92,7 +89,7 @@ class SimulatedExecutor(metaclass=abc.ABCMeta):
             self._get_orders_with_fill_prices_without_slippage(open_orders_list, tickers, market_open, market_close)
 
         if len(to_be_executed_orders) > 0:
-            current_time = self._timer.now()
+            current_time = self._data_provider.timer.now()
             fill_prices, fill_volumes = self._slippage_model.process_orders(current_time, to_be_executed_orders,
                                                                             no_slippage_fill_prices_list)
 
@@ -113,7 +110,7 @@ class SimulatedExecutor(metaclass=abc.ABCMeta):
         """
         Simulates execution of a single Order by converting the Order into Transaction.
         """
-        timestamp = self._timer.now()
+        timestamp = self._data_provider.timer.now()
         commission = self._commission_model.calculate_commission(fill_volume, fill_price)
 
         transaction = Transaction(timestamp, order.ticker, fill_volume, fill_price, commission)

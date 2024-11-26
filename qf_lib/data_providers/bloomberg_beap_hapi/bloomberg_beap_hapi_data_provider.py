@@ -26,6 +26,7 @@ import requests
 from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
+from qf_lib.data_providers.futures_data_provider import FuturesDataProvider
 from qf_lib.data_providers.tickers_universe_provider import TickersUniverseProvider
 
 try:
@@ -61,7 +62,7 @@ from qf_lib.settings import Settings
 from qf_lib.starting_dir import get_starting_dir_abs_path
 
 
-class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
+class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniverseProvider, FuturesDataProvider):
     """
     Data Provider which provides financial data from Bloomberg BEAP HAPI.
 
@@ -250,22 +251,46 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
     def supported_ticker_types(self):
         return {BloombergTicker, BloombergFutureTicker}
 
-    def get_tickers_universe(self, universe_ticker: BloombergTicker, date: Optional[datetime] = None) -> List[BloombergTicker]:
+    def get_tickers_universe(self, universe_ticker: BloombergTicker, date: Optional[datetime] = None,
+                             display_figi: bool = False) -> List[BloombergTicker]:
         """
+        Returns a list of all members of an index. Bloomberg Data License supports only fetching constituents for
+        the current date and it will not return any data for indices with more than 20,000 members.
+
         Parameters
         ----------
         universe_ticker: BloombergTicker
             ticker that describes a specific universe, which members will be returned
         date: datetime
-            date for which current universe members' tickers will be returned
+            date for which current universe members' tickers will be returned.
+        display_figi
+            the following flag can be used to have this field return Financial Instrument Global Identifiers (FIGI).
         """
         date = date or datetime.now()
         if date.date() != datetime.today().date():
-            raise ValueError(f"{self.__class__.__name__} does not provide historical tickers_universe data")
+            raise ValueError(f"{self.__class__.__name__} does not provide historical tickers universe data")
 
-        field = 'INDX_MEMBERS'
-        tickers: List[str] = self.get_current_values(universe_ticker, field)
-        return [BloombergTicker(f"{t} Equity", SecurityType.STOCK, 1) for t in tickers]
+        field = 'INDEX_MEMBERS_WEIGHTS'
+
+        MAX_PAGE_NUMBER = 7
+        MAX_MEMBERS_PER_PAGE = 3000
+        universe = []
+
+        def str_to_bbg_ticker(data: str, figi: bool):
+            identifier = data.split(";")[0]
+            ticker_str = f"/bbgid/{identifier}" if figi else f"{identifier} Equity"
+            return BloombergTicker(ticker_str, SecurityType.STOCK, 1)
+
+        for page_no in range(1, MAX_PAGE_NUMBER + 1):
+            ticker_data = self.get_current_values(universe_ticker, field, fields_overrides=[
+                ("DISPLAY_ID_BB_GLOBAL_OVERRIDE", "Y" if display_figi else "N"),
+                ("PAGE_NUMBER_OVERRIDE", str(page_no))])
+            tickers_chunk = [str_to_bbg_ticker(data, display_figi) for data in ticker_data]
+            universe.extend(tickers_chunk)
+            if len(tickers_chunk) < MAX_MEMBERS_PER_PAGE:
+                break
+
+        return universe
 
     def get_unique_tickers(self, universe_ticker: BloombergTicker) -> List[BloombergTicker]:
         raise ValueError(f"{self.__class__.__name__} does not provide historical tickers_universe data")
@@ -379,7 +404,7 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
         fields, got_single_field = convert_to_list(fields, str)
 
         tickers_str_to_obj = {t.as_string(): t for t in tickers}
-        universe_id = self._get_universe_id(tickers, universe_creation_time)
+        universe_id = self._get_universe_id(tickers, universe_creation_time, fields_overrides)
         universe_url = self.universe_hapi_provider.get_universe_url(universe_id, list(tickers_str_to_obj.keys()),
                                                                     fields_overrides)
 
@@ -406,11 +431,12 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
         return cast_dataframe_to_proper_type(squeezed_result) if tickers_indices != 0 or fields_indices != 0 \
             else squeezed_result
 
-    def _get_universe_id(self, tickers: Sequence[BloombergTicker], creation_time: Optional[datetime] = None):
+    def _get_universe_id(self, tickers: Sequence[BloombergTicker], creation_time: Optional[datetime] = None,
+                         overrides: Optional[List[Tuple]] = None):
         universe_creation_time = creation_time or datetime.now()
         universe_id = f'uni{universe_creation_time:%m%d%H%M%S%f}'
 
-        if len(tickers) == 1:
+        if len(tickers) == 1 and not overrides:
             ticker_str = tickers[0].as_string().lower().replace(" ", "")
             universe_id = ticker_str if ticker_str.isalnum() else universe_id
 
