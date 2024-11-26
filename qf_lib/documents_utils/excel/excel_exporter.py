@@ -156,6 +156,7 @@ class ExcelExporter:
         if write_mode == WriteMode.CREATE:
             assert not exists(file_path) or not isfile(file_path)
             work_book = Workbook()
+            work_book.remove(work_book.active)
         elif write_mode == WriteMode.OPEN_EXISTING:
             assert exists(file_path) and isfile(file_path)
             work_book = load_workbook(file_path)
@@ -167,7 +168,7 @@ class ExcelExporter:
         Gets a worksheet of given name from a provided workbook. If :sheet_name is None, then the active sheet
         from the workbook is returned.
         """
-        if sheet_name is None:
+        if sheet_name is None and work_book.active is not None:
             work_sheet = work_book.active
         else:
             work_sheet = self._get_or_create_worksheet(work_book, sheet_name)
@@ -192,7 +193,35 @@ class ExcelExporter:
             assert not include_index and not include_column_names
             work_sheet.cell(row=starting_row, column=starting_column, value=self._to_supported_type(exported_value))
 
+    def add_number_format(self, file_path: str, column_reference: str, number_format: str,
+                          sheet_name: Optional[str] = None):
+        """
+        Parameters
+        -----------
+        file_path
+            path to the xls file where the cell should be written in
+        column_reference: str
+            the specified column where the number format should take place. It should be the name of the column e.g. "A"
+            or "XY"
+        number_format: str
+            format of the number, e.g. "0.00%". For the list of all available nuber formats please refer to openpyxl
+            documentation.
+        sheet_name: str
+            the name of the sheet where the format should be written. If a sheet of this name doesn't exist
+            it will be created. If it does: it will be edited (but not cleared). If no sheet_name is specified,
+            then the currently active one will be picked
+        """
+        file_path = join(get_starting_dir_abs_path(), self.settings.output_directory, file_path)
+
+        work_book = self.get_workbook(file_path, WriteMode.CREATE_IF_DOESNT_EXIST)
+        work_sheet = self.get_worksheet(work_book, sheet_name)
+
+        for cell in work_sheet[column_reference]:
+            cell.number_format = number_format
+        work_book.save(file_path)
+
     def _get_or_create_worksheet(self, work_book, sheet_name):
+        sheet_name = sheet_name or "Sheet"
         if sheet_name in work_book:
             work_sheet = work_book[sheet_name]
         else:
