@@ -14,28 +14,26 @@
 from datetime import datetime
 from typing import List, Dict, Optional
 
-from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.portfolio.backtest_position import BacktestPosition, BacktestPositionSummary
 from qf_lib.backtesting.portfolio.position_factory import BacktestPositionFactory
 from qf_lib.backtesting.portfolio.transaction import Transaction
 from qf_lib.backtesting.portfolio.utils import split_transaction_if_needed
 from qf_lib.common.tickers.tickers import Ticker
-from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
+from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 
 
 class Portfolio:
-    def __init__(self, data_handler: DataHandler, initial_cash: float, timer: Timer, currency: Optional[str] = None):
+    def __init__(self, data_provider: AbstractPriceDataProvider, initial_cash: float, currency: Optional[str] = None):
         """
         On creation, the Portfolio object contains no positions and all values are "reset" to the initial
         cash, with no PnL.
         """
         self.initial_cash = initial_cash
-        self.data_handler = data_handler
-        self.timer = timer
+        self.data_provider = data_provider
         self.currency = currency
 
         self.net_liquidation = initial_cash
