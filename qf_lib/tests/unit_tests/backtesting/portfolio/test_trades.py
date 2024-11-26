@@ -32,7 +32,7 @@ class TestTrades(unittest.TestCase):
         cls.time = str_to_date('2020-01-01')
 
     def setUp(self):
-        self.portfolio = Portfolio(Mock(), 100000, Mock())
+        self.portfolio = Portfolio(Mock(), 100000)
         self.trades_generator = TradesGenerator()
 
     def test_long_trade(self):

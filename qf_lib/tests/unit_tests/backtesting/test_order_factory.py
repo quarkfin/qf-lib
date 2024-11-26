@@ -17,7 +17,6 @@ from math import floor
 from unittest.mock import Mock
 
 from qf_lib.backtesting.broker.broker import Broker
-from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.order.execution_style import MarketOrder, StopOrder
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.order_factory import OrderFactory
@@ -25,6 +24,7 @@ from qf_lib.backtesting.order.time_in_force import TimeInForce
 from qf_lib.backtesting.portfolio.position import Position
 from qf_lib.common.tickers.tickers import BloombergTicker, BinanceTicker
 from qf_lib.containers.series.qf_series import QFSeries
+from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 
 
 class TestOrderFactory(unittest.TestCase):
@@ -47,11 +47,11 @@ class TestOrderFactory(unittest.TestCase):
         broker.get_portfolio_value.return_value = cls.current_portfolio_value
         broker.get_positions.return_value = [position, crypto_position]
 
-        data_handler = Mock(spec=DataHandler)
-        data_handler.get_last_available_price.side_effect = lambda tickers, _: \
+        data_provider = Mock(spec=AbstractPriceDataProvider)
+        data_provider.get_last_available_price.side_effect = lambda tickers, _: \
             QFSeries([cls.share_price] * len(tickers), index=tickers)
 
-        cls.order_factory = OrderFactory(broker, data_handler)
+        cls.order_factory = OrderFactory(broker, data_provider)
 
     def test_order(self):
         quantity = 5

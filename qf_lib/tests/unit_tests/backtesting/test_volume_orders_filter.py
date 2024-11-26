@@ -16,8 +16,6 @@ from typing import Optional
 
 import pandas as pd
 
-from qf_lib.backtesting.data_handler.daily_data_handler import DailyDataHandler
-from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
 from qf_lib.backtesting.order.execution_style import MarketOrder, StopOrder
 from qf_lib.backtesting.order.order import Order
@@ -29,6 +27,7 @@ from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
+from qf_lib.data_providers.data_provider import DataProvider
 from qf_lib.data_providers.helpers import tickers_dict_to_data_array
 from qf_lib.data_providers.preset_data_provider import PresetDataProvider
 
@@ -43,11 +42,11 @@ class TestVolumeOrdersFilter(unittest.TestCase):
 
     def test_volume_orders_filter__resize_orders(self):
         """Tests VolumeOrdersVerifier with orders exceeding the limit."""
-        # Setup DataHandler and VolumeOrdersVerifier
+        # Setup DataProvider and VolumeOrdersVerifier
         volume_percentage_limit = 0.15
         volume_value = 100.0
-        data_handler = self._setup_data_handler(volume_value)
-        volume_orders_verifier = VolumeOrdersFilter(data_handler, volume_percentage_limit)
+        data_provider = self._setup_data_provider(volume_value)
+        volume_orders_verifier = VolumeOrdersFilter(data_provider, volume_percentage_limit)
 
         # Initialize a list of orders, which exceed the maximum volume limit
         buy_orders = [Order(self.ticker, 100, MarketOrder(), TimeInForce.GTC)]
@@ -64,11 +63,11 @@ class TestVolumeOrdersFilter(unittest.TestCase):
 
     def test_volume_orders_filter__no_resize_orders(self):
         """Tests if VolumeOrdersVerifier does not change orders, which do not exceed the limit."""
-        # Setup DataHandler and VolumeOrdersVerifier
+        # Setup DataProvider and VolumeOrdersVerifier
         volume_percentage_limit = 0.15
         volume_value = 100.0
-        data_handler = self._setup_data_handler(volume_value)
-        volume_orders_verifier = VolumeOrdersFilter(data_handler, volume_percentage_limit)
+        data_provider = self._setup_data_provider(volume_value)
+        volume_orders_verifier = VolumeOrdersFilter(data_provider, volume_percentage_limit)
 
         # Initialize a list of orders, which do not exceed the maximum volume limit
         max_quantity = int(volume_percentage_limit * volume_value)
@@ -81,11 +80,11 @@ class TestVolumeOrdersFilter(unittest.TestCase):
 
     def test_volume_orders_filter__no_volume_data(self):
         """Tests if VolumeOrdersVerifier does not change orders, which do not have the volume data."""
-        # Setup DataHandler and VolumeOrdersVerifier
+        # Setup DataProvider and VolumeOrdersVerifier
         volume_percentage_limit = 0.15
         volume_value = None
-        data_handler = self._setup_data_handler(volume_value)
-        volume_orders_verifier = VolumeOrdersFilter(data_handler, volume_percentage_limit)
+        data_provider = self._setup_data_provider(volume_value)
+        volume_orders_verifier = VolumeOrdersFilter(data_provider, volume_percentage_limit)
 
         # Initialize a list of orders, which do not exceed the maximum volume limit
         orders = [Order(self.ticker, 100, MarketOrder(), TimeInForce.GTC),
@@ -109,8 +108,8 @@ class TestVolumeOrdersFilter(unittest.TestCase):
 
         volume_percentage_limit = 0.15
         volume_value = 100.0
-        data_handler = self._setup_data_handler(volume_value)
-        volume_orders_verifier = VolumeOrdersFilter(data_handler, volume_percentage_limit)
+        data_provider = self._setup_data_provider(volume_value)
+        volume_orders_verifier = VolumeOrdersFilter(data_provider, volume_percentage_limit)
 
         # Initialize a list of orders, which do not exceed the maximum volume limit
         buy_order = [Order(self.ticker, 100, MarketOrder(), TimeInForce.GTC),
@@ -129,8 +128,8 @@ class TestVolumeOrdersFilter(unittest.TestCase):
 
         volume_percentage_limit = 0.15
         volume_value = 100.0
-        data_handler = self._setup_data_handler(volume_value)
-        volume_orders_verifier = VolumeOrdersFilter(data_handler, volume_percentage_limit)
+        data_provider = self._setup_data_provider(volume_value)
+        volume_orders_verifier = VolumeOrdersFilter(data_provider, volume_percentage_limit)
 
         # Initialize a list of orders, which do not exceed the maximum volume limit
         sell_order = [Order(self.ticker, -100, MarketOrder(), TimeInForce.GTC),
@@ -142,7 +141,7 @@ class TestVolumeOrdersFilter(unittest.TestCase):
                                Order(self.ticker, 115, StopOrder(1.0), TimeInForce.GTC)]
         self.assertCountEqual(new_orders, expected_sell_order)
 
-    def _setup_data_handler(self, volume_value: Optional[float]) -> DataHandler:
+    def _setup_data_provider(self, volume_value: Optional[float]) -> DataProvider:
         dates = pd.date_range(str_to_date("2019-12-01"), str_to_date("2020-01-30"), freq='D')
         prices_data_frame = QFDataFrame(data={PriceField.Volume: [volume_value] * len(dates)},
                                         index=dates)
@@ -151,7 +150,5 @@ class TestVolumeOrdersFilter(unittest.TestCase):
             self.ticker: prices_data_frame,
         }, [self.ticker], [PriceField.Volume])
 
-        data_provider = PresetDataProvider(prices_data_array, dates[0], dates[-1], Frequency.DAILY)
         timer = SettableTimer(dates[-1])
-
-        return DailyDataHandler(data_provider, timer)
+        return PresetDataProvider(prices_data_array, dates[0], dates[-1], Frequency.DAILY, timer=timer)

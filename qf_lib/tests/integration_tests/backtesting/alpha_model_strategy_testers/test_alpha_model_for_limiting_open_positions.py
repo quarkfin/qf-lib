@@ -19,7 +19,6 @@ import pandas as pd
 
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
-from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.events.time_event.regular_time_event.calculate_and_place_orders_event import \
     CalculateAndPlaceOrdersRegularEvent
 from qf_lib.backtesting.portfolio.portfolio import Portfolio
@@ -33,6 +32,7 @@ from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.futures.future_tickers.bloomberg_future_ticker import BloombergFutureTicker
 from qf_lib.containers.qf_data_array import QFDataArray
+from qf_lib.data_providers.data_provider import DataProvider
 from qf_lib.data_providers.preset_data_provider import PresetDataProvider
 from qf_lib.tests.integration_tests.backtesting.trading_session_for_tests import TradingSessionForTests
 
@@ -66,7 +66,7 @@ class TestAlphaModelPositionsLimit(TestCase):
         )
 
         # --- Build the model --- #
-        model = DummyAlphaModel(risk_estimation_factor=0.05, data_provider=self.ts.data_handler)
+        model = DummyAlphaModel(risk_estimation_factor=0.05, data_provider=self.ts.data_provider)
         self.model_tickers_dict = {model: self.tickers}
 
     def _mock_data_provider(self):
@@ -178,7 +178,7 @@ class TestAlphaModelPositionsLimit(TestCase):
 
 
 class DummyAlphaModel(AlphaModel):
-    def __init__(self, risk_estimation_factor: float, data_provider: DataHandler):
+    def __init__(self, risk_estimation_factor: float, data_provider: DataProvider):
         super().__init__(0.0, data_provider)
 
     def calculate_exposure(self, ticker: Ticker, current_exposure: Exposure, current_time: datetime,

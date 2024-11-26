@@ -13,7 +13,7 @@
 #     limitations under the License.
 
 from datetime import datetime
-from typing import Sequence, Union, List
+from typing import Sequence, Union, List, Optional
 from pathlib import Path
 
 import pandas as pd
@@ -22,6 +22,7 @@ from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker, PortaraTicker
+from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
@@ -74,8 +75,7 @@ class PortaraDataProvider(PresetDataProvider):
     """
 
     def __init__(self, path: str, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[PriceField, List[PriceField]],
-                 start_date: datetime, end_date: datetime, frequency: Frequency):
-
+                 start_date: datetime, end_date: datetime, frequency: Frequency, timer: Optional[Timer] = None):
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
         if frequency not in [Frequency.DAILY, Frequency.MIN_1]:
@@ -110,7 +110,8 @@ class PortaraDataProvider(PresetDataProvider):
                          exp_dates=exp_dates,
                          start_date=start_date,
                          end_date=end_date,
-                         frequency=frequency)
+                         frequency=frequency,
+                         timer=timer)
 
     def get_contracts_df(self) -> QFDataFrame:
         """ Returns contracts information. A non empty data frame is returned only if the pricing data files contain

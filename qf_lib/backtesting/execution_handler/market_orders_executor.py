@@ -71,8 +71,8 @@ class MarketOrdersExecutor(SimulatedExecutor):
     def _get_current_prices(self, tickers: Sequence[Ticker]):
         """
         Function used to obtain the current prices for the tickers in order to further calculate fill prices for orders.
-        The function uses data provider and not data handler, as it is necessary to get the current bar at each point
-        in time to compute the fill prices.
+        The function uses data provider with look ahead bias = True, as it is necessary to get the current bar at each
+        point in time to compute the fill prices.
         """
         if not tickers:
             return QFSeries()
@@ -81,7 +81,7 @@ class MarketOrdersExecutor(SimulatedExecutor):
                                                    " executor"
 
         # Compute the time ranges, used further by the get_price function
-        current_datetime = self._timer.now()
+        current_datetime = self._data_provider.timer.now()
 
         market_close_time = current_datetime + MarketCloseEvent.trigger_time() == current_datetime
         market_open_time = current_datetime + MarketOpenEvent.trigger_time() == current_datetime
@@ -104,7 +104,8 @@ class MarketOrdersExecutor(SimulatedExecutor):
             start_time_range = current_datetime
 
         price_field = PriceField.Close if market_close_time else PriceField.Open
-        prices = self._data_provider.get_price(tickers, price_field, start_time_range, start_time_range, self._frequency)
+        prices = self._data_provider.get_price(tickers, price_field, start_time_range, start_time_range,
+                                               self._frequency, look_ahead_bias=True)
         return prices
 
     def _check_order_validity(self, order):

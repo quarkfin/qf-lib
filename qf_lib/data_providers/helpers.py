@@ -81,7 +81,6 @@ def normalize_data_array(
 
 def squeeze_data_array_and_cast_to_proper_type(original_data_array: QFDataArray, got_single_date: bool,
                                                got_single_ticker: bool, got_single_field: bool, use_prices_types: bool):
-
     if isinstance(original_data_array, DataArray) and not isinstance(original_data_array, QFDataArray):
         warnings.warn("data_array to be normalized should be a QFDataFrame instance. "
                       "Transforming data_array to QFDataArray. Please check types in the future.")

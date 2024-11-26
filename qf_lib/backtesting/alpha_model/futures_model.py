@@ -35,7 +35,7 @@ from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 from qf_lib.containers.futures.futures_adjustment_method import FuturesAdjustmentMethod
 from qf_lib.containers.futures.futures_chain import FuturesChain
 from qf_lib.containers.series.qf_series import QFSeries
-from qf_lib.data_providers.data_provider import DataProvider
+from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 
 
 class FuturesModel(AlphaModel, metaclass=abc.ABCMeta):
@@ -51,14 +51,14 @@ class FuturesModel(AlphaModel, metaclass=abc.ABCMeta):
     risk_estimation_factor: float
         float value which estimates the risk level of the specific AlphaModel. Corresponds to the level at which
         the stop-loss should be placed.
-    data_provider: DataProvider
-        DataProvider which provides data for the ticker. For backtesting purposes the Data Handler should be used.
+    data_provider: AbstractPriceDataProvider
+        DataProvider which provides data for the ticker
     cache_path: Optional[str]
         path to a directory, which could be used by the model for caching purposes. If provided, the model will cache
         the outputs of get_data function.
     """
 
-    def __init__(self, num_of_bars_needed: int, risk_estimation_factor: float, data_provider: DataProvider,
+    def __init__(self, num_of_bars_needed: int, risk_estimation_factor: float, data_provider: AbstractPriceDataProvider,
                  cache_path: Optional[str] = None):
 
         super().__init__(risk_estimation_factor, data_provider)

@@ -16,8 +16,6 @@ from unittest.mock import Mock
 from qf_lib.backtesting.broker.backtest_broker import BacktestBroker
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.simulated_contract_ticker_mapper import \
     SimulatedContractTickerMapper
-from qf_lib.backtesting.data_handler.daily_data_handler import DailyDataHandler
-from qf_lib.backtesting.data_handler.intraday_data_handler import IntradayDataHandler
 from qf_lib.backtesting.events.notifiers import Notifiers
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
@@ -36,7 +34,7 @@ from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.utils.dateutils.date_to_string import date_to_str
 from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
-from qf_lib.data_providers.data_provider import DataProvider
+from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 
 
 class TradingSessionForTests(TradingSession):
@@ -48,7 +46,7 @@ class TradingSessionForTests(TradingSession):
     MarketOpenEvent.set_trigger_time({"hour": 13, "minute": 30, "second": 0, "microsecond": 0})
     MarketCloseEvent.set_trigger_time({"hour": 20, "minute": 0, "second": 0, "microsecond": 0})
 
-    def __init__(self, data_provider: DataProvider, start_date, end_date, initial_cash,
+    def __init__(self, data_provider: AbstractPriceDataProvider, start_date, end_date, initial_cash,
                  frequency: Frequency = Frequency.MIN_1):
         """
         Set up the backtest variables according to what has been passed in.
@@ -67,13 +65,10 @@ class TradingSessionForTests(TradingSession):
         )
 
         timer = SettableTimer(start_date)
-        notifiers = Notifiers(timer)
-        if frequency <= Frequency.DAILY:
-            data_handler = DailyDataHandler(data_provider, timer)
-        else:
-            data_handler = IntradayDataHandler(data_provider, timer)
+        data_provider.set_timer(timer)
 
-        portfolio = Portfolio(data_handler, initial_cash, timer)
+        notifiers = Notifiers(timer)
+        portfolio = Portfolio(data_provider, initial_cash)
         signals_register = BacktestSignalsRegister()
         backtest_result = BacktestResult(portfolio=portfolio, backtest_name="Testing the Backtester",
                                          start_date=start_date, end_date=end_date, signals_register=signals_register)
@@ -83,18 +78,18 @@ class TradingSessionForTests(TradingSession):
         slippage_model = PriceBasedSlippage(0.0, data_provider)
 
         execution_handler = SimulatedExecutionHandler(
-            data_handler, timer, notifiers.scheduler, monitor, commission_model,
+            data_provider, notifiers.scheduler, monitor, commission_model,
             portfolio, slippage_model, frequency=frequency)
 
         contract_ticker_mapper = SimulatedContractTickerMapper()
         broker = BacktestBroker(contract_ticker_mapper, portfolio, execution_handler)
-        order_factory = OrderFactory(broker, data_handler)
+        order_factory = OrderFactory(broker, data_provider)
 
         event_manager = self._create_event_manager(timer, notifiers)
         time_flow_controller = BacktestTimeFlowController(
             notifiers.scheduler, event_manager, timer, notifiers.empty_queue_event_notifier, end_date
         )
-        position_sizer = SimplePositionSizer(broker, data_handler, order_factory, signals_register)
+        position_sizer = SimplePositionSizer(broker, data_provider, order_factory, signals_register)
 
         self.logger.info(
             "\n".join([
@@ -117,14 +112,12 @@ class TradingSessionForTests(TradingSession):
         self.end_date = end_date
         self.event_manager = event_manager
         self.contract_ticker_mapper = contract_ticker_mapper
-        self.data_handler = data_handler
-        self.data_provider = data_handler
+        self.data_provider = data_provider
         self.portfolio = portfolio
         self.execution_handler = execution_handler
         self.position_sizer = position_sizer
         self.orders_filters = []
         self.monitor = monitor
-        self.timer = timer
         self.order_factory = order_factory
         self.time_flow_controller = time_flow_controller
         self.frequency = frequency

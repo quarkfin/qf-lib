@@ -43,7 +43,9 @@ class TestAlphaModelStrategy(unittest.TestCase):
 
         # Mock trading session
         self.ts = MagicMock()
-        self.ts.timer = SettableTimer(str_to_date("2000-01-04 08:00:00.0", DateFormat.FULL_ISO))
+        data_provider = MagicMock()
+        data_provider.timer = SettableTimer(str_to_date("2000-01-04 08:00:00.0", DateFormat.FULL_ISO))
+        self.ts.data_provider = data_provider
         self.ts.frequency = Frequency.DAILY
 
         self.positions_in_portfolio = []  # type: List[BacktestPosition]
@@ -62,7 +64,7 @@ class TestAlphaModelStrategy(unittest.TestCase):
                                                   use_stop_losses=False)
         # In case of empty portfolio get_signal function should have current exposure set to OUT
         alpha_model_strategy.calculate_and_place_orders()
-        self.alpha_model.get_signal.assert_called_with(self.ticker, Exposure.OUT, self.ts.timer.now(), Frequency.DAILY)
+        self.alpha_model.get_signal.assert_called_with(self.ticker, Exposure.OUT, self.ts.data_provider.timer.now(), Frequency.DAILY)
 
         # Open long position in the portfolio
         self.positions_in_portfolio = [Mock(spec=BacktestPosition, **{
@@ -71,7 +73,7 @@ class TestAlphaModelStrategy(unittest.TestCase):
             'start_time': str_to_date("2000-01-01")
         })]
         alpha_model_strategy.calculate_and_place_orders()
-        self.alpha_model.get_signal.assert_called_with(self.ticker, Exposure.LONG, self.ts.timer.now(), Frequency.DAILY)
+        self.alpha_model.get_signal.assert_called_with(self.ticker, Exposure.LONG, self.ts.data_provider.timer.now(), Frequency.DAILY)
 
         # Open short position in the portfolio
         self.positions_in_portfolio = [Mock(spec=BacktestPosition, **{
@@ -80,7 +82,7 @@ class TestAlphaModelStrategy(unittest.TestCase):
             'start_time': str_to_date("2000-01-01")
         })]
         alpha_model_strategy.calculate_and_place_orders()
-        self.alpha_model.get_signal.assert_called_with(self.ticker, Exposure.SHORT, self.ts.timer.now(), Frequency.DAILY)
+        self.alpha_model.get_signal.assert_called_with(self.ticker, Exposure.SHORT, self.ts.data_provider.timer.now(), Frequency.DAILY)
 
         # Verify if in case of two positions for the same ticker an exception will be raised by the strategy
         self.positions_in_portfolio = [BacktestPositionFactory.create_position(c) for c in (
@@ -102,7 +104,7 @@ class TestAlphaModelStrategy(unittest.TestCase):
         # In case of empty portfolio get_signal function should have current exposure set to OUT
         futures_alpha_model_strategy.calculate_and_place_orders()
         expected_current_exposure_values.append(Exposure.OUT)
-        self.alpha_model.get_signal.assert_called_with(self.future_ticker, Exposure.OUT, self.ts.timer.now(),
+        self.alpha_model.get_signal.assert_called_with(self.future_ticker, Exposure.OUT, self.ts.data_provider.timer.now(),
                                                        Frequency.DAILY)
 
         self.positions_in_portfolio = [Mock(spec=BacktestPosition, **{
@@ -111,7 +113,7 @@ class TestAlphaModelStrategy(unittest.TestCase):
             'start_time': str_to_date("2000-01-01")
         })]
         futures_alpha_model_strategy.calculate_and_place_orders()
-        self.alpha_model.get_signal.assert_called_with(self.future_ticker, Exposure.LONG, self.ts.timer.now(),
+        self.alpha_model.get_signal.assert_called_with(self.future_ticker, Exposure.LONG, self.ts.data_provider.timer.now(),
                                                        Frequency.DAILY)
 
         self.positions_in_portfolio = [BacktestPositionFactory.create_position(c) for c in (ticker, ticker)]
@@ -136,7 +138,7 @@ class TestAlphaModelStrategy(unittest.TestCase):
         })]
         futures_alpha_model_strategy.calculate_and_place_orders()
 
-        self.alpha_model.get_signal.assert_called_once_with(self.future_ticker, Exposure.LONG, self.ts.timer.now(),
+        self.alpha_model.get_signal.assert_called_once_with(self.future_ticker, Exposure.LONG, self.ts.data_provider.timer.now(),
                                                             Frequency.DAILY)
 
         self.positions_in_portfolio = [Mock(spec=BacktestPosition, **{
@@ -173,7 +175,7 @@ class TestAlphaModelStrategy(unittest.TestCase):
             'start_time': str_to_date("2000-01-02")
         })]
         futures_alpha_model_strategy.calculate_and_place_orders()
-        self.alpha_model.get_signal.assert_called_once_with(self.future_ticker, Exposure.LONG, self.ts.timer.now(),
+        self.alpha_model.get_signal.assert_called_once_with(self.future_ticker, Exposure.LONG, self.ts.data_provider.timer.now(),
                                                             Frequency.DAILY)
 
     @patch.object(FuturesRollingOrdersGenerator, 'generate_close_orders')

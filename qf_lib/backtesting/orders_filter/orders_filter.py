@@ -16,12 +16,12 @@ from typing import List
 
 from qf_lib.backtesting.order.order import Order
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
-from qf_lib.data_providers.data_provider import DataProvider
+from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 
 
 class OrdersFilter(metaclass=abc.ABCMeta):
     """Adjusts final orders list to meet various requirements e.g. volume limitations."""
-    def __init__(self, data_provider: DataProvider):
+    def __init__(self, data_provider: AbstractPriceDataProvider):
         self._data_provider = data_provider
 
         self.logger = qf_logger.getChild(self.__class__.__name__)

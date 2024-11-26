@@ -40,10 +40,11 @@ class TestGeneralPriceProvider(unittest.TestCase):
             BloombergFutureTicker("Cotton", "CT{} Comdty", 1, 3),
             BloombergFutureTicker("Corn", 'C {} Comdty', 1, 5, 50, "HMUZ")]
 
+        data_provider.set_timer(timer)
         timer.set_current_time(str_to_date('2017-12-20'))
 
         for ticker in cls.tickers:
-            ticker.initialize_data_provider(timer, bbg_provider)
+            ticker.initialize_data_provider(bbg_provider)
 
         cls.start_date = str_to_date('2015-10-08')
         cls.end_date = str_to_date('2017-12-20')

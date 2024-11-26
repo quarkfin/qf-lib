@@ -27,7 +27,7 @@ from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
-from qf_lib.data_providers.data_provider import DataProvider
+from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 
 
 class Slippage(metaclass=ABCMeta):
@@ -38,7 +38,7 @@ class Slippage(metaclass=ABCMeta):
 
     Parameters
     ----------
-    data_provider: DataProvider
+    data_provider: AbstractPriceDataProvider
         DataProvider component
     max_volume_share_limit: float, None
         number from range [0,1] which denotes how big (volume-wise) the Order can be i.e. if it's 0.5 and a daily
@@ -46,7 +46,7 @@ class Slippage(metaclass=ABCMeta):
         volume checks are performed.
     """
 
-    def __init__(self, data_provider: DataProvider, max_volume_share_limit: Optional[float] = None):
+    def __init__(self, data_provider: AbstractPriceDataProvider, max_volume_share_limit: Optional[float] = None):
         self.max_volume_share_limit = max_volume_share_limit
         self._data_provider = data_provider
 
@@ -98,7 +98,8 @@ class Slippage(metaclass=ABCMeta):
         end_date = start_date + RelativeDelta(days=1)
 
         # Look into the future in order to see the total volume traded today
-        volume_df = self._data_provider.get_price(tickers, PriceField.Volume, start_date, end_date, Frequency.DAILY)
+        volume_df = self._data_provider.get_price(tickers, PriceField.Volume, start_date, end_date, Frequency.DAILY,
+                                                  look_ahead_bias=True)
         volume_df = volume_df.fillna(0.0)
         try:
             volumes = volume_df.loc[start_date, tickers].values

@@ -17,6 +17,8 @@ from unittest import TestCase
 
 from pandas import concat
 
+from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
+from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.enums.security_type import SecurityType
@@ -45,24 +47,24 @@ class TestPortaraFutureTicker(TestCase):
     def setUp(self) -> None:
         self.data_provider = PortaraDataProvider(self.futures_path, [self.future_ticker_1, self.future_ticker_2],
                                                  PriceField.ohlcv(), self.start_date, self.end_date, Frequency.DAILY)
+        self.data_provider.set_timer(SettableTimer())
 
     def test_get_current_specific_ticker(self):
-        timer = SettableTimer()
-        self.future_ticker_1.initialize_data_provider(timer, self.data_provider)
+        self.future_ticker_1.initialize_data_provider(self.data_provider)
 
-        timer.set_current_time(str_to_date("2021-03-18"))
+        self.data_provider.timer.set_current_time(str_to_date("2021-03-18"))
         specific_ticker = self.future_ticker_1.get_current_specific_ticker()
         self.assertEqual(specific_ticker, PortaraTicker("AB2021M", SecurityType.FUTURE, 1))
 
-        timer.set_current_time(str_to_date("2021-06-14"))
+        self.data_provider.timer.set_current_time(str_to_date("2021-06-14"))
         specific_ticker = self.future_ticker_1.get_current_specific_ticker()
         self.assertEqual(specific_ticker, PortaraTicker("AB2021M", SecurityType.FUTURE, 1))
 
-        timer.set_current_time(str_to_date("2021-06-15"))
+        self.data_provider.timer.set_current_time(str_to_date("2021-06-15"))
         specific_ticker = self.future_ticker_1.get_current_specific_ticker()
         self.assertEqual(specific_ticker, PortaraTicker("AB2021U", SecurityType.FUTURE, 1))
 
-        timer.set_current_time(datetime(2021, 12, 14, 23, 59))
+        self.data_provider.timer.set_current_time(datetime(2021, 12, 14, 23, 59))
         specific_ticker = self.future_ticker_1.get_current_specific_ticker()
         self.assertEqual(specific_ticker, PortaraTicker("AB2021Z", SecurityType.FUTURE, 1))
 
@@ -81,16 +83,18 @@ class TestPortaraFutureTicker(TestCase):
     def test_designated_contracts(self):
         future_ticker = PortaraFutureTicker("", "AB{}", 1, 1, designated_contracts="MZ")
 
-        timer = SettableTimer()
-        future_ticker.initialize_data_provider(timer, self.data_provider)
+        future_ticker.initialize_data_provider(self.data_provider)
 
-        timer.set_current_time(str_to_date("2021-06-15"))
+        self.data_provider.timer.set_current_time(str_to_date("2021-06-15"))
         specific_ticker = future_ticker.get_current_specific_ticker()
         self.assertEqual(specific_ticker, PortaraTicker("AB2021Z", SecurityType.FUTURE, 1))
 
     def test_futures_chain_without_adjustment(self):
-        timer = SettableTimer(self.end_date)
-        self.future_ticker_1.initialize_data_provider(timer, self.data_provider)
+        self.data_provider.timer.set_current_time(self.end_date)
+        self.future_ticker_1.initialize_data_provider(self.data_provider)
+
+        MarketOpenEvent.set_trigger_time({"hour": 13, "minute": 30, "second": 0, "microsecond": 0})
+        MarketCloseEvent.set_trigger_time({"hour": 20, "minute": 0, "second": 0, "microsecond": 0})
 
         futures_chain = FuturesChain(self.future_ticker_1, self.data_provider, FuturesAdjustmentMethod.NTH_NEAREST)
 

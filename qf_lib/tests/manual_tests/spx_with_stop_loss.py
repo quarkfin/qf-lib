@@ -44,15 +44,14 @@ class SpxWithStopLoss(AbstractStrategy):
         super().__init__(ts)
         self.broker = ts.broker
         self.order_factory = ts.order_factory
-        self.data_handler = ts.data_handler
+        self.data_provider = ts.data_provider
         self.position_sizer = ts.position_sizer
-        self.timer = ts.timer
 
     def calculate_and_place_orders(self):
         self.calculate_signals()
 
     def calculate_signals(self):
-        last_price = self.data_handler.get_last_available_price(self.ticker, Frequency.DAILY)
+        last_price = self.data_provider.get_last_available_price(self.ticker, Frequency.DAILY)
 
         orders = self.order_factory.target_percent_orders({self.ticker: 1.0}, MarketOrder(),
                                                           time_in_force=TimeInForce.OPG, tolerance_percentage=0.02)

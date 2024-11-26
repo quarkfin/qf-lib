@@ -23,7 +23,6 @@ from qf_lib.backtesting.position_sizer.initial_risk_with_volume_position_sizer i
 from qf_lib.backtesting.signals.backtest_signals_register import BacktestSignalsRegister
 from qf_lib.backtesting.signals.signal import Signal
 from qf_lib.backtesting.broker.broker import Broker
-from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.order.execution_style import MarketOrder, StopOrder
 from qf_lib.backtesting.order.order import Order
 from qf_lib.backtesting.order.order_factory import OrderFactory
@@ -64,21 +63,21 @@ class TestPositionSizer(unittest.TestCase):
         self.broker.get_positions.return_value = [position, crypto_position]
         self.broker.get_portfolio_value.return_value = self.portfolio_value
 
-        data_handler = Mock(spec=DataHandler, timer=self.timer)
-        data_handler.get_last_available_price.side_effect = lambda _: self.last_price
-        data_handler.get_price.return_value = self.volume
+        data_provider = Mock(timer=self.timer)
+        data_provider.get_last_available_price.side_effect = lambda _: self.last_price
+        data_provider.get_price.return_value = self.volume
 
         order_factory = self._mock_order_factory(self.initial_position, self.initial_allocation)
 
-        self.simple_position_sizer = SimplePositionSizer(self.broker, data_handler, order_factory,
+        self.simple_position_sizer = SimplePositionSizer(self.broker, data_provider, order_factory,
                                                          BacktestSignalsRegister())
 
-        self.initial_risk_position_sizer = InitialRiskPositionSizer(self.broker, data_handler, order_factory,
+        self.initial_risk_position_sizer = InitialRiskPositionSizer(self.broker, data_provider, order_factory,
                                                                     BacktestSignalsRegister(),
                                                                     self.initial_risk,
                                                                     self.max_target_percentage)
 
-        self.initial_risk_with_volume_position_sizer = InitialRiskWithVolumePositionSizer(self.broker, data_handler,
+        self.initial_risk_with_volume_position_sizer = InitialRiskWithVolumePositionSizer(self.broker, data_provider,
                                                                                           order_factory, BacktestSignalsRegister(),
                                                                                           self.initial_risk, self.max_target_percentage)
 

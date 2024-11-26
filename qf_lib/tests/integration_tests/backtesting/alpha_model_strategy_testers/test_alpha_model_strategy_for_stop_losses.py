@@ -64,8 +64,8 @@ class TestAlphaModelStrategy(TestCase):
 
         risk_estimation_factor = 0.05
 
-        ts = self._test_trading_session_init()
-        alpha_model = self.DummyAlphaModel(risk_estimation_factor, ts.data_handler)
+        ts = self._test_trading_session_init(self._price_provider_mock)
+        alpha_model = self.DummyAlphaModel(risk_estimation_factor, ts.data_provider)
 
         # Mock the backtest result in order to be able to compare transactions
         self.transactions = []
@@ -84,7 +84,7 @@ class TestAlphaModelStrategy(TestCase):
         expected_transactions_quantities = \
             [8130, -127, 1, -8004, 7454, -58, -7396, 6900, -6900, 6390, -44, -6346, 5718, -36]
         result_transactions_quantities = [t.quantity for t in self.transactions]
-        assert_equal(expected_transactions_quantities, result_transactions_quantities)
+        assert_equal(result_transactions_quantities, expected_transactions_quantities)
 
         expected_transactions_prices = [125, 130, 135, 235.6, 255, 260, 259.35, 280, 264.1, 285, 290, 282, 315, 320]
         result_transactions_prices = [t.price for t in self.transactions]
@@ -127,9 +127,9 @@ class TestAlphaModelStrategy(TestCase):
         mocked_result.loc[str_to_date('2015-02-23'), tickers[0], PriceField.Open] = \
             mocked_result.loc[str_to_date('2015-02-23'), tickers[0], PriceField.Low]
 
-    def _test_trading_session_init(self):
+    def _test_trading_session_init(self, data_provider):
         ts = TradingSessionForTests(
-            data_provider=self._price_provider_mock,
+            data_provider=data_provider,
             start_date=self.test_start_date,
             end_date=self.test_end_date,
             initial_cash=1000000,

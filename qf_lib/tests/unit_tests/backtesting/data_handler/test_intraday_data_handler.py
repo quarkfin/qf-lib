@@ -11,52 +11,43 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-import unittest
 from datetime import datetime
 from unittest import TestCase
-from unittest.mock import Mock
 
 from numpy import nan, concatenate
-from pandas import date_range, isnull, concat, Index, DatetimeIndex
+from pandas import date_range, isnull, Index, DatetimeIndex
 
-from qf_lib.backtesting.data_handler.intraday_data_handler import IntradayDataHandler
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
-from qf_lib.common.tickers.tickers import QuandlTicker, Ticker
+from qf_lib.common.tickers.tickers import QuandlTicker
 from qf_lib.common.utils.dateutils.date_format import DateFormat
-from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.dateutils.timer import SettableTimer
-from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.dimension_names import TICKERS, DATES, FIELDS
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
-from qf_lib.data_providers.data_provider import DataProvider
 from qf_lib.data_providers.helpers import normalize_data_array
+from qf_lib.data_providers.preset_data_provider import PresetDataProvider
 from qf_lib.tests.helpers.testing_tools.containers_comparison import assert_series_equal, assert_dataframes_equal, \
     assert_dataarrays_equal
 
 
-class TestIntradayDataHandler(TestCase):
+class TestDataProviderIntradayForLookaheadBias(TestCase):
     def setUp(self):
         self.timer = SettableTimer()
         self.tickers = [QuandlTicker("MSFT", "WIKI"), QuandlTicker("AAPL", "WIKI")]
-        price_data_provider_mock_MIN_1 = self._create_price_provider_mock(self.tickers, frequency=Frequency.MIN_1)
-        price_data_provider_mock_MIN_5 = self._create_price_provider_mock(self.tickers, frequency=Frequency.MIN_5)
-        price_data_provider_mock_MIN_60 = self._create_price_provider_mock(self.tickers, frequency=Frequency.MIN_60)
+        self.data_provider_MIN_1 = self._create_price_provider_mock(self.tickers, Frequency.MIN_1, self.timer)
+        self.data_provider_MIN_5 = self._create_price_provider_mock(self.tickers, Frequency.MIN_5, self.timer)
+        self.data_provider_MIN_60 = self._create_price_provider_mock(self.tickers, Frequency.MIN_60, self.timer)
 
-        self.data_handler_MIN_1 = IntradayDataHandler(price_data_provider_mock_MIN_1, self.timer)
-        self.data_handler_MIN_5 = IntradayDataHandler(price_data_provider_mock_MIN_5, self.timer)
-        self.data_handler_MIN_60 = IntradayDataHandler(price_data_provider_mock_MIN_60, self.timer)
-
-        self.data_handlers = {Frequency.MIN_1: self.data_handler_MIN_1,
-                              Frequency.MIN_5: self.data_handler_MIN_5,
-                              Frequency.MIN_60: self.data_handler_MIN_60}
+        self.data_providers = {Frequency.MIN_1: self.data_provider_MIN_1,
+                               Frequency.MIN_5: self.data_provider_MIN_5,
+                               Frequency.MIN_60: self.data_provider_MIN_60}
 
         MarketOpenEvent.set_trigger_time({"hour": 8, "minute": 0, "second": 0, "microsecond": 0})
         MarketCloseEvent.set_trigger_time({"hour": 16, "minute": 0, "second": 0, "microsecond": 0})
@@ -250,7 +241,8 @@ class TestIntradayDataHandler(TestCase):
         self._assert_get_prices_are_correct("2009-12-30 16:03:00.000000", start_date, end_date, self.tickers,
                                             PriceField.Open, expected_result, frequency=Frequency.MIN_1)
 
-        expected_result = PricesSeries(index=Index(self.tickers, name=TICKERS), name=PriceField.Close, data=[45.65, nan])
+        expected_result = PricesSeries(index=Index(self.tickers, name=TICKERS), name=PriceField.Close,
+                                       data=[45.65, nan])
         self._assert_get_prices_are_correct("2009-12-30 16:03:00.000000", start_date, end_date, self.tickers,
                                             PriceField.Close, expected_result, frequency=Frequency.MIN_1)
 
@@ -270,7 +262,8 @@ class TestIntradayDataHandler(TestCase):
         self._assert_get_prices_are_correct("2009-12-30 15:56:00.100000", start_date, end_date, self.tickers,
                                             PriceField.Open, expected_result, frequency=Frequency.MIN_1)
 
-    def test_get_price_before_market_close_during_bar_single_date_single_field_multiple_tickers_empty_container_freq5(self):
+    def test_get_price_before_market_close_during_bar_single_date_single_field_multiple_tickers_empty_container_freq5(
+            self):
         start_date = datetime(2009, 12, 30, 15, 56)
         end_date = datetime(2009, 12, 30, 15, 56)
 
@@ -278,7 +271,8 @@ class TestIntradayDataHandler(TestCase):
         self._assert_get_prices_are_correct("2009-12-30 15:57:00.100000", start_date, end_date, self.tickers,
                                             PriceField.Open, expected_result, frequency=Frequency.MIN_5)
 
-    def test_get_price_before_market_close_during_bar_single_date_single_field_multiple_tickers_empty_container_freq60(self):
+    def test_get_price_before_market_close_during_bar_single_date_single_field_multiple_tickers_empty_container_freq60(
+            self):
         start_date = datetime(2009, 12, 30, 15, 56)
         end_date = datetime(2009, 12, 30, 15, 56)
 
@@ -303,7 +297,8 @@ class TestIntradayDataHandler(TestCase):
         expected_result = PricesSeries(index=Index([PriceField.Open, PriceField.Close], name=FIELDS),
                                        name=self.tickers[0].as_string(), data=[45.1, 45.3])
         self._assert_get_prices_are_correct("2009-12-30 15:58:00.000000", start_date, end_date, self.tickers[0],
-                                            [PriceField.Open, PriceField.Close], expected_result, frequency=Frequency.MIN_1)
+                                            [PriceField.Open, PriceField.Close], expected_result,
+                                            frequency=Frequency.MIN_1)
 
     def test_get_price_after_market_close_single_date_multiple_fields_single_ticker(self):
         start_date = datetime(2009, 12, 30, 16, 2)
@@ -312,7 +307,8 @@ class TestIntradayDataHandler(TestCase):
         expected_result = PricesSeries(index=Index([PriceField.Open, PriceField.Close], name=FIELDS),
                                        name=self.tickers[0].as_string(), data=[45.7, 45.65])
         self._assert_get_prices_are_correct("2009-12-30 16:03:00.000000", start_date, end_date, self.tickers[0],
-                                            [PriceField.Open, PriceField.Close], expected_result, frequency=Frequency.MIN_1)
+                                            [PriceField.Open, PriceField.Close], expected_result,
+                                            frequency=Frequency.MIN_1)
 
     def test_get_price_after_market_close_single_date_multiple_fields_single_ticker_empty_container(self):
         start_date = datetime(2009, 12, 30, 16, 4)
@@ -321,7 +317,8 @@ class TestIntradayDataHandler(TestCase):
         expected_result = PricesSeries(index=Index([PriceField.Open, PriceField.Close], name=FIELDS),
                                        name=self.tickers[0].as_string())
         self._assert_get_prices_are_correct("2009-12-30 16:04:00.000000", start_date, end_date, self.tickers[0],
-                                            [PriceField.Open, PriceField.Close], expected_result, frequency=Frequency.MIN_1)
+                                            [PriceField.Open, PriceField.Close], expected_result,
+                                            frequency=Frequency.MIN_1)
 
     """ Test get_price function - single date, multiple fields, multiple tickers """
 
@@ -333,7 +330,8 @@ class TestIntradayDataHandler(TestCase):
                                           index=Index(self.tickers, name=TICKERS),
                                           data=[[45.1, 45.3], [nan, nan]])
         self._assert_get_prices_are_correct("2009-12-30 15:58:00.000000", start_date, end_date, self.tickers,
-                                            [PriceField.Open, PriceField.Close], expected_result, frequency=Frequency.MIN_1)
+                                            [PriceField.Open, PriceField.Close], expected_result,
+                                            frequency=Frequency.MIN_1)
 
     def test_get_price_before_market_close_single_date_multiple_fields_multiple_tickers_empty_container(self):
         start_date = datetime(2009, 12, 30, 16, 4)
@@ -343,7 +341,8 @@ class TestIntradayDataHandler(TestCase):
                                           index=Index(self.tickers, name=TICKERS),
                                           data=None)
         self._assert_get_prices_are_correct("2009-12-30 16:04:00.000000", start_date, end_date, self.tickers,
-                                            [PriceField.Open, PriceField.Close], expected_result, frequency=Frequency.MIN_1)
+                                            [PriceField.Open, PriceField.Close], expected_result,
+                                            frequency=Frequency.MIN_1)
 
     def test_get_price_after_market_close_single_date_multiple_fields_multiple_tickers(self):
         start_date = datetime(2009, 12, 30, 16, 2)
@@ -353,7 +352,8 @@ class TestIntradayDataHandler(TestCase):
                                           index=Index(self.tickers, name=TICKERS),
                                           data=[[45.7, 45.65], [nan, nan]])
         self._assert_get_prices_are_correct("2009-12-30 16:03:00.000000", start_date, end_date, self.tickers,
-                                            [PriceField.Open, PriceField.Close], expected_result, frequency=Frequency.MIN_1)
+                                            [PriceField.Open, PriceField.Close], expected_result,
+                                            frequency=Frequency.MIN_1)
 
     def test_get_price_after_market_close_during_bar_single_date_multiple_fields_multiple_tickers(self):
         start_date = datetime(2009, 12, 30, 16, 2)
@@ -363,7 +363,8 @@ class TestIntradayDataHandler(TestCase):
                                           index=Index(self.tickers, name=TICKERS),
                                           data=[[45.7, 45.65], [nan, nan]])
         self._assert_get_prices_are_correct("2009-12-30 16:03:00.100000", start_date, end_date, self.tickers,
-                                            [PriceField.Open, PriceField.Close], expected_result, frequency=Frequency.MIN_1)
+                                            [PriceField.Open, PriceField.Close], expected_result,
+                                            frequency=Frequency.MIN_1)
 
     def test_get_price_after_market_close_during_bar_single_date_multiple_fields_multiple_tickers_freq5(self):
         start_date = datetime(2009, 12, 30, 16, 10)
@@ -373,7 +374,8 @@ class TestIntradayDataHandler(TestCase):
                                           index=Index(self.tickers, name=TICKERS),
                                           data=[[45.7, 45.65], [nan, nan]])
         self._assert_get_prices_are_correct("2009-12-30 16:15:00.100000", start_date, end_date, self.tickers,
-                                            [PriceField.Open, PriceField.Close], expected_result, frequency=Frequency.MIN_5)
+                                            [PriceField.Open, PriceField.Close], expected_result,
+                                            frequency=Frequency.MIN_5)
 
     def test_get_price_after_market_close_during_bar_single_date_multiple_fields_multiple_tickers_freq60(self):
         start_date = datetime(2009, 12, 30, 17)
@@ -383,7 +385,8 @@ class TestIntradayDataHandler(TestCase):
                                           index=Index(self.tickers, name=TICKERS),
                                           data=[[45.6, 46.2], [30.1, 30.3]])
         self._assert_get_prices_are_correct("2009-12-30 18:00:00.100000", start_date, end_date, self.tickers,
-                                            [PriceField.Open, PriceField.Close], expected_result, frequency=Frequency.MIN_60)
+                                            [PriceField.Open, PriceField.Close], expected_result,
+                                            frequency=Frequency.MIN_60)
 
     def test_get_price_after_market_close_single_date_multiple_fields_multiple_tickers_empty_container(self):
         start_date = datetime(2009, 12, 30, 16, 4)
@@ -393,7 +396,8 @@ class TestIntradayDataHandler(TestCase):
                                           index=Index(self.tickers, name=TICKERS),
                                           data=None)
         self._assert_get_prices_are_correct("2009-12-30 16:04:00.000000", start_date, end_date, self.tickers,
-                                            [PriceField.Open, PriceField.Close], expected_result, frequency=Frequency.MIN_1)
+                                            [PriceField.Open, PriceField.Close], expected_result,
+                                            frequency=Frequency.MIN_1)
 
     """ Test get_price function - multiple dates, single field, single ticker """
 
@@ -502,7 +506,8 @@ class TestIntradayDataHandler(TestCase):
         end_date = datetime(2009, 12, 30, 16, 10)
 
         fields = PriceField.Open
-        expected_result = PricesDataFrame(columns=Index(self.tickers, name=TICKERS), index=DatetimeIndex([], name=DATES))
+        expected_result = PricesDataFrame(columns=Index(self.tickers, name=TICKERS),
+                                          index=DatetimeIndex([], name=DATES))
         expected_result.name = fields
         self._assert_get_prices_are_correct("2009-12-30 16:15:00.000000", start_date, end_date, self.tickers, fields,
                                             expected_result, frequency=Frequency.MIN_1)
@@ -527,7 +532,8 @@ class TestIntradayDataHandler(TestCase):
         end_date = datetime(2009, 12, 30, 16, 0)
 
         expected_result = PricesDataFrame(columns=Index([PriceField.Open], name=FIELDS),
-                                          index=DatetimeIndex([datetime(2009, 12, 30, 15, 57)], name=DATES), data=[45.1])
+                                          index=DatetimeIndex([datetime(2009, 12, 30, 15, 57)], name=DATES),
+                                          data=[45.1])
         expected_result.name = self.tickers[0].as_string()
         self._assert_get_prices_are_correct("2009-12-30 15:58:59.000000", start_date, end_date, self.tickers[0],
                                             [PriceField.Open], expected_result, frequency=Frequency.MIN_1)
@@ -537,7 +543,8 @@ class TestIntradayDataHandler(TestCase):
         end_date = datetime(2009, 12, 30, 16, 0)
 
         expected_result = PricesDataFrame(columns=Index([PriceField.Open], name=FIELDS),
-                                          index=DatetimeIndex([datetime(2009, 12, 30, 15, 45)], name=DATES), data=[45.1])
+                                          index=DatetimeIndex([datetime(2009, 12, 30, 15, 45)], name=DATES),
+                                          data=[45.1])
         expected_result.name = self.tickers[0].as_string()
         self._assert_get_prices_are_correct("2009-12-30 15:51:59.000000", start_date, end_date, self.tickers[0],
                                             [PriceField.Open], expected_result, frequency=Frequency.MIN_5)
@@ -654,7 +661,7 @@ class TestIntradayDataHandler(TestCase):
         current_time = str_to_date(curr_time_str, DateFormat.FULL_ISO)
         self.timer.set_current_time(current_time)
         expected_series = PricesSeries(data=expected_values, index=self.tickers)
-        actual_series = self.data_handlers[frequency].get_last_available_price(self.tickers)
+        actual_series = self.data_providers[frequency].get_last_available_price(self.tickers)
         assert_series_equal(expected_series, actual_series, check_names=False)
 
     def _assert_last_prices_are_correct_with_end_date(self, curr_time_str, end_date, expected_values, frequency):
@@ -662,13 +669,14 @@ class TestIntradayDataHandler(TestCase):
         end_date = str_to_date(end_date, DateFormat.FULL_ISO)
         self.timer.set_current_time(current_time)
         expected_series = PricesSeries(data=expected_values, index=self.tickers)
-        actual_series = self.data_handlers[frequency].get_last_available_price(self.tickers, end_time=end_date)
+        actual_series = self.data_providers[frequency].get_last_available_price(self.tickers, end_time=end_date)
         assert_series_equal(expected_series, actual_series, check_names=False)
 
-    def _assert_get_prices_are_correct(self, curr_time_str, start_date, end_date, tickers, fields, expected_result, frequency):
+    def _assert_get_prices_are_correct(self, curr_time_str, start_date, end_date, tickers, fields, expected_result,
+                                       frequency):
         current_time = str_to_date(curr_time_str, DateFormat.FULL_ISO)
         self.timer.set_current_time(current_time)
-        actual_prices = self.data_handlers[frequency].get_price(tickers, fields, start_date, end_date)
+        actual_prices = self.data_providers[frequency].get_price(tickers, fields, start_date, end_date)
         self.assertEqual(type(expected_result), type(actual_prices))
 
         if isinstance(expected_result, QFSeries):
@@ -682,7 +690,7 @@ class TestIntradayDataHandler(TestCase):
         else:
             self.assertEqual(expected_result, actual_prices)
 
-    def _create_price_provider_mock(self, tickers, frequency):
+    def _create_price_provider_mock(self, tickers, frequency, timer):
 
         if frequency == Frequency.MIN_1:
             dates = concatenate([
@@ -798,30 +806,5 @@ class TestIntradayDataHandler(TestCase):
             ]
         )
 
-        def get_price(t, fields, start_date, end_date, frequency):
-            got_single_date = start_date + frequency.time_delta() > end_date
-            fields, got_single_field = convert_to_list(fields, PriceField)
-            t, got_single_ticker = convert_to_list(t, Ticker)
-
-            return normalize_data_array(mock_data_array.loc[start_date:end_date, t, fields], t, fields,
-                                        got_single_date, got_single_ticker, got_single_field, use_prices_types=True)
-
-        def get_last_available_price(t, freq, end_time: datetime = None):
-            open_prices = mock_data_array.loc[:, t, PriceField.Open].to_pandas()
-            open_prices.index = [ind for ind in open_prices.index]
-            close_prices = mock_data_array.loc[:, t, PriceField.Close].to_pandas()
-            close_prices.index = [ind + freq.time_delta() + RelativeDelta(microseconds=-1) for ind in close_prices.index]
-            prices = PricesDataFrame(concat([open_prices, close_prices])).sort_index().ffill()
-
-            end_date = end_time + RelativeDelta(second=0, microsecond=0)
-            prices = prices.loc[:end_date + freq.time_delta() + RelativeDelta(microseconds=-1)]
-            return prices.iloc[-1] if not prices.empty else PricesSeries(index=t, data=nan)
-
-        price_data_provider_mock = Mock(spec=DataProvider, frequency=frequency)
-        price_data_provider_mock.get_price.side_effect = get_price
-        price_data_provider_mock.get_last_available_price.side_effect = get_last_available_price
-        return price_data_provider_mock
-
-
-if __name__ == '__main__':
-    unittest.main()
+        return PresetDataProvider(mock_data_array, datetime(2009, 12, 1), datetime(2009, 12, 31, 23, 59), frequency,
+                                  timer=timer)

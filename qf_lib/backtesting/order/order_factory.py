@@ -27,7 +27,7 @@ from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.miscellaneous.constants import ISCLOSE_REL_TOL, ISCLOSE_ABS_TOL
 from qf_lib.common.utils.miscellaneous.function_name import get_function_name
 from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
-from qf_lib.data_providers.data_provider import DataProvider
+from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 
 
 class OrderFactory:
@@ -37,11 +37,11 @@ class OrderFactory:
     ----------
     broker: Broker
         broker used to access the portfolio
-    data_provider: DataProvider
-        data provider used to download prices. In case of backtesting, the DataHandler wrapper should be used.
+    data_provider: AbstractPriceDataProvider
+        data provider used to download prices.
     """
 
-    def __init__(self, broker: Broker, data_provider: DataProvider):
+    def __init__(self, broker: Broker, data_provider: AbstractPriceDataProvider):
         self.broker = broker
         self.data_provider = data_provider
         self.logger = qf_logger.getChild(self.__class__.__name__)
@@ -309,7 +309,7 @@ class OrderFactory:
         """
         tickers = list(ticker_to_amount_of_money.keys())
         # In case of live trading the get_last_available_price will use datetime.now() as the current time to obtain
-        # last price and in case of a backtest - it will use the data handlers timer to compute the date
+        # last price and in case of a backtest - it will use the data providers timer to compute the date
         current_prices = self.data_provider.get_last_available_price(tickers, frequency)
 
         # Ticker -> target number of shares

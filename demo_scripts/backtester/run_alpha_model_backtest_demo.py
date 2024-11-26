@@ -56,7 +56,7 @@ def main():
 
     # ----- build models ----- #
     model = MovingAverageAlphaModel(fast_time_period=5, slow_time_period=20, risk_estimation_factor=1.25,
-                                    data_provider=ts.data_handler)
+                                    data_provider=ts.data_provider)
     model_tickers = [DummyTicker('AAA'), DummyTicker('BBB')]
     model_tickers_dict = {model: model_tickers}
 
