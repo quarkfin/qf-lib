@@ -29,8 +29,11 @@ class BacktestBroker(Broker):
         self.portfolio = portfolio
         self.execution_handler = execution_handler
 
-    def get_portfolio_value(self) -> Optional[float]:
-        return self.portfolio.net_liquidation
+    def get_portfolio_value(self, currency: str = None) -> Optional[float]:
+        if currency:
+            return self.portfolio.net_liquidation_in_currency(currency)
+        else:
+            return self.portfolio.net_liquidation
 
     def get_positions(self) -> List[Position]:
         return list(self.portfolio.open_positions_dict.values())

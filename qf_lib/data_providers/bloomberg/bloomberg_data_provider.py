@@ -31,6 +31,7 @@ from qf_lib.containers.futures.future_tickers.bloomberg_future_ticker import Blo
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
+from qf_lib.data_providers.exchange_rate_provider import ExchangeRateProvider
 from qf_lib.data_providers.futures_data_provider import FuturesDataProvider
 from qf_lib.data_providers.helpers import normalize_data_array, cast_dataframe_to_proper_type
 from qf_lib.data_providers.tickers_universe_provider import TickersUniverseProvider
@@ -54,7 +55,8 @@ except ImportError:
                   " library")
 
 
-class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider, FuturesDataProvider):
+class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider,
+                            FuturesDataProvider, ExchangeRateProvider):
     """
     Data Provider which provides financial data from Bloomberg.
     """
@@ -210,6 +212,32 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider, 
             else squeezed_result
 
         return casted_result
+
+    def create_exchange_rate_ticker(self, base_currency: str, quote_currency: str) -> BloombergTicker:
+        return BloombergTicker.from_string(f'{base_currency}{quote_currency} Curncy', security_type=SecurityType.FX)
+
+    def get_last_available_exchange_rate(self, base_currency: str, quote_currency: str,
+                                         frequency: Frequency = Frequency.DAILY):
+        """
+        Get last available exchange rate from the base currency to the quote currency in the provided frequency.
+
+        Parameters
+        -----------
+        base_currency: str
+            ISO code of the base currency (ex. 'USD' for US Dollar)
+        quote_currency: str
+            ISO code of the quote currency (ex. 'EUR' for Euro)
+        frequency: Frequency
+            frequency of the returned data
+
+        Returns
+        -------
+        float
+            last available exchange rate
+        """
+        currency_ticker = self.create_exchange_rate_ticker(base_currency, quote_currency)
+        quote_factor = self.get_current_values(currency_ticker, fields="QUOTE_FACTOR")
+        return self.get_last_available_price(currency_ticker, frequency=frequency)/quote_factor
 
     def get_history(self, tickers: Union[BloombergTicker, Sequence[BloombergTicker]], fields: Union[str, Sequence[str]],
                     start_date: datetime, end_date: datetime = None, frequency: Frequency = None,

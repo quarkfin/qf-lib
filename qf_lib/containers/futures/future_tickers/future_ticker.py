@@ -64,16 +64,22 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
         parameter value equal to "HMUZ", would restrict the future chain to only the contracts, which expire in
         March, June, September and December, even if contracts for any other months exist and are returned by the
         DataProvider get_futures_chain_tickers function.
+    security_type: SecurityType
+        Enum which denotes the type of the security. Defaults to SecurityType.FUTURE.
+    currency: str
+        ISO code of the currency of the ticker. Example "USD".
     """
 
     def __init__(self, name: str, family_id: str, N: int, days_before_exp_date: int, point_value: int = 1,
-                 designated_contracts: Optional[str] = None, security_type: SecurityType = SecurityType.FUTURE):
+                 designated_contracts: Optional[str] = None, security_type: SecurityType = SecurityType.FUTURE,
+                 currency: Optional[str] = None):
         super().__init__(family_id, security_type, point_value)
         self._name = name
         self.family_id = family_id
         self.point_value = point_value
         self.N = N
         self.designated_contracts = designated_contracts
+        self.currency = currency
 
         self._days_before_exp_date = days_before_exp_date
 

@@ -80,6 +80,14 @@ class BacktestTradingSession(TradingSession):
         # the same set of tickers and fields
         tickers, _ = convert_to_list(tickers, Ticker)
 
+        if self.portfolio.currency is not None:
+            currencies = set(ticker.currency for ticker in tickers)
+            currencies.discard(self.portfolio.currency)
+            if currencies:
+                tickers = tickers + [
+                    self.data_provider.create_exchange_rate_ticker(currency, self.portfolio.currency) for currency in currencies
+                ]
+
         self.data_provider = PrefetchingDataProvider(self.data_provider, sorted(tickers), sorted(PriceField.ohlcv()),
                                                      data_start, self.end_date, self.frequency,
                                                      timer=self.data_provider.timer)

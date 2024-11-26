@@ -23,6 +23,7 @@ from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
+from qf_lib.data_providers.exchange_rate_provider import ExchangeRateProvider
 from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 from qf_lib.data_providers.futures_data_provider import FuturesDataProvider
 from qf_lib.data_providers.helpers import chain_tickers_within_range
@@ -86,6 +87,10 @@ class PrefetchingDataProvider(PresetDataProvider):
                     all_tickers.extend(chain_tickers_within_range(ft, exp_dates[ft], start_date, end_date))
 
         data_array = data_provider.get_price(all_tickers, fields, start_date, end_date, frequency, timer)
+
+        if isinstance(data_provider, ExchangeRateProvider):
+            self.get_last_available_exchange_rate = lambda base_currency, quote_currency, frequency: \
+                data_provider.get_last_available_exchange_rate(base_currency, quote_currency, frequency)
 
         super().__init__(data=data_array,
                          exp_dates=exp_dates,
