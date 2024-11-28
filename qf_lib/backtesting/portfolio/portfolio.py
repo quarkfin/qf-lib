@@ -24,6 +24,7 @@ from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
+from qf_lib.data_providers.exchange_rate_provider import ExchangeRateProvider
 
 
 class Portfolio:
@@ -67,8 +68,12 @@ class Portfolio:
         """Last available exchange rate from the specified currency to the portfolio currency."""
         if currency == self.currency:
             return 1.
-        return self.data_handler.get_last_available_exchange_rate(currency, self.currency,
-                                                                  frequency=self.data_handler.default_frequency)
+
+        if isinstance(self.data_provider, ExchangeRateProvider):
+            return self.data_provider.get_last_available_exchange_rate(currency, self.currency,
+                                                                       frequency=self.data_provider.frequency)
+        else:
+            raise NotImplementedError()
 
     def net_liquidation_in_currency(self, currency: str = None) -> float:
         """Converts the current net liquidation from the portfolio currency into the specified currency"""
@@ -121,7 +126,7 @@ class Portfolio:
         self.gross_exposure_of_positions = 0
 
         tickers = list(self.open_positions_dict.keys())
-        current_prices_series = self.data_handler.get_last_available_price(tickers=tickers)
+        current_prices_series = self.data_provider.get_last_available_price(tickers=tickers)
 
         current_positions = {}
         for ticker, position in self.open_positions_dict.items():
@@ -138,7 +143,7 @@ class Portfolio:
                 current_positions[ticker] = BacktestPositionSummary(position)
 
         if record:
-            self._dates.append(self.timer.now())
+            self._dates.append(self.data_provider.timer.now())
             self._portfolio_values.append(self.net_liquidation)
             self._leverage_list.append(self.gross_exposure_of_positions / self.net_liquidation)
             self._positions_history.append(current_positions)

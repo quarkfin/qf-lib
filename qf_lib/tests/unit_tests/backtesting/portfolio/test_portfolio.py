@@ -102,7 +102,7 @@ class TestPortfolio(unittest.TestCase):
         self.assertEqual(len(portfolio.open_positions_dict), 1)
 
     def test_transact_transaction_2(self):
-        portfolio, dh = self.get_portfolio_and_data_provider()
+        portfolio, data_provider = self.get_portfolio_and_data_provider()
 
         # First transaction
         transaction_1 = Transaction(self.random_time, self.ticker, quantity=50, price=100, commission=5)
@@ -113,7 +113,7 @@ class TestPortfolio(unittest.TestCase):
         portfolio.update()
 
         # Get the new price of the contract
-        new_price = dh.get_last_available_price(self.ticker)
+        new_price = data_provider.get_last_available_price(self.ticker)
 
         pnl_1 = (new_price - transaction_1.price) * transaction_1.quantity * transaction_1.ticker.point_value \
             - transaction_1.commission
@@ -144,7 +144,7 @@ class TestPortfolio(unittest.TestCase):
         self.assertEqual(len(portfolio.open_positions_dict), 1)
 
     def test_transact_transaction_3(self):
-        portfolio, dh = self.get_portfolio_and_data_provider()
+        portfolio, data_provider = self.get_portfolio_and_data_provider()
 
         # First transaction
         transaction_1 = Transaction(self.random_time, self.fut_ticker, quantity=50, price=200, commission=7)
@@ -155,7 +155,7 @@ class TestPortfolio(unittest.TestCase):
         portfolio.update()
 
         # Get the new price of the contract
-        new_price = dh.get_last_available_price(self.fut_ticker)
+        new_price = data_provider.get_last_available_price(self.fut_ticker)
 
         pnl_1 = (new_price - transaction_1.price) * transaction_1.quantity * transaction_1.ticker.point_value \
             - transaction_1.commission
@@ -194,7 +194,7 @@ class TestPortfolio(unittest.TestCase):
 
     def test_transact_transaction_close_position_2_transactions(self):
         for quantity in (-50, 50):
-            portfolio, dh = self.get_portfolio_and_data_provider()
+            portfolio, data_provider = self.get_portfolio_and_data_provider()
             all_commissions = 0.0
 
             transaction_1 = Transaction(self.random_time, self.fut_ticker, quantity=quantity, price=200, commission=7)
@@ -203,7 +203,7 @@ class TestPortfolio(unittest.TestCase):
             self.data_provider_prices = self.prices_series
             portfolio.update()
 
-            new_price = dh.get_last_available_price(self.fut_ticker)
+            new_price = data_provider.get_last_available_price(self.fut_ticker)
             transaction_2 = Transaction(self.end_time, self.fut_ticker, quantity=-transaction_1.quantity,
                                         price=new_price,
                                         commission=transaction_1.commission)
@@ -221,7 +221,7 @@ class TestPortfolio(unittest.TestCase):
             self.assertEqual(len(portfolio.open_positions_dict), 0)
 
     def test_transact_transaction_split_position(self):
-        portfolio, dh = self.get_portfolio_and_data_provider()
+        portfolio, data_provider = self.get_portfolio_and_data_provider()
 
         # Transact two transaction, which will result in transactions splitting
         quantity_after_first_transaction = 50
@@ -236,7 +236,7 @@ class TestPortfolio(unittest.TestCase):
 
         # Set new prices
         self.data_provider_prices = self.prices_series
-        new_price = dh.get_last_available_price(self.fut_ticker)  # == 250
+        new_price = data_provider.get_last_available_price(self.fut_ticker)  # == 250
         portfolio.update()
 
         # Transact the second transaction
@@ -262,7 +262,7 @@ class TestPortfolio(unittest.TestCase):
         self.assertEqual(len(portfolio.open_positions_dict), 1)
 
     def test_transact_transaction_split_and_close(self):
-        portfolio, dh = self.get_portfolio_and_data_provider()
+        portfolio, data_provider = self.get_portfolio_and_data_provider()
 
         # Transact the initial transaction
         transactions = []
@@ -270,7 +270,7 @@ class TestPortfolio(unittest.TestCase):
 
         # Set initial price for the given ticker
         self.data_provider_prices = self.prices_down
-        price_1 = dh.get_last_available_price(self.fut_ticker)  # == 210
+        price_1 = data_provider.get_last_available_price(self.fut_ticker)  # == 210
 
         initial_transaction = Transaction(self.random_time, self.fut_ticker, quantity=quantity, price=price_1,
                                           commission=10)
@@ -280,7 +280,7 @@ class TestPortfolio(unittest.TestCase):
 
         # Change of price for the given ticker
         self.data_provider_prices = self.prices_series
-        price_2 = dh.get_last_available_price(self.fut_ticker)  # == 250
+        price_2 = data_provider.get_last_available_price(self.fut_ticker)  # == 250
 
         transaction_to_split = Transaction(self.random_time, self.fut_ticker, quantity=(-2) * quantity,
                                            price=price_2, commission=18)
@@ -294,7 +294,7 @@ class TestPortfolio(unittest.TestCase):
 
         # Change of price for the given ticker
         self.data_provider_prices = self.prices_series
-        price_3 = dh.get_last_available_price(self.fut_ticker)  # == 270
+        price_3 = data_provider.get_last_available_price(self.fut_ticker)  # == 270
         closing_transaction = Transaction(self.random_time, self.fut_ticker, quantity=quantity,
                                           price=price_3, commission=5)
         portfolio.transact_transaction(closing_transaction)
@@ -308,8 +308,8 @@ class TestPortfolio(unittest.TestCase):
         expected_portfolio_eod_series = PricesSeries()
 
         # Empty portfolio
-        portfolio, dh = self.get_portfolio_and_data_provider()
-        timer = dh.timer
+        portfolio, data_provider = self.get_portfolio_and_data_provider()
+        timer = data_provider.timer
         portfolio.update(record=True)
         expected_portfolio_eod_series[timer.time] = self.initial_cash
 
@@ -322,7 +322,7 @@ class TestPortfolio(unittest.TestCase):
 
         position = portfolio.open_positions_dict[self.fut_ticker]
 
-        price_1 = dh.get_last_available_price(self.fut_ticker)
+        price_1 = data_provider.get_last_available_price(self.fut_ticker)
         pnl = self.fut_ticker.point_value * transaction_1.quantity * (price_1 - transaction_1.price)
         nav = self.initial_cash + pnl - transaction_1.commission
         expected_portfolio_eod_series[timer.time] = nav
@@ -332,7 +332,7 @@ class TestPortfolio(unittest.TestCase):
         self.data_provider_prices = self.prices_up
         portfolio.update(record=True)
 
-        price_2 = dh.get_last_available_price(self.fut_ticker)  # == 270
+        price_2 = data_provider.get_last_available_price(self.fut_ticker)  # == 270
         pnl = self.fut_ticker.point_value * transaction_1.quantity * (price_2 - price_1)
         nav += pnl
         expected_portfolio_eod_series[timer.time] = nav
@@ -354,7 +354,7 @@ class TestPortfolio(unittest.TestCase):
         self.data_provider_prices = self.prices_down
         portfolio.update(record=True)
 
-        price_3 = dh.get_last_available_price(self.fut_ticker)  # == 210
+        price_3 = data_provider.get_last_available_price(self.fut_ticker)  # == 210
         pnl2 = self.fut_ticker.point_value * position.quantity() * (price_3 - price_2)
         nav += pnl2
         expected_portfolio_eod_series[timer.time] = nav
@@ -368,8 +368,8 @@ class TestPortfolio(unittest.TestCase):
         timer.set_current_time(new_time)
 
     def test_portfolio_leverage1(self):
-        portfolio, dh = self.get_portfolio_and_data_provider()
-        timer = dh.timer
+        portfolio, data_provider = self.get_portfolio_and_data_provider()
+        timer = data_provider.timer
 
         expected_leverage_series = QFSeries()
         nav = self.initial_cash
@@ -437,8 +437,8 @@ class TestPortfolio(unittest.TestCase):
         expected_dates = []
 
         # empty portfolio
-        portfolio, dh = self.get_portfolio_and_data_provider()
-        timer = dh.timer
+        portfolio, data_provider = self.get_portfolio_and_data_provider()
+        timer = data_provider.timer
         portfolio.update(record=True)
         expected_values.append(0)
         expected_dates.append(self.start_time)
@@ -507,8 +507,8 @@ class TestPortfolio(unittest.TestCase):
 
     def test_portfolio_history(self):
         # empty portfolio
-        portfolio, dh = self.get_portfolio_and_data_provider()
-        timer = dh.timer
+        portfolio, data_provider = self.get_portfolio_and_data_provider()
+        timer = data_provider.timer
         portfolio.update(record=True)
 
         # buy contract

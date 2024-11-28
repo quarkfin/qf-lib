@@ -25,6 +25,7 @@ from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
+from qf_lib.data_providers.bloomberg.bloomberg_data_provider import BloombergDataProvider
 from qf_lib.tests.helpers.testing_tools.containers_comparison import assert_series_equal
 from qf_lib.tests.unit_tests.backtesting.portfolio.dummy_ticker import DummyTicker
 
@@ -54,8 +55,8 @@ class TestPortfolioWithCurrency(unittest.TestCase):
         self.data_provider_prices = None
 
     def get_portfolio_and_data_provider(self):
-        data_provider = Mock(spec=AbstractPriceDataProvider)
-        data_provider.default_frequency = Frequency.DAILY
+        data_provider = Mock(spec=BloombergDataProvider)
+        data_provider.frequency = Frequency.DAILY
         data_provider.get_last_available_price.side_effect = lambda tickers: self.data_provider_prices[tickers] \
             if tickers else None
         data_provider.get_last_available_exchange_rate.side_effect = \
@@ -64,8 +65,9 @@ class TestPortfolioWithCurrency(unittest.TestCase):
 
         timer = SettableTimer()
         timer.set_current_time(self.start_time)
+        data_provider.timer = timer
 
-        portfolio = Portfolio(data_provider, self.initial_cash, timer, currency=self.currency)
+        portfolio = Portfolio(data_provider, self.initial_cash, currency=self.currency)
         return portfolio, data_provider, timer
 
     @staticmethod

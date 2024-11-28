@@ -60,6 +60,8 @@ class PrefetchingDataProvider(PresetDataProvider):
                  fields: Union[PriceField, Sequence[PriceField]],
                  start_date: datetime, end_date: datetime,
                  frequency: Frequency, timer: Optional[Timer] = None):
+
+        self.data_provider = data_provider
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
         # Convert fields into list in order to return a QFDataArray as the result of get_price function
@@ -88,13 +90,15 @@ class PrefetchingDataProvider(PresetDataProvider):
 
         data_array = data_provider.get_price(all_tickers, fields, start_date, end_date, frequency, timer)
 
-        if isinstance(data_provider, ExchangeRateProvider):
-            self.get_last_available_exchange_rate = lambda base_currency, quote_currency, frequency: \
-                data_provider.get_last_available_exchange_rate(base_currency, quote_currency, frequency)
-
         super().__init__(data=data_array,
                          exp_dates=exp_dates,
                          start_date=start_date,
                          end_date=end_date,
                          frequency=frequency,
                          timer=timer)
+
+    def get_last_available_exchange_rate(self, base_currency, quote_currency, frequency):
+        if isinstance(self.data_provider, ExchangeRateProvider):
+            return self.data_provider.get_last_available_exchange_rate(base_currency, quote_currency, frequency)
+        else:
+            raise NotImplementedError()
