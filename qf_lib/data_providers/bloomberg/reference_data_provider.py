@@ -103,7 +103,7 @@ class ReferenceDataProvider:
                 value = field_element.getValueAsBool()
             elif element_data_type in (DataType.DATETIME, DataType.DATE):
                 value = to_datetime(field_element.getValueAsDatetime())
-            elif element_data_type in DataType.TIME:
+            elif element_data_type is DataType.TIME:
                 value = field_element.getValueAsDatetime()
             else:
                 value = field_element.getValueAsString()
