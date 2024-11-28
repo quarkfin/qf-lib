@@ -24,7 +24,6 @@ from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
-from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 from qf_lib.data_providers.bloomberg.bloomberg_data_provider import BloombergDataProvider
 from qf_lib.tests.helpers.testing_tools.containers_comparison import assert_series_equal
 from qf_lib.tests.unit_tests.backtesting.portfolio.dummy_ticker import DummyTicker
