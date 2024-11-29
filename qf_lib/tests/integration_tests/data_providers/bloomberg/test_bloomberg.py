@@ -298,7 +298,7 @@ class TestBloomberg(unittest.TestCase):
         self.assertIsInstance(result, str)
 
     def test_get_float_values(self):
-        float_field = "PX_Last"
+        float_field = "PX_LAST"
         result = self.bbg_provider.get_current_values(self.SINGLE_TICKER, float_field)
         self.assertIsInstance(result, float)
 
