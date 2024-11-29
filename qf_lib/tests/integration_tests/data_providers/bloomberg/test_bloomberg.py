@@ -11,7 +11,7 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-
+import datetime
 import unittest
 
 import numpy as np
@@ -289,6 +289,33 @@ class TestBloomberg(unittest.TestCase):
         data_array = self.bbg_provider.get_price(tickers, [PriceField.Close, PriceField.Volume], start_date, end_date,
                                                  Frequency.DAILY)
         self.assertEqual(data_array.dtype, np.float64)
+
+    # =========================== Test Value Parser ====================================================
+
+    def test_get_string_values(self):
+        string_field = "NAME"
+        result = self.bbg_provider.get_current_values(self.SINGLE_TICKER, string_field)
+        self.assertIsInstance(result, str)
+
+    def test_get_float_values(self):
+        float_field = "PX_LAST"
+        result = self.bbg_provider.get_current_values(self.SINGLE_TICKER, float_field)
+        self.assertIsInstance(result, float)
+
+    def test_get_date_values(self):
+        date_field = "LAST_UPDATE"
+        result = self.bbg_provider.get_current_values(self.SINGLE_TICKER, date_field)
+        self.assertIsInstance(result, datetime.datetime)
+
+    def test_get_time_values(self):
+        time_field = "VWAP_END_TIME"
+        result = self.bbg_provider.get_current_values(self.SINGLE_TICKER, time_field)
+        self.assertIsInstance(result, datetime.time)
+
+    def test_get_none_values(self):
+        none_field = "BN_SURVEY_MEDIAN"
+        result = self.bbg_provider.get_current_values(self.SINGLE_TICKER, none_field)
+        self.assertIsNone(result)
 
 
 if __name__ == '__main__':
