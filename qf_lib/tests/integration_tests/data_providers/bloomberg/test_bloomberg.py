@@ -290,7 +290,7 @@ class TestBloomberg(unittest.TestCase):
                                                  Frequency.DAILY)
         self.assertEqual(data_array.dtype, np.float64)
 
-    # =========================== Test Value Parser  ====================================================
+    # =========================== Test Value Parser ====================================================
 
     def test_get_string_values(self):
         string_field = "NAME"
