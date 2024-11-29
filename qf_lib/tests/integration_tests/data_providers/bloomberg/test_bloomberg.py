@@ -293,8 +293,8 @@ class TestBloomberg(unittest.TestCase):
     # =========================== Test Value Parser ====================================================
 
     def test_get_string_values(self):
-        string_field = "NAME"
-        result = self.bbg_provider.get_current_values(self.SINGLE_TICKER, string_field)
+        field = "NAME"
+        result = self.bbg_provider.get_current_values(self.SINGLE_TICKER, field)
         self.assertIsInstance(result, str)
 
     def test_get_float_values(self):
