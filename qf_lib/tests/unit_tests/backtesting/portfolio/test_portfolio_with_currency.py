@@ -105,8 +105,8 @@ class TestPortfolioWithCurrency(unittest.TestCase):
         portfolio_value_USD = portfolio.net_liquidation_in_currency(currency="USD")
         portfolio_value_CHF = portfolio.net_liquidation_in_currency(currency="CHF")
 
-        assert portfolio_value_USD == 1000000 / 0.95
-        assert portfolio_value_CHF == 1000000
+        assert portfolio_value_USD == self.initial_cash / self.prices_series.loc[self.currency_ticker]
+        assert portfolio_value_CHF == self.initial_cash
 
     def test_net_liquidation_no_currency(self):
 
