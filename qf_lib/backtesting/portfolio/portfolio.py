@@ -73,7 +73,8 @@ class Portfolio:
             return self.data_provider.get_last_available_exchange_rate(currency, self.currency,
                                                                        frequency=self.data_provider.frequency)
         else:
-            raise NotImplementedError()
+            raise NotImplementedError(f"Portfolio currency is set to {self.currency} but {type(self.data_provider)} "
+                                      "does not extend ExchangeRateProvider.")
 
     def net_liquidation_in_currency(self, currency: str = None) -> float:
         """Converts the current net liquidation from the portfolio currency into the specified currency"""

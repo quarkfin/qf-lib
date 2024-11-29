@@ -101,4 +101,4 @@ class PrefetchingDataProvider(PresetDataProvider):
         if isinstance(self.data_provider, ExchangeRateProvider):
             return self.data_provider.get_last_available_exchange_rate(base_currency, quote_currency, frequency)
         else:
-            raise NotImplementedError()
+            raise NotImplementedError(f"{type(self.data_provider)} does not extend ExchangeRateProvider.")
