@@ -32,6 +32,7 @@ from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.helpers import compute_container_hash
 from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
+from qf_lib.data_providers.exchange_rate_provider import ExchangeRateProvider
 from qf_lib.data_providers.prefetching_data_provider import PrefetchingDataProvider
 
 
@@ -79,6 +80,14 @@ class BacktestTradingSession(TradingSession):
         # The tickers and price fields are sorted in order to always return the same hash of the data bundle for
         # the same set of tickers and fields
         tickers, _ = convert_to_list(tickers, Ticker)
+
+        if self.portfolio.currency is not None and isinstance(self.data_provider, ExchangeRateProvider):
+            currencies = set(ticker.currency for ticker in tickers)
+            currencies.discard(self.portfolio.currency)
+            if currencies:
+                tickers = tickers + [
+                    self.data_provider.create_exchange_rate_ticker(currency, self.portfolio.currency) for currency in currencies
+                ]
 
         self.data_provider = PrefetchingDataProvider(self.data_provider, sorted(tickers), sorted(PriceField.ohlcv()),
                                                      data_start, self.end_date, self.frequency,

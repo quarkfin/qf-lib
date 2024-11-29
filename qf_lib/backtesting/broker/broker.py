@@ -37,7 +37,7 @@ class Broker(metaclass=ABCMeta):
         self.contract_ticker_mapper = contract_ticker_mapper
 
     @abstractmethod
-    def get_portfolio_value(self) -> float:
+    def get_portfolio_value(self, currency: Optional[str] = None) -> float:
         pass
 
     @abstractmethod

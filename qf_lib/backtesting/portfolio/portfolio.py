@@ -12,7 +12,7 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 from datetime import datetime
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 from qf_lib.backtesting.portfolio.backtest_position import BacktestPosition, BacktestPositionSummary
 from qf_lib.backtesting.portfolio.position_factory import BacktestPositionFactory
@@ -24,16 +24,18 @@ from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
+from qf_lib.data_providers.exchange_rate_provider import ExchangeRateProvider
 
 
 class Portfolio:
-    def __init__(self, data_provider: AbstractPriceDataProvider, initial_cash: float):
+    def __init__(self, data_provider: AbstractPriceDataProvider, initial_cash: float, currency: Optional[str] = None):
         """
         On creation, the Portfolio object contains no positions and all values are "reset" to the initial
         cash, with no PnL.
         """
         self.initial_cash = initial_cash
         self.data_provider = data_provider
+        self.currency = currency
 
         self.net_liquidation = initial_cash
         """ Cash value includes futures P&L + stock value + securities options value + bond value + fund value. """
@@ -62,6 +64,27 @@ class Portfolio:
 
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
+    def _current_exchange_rate(self, currency: str) -> float:
+        """Last available exchange rate from the specified currency to the portfolio currency."""
+        if currency == self.currency:
+            return 1.
+
+        if isinstance(self.data_provider, ExchangeRateProvider):
+            return self.data_provider.get_last_available_exchange_rate(currency, self.currency,
+                                                                       frequency=self.data_provider.frequency)
+        else:
+            raise NotImplementedError(f"Portfolio currency is set to {self.currency} but {type(self.data_provider)} "
+                                      "does not extend ExchangeRateProvider.")
+
+    def net_liquidation_in_currency(self, currency: str = None) -> float:
+        """Converts the current net liquidation from the portfolio currency into the specified currency"""
+        if currency == self.currency:
+            return self.net_liquidation
+        elif self.currency is not None:
+            return self.net_liquidation/self._current_exchange_rate(currency)
+        else:
+            raise ValueError("Portfolio currency is not specified.")
+
     def transact_transaction(self, transaction: Transaction):
         """
         Adjusts positions to account for a transaction.
@@ -88,7 +111,10 @@ class Portfolio:
                 new_position = self._create_new_position(remaining_transaction)
                 transaction_cost += new_position.transact_transaction(remaining_transaction)
 
-        self.current_cash += transaction_cost
+        if self.currency is not None:
+            self.current_cash += transaction_cost*self._current_exchange_rate(transaction.ticker.currency)
+        else:
+            self.current_cash += transaction_cost
 
     def update(self, record=False):
         """
@@ -109,8 +135,11 @@ class Portfolio:
             position.update_price(bid_price=security_price, ask_price=security_price)
             position_value = position.market_value()
             position_exposure = position.total_exposure()
-            self.net_liquidation += position_value
-            self.gross_exposure_of_positions += abs(position_exposure)
+
+            current_exchange_rate = self._current_exchange_rate(ticker.currency) if self.currency is not None else 1.
+            self.net_liquidation += position_value*current_exchange_rate
+            self.gross_exposure_of_positions += abs(position_exposure)*current_exchange_rate
+
             if record:
                 current_positions[ticker] = BacktestPositionSummary(position)
 

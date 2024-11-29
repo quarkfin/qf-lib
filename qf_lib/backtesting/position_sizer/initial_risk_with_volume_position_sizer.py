@@ -87,7 +87,7 @@ class InitialRiskWithVolumePositionSizer(InitialRiskPositionSizer):
         """
         ticker: Ticker = signal.ticker
 
-        portfolio_value = self._broker.get_portfolio_value()
+        portfolio_value = self._broker.get_portfolio_value(ticker.currency)
         target_percentage = self._compute_target_percentage(signal)
         target_value = portfolio_value * target_percentage
 

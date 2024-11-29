@@ -14,7 +14,7 @@
 
 from abc import abstractmethod, ABCMeta
 from functools import total_ordering
-from typing import Union, Sequence
+from typing import Optional, Union, Sequence
 
 from qf_lib.common.enums.quandl_db_type import QuandlDBType
 from qf_lib.common.enums.security_type import SecurityType
@@ -34,11 +34,14 @@ class Ticker(metaclass=ABCMeta):
         SecurityType.FUTURE for a futures contract etc.
     point_value: int
         size of the contract as given by the ticker's Data Provider.
+    currency: Optional[str]
+        ISO code of the currency of the ticker. Example "USD".
     """
-    def __init__(self, ticker: str, security_type: SecurityType, point_value: int):
+    def __init__(self, ticker: str, security_type: SecurityType, point_value: int, currency: Optional[str] = None):
         self.ticker = ticker
         self.security_type = security_type
         self.point_value = point_value
+        self.currency = currency
         self._name = ticker
 
         self.logger = qf_logger.getChild(self.__class__.__name__)
@@ -70,6 +73,9 @@ class Ticker(metaclass=ABCMeta):
         to point to the name of the asset (e.g. Cotton, Corn) to faciliate the further analysis of the tickers in
         transactions, portfolio etc. """
         self._name = name
+
+    def set_currency(self, currency: str):
+        self.currency = currency
 
     @abstractmethod
     def from_string(self, ticker_str: Union[str, Sequence[str]]) -> Union['Ticker', Sequence['Ticker']]:
@@ -116,20 +122,23 @@ class BloombergTicker(Ticker):
     point_value: int
         size of the contract as given by the ticker's Data Provider. Used mostly by tickers of security_type FUTURE and
         by default equals 1.
+    currency: str
+        ISO code of the currency of the ticker. Example "USD".
     """
-    def __init__(self, ticker: str, security_type: SecurityType = SecurityType.STOCK, point_value: int = 1):
-        super().__init__(ticker, security_type, point_value)
+    def __init__(self, ticker: str, security_type: SecurityType = SecurityType.STOCK,
+                 point_value: int = 1, currency: Optional[str] = None):
+        super().__init__(ticker, security_type, point_value, currency)
 
     @classmethod
     def from_string(cls, ticker_str: Union[str, Sequence[str]], security_type: SecurityType = SecurityType.STOCK,
-                    point_value: int = 1) -> Union["BloombergTicker", Sequence["BloombergTicker"]]:
+                    point_value: int = 1, currency: Optional[str] = None) -> Union["BloombergTicker", Sequence["BloombergTicker"]]:
         """
         Example: BloombergTicker.from_string('SPX Index')
         """
         if isinstance(ticker_str, str):
-            return BloombergTicker(ticker_str, security_type, point_value)
+            return BloombergTicker(ticker_str, security_type, point_value, currency)
         else:
-            return [BloombergTicker(t, security_type, point_value) for t in ticker_str]
+            return [BloombergTicker(t, security_type, point_value, currency) for t in ticker_str]
 
 
 class PortaraTicker(Ticker):
@@ -145,17 +154,19 @@ class PortaraTicker(Ticker):
         SecurityType.FUTURE for a futures contract etc.
     point_value: int
         size of the contract as given by the Portara (e.g. 50 for Silver future contracts).
+    currency: Currency
+        ISO code of the currency of the ticker. Example "USD".
     """
-    def __init__(self, ticker: str, security_type: SecurityType, point_value):
-        super().__init__(ticker, security_type, point_value)
+    def __init__(self, ticker: str, security_type: SecurityType, point_value, currency: Optional[str] = None):
+        super().__init__(ticker, security_type, point_value, currency)
 
     @classmethod
     def from_string(cls, ticker_str: Union[str, Sequence[str]], security_type: SecurityType = SecurityType.STOCK,
-                    point_value: int = 1) -> Union["PortaraTicker", Sequence["PortaraTicker"]]:
+                    point_value: int = 1, currency: Optional[str] = None) -> Union["PortaraTicker", Sequence["PortaraTicker"]]:
         if isinstance(ticker_str, str):
-            return PortaraTicker(ticker_str, security_type, point_value)
+            return PortaraTicker(ticker_str, security_type, point_value, currency)
         else:
-            return [PortaraTicker(t, security_type, point_value) for t in ticker_str]
+            return [PortaraTicker(t, security_type, point_value, currency) for t in ticker_str]
 
 
 class BinanceTicker(Ticker):
@@ -163,12 +174,12 @@ class BinanceTicker(Ticker):
 
     Parameters
     --------------
-    currency:
-        identifier of the security, e.g. 'BTC'
+    base_ccy:
+        the base currency of the asset, e.g. 'BTC'
     quote_ccy:
         the quote currency of the asset.
         For example to trade BTC using USDT use:
-            BTC as currency
+            BTC as base_ccy
             USDT as quote_ccy
         quote currency here should be the same as quote_ccy set in BinanceContractTickerMapper
     security_type:
@@ -177,12 +188,15 @@ class BinanceTicker(Ticker):
     point_value:
         size of the contract as given by the ticker's Data Provider. Used mostly by tickers of security_type FUTURE and
         by default equals 1.
+    rounding_precision:
+        rounding precision. Default 5.
     """
-    def __init__(self, currency: str, quote_ccy: str, security_type: SecurityType = SecurityType.CRYPTO,
+    def __init__(self, base_ccy: str, quote_ccy: str, security_type: SecurityType = SecurityType.CRYPTO,
                  point_value: int = 1, rounding_precision: int = 5):
-        ticker_str = currency + quote_ccy if currency != quote_ccy and quote_ccy is not None else currency
+        ticker_str = base_ccy + quote_ccy if base_ccy != quote_ccy and \
+            quote_ccy is not None else base_ccy
         super().__init__(ticker_str, security_type, point_value)
-        self._currency = currency
+        self._base_ccy = base_ccy
         self._quote_ccy = quote_ccy
         self._rounding_precision = rounding_precision
 
@@ -191,8 +205,8 @@ class BinanceTicker(Ticker):
         raise NotImplementedError('Binance from_string method is not implemented. Please use init function.')
 
     @property
-    def currency(self) -> str:
-        return self._currency
+    def base_ccy(self) -> str:
+        return self._base_ccy
 
     @property
     def quote_ccy(self) -> str:
@@ -218,10 +232,12 @@ class HaverTicker(Ticker):
     point_value: int
         size of the contract as given by the ticker's Data Provider. Used mostly by tickers of security_type FUTURE and
         by default equals 1.
+    currency: str
+        ISO code of the currency of the ticker. Example "USD".
     """
     def __init__(self, ticker: str, database_name: str, security_type: SecurityType = SecurityType.STOCK,
-                 point_value: int = 1):
-        super().__init__(ticker, security_type, point_value)
+                 point_value: int = 1, currency: Optional[str] = None):
+        super().__init__(ticker, security_type, point_value, currency)
         self.database_name = database_name
 
     def as_string(self) -> str:
@@ -232,12 +248,12 @@ class HaverTicker(Ticker):
 
     @classmethod
     def from_string(cls, ticker_str: Union[str, Sequence[str]], security_type: SecurityType = SecurityType.STOCK,
-                    point_value: int = 1) -> Union["HaverTicker", Sequence["HaverTicker"]]:
+                    point_value: int = 1, currency: Optional[str] = None) -> Union["HaverTicker", Sequence["HaverTicker"]]:
         """ Example: HaverTicker.from_string('RECESSQ2@USECON') """
 
         def to_ticker(ticker_string: str):
             ticker, db_name = ticker_string.split('@')
-            return HaverTicker(ticker, db_name, security_type=security_type, point_value=point_value)
+            return HaverTicker(ticker, db_name, security_type=security_type, point_value=point_value, currency=currency)
 
         if isinstance(ticker_str, str):
             return to_ticker(ticker_str)
@@ -262,10 +278,12 @@ class QuandlTicker(Ticker):
     point_value: int
         size of the contract as given by the ticker's Data Provider. Used mostly by tickers of security_type FUTURE and
         by default equals 1.
+    currency: str
+        ISO code of the currency of the ticker. Example "USD".
     """
     def __init__(self, ticker: str, database_name: str, database_type: QuandlDBType = QuandlDBType.Timeseries,
-                 security_type: SecurityType = SecurityType.STOCK, point_value: int = 1):
-        super().__init__(ticker, security_type, point_value)
+                 security_type: SecurityType = SecurityType.STOCK, point_value: int = 1, currency: Optional[str] = None):
+        super().__init__(ticker, security_type, point_value, currency)
         self.database_name = database_name
         self.database_type = database_type
 
@@ -287,8 +305,8 @@ class QuandlTicker(Ticker):
 
     @classmethod
     def from_string(cls, ticker_str: Union[str, Sequence[str]], db_type: QuandlDBType = QuandlDBType.Timeseries,
-                    security_type: SecurityType = SecurityType.STOCK, point_value: int = 1) \
-            -> Union["QuandlTicker", Sequence["QuandlTicker"]]:
+                    security_type: SecurityType = SecurityType.STOCK, point_value: int = 1,
+                    currency: Optional[str] = None) -> Union["QuandlTicker", Sequence["QuandlTicker"]]:
         """
         Example: QuandlTicker.from_string('WIKI/MSFT')
         Note: this method supports only the Timeseries tickers at the moment.
@@ -296,7 +314,8 @@ class QuandlTicker(Ticker):
 
         def to_ticker(ticker_string: str):
             db_name, ticker = ticker_string.rsplit('/', 1)
-            return QuandlTicker(ticker, db_name, db_type, security_type=security_type, point_value=point_value)
+            return QuandlTicker(ticker, db_name, db_type, security_type=security_type,
+                                point_value=point_value, currency=currency)
 
         if isinstance(ticker_str, str):
             return to_ticker(ticker_str)
@@ -317,17 +336,20 @@ class CcyTicker(Ticker):
     point_value: int
         size of the contract as given by the ticker's Data Provider. Used mostly by tickers of security_type FUTURE and
         by default equals 1.
+    currency: str
+        ISO code of the currency of the ticker. Example "USD".
     """
-    def __init__(self, ticker: str, security_type: SecurityType = SecurityType.CRYPTO, point_value: int = 1):
-        super().__init__(ticker, security_type, point_value)
+    def __init__(self, ticker: str, security_type: SecurityType = SecurityType.CRYPTO, point_value: int = 1,
+                 currency: Optional[str] = None):
+        super().__init__(ticker, security_type, point_value, currency)
 
     @classmethod
     def from_string(cls, ticker_str: Union[str, Sequence[str]], security_type: SecurityType = SecurityType.CRYPTO,
-                    point_value: int = 1) -> Union["CcyTicker", Sequence["CcyTicker"]]:
+                    point_value: int = 1, currency: Optional[str] = None) -> Union["CcyTicker", Sequence["CcyTicker"]]:
         """ Example: CcyTicker.from_string('Bitcoin'). """
 
         def to_ticker(ticker_string: str,):
-            return CcyTicker(ticker_string.lower(), security_type, point_value)
+            return CcyTicker(ticker_string.lower(), security_type, point_value, currency)
 
         if isinstance(ticker_str, str):
             return to_ticker(ticker_str)
