@@ -17,22 +17,20 @@ from itertools import groupby
 from typing import Union, Sequence, Dict
 
 import pandas as pd
-from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.enums.quandl_db_type import QuandlDBType
-from qf_lib.common.tickers.tickers import QuandlTicker, Ticker
+from qf_lib.common.tickers.tickers import QuandlTicker
 from qf_lib.common.utils.dateutils.date_to_string import date_to_str
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
-from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.qf_series import QFSeries
+from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 from qf_lib.data_providers.helpers import tickers_dict_to_data_array, \
     normalize_data_array, get_fields_from_tickers_data_dict
-from qf_lib.data_providers.data_provider import DataProvider
 from qf_lib.settings import Settings
 
 try:
@@ -43,7 +41,7 @@ except ImportError:
     warnings.warn("No quandl installed. If you would like to use QuandlDataProvider first install the quandl library.")
 
 
-class QuandlDataProvider(DataProvider):
+class QuandlDataProvider(AbstractPriceDataProvider):
     """
     Class providing the Quandl data.
     The table database: WIKI/PRICES offers stock prices, dividends and splits for 3000 US publicly-traded companies.
@@ -151,17 +149,17 @@ class QuandlDataProvider(DataProvider):
         return {QuandlTicker}
 
     def _map_fields_to_str(self, fields: Sequence[PriceField], database_name: str, database_type: QuandlDBType):
-        field_to_str = self._price_field_to_str_map(database_name, database_type)
+        field_to_str = self.price_field_to_str_map(database_name, database_type)
         fields_as_strings = [field_to_str[field] for field in fields]
         return fields_as_strings
 
     def _str_to_price_field_map(self, database_name: str, database_type: QuandlDBType):
-        field_to_str = self._price_field_to_str_map(database_name, database_type)
+        field_to_str = self.price_field_to_str_map(database_name, database_type)
         str_to_field = {field_str: field for field, field_str in field_to_str.items()}
 
         return str_to_field
 
-    def _price_field_to_str_map(self, database_name: str, database_type: QuandlDBType) -> Dict[PriceField, str]:
+    def price_field_to_str_map(self, database_name: str, database_type: QuandlDBType) -> Dict[PriceField, str]:
         if database_type == QuandlDBType.Table and database_name == 'WIKI/PRICES':
             price_field_dict = {
                 PriceField.Open: 'adj_open',
@@ -299,11 +297,3 @@ class QuandlDataProvider(DataProvider):
         table = table.loc[start_date:end_date]
 
         return table
-
-    def get_futures_chain_tickers(self, tickers: Union[FutureTicker, Sequence[FutureTicker]],
-                                  expiration_date_fields: Union[ExpirationDateField, Sequence[ExpirationDateField]]) \
-            -> Dict[FutureTicker, Union[QFSeries, QFDataFrame]]:
-        raise NotImplementedError("Downloading Future Chain Tickers in QuandlDataProvider is not supported yet")
-
-    def expiration_date_field_str_map(self, ticker: Ticker = None) -> Dict[ExpirationDateField, str]:
-        pass

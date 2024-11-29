@@ -25,7 +25,7 @@ class AbstractStrategy(metaclass=abc.ABCMeta):
     """ Basic interface used to create a generic strategy. """
 
     def __init__(self, ts: TradingSession):
-        self.timer = ts.timer
+        self.timer = ts.data_provider.timer
         self.notifiers = ts.notifiers
 
     @abc.abstractmethod

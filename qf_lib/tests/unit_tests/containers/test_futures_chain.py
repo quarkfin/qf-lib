@@ -16,6 +16,8 @@ import unittest
 from numpy import nan
 from pandas import date_range
 
+from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
+from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
 from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
@@ -88,6 +90,9 @@ class TestFuturesChain(unittest.TestCase):
                                                  ],
                                              ])
 
+        MarketOpenEvent.set_trigger_time({"hour": 13, "minute": 30, "second": 0, "microsecond": 0})
+        MarketCloseEvent.set_trigger_time({"hour": 20, "minute": 0, "second": 0, "microsecond": 0})
+
     def test_future_chains(self):
         """ Open prices are available on the expiration date and the Close prices are available on the day before
         the expiration day. """
@@ -145,7 +150,7 @@ class TestFuturesChain(unittest.TestCase):
         timer = SettableTimer()
 
         timer.set_current_time(self.expiration_date)
-        self.future_ticker.initialize_data_provider(timer, data_provider)
+        self.future_ticker.initialize_data_provider(data_provider)
         futures_chain_1 = FuturesChain(self.future_ticker, data_provider, FuturesAdjustmentMethod.BACK_ADJUSTED)
         prices = futures_chain_1.get_price(PriceField.ohlcv(), self.start_date, timer.now())
 
@@ -159,14 +164,14 @@ class TestFuturesChain(unittest.TestCase):
     def _assert_adjustment_difference_is_correct(self, data_provider: DataProvider, expected_difference: float):
         """ Computes the adjusted and non adjusted futures chain and checks if all price values (OHLC) are adjusted
         by the correct value. """
-        timer = SettableTimer(self.end_date)
-        self.future_ticker.initialize_data_provider(timer, data_provider)
+        data_provider.timer.set_current_time(self.end_date)
+        self.future_ticker.initialize_data_provider(data_provider)
 
         adjusted_chain = FuturesChain(self.future_ticker, data_provider, FuturesAdjustmentMethod.BACK_ADJUSTED)
-        adjusted_prices = adjusted_chain.get_price(PriceField.ohlcv(), self.start_date, timer.now())
+        adjusted_prices = adjusted_chain.get_price(PriceField.ohlcv(), self.start_date, data_provider.timer.now())
 
         non_adjusted_chain = FuturesChain(self.future_ticker, data_provider, FuturesAdjustmentMethod.NTH_NEAREST)
-        non_adjusted_prices = non_adjusted_chain.get_price(PriceField.ohlcv(), self.start_date, timer.now())
+        non_adjusted_prices = non_adjusted_chain.get_price(PriceField.ohlcv(), self.start_date, data_provider.timer.now())
 
         fields_to_adjust = [PriceField.Open, PriceField.Close, PriceField.High, PriceField.Low]
         fields_without_adjustment = [PriceField.Volume]
@@ -185,4 +190,5 @@ class TestFuturesChain(unittest.TestCase):
                                 non_adjusted_prices.loc[self.expiration_date:], check_names=False)
 
     def _mock_data_provider(self, data_array: QFDataArray):
-        return PresetDataProvider(data_array, self.start_date, self.end_date, Frequency.DAILY, self.exp_dates)
+        return PresetDataProvider(data_array, self.start_date, self.end_date, Frequency.DAILY, self.exp_dates,
+                                  timer=SettableTimer(self.end_date))

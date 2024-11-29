@@ -18,8 +18,6 @@ from typing import List, Tuple, Type, Dict
 from qf_lib.backtesting.broker.backtest_broker import BacktestBroker
 from qf_lib.backtesting.contract.contract_to_ticker_conversion.simulated_contract_ticker_mapper import \
     SimulatedContractTickerMapper
-from qf_lib.backtesting.data_handler.daily_data_handler import DailyDataHandler
-from qf_lib.backtesting.data_handler.intraday_data_handler import IntradayDataHandler
 from qf_lib.backtesting.events.event_manager import EventManager
 from qf_lib.backtesting.events.notifiers import Notifiers
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
@@ -307,7 +305,7 @@ class BacktestTradingSessionBuilder:
     @ConfigExporter.update_config
     def set_position_sizer(self, position_sizer_type: Type[PositionSizer], **kwargs):
         """Sets the position sizer. The parameters to initialize the PositionSizer should be passed as keyword
-        arguments. Parameters corresponding to the broker, data handler, contract ticker mapper or signals register
+        arguments. Parameters corresponding to the broker, data provider, contract ticker mapper or signals register
         should not be provided, as all these parameters are setup by the backtest trading session builder.
         For example to set position sizer with initial risk = 0.3 and tolerance percentage = 0.1 the following command
         should be called on the session builder:
@@ -336,7 +334,7 @@ class BacktestTradingSessionBuilder:
     @ConfigExporter.append_config
     def add_orders_filter(self, orders_filter_type: Type[OrdersFilter], **kwargs):
         """Adds orders filter to the pipeline. Ths parameters to initialize the OrdersFilter should be passed as keyword
-        arguments. Parameters corresponding to data handler and contract ticker mapper should not be provided, as
+        arguments. Parameters corresponding to data provider and contract ticker mapper should not be provided, as
         they are setup by the backtest trading session builder. For example to set orders filter with
         volume_percentage_limit = 0.3 the following command should be called on the session builder:
 
@@ -371,21 +369,6 @@ class BacktestTradingSessionBuilder:
         ])
         return event_manager
 
-    def _create_data_handler(self, data_provider, timer):
-        assert data_provider is not None, "Data provider is None. Set data_provider using set_data_provider() " \
-                                          "method before building BacktestTradingSession"
-        if self._frequency == Frequency.MIN_1:
-            data_handler = IntradayDataHandler(data_provider, timer)
-        elif self._frequency == Frequency.DAILY:
-            data_handler = DailyDataHandler(data_provider, timer)
-        else:
-            raise ValueError("Invalid frequency parameter. The only frequencies supported by the DataHandler are "
-                             "Frequency.DAILY and Frequency.MIN_1. "
-                             "\nMake sure you set the frequency in the session builder for example: "
-                             "\n\t-> 'session_builder.set_frequency(Frequency.DAILY)'")
-
-        return data_handler
-
     def build(self, start_date: datetime, end_date: datetime) -> BacktestTradingSession:
         """Builds a backtest trading session.
 
@@ -402,13 +385,14 @@ class BacktestTradingSessionBuilder:
             trading session containing all the necessary parameters
         """
         self._timer = SettableTimer(start_date)
+        self._data_provider.set_timer(self._timer)
+        self._data_provider.frequency = self._frequency
         self._notifiers = Notifiers(self._timer)
         self._events_manager = self._create_event_manager(self._timer, self._notifiers)
 
-        self._data_handler = self._create_data_handler(self._data_provider, self._timer)
         signals_register = self._signals_register if self._signals_register else BacktestSignalsRegister()
 
-        self._portfolio = Portfolio(self._data_handler, self._initial_cash, self._timer)
+        self._portfolio = Portfolio(self._data_provider, self._initial_cash)
 
         self._backtest_result = BacktestResult(self._portfolio, signals_register, self._backtest_name, start_date,
                                                end_date, self._initial_risk)
@@ -417,7 +401,7 @@ class BacktestTradingSessionBuilder:
         self._slippage_model = self._slippage_model_setup()
         self._commission_model = self._commission_model_setup()
         self._execution_handler = SimulatedExecutionHandler(
-            self._data_handler, self._timer, self._notifiers.scheduler, self._monitor, self._commission_model,
+            self._data_provider, self._notifiers.scheduler, self._monitor, self._commission_model,
             self._portfolio, self._slippage_model,
             scheduling_time_delay=self._scheduling_time_delay, frequency=self._frequency)
 
@@ -426,7 +410,7 @@ class BacktestTradingSessionBuilder:
             self._notifiers.empty_queue_event_notifier, end_date)
 
         self._broker = BacktestBroker(self._contract_ticker_mapper, self._portfolio, self._execution_handler)
-        self._order_factory = OrderFactory(self._broker, self._data_handler)
+        self._order_factory = OrderFactory(self._broker, self._data_provider)
         self._position_sizer = self._position_sizer_setup(signals_register)
         self._orders_filters = self._orders_filter_setup()
 
@@ -446,8 +430,7 @@ class BacktestTradingSessionBuilder:
             "\n".join([
                 "Configuration of components:",
                 "\tPosition sizer: {:s}".format(self._position_sizer.__class__.__name__),
-                "\tTimer: {:s}".format(self._timer.__class__.__name__),
-                "\tData Handler: {:s}".format(self._data_handler.__class__.__name__),
+                "\tData Provider: {:s}".format(self._data_provider.__class__.__name__),
                 "\tBacktest Result: {:s}".format(self._backtest_result.__class__.__name__),
                 "\tMonitor: {:s}".format(self._monitor.__class__.__name__),
                 "\tExecution Handler: {:s}".format(self._execution_handler.__class__.__name__),
@@ -472,8 +455,7 @@ class BacktestTradingSessionBuilder:
             end_date=end_date,
             position_sizer=self._position_sizer,
             orders_filters=self._orders_filters,
-            data_handler=self._data_handler,
-            timer=self._timer,
+            data_provider=self._data_provider,
             notifiers=self._notifiers,
             portfolio=self._portfolio,
             events_manager=self._events_manager,
@@ -493,12 +475,12 @@ class BacktestTradingSessionBuilder:
 
     def _position_sizer_setup(self, signals_register: SignalsRegister):
         return self._position_sizer_type(
-            self._broker, self._data_handler, self._order_factory, signals_register, **self._position_sizer_kwargs)
+            self._broker, self._data_provider, self._order_factory, signals_register, **self._position_sizer_kwargs)
 
     def _orders_filter_setup(self):
         orders_filters = []
         for orders_filter_type, kwargs in self._orders_filter_types_params:
-            orders_filter = orders_filter_type(self._data_handler, **kwargs)
+            orders_filter = orders_filter_type(self._data_provider, **kwargs)
             orders_filters.append(orders_filter)
         return orders_filters
 

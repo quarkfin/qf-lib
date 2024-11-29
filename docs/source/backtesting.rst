@@ -27,20 +27,6 @@ contract
     contract_to_ticker_conversion.simulated_contract_ticker_mapper.SimulatedContractTickerMapper
     contract_to_ticker_conversion.ib_contract_ticker_mapper.IBContractTickerMapper
 
-
-data_handler
-==================
-.. currentmodule:: qf_lib.backtesting.data_handler
-
-.. autosummary::	
-    :nosignatures:
-    :toctree: _autosummary
-    :template: short_class.rst
-
-    data_handler.DataHandler
-    daily_data_handler.DailyDataHandler
-    intraday_data_handler.IntradayDataHandler
-
 events
 ========
 .. currentmodule:: qf_lib.backtesting.events.time_event

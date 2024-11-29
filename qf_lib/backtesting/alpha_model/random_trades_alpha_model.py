@@ -17,12 +17,12 @@ from typing import Sequence, Optional
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
 from qf_lib.backtesting.alpha_model.futures_model import FuturesModel
-from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.fast_alpha_model_tester.scenarios_generator import ScenariosGenerator
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
+from qf_lib.data_providers.data_provider import DataProvider
 
 
 class RandomTradesAlphaModel(AlphaModel):
@@ -34,8 +34,8 @@ class RandomTradesAlphaModel(AlphaModel):
     risk_estimation_factor
         float value which estimates the risk level of the specific AlphaModel. Corresponds to the level at which
         the stop-loss should be placed.
-    data_provider: DataHandler
-        DataHandler which provides data for the ticker.
+    data_provider: DataProvider
+        DataProvider which provides data for the ticker.
     start_date: datetime
         first date considered in the returned series
     end_date: datetime
@@ -51,12 +51,11 @@ class RandomTradesAlphaModel(AlphaModel):
     seed: Optional[int]
         seed used to make the scenarios deterministic
     """
-    def __init__(self, risk_estimation_factor: float, data_provider: DataHandler, start_date: datetime,
+    def __init__(self, risk_estimation_factor: float, data_provider: DataProvider, start_date: datetime,
                  end_date: datetime, tickers: Sequence[Ticker], number_of_trades: int, time_in_the_market: float,
                  exposure: Exposure = Exposure.LONG, frequency: Frequency = Frequency.DAILY, seed: Optional[int] = None):
         super().__init__(risk_estimation_factor, data_provider)
 
-        self.timer = data_provider.timer
         self.start_date = start_date
         self.end_date = end_date
         self.frequency = frequency
@@ -88,8 +87,8 @@ class RandomTradesFuturesAlphaModel(FuturesModel):
     risk_estimation_factor
         float value which estimates the risk level of the specific AlphaModel. Corresponds to the level at which
         the stop-loss should be placed.
-    data_provider: DataHandler
-        DataHandler which provides data for the ticker.
+    data_provider: DataProvider
+        DataProvider which provides data for the ticker.
     start_date: datetime
         first date considered in the returned series
     end_date: datetime
@@ -105,13 +104,12 @@ class RandomTradesFuturesAlphaModel(FuturesModel):
     seed: Optional[int]
         seed used to make the scenarios deterministic
     """
-    def __init__(self, risk_estimation_factor: float, data_provider: DataHandler, start_date: datetime,
+    def __init__(self, risk_estimation_factor: float, data_provider: DataProvider, start_date: datetime,
                  end_date: datetime, tickers: Sequence[Ticker], number_of_trades: int, time_in_the_market: float,
                  num_of_bars_needed: int = 180, exposure: Exposure = Exposure.LONG,
                  frequency: Frequency = Frequency.DAILY, seed: Optional[int] = None):
         super().__init__(num_of_bars_needed, risk_estimation_factor, data_provider)
 
-        self.timer = data_provider.timer
         self.start_date = start_date
         self.end_date = end_date
         self.frequency = frequency

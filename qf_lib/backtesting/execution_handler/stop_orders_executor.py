@@ -31,7 +31,7 @@ class StopOrdersExecutor(SimulatedExecutor):
         tickers = [order.ticker for order in orders]
 
         unique_tickers_list = list(set(tickers))
-        prices_at_acceptance_time = self._data_handler.get_last_available_price(unique_tickers_list)
+        prices_at_acceptance_time = self._data_provider.get_last_available_price(unique_tickers_list)
 
         order_id_list = []
         for order, ticker in zip(orders, tickers):
@@ -114,7 +114,7 @@ class StopOrdersExecutor(SimulatedExecutor):
 
         assert self._frequency >= Frequency.DAILY, "Lower than daily frequency is not supported by the simulated " \
                                                    "executor"
-        current_datetime = self._timer.now()
+        current_datetime = self._data_provider.timer.now()
         market_close_time = current_datetime + MarketCloseEvent.trigger_time() == current_datetime
 
         if self._frequency == Frequency.DAILY:
@@ -129,7 +129,7 @@ class StopOrdersExecutor(SimulatedExecutor):
             # In case of intraday trading the current full bar is always indexed by the left side of the time range
             start_date = current_datetime - self._frequency.time_delta()
 
-        return self._data_handler.get_price(tickers, PriceField.ohlcv(), start_date, start_date, self._frequency)
+        return self._data_provider.get_price(tickers, PriceField.ohlcv(), start_date, start_date, self._frequency)
 
     def _calculate_no_slippage_fill_price(self, current_bar, order):
         """

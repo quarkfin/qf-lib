@@ -278,6 +278,10 @@ class QuandlTicker(Ticker):
         else:
             raise TypeError("Incorrect database type: {}".format(self.database_type))
 
+    @property
+    def name(self) -> str:
+        return self.as_string()
+
     def field_to_column_name(self, field: str):
         return self.as_string() + ' - ' + field
 

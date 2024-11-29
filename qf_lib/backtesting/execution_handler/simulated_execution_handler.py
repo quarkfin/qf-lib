@@ -16,7 +16,6 @@ from collections import defaultdict
 from itertools import count, groupby
 from typing import List, Sequence, Dict
 
-from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.events.time_event.periodic_event.intraday_bar_event import IntradayBarEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
@@ -41,8 +40,8 @@ from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.exceptions.broker_exceptions import OrderCancellingException
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
-from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
+from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 
 
 class SimulatedExecutionHandler(ExecutionHandler):
@@ -52,7 +51,7 @@ class SimulatedExecutionHandler(ExecutionHandler):
     StopOrders are executed at the MarketClose (if applicable) with the Low price.
     """
 
-    def __init__(self, data_handler: DataHandler, timer: Timer, scheduler: Scheduler, monitor: AbstractMonitor,
+    def __init__(self, data_provider: AbstractPriceDataProvider, scheduler: Scheduler, monitor: AbstractMonitor,
                  commission_model: CommissionModel, portfolio: Portfolio, slippage_model: Slippage,
                  scheduling_time_delay: RelativeDelta = RelativeDelta(minutes=1),
                  frequency: Frequency = Frequency.DAILY) -> None:
@@ -70,26 +69,25 @@ class SimulatedExecutionHandler(ExecutionHandler):
         if self.intraday_trading:
             scheduler.subscribe(IntradayBarEvent, self)
 
-        self.data_handler = data_handler
+        self.data_provider = data_provider
         self.commission_model = commission_model
         self.portfolio = portfolio
         self.monitor = monitor
-        self.timer = timer
         self.scheduling_time_delay = scheduling_time_delay
 
         order_id_generator = count(start=1)
 
-        self._market_orders_executor = MarketOrdersExecutor(data_handler, monitor, portfolio, timer, order_id_generator,
+        self._market_orders_executor = MarketOrdersExecutor(data_provider, monitor, portfolio, order_id_generator,
                                                             commission_model, slippage_model, frequency)
 
-        self._stop_orders_executor = StopOrdersExecutor(data_handler, monitor, portfolio, timer, order_id_generator,
+        self._stop_orders_executor = StopOrdersExecutor(data_provider, monitor, portfolio, order_id_generator,
                                                         commission_model, slippage_model, frequency)
 
-        self._market_on_close_orders_executor = MarketOnCloseOrdersExecutor(data_handler, monitor, portfolio, timer,
+        self._market_on_close_orders_executor = MarketOnCloseOrdersExecutor(data_provider, monitor, portfolio,
                                                                             order_id_generator, commission_model,
                                                                             slippage_model, frequency)
 
-        self._market_on_open_orders_executor = MarketOnOpenOrdersExecutor(data_handler, monitor, portfolio, timer,
+        self._market_on_open_orders_executor = MarketOnOpenOrdersExecutor(data_provider, monitor, portfolio,
                                                                           order_id_generator, commission_model,
                                                                           slippage_model, frequency)
 
@@ -102,7 +100,7 @@ class SimulatedExecutionHandler(ExecutionHandler):
         # this was in the past done after market close
         self._remove_acquired_or_not_active_positions()
         self.portfolio.update(record=True)
-        self.monitor.end_of_day_update(self.timer.now())
+        self.monitor.end_of_day_update(self.data_provider.timer.now())
 
     def on_market_open(self, _: MarketOpenEvent):
         self._market_orders_executor.execute_orders(market_open=True)
@@ -113,7 +111,7 @@ class SimulatedExecutionHandler(ExecutionHandler):
         self._stop_orders_executor.execute_orders()
 
     def on_orders_accept(self, event: ScheduleOrderExecutionEvent):
-        executors_to_orders_dict = event.get_executors_to_orders_dict(self.timer.now())  # type: Dict[SimulatedExecutor, List[Order]]
+        executors_to_orders_dict = event.get_executors_to_orders_dict(self.data_provider.timer.now())  # type: Dict[SimulatedExecutor, List[Order]]
         for executor in executors_to_orders_dict.keys():
             executor.accept_orders(executors_to_orders_dict[executor])
 
@@ -151,7 +149,7 @@ class SimulatedExecutionHandler(ExecutionHandler):
             order_id_list += partial_order_id_list
 
         # Schedule the orders execution
-        scheduled_time = self.timer.now() + self.scheduling_time_delay
+        scheduled_time = self.data_provider.timer.now() + self.scheduling_time_delay
         ScheduleOrderExecutionEvent.schedule_new_event(scheduled_time, scheduled_event_data)
 
         return order_id_list
@@ -196,16 +194,16 @@ class SimulatedExecutionHandler(ExecutionHandler):
         last price of the asset recorded by the portfolio and the commission is set to 0, as no real order is created.
         """
         all_tickers_in_portfolio = list(self.portfolio.open_positions_dict.keys())
-        start_date = self.timer.now() - RelativeDelta(days=7)
+        start_date = self.data_provider.timer.now() - RelativeDelta(days=7)
 
         for ticker in all_tickers_in_portfolio:
             # Double check if there was no price for the past 7 days for the given ticker
-            prices = self.data_handler.get_price(ticker, PriceField.ohlc(), start_date).dropna(how="all", axis=1)
+            prices = self.data_provider.get_price(ticker, PriceField.ohlc(), start_date).dropna(how="all", axis=1)
             if prices.empty:
                 position = self.portfolio.open_positions_dict[ticker]
-                closing_transaction = Transaction(self.timer.now(), ticker, -position.quantity(),
+                closing_transaction = Transaction(self.data_provider.timer.now(), ticker, -position.quantity(),
                                                   position.current_price, 0)
                 self.monitor.record_transaction(closing_transaction)
                 self.portfolio.transact_transaction(closing_transaction)
-                self.logger.warning(f"{self.timer.now()}: position assigned to Ticker {position.ticker()} "
+                self.logger.warning(f"{self.data_provider.timer.now()}: position assigned to Ticker {position.ticker()} "
                                     f"removed due to incomplete price data.")

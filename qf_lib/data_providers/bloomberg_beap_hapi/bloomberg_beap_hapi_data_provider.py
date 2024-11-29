@@ -26,6 +26,7 @@ import requests
 from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
+from qf_lib.data_providers.futures_data_provider import FuturesDataProvider
 from qf_lib.data_providers.tickers_universe_provider import TickersUniverseProvider
 
 try:
@@ -61,7 +62,7 @@ from qf_lib.settings import Settings
 from qf_lib.starting_dir import get_starting_dir_abs_path
 
 
-class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniverseProvider):
+class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniverseProvider, FuturesDataProvider):
     """
     Data Provider which provides financial data from Bloomberg BEAP HAPI.
 

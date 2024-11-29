@@ -40,7 +40,6 @@ class TradingSession(metaclass=ABCMeta):
         self.settings = None                # type: Settings
         self.data_provider = None           # type: DataProvider
 
-        self.timer = None                   # type: Timer
         self.monitor = None                 # type: AbstractMonitor
         self.broker = None                  # type: Broker
 

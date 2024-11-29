@@ -26,7 +26,7 @@ from qf_lib.backtesting.portfolio.transaction import Transaction
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
-from qf_lib.common.utils.dateutils.timer import Timer
+from qf_lib.common.utils.dateutils.timer import SettableTimer
 
 
 class TestSimulatedExecutor(unittest.TestCase):
@@ -150,10 +150,10 @@ class TestSimulatedExecutor(unittest.TestCase):
         monitor: AbstractMonitor = MagicMock()
         monitor.record_transaction.side_effect = mock_record_transaction
 
-        timer: Timer = MagicMock()
-        timer.now.return_value = self.backtest_date
+        timer = SettableTimer(self.backtest_date)
+        data_provider = MagicMock(timer=timer)
 
         order_id_generator = count(start=1)
-        simulated_executor = MarketOrdersExecutor(MagicMock(), monitor, MagicMock(), timer, order_id_generator,
+        simulated_executor = MarketOrdersExecutor(data_provider, monitor, MagicMock(), order_id_generator,
                                                   commission_model, slippage_model, Frequency.DAILY)
         return simulated_executor

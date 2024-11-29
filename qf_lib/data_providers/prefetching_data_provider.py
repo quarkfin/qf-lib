@@ -12,18 +12,21 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 from datetime import datetime
-from typing import Sequence, Union
+from typing import Sequence, Union, Optional
 
 from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
+from qf_lib.common.utils.dateutils.timer import Timer
+from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
+from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
+from qf_lib.data_providers.futures_data_provider import FuturesDataProvider
 from qf_lib.data_providers.helpers import chain_tickers_within_range
 from qf_lib.data_providers.preset_data_provider import PresetDataProvider
-from qf_lib.data_providers.data_provider import DataProvider
 
 
 class PrefetchingDataProvider(PresetDataProvider):
@@ -34,7 +37,7 @@ class PrefetchingDataProvider(PresetDataProvider):
 
     Parameters
     -----------
-    data_provider: DataProvider
+    data_provider: AbstractPriceDataProvider
         data provider used to download the data
     tickers: Ticker, Sequence[Ticker]
         one or a list of tickers, used further to download the futures contracts related data.
@@ -51,11 +54,13 @@ class PrefetchingDataProvider(PresetDataProvider):
         frequency of the data
     """
 
-    def __init__(self, data_provider: DataProvider,
+    def __init__(self, data_provider: AbstractPriceDataProvider,
                  tickers: Union[Ticker, Sequence[Ticker]],
                  fields: Union[PriceField, Sequence[PriceField]],
                  start_date: datetime, end_date: datetime,
-                 frequency: Frequency):
+                 frequency: Frequency, timer: Optional[Timer] = None):
+        self.logger = qf_logger.getChild(self.__class__.__name__)
+
         # Convert fields into list in order to return a QFDataArray as the result of get_price function
         fields, _ = convert_to_list(fields, PriceField)
 
@@ -70,16 +75,21 @@ class PrefetchingDataProvider(PresetDataProvider):
         all_tickers = non_future_tickers
 
         if future_tickers:
-            exp_dates = data_provider.get_futures_chain_tickers(future_tickers, ExpirationDateField.all_dates())
+            if not isinstance(data_provider, FuturesDataProvider):
+                self.logger.error("The passed data provider does not support future tickers. All future tickers will "
+                                  "be ignored in the process.")
+            else:
+                exp_dates = data_provider.get_futures_chain_tickers(future_tickers, ExpirationDateField.all_dates())
 
-            # Filter out all theses specific future contracts, which expired before start_date
-            for ft in future_tickers:
-                all_tickers.extend(chain_tickers_within_range(ft, exp_dates[ft], start_date, end_date))
+                # Filter out all these specific future contracts, which expired before start_date
+                for ft in future_tickers:
+                    all_tickers.extend(chain_tickers_within_range(ft, exp_dates[ft], start_date, end_date))
 
-        data_array = data_provider.get_price(all_tickers, fields, start_date, end_date, frequency)
+        data_array = data_provider.get_price(all_tickers, fields, start_date, end_date, frequency, timer)
 
         super().__init__(data=data_array,
                          exp_dates=exp_dates,
                          start_date=start_date,
                          end_date=end_date,
-                         frequency=frequency)
+                         frequency=frequency,
+                         timer=timer)

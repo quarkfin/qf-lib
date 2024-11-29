@@ -41,7 +41,6 @@ class FuturesChain(pd.Series):
          result of get_price function.
     data_provider: DataProvider
         Reference to the data provider, necessary to download latest prices, returned by the get_price function.
-        In case of backtests, the DataHandler wrapper should be used to avoid looking into the future.
     method: FuturesAdjustmentMethod
         FuturesAdjustmentMethod corresponding to one of two available methods of chaining the futures contracts.
     """

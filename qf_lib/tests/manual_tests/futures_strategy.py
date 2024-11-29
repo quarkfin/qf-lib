@@ -17,7 +17,6 @@ from typing import Tuple
 
 from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
-from qf_lib.backtesting.data_handler.data_handler import DataHandler
 from qf_lib.backtesting.events.time_event.regular_time_event.calculate_and_place_orders_event import \
     CalculateAndPlaceOrdersRegularEvent
 from qf_lib.backtesting.monitoring.backtest_monitor import BacktestMonitorSettings
@@ -40,13 +39,11 @@ from qf_lib.tests.unit_tests.config.test_settings import get_test_settings
 
 class SimpleFuturesModel(AlphaModel):
     def __init__(self, fast_time_period: int, slow_time_period: int,
-                 risk_estimation_factor: float, data_provider: DataHandler):
+                 risk_estimation_factor: float, data_provider: DataProvider):
         super().__init__(risk_estimation_factor, data_provider)
 
         self.fast_time_period = fast_time_period
         self.slow_time_period = slow_time_period
-
-        self.timer = data_provider.timer
 
         self.futures_chain = None  # type: FuturesChain
         self.time_of_opening_position = None  # type: datetime
@@ -156,7 +153,7 @@ def run_strategy(data_provider: DataProvider) -> Tuple[float, str]:
 
     # ----- build models ----- #
     model = SimpleFuturesModel(fast_time_period=50, slow_time_period=100, risk_estimation_factor=3,
-                               data_provider=ts.data_handler)
+                               data_provider=ts.data_provider)
     model_tickers_dict = {model: model_tickers}
 
     # ----- start trading ----- #
