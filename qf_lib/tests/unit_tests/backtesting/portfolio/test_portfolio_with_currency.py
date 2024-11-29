@@ -24,6 +24,7 @@ from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
+from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 from qf_lib.data_providers.bloomberg.bloomberg_data_provider import BloombergDataProvider
 from qf_lib.tests.helpers.testing_tools.containers_comparison import assert_series_equal
 from qf_lib.tests.unit_tests.backtesting.portfolio.dummy_ticker import DummyTicker
@@ -178,6 +179,14 @@ class TestPortfolioWithCurrency(unittest.TestCase):
 
         tms = portfolio.portfolio_eod_series()
         assert_series_equal(expected_portfolio_eod_series, tms)
+
+    def test_assert_data_provider_without_currency_raises_error(self):
+        data_provider = Mock(spec=AbstractPriceDataProvider)
+        portfolio = Portfolio(data_provider, self.initial_cash, currency=self.currency)
+        self.data_provider_prices = self.prices_series
+        transaction = Transaction(self.random_time, self.ticker, quantity=50, price=100, commission=5, )
+        with self.assertRaises(NotImplementedError):
+            portfolio.transact_transaction(transaction)
 
 
 if __name__ == "__main__":
