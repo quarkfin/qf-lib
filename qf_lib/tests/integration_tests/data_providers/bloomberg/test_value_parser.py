@@ -16,7 +16,7 @@ from unittest import TestCase
 
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.data_providers.bloomberg import BloombergDataProvider
-from tests.unit_tests.config.test_settings import get_test_settings
+from qf_lib.tests.unit_tests.config.test_settings import get_test_settings
 
 
 class TestBloombergValueParser(TestCase):
