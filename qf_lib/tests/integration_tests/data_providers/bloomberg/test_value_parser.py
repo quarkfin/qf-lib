@@ -14,9 +14,8 @@
 import datetime
 from unittest import TestCase
 
-from data_providers.bloomberg import BloombergDataProvider
 from qf_lib.common.tickers.tickers import BloombergTicker
-from tests.integration_tests.data_providers.futures.test_general_price_provider import bbg_provider
+from qf_lib.data_providers.bloomberg import BloombergDataProvider
 from tests.unit_tests.config.test_settings import get_test_settings
 
 
@@ -28,7 +27,7 @@ class TestBloombergValueParser(TestCase):
         try:
             settings = get_test_settings()
             self.bbg_provider = BloombergDataProvider(settings)
-            bbg_provider.connect()
+            self.bbg_provider.connect()
 
         except Exception as e:
             raise self.skipTest(e)
