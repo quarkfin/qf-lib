@@ -174,12 +174,12 @@ class BinanceTicker(Ticker):
 
     Parameters
     --------------
-    crypto_currency:
-        identifier of the security, e.g. 'BTC'
+    base_ccy:
+        the base currency of the asset, e.g. 'BTC'
     quote_ccy:
         the quote currency of the asset.
         For example to trade BTC using USDT use:
-            BTC as currency
+            BTC as base_ccy
             USDT as quote_ccy
         quote currency here should be the same as quote_ccy set in BinanceContractTickerMapper
     security_type:
@@ -191,12 +191,12 @@ class BinanceTicker(Ticker):
     rounding_precision:
         rounding precision. Default 5.
     """
-    def __init__(self, crypto_currency: str, quote_ccy: str, security_type: SecurityType = SecurityType.CRYPTO,
+    def __init__(self, base_ccy: str, quote_ccy: str, security_type: SecurityType = SecurityType.CRYPTO,
                  point_value: int = 1, rounding_precision: int = 5):
-        ticker_str = crypto_currency + quote_ccy if crypto_currency != quote_ccy and \
-            quote_ccy is not None else crypto_currency
+        ticker_str = base_ccy + quote_ccy if base_ccy != quote_ccy and \
+            quote_ccy is not None else base_ccy
         super().__init__(ticker_str, security_type, point_value)
-        self._crypto_currency = crypto_currency
+        self._base_ccy = base_ccy
         self._quote_ccy = quote_ccy
         self._rounding_precision = rounding_precision
 
@@ -205,8 +205,8 @@ class BinanceTicker(Ticker):
         raise NotImplementedError('Binance from_string method is not implemented. Please use init function.')
 
     @property
-    def crypto_currency(self) -> str:
-        return self._crypto_currency
+    def base_ccy(self) -> str:
+        return self._base_ccy
 
     @property
     def quote_ccy(self) -> str:

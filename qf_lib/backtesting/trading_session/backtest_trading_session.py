@@ -32,6 +32,7 @@ from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.helpers import compute_container_hash
 from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
+from qf_lib.data_providers.exchange_rate_provider import ExchangeRateProvider
 from qf_lib.data_providers.prefetching_data_provider import PrefetchingDataProvider
 
 
@@ -80,7 +81,7 @@ class BacktestTradingSession(TradingSession):
         # the same set of tickers and fields
         tickers, _ = convert_to_list(tickers, Ticker)
 
-        if self.portfolio.currency is not None:
+        if self.portfolio.currency is not None and isinstance(self.data_provider, ExchangeRateProvider):
             currencies = set(ticker.currency for ticker in tickers)
             currencies.discard(self.portfolio.currency)
             if currencies:

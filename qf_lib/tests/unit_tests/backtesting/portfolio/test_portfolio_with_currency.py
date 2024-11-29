@@ -19,6 +19,7 @@ from qf_lib.backtesting.portfolio.portfolio import Portfolio
 from qf_lib.backtesting.portfolio.transaction import Transaction
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.security_type import SecurityType
+from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.dateutils.timer import SettableTimer
@@ -27,7 +28,6 @@ from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 from qf_lib.data_providers.bloomberg.bloomberg_data_provider import BloombergDataProvider
 from qf_lib.tests.helpers.testing_tools.containers_comparison import assert_series_equal
-from qf_lib.tests.unit_tests.backtesting.portfolio.dummy_ticker import DummyTicker
 
 
 class TestPortfolioWithCurrency(unittest.TestCase):
@@ -37,18 +37,19 @@ class TestPortfolioWithCurrency(unittest.TestCase):
         cls.initial_cash = 1000000  # 1M
         cls.currency = "CHF"
 
-        cls.ticker = DummyTicker('AAPL US Equity', SecurityType.STOCK, currency="USD")
+        cls.usd_ticker = BloombergTicker('AAPL US Equity', SecurityType.STOCK, currency="USD")
+        cls.chf_ticker = BloombergTicker('ZURN SW Equity', SecurityType.STOCK, currency="CHF")
         cls.point_value = 75
-        cls.fut_ticker = DummyTicker('CTZ9 Comdty', SecurityType.FUTURE, cls.point_value, "USD")
-        cls.currency_ticker = DummyTicker('USDCHF', SecurityType.FX)
+        cls.fut_ticker = BloombergTicker('CTZ9 Comdty', SecurityType.FUTURE, cls.point_value, "USD")
+        cls.currency_ticker = BloombergTicker('USDCHF', SecurityType.FX)
 
-        tickers = [cls.ticker, cls.fut_ticker, cls.currency_ticker]
-        cls.prices_series = QFSeries(data=[120, 250, 0.95], index=tickers)
-        cls.prices_up = QFSeries(data=[130, 270, 0.98], index=tickers)
-        cls.prices_down = QFSeries(data=[100, 210, 0.98], index=tickers)
+        tickers = [cls.usd_ticker, cls.chf_ticker, cls.fut_ticker, cls.currency_ticker]
+        cls.prices_series = QFSeries(data=[120, 56, 250, 0.95], index=tickers)
+        cls.prices_up = QFSeries(data=[130, 65, 270, 0.98], index=tickers)
+        cls.prices_down = QFSeries(data=[100, 49, 210, 0.98], index=tickers)
 
         cls.start_time = str_to_date('2017-01-01')
-        cls.random_time = str_to_date('2017-02-02')
+        cls.end_time = str_to_date('2017-02-02')
         cls.trades_generator = TradesGenerator()
 
     def setUp(self) -> None:
@@ -60,7 +61,7 @@ class TestPortfolioWithCurrency(unittest.TestCase):
         data_provider.get_last_available_price.side_effect = lambda tickers: self.data_provider_prices[tickers] \
             if tickers else None
         data_provider.get_last_available_exchange_rate.side_effect = \
-            lambda base_currency, quote_currency, frequency: self.data_provider_prices[DummyTicker(
+            lambda base_currency, quote_currency, frequency: self.data_provider_prices[BloombergTicker(
                 f'{base_currency}{quote_currency}', SecurityType.FX)]
 
         timer = SettableTimer()
@@ -84,11 +85,11 @@ class TestPortfolioWithCurrency(unittest.TestCase):
 
         self.data_provider_prices = self.prices_series
 
-        transaction = Transaction(self.random_time, self.ticker, quantity=50, price=100, commission=5, )
+        transaction = Transaction(self.end_time, self.usd_ticker, quantity=50, price=100, commission=5, )
         portfolio.transact_transaction(transaction)
 
         cash_move_1 = self._cash_move(transaction)
-        cash_move_1 *= data_provider.get_last_available_exchange_rate(self.ticker.currency, self.currency, Frequency.DAILY)
+        cash_move_1 *= data_provider.get_last_available_exchange_rate(self.usd_ticker.currency, self.currency, Frequency.DAILY)
 
         self.assertEqual(portfolio.initial_cash, self.initial_cash)
         self.assertEqual(portfolio.net_liquidation, self.initial_cash)
@@ -136,7 +137,7 @@ class TestPortfolioWithCurrency(unittest.TestCase):
 
         price_1 = data_provider.get_last_available_price(self.fut_ticker)
         pnl = self.fut_ticker.point_value * transaction_1.quantity * (price_1 - transaction_1.price) - transaction_1.commission
-        pnl *= data_provider.get_last_available_exchange_rate(self.ticker.currency, self.currency, Frequency.DAILY)
+        pnl *= data_provider.get_last_available_exchange_rate(self.fut_ticker.currency, self.currency, Frequency.DAILY)
         nav = self.initial_cash + pnl
         expected_portfolio_eod_series[timer.time] = nav
 
@@ -147,7 +148,7 @@ class TestPortfolioWithCurrency(unittest.TestCase):
 
         price_2 = data_provider.get_last_available_price(self.fut_ticker)  # == 270
         pnl = self.fut_ticker.point_value * transaction_1.quantity * (price_2 - price_1)
-        pnl *= data_provider.get_last_available_exchange_rate(self.ticker.currency, self.currency, Frequency.DAILY)
+        pnl *= data_provider.get_last_available_exchange_rate(self.fut_ticker.currency, self.currency, Frequency.DAILY)
         nav += pnl
         expected_portfolio_eod_series[timer.time] = nav
 
@@ -160,7 +161,7 @@ class TestPortfolioWithCurrency(unittest.TestCase):
 
         pnl = (transaction_2.price - price_2) * transaction_2.quantity * self.fut_ticker.point_value - \
             transaction_2.commission
-        pnl *= data_provider.get_last_available_exchange_rate(self.ticker.currency, self.currency, Frequency.DAILY)
+        pnl *= data_provider.get_last_available_exchange_rate(self.fut_ticker.currency, self.currency, Frequency.DAILY)
         nav += pnl
         expected_portfolio_eod_series[timer.time] = nav
 
@@ -173,7 +174,7 @@ class TestPortfolioWithCurrency(unittest.TestCase):
 
         price_3 = data_provider.get_last_available_price(self.fut_ticker)  # == 210
         pnl2 = self.fut_ticker.point_value * position.quantity() * (price_3 - price_2)
-        pnl2 *= data_provider.get_last_available_exchange_rate(self.ticker.currency, self.currency, Frequency.DAILY)
+        pnl2 *= data_provider.get_last_available_exchange_rate(self.fut_ticker.currency, self.currency, Frequency.DAILY)
         nav += pnl2
         expected_portfolio_eod_series[timer.time] = nav
 
@@ -184,10 +185,6 @@ class TestPortfolioWithCurrency(unittest.TestCase):
         data_provider = Mock(spec=AbstractPriceDataProvider)
         portfolio = Portfolio(data_provider, self.initial_cash, currency=self.currency)
         self.data_provider_prices = self.prices_series
-        transaction = Transaction(self.random_time, self.ticker, quantity=50, price=100, commission=5, )
+        transaction = Transaction(self.end_time, self.usd_ticker, quantity=50, price=100, commission=5, )
         with self.assertRaises(NotImplementedError):
             portfolio.transact_transaction(transaction)
-
-
-if __name__ == "__main__":
-    unittest.main()
