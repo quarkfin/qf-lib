@@ -62,7 +62,6 @@ class PieChart(Chart):
 
         sum_series = self.data.sum()
         labels = [f"{index}, {value / sum_series:.1%}" for index, value in self.data.items()]
-        label_positions = []
 
         for i, p in enumerate(wedges):
             angle = (p.theta2 - p.theta1) / 2. + p.theta1
@@ -75,7 +74,6 @@ class PieChart(Chart):
             horizontal_alignment = "right" if x <= 0 else "left"
 
             label_pos = ((1.3 + (i % 2) * 0.4) * np.sign(x), 1.4 * yc)
-            label_positions.append(label_pos)
 
             self.axes.annotate(labels[i], xy=(0.8 * x, 0.8 * y), xytext=label_pos,
                                horizontalalignment=horizontal_alignment,
