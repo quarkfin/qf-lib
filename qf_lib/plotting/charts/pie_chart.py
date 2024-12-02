@@ -42,7 +42,6 @@ class PieChart(Chart):
         self.data = data.sort_values(ascending=False) if sort_values else data
         self.distance = slices_distance if not isinstance(slices_distance, QFSeries) else slices_distance.reindex_like(self.data)
 
-
     def plot(self, figsize: Tuple[float, float] = None) -> None:
         self._setup_axes_if_necessary(figsize)
 
@@ -78,7 +77,6 @@ class PieChart(Chart):
             self.axes.annotate(labels[i], xy=(0.8 * x, 0.8 * y), xytext=label_pos,
                                horizontalalignment=horizontal_alignment,
                                **kw)
-
 
         self._apply_decorators()
         self._adjust_style()
