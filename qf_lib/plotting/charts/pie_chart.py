@@ -11,7 +11,7 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-from typing import Tuple
+from typing import Tuple, Optional
 
 import numpy as np
 
@@ -27,47 +27,42 @@ class PieChart(Chart):
     ----------
     data: QFSeries
         The series to plot in the pie chart.
-    slices_distance: float
+    slices_distance: Tuple[float, QFSeries]
         The distance between slices. Default is 0.01
+    sort_values:
     plot_settings
         Options to pass to the ``pie`` function.
     """
 
-    def __init__(self, data: QFSeries, slices_distance: float = 0.01, **plot_settings):
+    def __init__(self, data: QFSeries, slices_distance: Tuple[float, QFSeries] = 0.01, sort_values: Optional[bool] = True, **plot_settings):
         super().__init__()
         self.plot_settings = plot_settings
 
-        self.distance = slices_distance
-
         self.assert_is_qfseries(data)
-        self.data = data.sort_values(ascending=False)
+        self.data = data.sort_values(ascending=False) if sort_values else data
+        self.distance = slices_distance if not isinstance(slices_distance, QFSeries) else slices_distance.reindex_like(self.data)
+
 
     def plot(self, figsize: Tuple[float, float] = None) -> None:
         self._setup_axes_if_necessary(figsize)
 
         plot_kwargs = self.plot_settings
-        separate = ((self.distance, ) * len(self.data))
+        separate = ((self.distance, ) * len(self.data)) if isinstance(self.distance, float) else self.distance.values
         wedges, _ = self.axes.pie(self.data, startangle=90, counterclock=False, explode=separate, **plot_kwargs)
 
         arrow_props = {
             'arrowstyle': '-',
             'color': 'black'
         }
-        bbox_props = {
-            "boxstyle": "square,pad=0.3",
-            "fc": "w",
-            "ec": "k",
-            "lw": 0.72
-        }
         kw = {
             'arrowprops': arrow_props,
-            'bbox': bbox_props,
             'zorder': 0,
             'va': 'center'
         }
 
         sum_series = self.data.sum()
         labels = [f"{index}, {value / sum_series:.1%}" for index, value in self.data.items()]
+        label_positions = []
 
         for i, p in enumerate(wedges):
             angle = (p.theta2 - p.theta1) / 2. + p.theta1
@@ -79,8 +74,13 @@ class PieChart(Chart):
             kw["arrowprops"].update({"connectionstyle": connection_style})
             horizontal_alignment = "right" if x <= 0 else "left"
 
-            self.axes.annotate(labels[i], xy=(0.8 * x, 0.8 * y), xytext=((1.3 + (i % 2) * 0.4) * np.sign(x), 1.4 * yc),
-                               horizontalalignment=horizontal_alignment, **kw)
+            label_pos = ((1.3 + (i % 2) * 0.4) * np.sign(x), 1.4 * yc)
+            label_positions.append(label_pos)
+
+            self.axes.annotate(labels[i], xy=(0.8 * x, 0.8 * y), xytext=label_pos,
+                               horizontalalignment=horizontal_alignment,
+                               **kw)
+
 
         self._apply_decorators()
         self._adjust_style()
