@@ -50,7 +50,7 @@ jobs:
         coverage run -m pytest qf_lib/tests/unit_tests
         coverage xml -o unit_tests.xml
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: unit_tests
         path: unit_tests.xml
@@ -103,7 +103,7 @@ jobs:
           coverage run -a -m pytest qf_lib/tests/integration_tests/data_providers
           coverage xml -o data_providers_tests.xml
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: data_providers_tests
           path: data_providers_tests.xml
@@ -118,11 +118,11 @@ jobs:
         with:
           name: unit_tests
       - name: Download artifacts data_providers_tests
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: data_providers_tests
       - name: Download backtesting_tests artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: backtesting_tests
       - name: Set up Python
