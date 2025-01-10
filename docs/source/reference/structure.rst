@@ -229,8 +229,7 @@ Documents utils
 
 The package contains the following tools: - *document_exporting* -
 templates, styles and components used to export the results and save
-them as files - *email_publishing* - creation and sending emails from
-given templates - *excel* - exporting and importing data to/from Excel
+them as files - *excel* - exporting and importing data to/from Excel
 files
 
 Indicators
