@@ -120,17 +120,6 @@ first you need to have a Bloomberg subscription. Then you need to have
 the BLPAPI running somewhere. Then you need to specify where the API is
 running by specifying its host and port.
 
-**email_templates_directory (optional)**
-
-``settings.json``:
-
-.. code:: json
-
-     "email_templates_directory": "input/email_templates"
-
-Setting used by the ``EmailPublisher``. Email templates are HTML
-templates with placeholders (e.g. {{user.name}}).
-
 **output_directory**
 
 ``settings.json``:
@@ -141,28 +130,3 @@ templates with placeholders (e.g. {{user.name}}).
 
 A relative path to the directory into which different components will
 put their output (e.g. generated tearsheets).
-
-**smtp (optional)**
-
-``settings.json``:
-
-.. code:: json
-
-     "smtp": {
-       "host": "smtp.server.pl",
-       "port": 587,
-       "domain": "SOME_DOMAIN",
-       "tls": true,
-       "sender": "sample_user@some.domain.com"
-     }
-
-``secret_settings.json``:
-
-.. code:: json
-
-     "smtp": {
-       "username": "sample_user",
-       "password": "VeryStrong P4ssw0rd with s0me Polish special characters (to confuse the hacker)"
-     }
-
-SMTP settings used by the ``EmailPublisher``.
