@@ -13,7 +13,7 @@
 #     limitations under the License.
 
 from datetime import datetime
-from typing import Set, Type, Union, Sequence, Dict
+from typing import Set, Type, Union, Sequence, Dict, Optional
 
 from pandas import MultiIndex
 
@@ -99,10 +99,10 @@ class YFinanceDataProvider(AbstractPriceDataProvider):
 
 
 if __name__ == '__main__':
-    ticker = [YFinanceTicker("AAPL"), YFinanceTicker("MSFTB"), YFinanceTicker("MSFT"), YFinanceTicker("MSFTA")]
-    dp = YFinanceDataProvider(SettableTimer(datetime(2025, 1, 3, 15)))
+    ticker = [YFinanceTicker("AAPL"), YFinanceTicker("MSFTB"), YFinanceTicker("MSFT"), YFinanceTicker("MSFTx")]
+    dp = YFinanceDataProvider(SettableTimer(datetime(2025, 1, 5, 15)))
     MarketCloseEvent.set_trigger_time({"hour": 9, "minute": 0, "second": 0, "microsecond": 0})
     MarketOpenEvent.set_trigger_time({"hour": 15, "minute": 30, "second": 0, "microsecond": 0})
 
-    prices = dp.get_price(ticker[0], [PriceField.Close], datetime(2025, 1, 1), datetime(2025, 1, 3, 20), Frequency.MIN_60, look_ahead_bias=False)
+    prices = dp.get_price(ticker, [PriceField.Close], datetime(2025, 1, 2), datetime(2025, 1, 2), Frequency.DAILY, look_ahead_bias=False)
     print(prices)

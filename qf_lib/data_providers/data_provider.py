@@ -124,7 +124,7 @@ class DataProvider(metaclass=ABCMeta):
             else today_market_event
 
         latest_market_event = min(latest_available_market_event, end_date)
-        return datetime(latest_market_event.year, latest_market_event.month, latest_market_event.day)
+        return latest_market_event
 
     def _get_end_date_without_look_ahead_intraday(self, end_date: Optional[datetime], frequency: Frequency):
         """
@@ -159,10 +159,10 @@ class DataProvider(metaclass=ABCMeta):
         end_date = end_date or current_time
         end_date += RelativeDelta(second=0, microsecond=0)
 
-        frequency_delta = to_offset(self.frequency.to_pandas_freq()).delta.value
+        frequency_delta = to_offset(frequency.to_pandas_freq()).delta.value
         if current_time <= end_date:
             end_date_without_lookahead = Timestamp(math.floor(Timestamp(current_time).value / frequency_delta) *
-                                                   frequency_delta).to_pydatetime() - self.frequency.time_delta()
+                                                   frequency_delta).to_pydatetime() - frequency.time_delta()
         else:
             end_date_without_lookahead = Timestamp(math.floor(Timestamp(end_date).value / frequency_delta) *
                                                    frequency_delta).to_pydatetime()
