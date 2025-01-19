@@ -124,7 +124,7 @@ class DataProvider(metaclass=ABCMeta):
             else today_market_event
 
         latest_market_event = min(latest_available_market_event, end_date)
-        return datetime(latest_market_event.year, latest_market_event.month, latest_market_event.day)
+        return latest_market_event
 
     def _get_end_date_without_look_ahead_intraday(self, end_date: Optional[datetime], frequency: Frequency):
         """
