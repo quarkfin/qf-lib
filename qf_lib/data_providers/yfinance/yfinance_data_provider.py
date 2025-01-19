@@ -13,20 +13,20 @@
 #     limitations under the License.
 
 from datetime import datetime
-from typing import Set, Type, Union, Sequence, Dict, Optional
+from typing import Set, Type, Union, Sequence, Dict
 
 from pandas import MultiIndex
 
+from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
+from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
-from qf_lib.common.utils.dateutils.timer import RealTimer
+from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
-from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.qf_data_array import QFDataArray
-from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 from qf_lib.data_providers.helpers import normalize_data_array
@@ -37,7 +37,13 @@ import yfinance as yf
 
 class YFinanceDataProvider(AbstractPriceDataProvider):
     def price_field_to_str_map(self, *args) -> Dict[PriceField, str]:
-        pass
+        return {
+            PriceField.Open: 'Open',
+            PriceField.High: 'High',
+            PriceField.Low: 'Low',
+            PriceField.Close: 'Close',
+            PriceField.Volume: 'Volume'
+        }
 
     def get_history(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[None, str, Sequence[str]],
                     start_date: datetime, end_date: datetime = None, frequency: Frequency = None,
@@ -58,7 +64,8 @@ class YFinanceDataProvider(AbstractPriceDataProvider):
         fields, got_single_field = convert_to_list(fields, (PriceField, str))
 
         tickers_str = [t.as_string() for t in tickers]
-        df = yf.download(tickers_str, start_date, end_date, keepna=True)
+        df = yf.download(tickers_str, start_date, end_date, keepna=True, interval=self._frequency_to_period(frequency),
+                         progress=False)
         df = df.reindex(columns=MultiIndex.from_product([fields, tickers_str]))
         stacked_df = df.stack(level=1, dropna=False)
         values = stacked_df.values.reshape(len(df), len(tickers), len(fields))
@@ -67,22 +74,35 @@ class YFinanceDataProvider(AbstractPriceDataProvider):
             qf_data_array, tickers, fields, got_single_date, got_single_ticker, got_single_field, use_prices_types=False
         )
 
-    def historical_price(self, tickers: Union[Ticker, Sequence[Ticker]],
-                         fields: Union[PriceField, Sequence[PriceField]],
-                         nr_of_bars: int, end_date: Optional[datetime] = None,
-                         frequency: Frequency = None, **kwargs) -> Union[PricesSeries, PricesDataFrame, QFDataArray]:
-        if isinstance(self.timer, RealTimer):
-            pass
-            # TODO use the download period function
-        else:
-            super().historical_price(tickers, fields, end_date, frequency, **kwargs)
-
     def supported_ticker_types(self) -> Set[Type[Ticker]]:
         return {YFinanceTicker}
+
+    @staticmethod
+    def _frequency_to_period(freq: Frequency):
+        frequencies_mapping = {
+            Frequency.MIN_1: '1m',
+            Frequency.MIN_5: '5m',
+            Frequency.MIN_15: '15m',
+            Frequency.MIN_30: '30m',
+            Frequency.MIN_60: '60m',
+            Frequency.DAILY: '1d',
+            Frequency.WEEKLY: '1wk',
+            Frequency.MONTHLY: '1mo',
+            Frequency.QUARTERLY: '3mo',
+        }
+
+        try:
+            return frequencies_mapping[freq]
+        except KeyError:
+            raise ValueError(f"Frequency must be one of the supported frequencies: {frequencies_mapping.keys()}.") \
+                from None
 
 
 if __name__ == '__main__':
     ticker = [YFinanceTicker("AAPL"), YFinanceTicker("MSFTB"), YFinanceTicker("MSFT"), YFinanceTicker("MSFTA")]
-    dp = YFinanceDataProvider()
-    prices = dp.get_history(ticker[0], ["Close"], datetime(2025, 1, 1), datetime(2025, 1, 2))
+    dp = YFinanceDataProvider(SettableTimer(datetime(2025, 1, 3, 15)))
+    MarketCloseEvent.set_trigger_time({"hour": 9, "minute": 0, "second": 0, "microsecond": 0})
+    MarketOpenEvent.set_trigger_time({"hour": 15, "minute": 30, "second": 0, "microsecond": 0})
+
+    prices = dp.get_price(ticker[0], [PriceField.Close], datetime(2025, 1, 1), datetime(2025, 1, 3, 20), Frequency.MIN_60, look_ahead_bias=False)
     print(prices)
