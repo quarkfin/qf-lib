@@ -159,10 +159,10 @@ class DataProvider(metaclass=ABCMeta):
         end_date = end_date or current_time
         end_date += RelativeDelta(second=0, microsecond=0)
 
-        frequency_delta = to_offset(self.frequency.to_pandas_freq()).delta.value
+        frequency_delta = to_offset(frequency.to_pandas_freq()).delta.value
         if current_time <= end_date:
             end_date_without_lookahead = Timestamp(math.floor(Timestamp(current_time).value / frequency_delta) *
-                                                   frequency_delta).to_pydatetime() - self.frequency.time_delta()
+                                                   frequency_delta).to_pydatetime() - frequency.time_delta()
         else:
             end_date_without_lookahead = Timestamp(math.floor(Timestamp(end_date).value / frequency_delta) *
                                                    frequency_delta).to_pydatetime()
