@@ -13,7 +13,7 @@
 #     limitations under the License.
 import warnings
 from datetime import datetime
-from typing import Set, Type, Union, Sequence, Dict, Optional
+from typing import Set, Type, Union, Sequence, Dict
 
 from pandas import MultiIndex
 
