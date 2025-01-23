@@ -12,10 +12,12 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 from datetime import datetime
+from sqlite3 import Timestamp
 from unittest.mock import patch
 
 import pytest
 import pandas as pd
+from numpy import nan
 
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
@@ -42,6 +44,7 @@ def mock_daily_yfinance_download():
         # Hardcoded data for testing
         data = {
             "AAPL": pd.DataFrame({
+                ("Open", "AAPL"): [140.0, 142.0, None, 142.0, 143.0, 144.0, 145.0, 146.0],
                 ("Close", "AAPL"): [150.0, 151.0, None, 152.0, 153.0, 154.0, 155.0, 156.0],
                 ("Volume", "AAPL"): [1000000 + i * 100000 for i in range(8)],
             }, index=pd.date_range("2025-01-01", "2025-01-08")),
@@ -86,35 +89,58 @@ def test_get_history__real_timer(mock_download, tickers, fields, start_date,
         assert result == expected_values, f"Expected value {expected_values}, but got {result}"
     elif isinstance(result, QFSeries):
         assert_series_equal(expected_values, result, check_names=False, check_index_type=False)
-    elif isinstance(result, QFDataFrame):
-        assert_dataframes_equal(expected_values, result, check_names=False, check_index_type=False)
 
 
 @patch("yfinance.download")
 @pytest.mark.parametrize(
     "tickers, fields, start_date, end_date, frequency, expected_type, expected_values, current_time",
     [
-        ("AAPL", "Close", "2025-01-01", "2025-01-01", Frequency.DAILY, float, 150.0), datetime(2025, 1, 3, 14),
+        ("AAPL", "Close", "2025-01-01", "2025-01-01", Frequency.DAILY, float, 150.0, datetime(2025, 1, 3, 14)),
+        ("AAPL", "Close", "2025-01-01", "2025-01-02", Frequency.DAILY, QFSeries,
+         QFSeries([150, 151], pd.date_range("2025-01-01", "2025-01-02")), datetime(2025, 1, 3, 14)),
+        ("AAPL", "Close", "2025-01-01", "2025-01-02", Frequency.DAILY, QFSeries,
+         QFSeries([150, 151], pd.date_range("2025-01-01", "2025-01-02")), datetime(2025, 1, 2, 16)),
+        ("AAPL", "Close", "2025-01-01", "2025-01-02", Frequency.DAILY, QFSeries,
+         QFSeries([150], pd.date_range("2025-01-01", "2025-01-01")), datetime(2025, 1, 2, 14, 45)),
+        ("AAPL", "Close", "2025-01-01", "2025-01-02", Frequency.DAILY, QFSeries,
+         QFSeries([150], pd.date_range("2025-01-01", "2025-01-01")), datetime(2025, 1, 1, 15, 45)),
+
+        # Get history, daily, doesn't return Open price before the market closes
+        ("AAPL", "Open", "2025-01-01", "2025-01-02", Frequency.DAILY, QFSeries,
+         QFSeries([140, ], pd.date_range("2025-01-01", "2025-01-01")), datetime(2025, 1, 2, 14)),
+        ("AAPL", "Open", "2025-01-01", "2025-01-02", Frequency.DAILY, QFSeries,
+         QFSeries([140, 142], pd.date_range("2025-01-01", "2025-01-02")), datetime(2025, 1, 2, 16)),
+
+        (["AAPL", "MSFT"], "Close", "2025-01-01", "2025-01-02", Frequency.DAILY, QFDataFrame,
+         QFDataFrame.from_dict({YFinanceTicker('AAPL'): {str_to_date('2025-01-01'): 150.0,
+                                                         str_to_date('2025-01-02'): 151.0},
+                                YFinanceTicker('MSFT'): {str_to_date('2025-01-01'): 300.0,
+                                                         str_to_date('2025-01-02'): nan}}),
+         datetime(2025, 1, 2, 16)),
+        (["AAPL", "AAPL"], "Close", "2025-01-01", "2025-01-02", Frequency.DAILY, QFDataFrame,
+         QFDataFrame.from_dict({YFinanceTicker('AAPL'): {str_to_date('2025-01-01'): 150.0,
+                                                         str_to_date('2025-01-02'): 151.0},
+                                YFinanceTicker('MSFT'): {str_to_date('2025-01-01'): 150.0,
+                                                         str_to_date('2025-01-02'): 151.0}}),
+         datetime(2025, 1, 2, 16)),
     ]
 )
 def test_get_history__settable_timer(mock_download, tickers, fields, start_date,
                                      end_date, frequency, expected_type, expected_values, current_time,
                                      mock_daily_yfinance_download,
                                      data_provider):
-    # TODO
-    MarketCloseEvent.set_trigger_time({"hour": 9, "minute": 0, "second": 0, "microsecond": 0})
-    MarketOpenEvent.set_trigger_time({"hour": 15, "minute": 0, "second": 0, "microsecond": 0})
+    MarketOpenEvent.set_trigger_time({"hour": 9, "minute": 0, "second": 0, "microsecond": 0})
+    MarketCloseEvent.set_trigger_time({"hour": 15, "minute": 0, "second": 0, "microsecond": 0})
 
     data_provider.timer = SettableTimer(current_time)
     mock_download.side_effect = mock_daily_yfinance_download
 
     result = data_provider.get_history(YFinanceTicker.from_string(tickers), fields, str_to_date(start_date),
                                        str_to_date(end_date), frequency)
+
     assert isinstance(result, expected_type), f"Expected type {expected_type}, but got {type(result)}"
 
     if isinstance(result, float):
         assert result == expected_values, f"Expected value {expected_values}, but got {result}"
     elif isinstance(result, QFSeries):
         assert_series_equal(expected_values, result, check_names=False, check_index_type=False)
-    elif isinstance(result, QFDataFrame):
-        assert_dataframes_equal(expected_values, result, check_names=False, check_index_type=False)

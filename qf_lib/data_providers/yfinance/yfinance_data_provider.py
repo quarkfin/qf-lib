@@ -63,7 +63,7 @@ class YFinanceDataProvider(AbstractPriceDataProvider):
         tickers, got_single_ticker = convert_to_list(tickers, YFinanceTicker)
         fields, got_single_field = convert_to_list(fields, (PriceField, str))
 
-        tickers_str = [t.as_string() for t in tickers]
+        tickers_str = {t.as_string() for t in tickers}
         df = yf.download(tickers_str, start_date, end_date, keepna=True, interval=self._frequency_to_period(frequency),
                          progress=False)
         df = df.reindex(columns=MultiIndex.from_product([fields, tickers_str]))
@@ -100,9 +100,11 @@ class YFinanceDataProvider(AbstractPriceDataProvider):
 
 if __name__ == '__main__':
     ticker = [YFinanceTicker("AAPL"), YFinanceTicker("MSFTB"), YFinanceTicker("MSFT"), YFinanceTicker("MSFTx")]
-    dp = YFinanceDataProvider(SettableTimer(datetime(2025, 1, 5, 15)))
-    MarketCloseEvent.set_trigger_time({"hour": 9, "minute": 0, "second": 0, "microsecond": 0})
-    MarketOpenEvent.set_trigger_time({"hour": 15, "minute": 30, "second": 0, "microsecond": 0})
+    dp = YFinanceDataProvider()
+    #MarketCloseEvent.set_trigger_time({"hour": 9, "minute": 0, "second": 0, "microsecond": 0})
+    #MarketOpenEvent.set_trigger_time({"hour": 15, "minute": 30, "second": 0, "microsecond": 0})
 
-    prices = dp.get_price(ticker, [PriceField.Close], datetime(2025, 1, 2), datetime(2025, 1, 2), Frequency.DAILY, look_ahead_bias=False)
+    prices = dp.get_price(YFinanceTicker("6588.T"), PriceField.Close, datetime(2025, 1, 2),
+                          datetime(2025, 1, 30), Frequency.DAILY, look_ahead_bias=False)
     print(prices)
+    print(prices.index[0])
