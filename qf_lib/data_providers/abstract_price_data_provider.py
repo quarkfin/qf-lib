@@ -291,7 +291,7 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
 
     @staticmethod
     def _got_single_date(start_date: datetime, end_date: datetime, frequency: Frequency):
-        return start_date.date() == end_date.date() if frequency <= Frequency.DAILY else \
+        return (start_date + frequency.time_delta()).date() > end_date.date() if frequency <= Frequency.DAILY else \
             (start_date + frequency.time_delta() >= end_date)
 
     def _map_field_to_str(

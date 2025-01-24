@@ -16,8 +16,7 @@ from abc import ABCMeta, abstractmethod
 from datetime import datetime
 from typing import Union, Sequence, Type, Set, Optional
 
-from pandas import Timestamp
-from pandas._libs.tslibs import to_offset
+from pandas import Timestamp, Timedelta
 
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.regular_market_event import RegularMarketEvent
@@ -108,7 +107,7 @@ class DataProvider(metaclass=ABCMeta):
             return end_date
 
         frequency = frequency or self.frequency
-        if frequency == Frequency.DAILY:
+        if frequency <= Frequency.DAILY:
             return self._get_last_available_market_event(end_date, MarketCloseEvent)
         else:
             return self._get_end_date_without_look_ahead_intraday(end_date, frequency)
@@ -159,7 +158,7 @@ class DataProvider(metaclass=ABCMeta):
         end_date = end_date or current_time
         end_date += RelativeDelta(second=0, microsecond=0)
 
-        frequency_delta = to_offset(frequency.to_pandas_freq()).delta.value
+        frequency_delta = Timedelta((current_time + frequency.time_delta()) - current_time).value
         if current_time <= end_date:
             end_date_without_lookahead = Timestamp(math.floor(Timestamp(current_time).value / frequency_delta) *
                                                    frequency_delta).to_pydatetime() - frequency.time_delta()

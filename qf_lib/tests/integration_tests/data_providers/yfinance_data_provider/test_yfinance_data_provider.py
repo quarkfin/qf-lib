@@ -17,10 +17,13 @@ from datetime import datetime
 import pytest
 from numpy import nan
 from numpy.testing import assert_almost_equal
-from pandas import date_range
+from pandas import date_range, DatetimeIndex
 
+from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
+from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
+from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.qf_series import QFSeries
@@ -35,92 +38,129 @@ def data_provider():
     return YFinanceDataProvider()
 
 
+def assert_equal(result, expected_value, decimals=2):
+    expected_type = type(expected_value)
+    assert isinstance(result, expected_type), f"Expected type {expected_type}, but got {type(result)}"
+
+    if isinstance(result, float):
+        if isnan(result):
+            assert isnan(expected_value)
+        else:
+            assert_almost_equal(expected_value, result, decimal=decimals)
+    elif isinstance(result, QFSeries):
+        assert_series_equal(expected_value, result, check_names=False, check_index_type=False)
+    elif isinstance(result, QFDataFrame):
+        assert_dataframes_equal(expected_value, result, check_names=False, check_index_type=False)
+    elif isinstance(result, QFDataArray):
+        assert_dataarrays_equal(expected_value, result, check_names=False, check_index_type=False)
+
+
 @pytest.mark.parametrize(
-    "tickers, fields, start_date, end_date, expected_type, expected_values",
+    "tickers, fields, start_date, end_date, expected_values",
     [
-        ("AAPL", "Close", "2025-01-02", "2025-01-02", float, 243.85),
-        ("AAPL", ["Close"], "2025-01-02", "2025-01-02", QFSeries, QFSeries([243.85], index=["Close"])),
-        (["AAPL"], "Close", "2025-01-02", "2025-01-02", QFSeries, QFSeries([243.85], index=[YFinanceTicker("AAPL")])),
-        ("AAPL", ["Close"], "2025-01-02", "2025-01-06", QFDataFrame,
+        ("AAPL", "Close", "2025-01-02", "2025-01-02", 243.85),
+        ("AAPL", ["Close"], "2025-01-02", "2025-01-02", QFSeries([243.85], index=["Close"])),
+        (["AAPL"], "Close", "2025-01-02", "2025-01-02", QFSeries([243.85], index=[YFinanceTicker("AAPL")])),
+        ("AAPL", ["Close"], "2025-01-02", "2025-01-06",
          QFDataFrame({"Close": [243.85, 243.36, 245.00]}, index=date_range("2025-01-02", "2025-01-06", freq="B"))),
-        (["AAPL"], "Close", "2025-01-02", "2025-01-06", QFDataFrame,
-         QFDataFrame({YFinanceTicker("AAPL"): [243.85, 243.36, 245.00]}, index=date_range("2025-01-02", "2025-01-06", freq="B"))),
-        ("AAPL", "Close", "2025-01-01", "2025-01-06", QFSeries,
+        (["AAPL"], "Close", "2025-01-02", "2025-01-06",
+         QFDataFrame({YFinanceTicker("AAPL"): [243.85, 243.36, 245.00]},
+                     index=date_range("2025-01-02", "2025-01-06", freq="B"))),
+        ("AAPL", "Close", "2025-01-01", "2025-01-06",
          QFSeries([243.85, 243.36, 245.00], date_range("2025-01-02", "2025-01-06", freq="B"))),
-        (["AAPL"], ["Close"], "2025-01-01", "2025-01-06", QFDataArray,
+        (["AAPL"], ["Close"], "2025-01-01", "2025-01-06",
          QFDataArray.create(date_range("2025-01-02", "2025-01-06", freq="B"), [YFinanceTicker("AAPL")], ["Close"],
                             [[[243.85]], [[243.36]], [[245.00]]])),
 
-        (["AAPL", "MSFT"], "Close", "2025-01-02", "2025-01-02", QFSeries,
+        (["AAPL", "MSFT"], "Close", "2025-01-02", "2025-01-02",
          QFSeries([243.85, 418.58], index=YFinanceTicker.from_string(["AAPL", "MSFT"]))),
-        (["AAPL", "MSFT"], ["Close"], "2025-01-02", "2025-01-03", QFDataArray,
-         QFDataArray.create(date_range("2025-01-02", "2025-01-03", freq="B"), YFinanceTicker.from_string(["AAPL", "MSFT"]),
-                            ["Close"], [[[243.85], [418.58]], [[243.36], [423.35]],])),
+        (["AAPL", "MSFT"], ["Close"], "2025-01-02", "2025-01-03",
+         QFDataArray.create(date_range("2025-01-02", "2025-01-03", freq="B"),
+                            YFinanceTicker.from_string(["AAPL", "MSFT"]),
+                            ["Close"], [[[243.85], [418.58]], [[243.36], [423.35]], ])),
+        (["AAPL", "AAPL"], "Close", "2025-01-02", "2025-01-02",
+         QFSeries([243.85, 243.85], index=YFinanceTicker.from_string(["AAPL", "AAPL"]))),
     ]
 )
-def test_get_history__daily__real_timer(tickers, fields, start_date, end_date, expected_type, expected_values,
-                                 data_provider):
+def test_get_history__daily__real_timer(tickers, fields, start_date, end_date, expected_values, data_provider):
     result = data_provider.get_history(YFinanceTicker.from_string(tickers), fields, str_to_date(start_date),
                                        str_to_date(end_date))
-    assert isinstance(result, expected_type), f"Expected type {expected_type}, but got {type(result)}"
+    assert_equal(result, expected_values)
 
-    if isinstance(result, float):
-        assert_almost_equal(expected_values, result, decimal=2)
-    elif isinstance(result, QFSeries):
-        assert_series_equal(expected_values, result, check_names=False, check_index_type=False)
-    elif isinstance(result, QFDataFrame):
-        assert_dataframes_equal(expected_values, result, check_names=False, check_index_type=False)
-    elif isinstance(result, QFDataArray):
-        assert_dataarrays_equal(expected_values, result, check_names=False, check_index_type=False)
 
 @pytest.mark.parametrize(
-    "tickers, fields, start_date, end_date, expected_type, expected_values",
+    "tickers, fields, start_date, end_date, expected_values",
     [
-        ("HAHA", "Close", "2025-01-02", "2025-01-02", float, nan),
-        ("HAHA", ["Close"], "2025-01-02", "2025-01-02", QFSeries, QFSeries([nan], index=["Close"])),
-        (["HAHA"], "Closee", "2025-01-02", "2025-01-02", QFSeries, QFSeries([nan], index=[YFinanceTicker("HAHA")])),
-       
-        (["HAHA", "MSFT"], "Close", "2025-01-02", "2025-01-02", QFSeries,
+        ("HAHA", "Close", "2025-01-02", "2025-01-02", nan),
+        ("HAHA", ["Close"], "2025-01-02", "2025-01-02", QFSeries([nan], index=["Close"])),
+        (["HAHA"], "Closee", "2025-01-02", "2025-01-02", QFSeries([nan], index=[YFinanceTicker("HAHA")])),
+
+        (["HAHA", "MSFT"], "Close", "2025-01-02", "2025-01-02",
          QFSeries([nan, 418.58], index=YFinanceTicker.from_string(["HAHA", "MSFT"]))),
-        (["HAHA", "MSFT"], ["Close"], "2025-01-02", "2025-01-03", QFDataArray,
-         QFDataArray.create(date_range("2025-01-02", "2025-01-03", freq="B"), YFinanceTicker.from_string(["HAHA", "MSFT"]),
-                            ["Close"], [[[nan], [418.58]], [[nan], [423.35]],])),
+        (["HAHA", "MSFT"], ["Close"], "2025-01-02", "2025-01-03",
+         QFDataArray.create(date_range("2025-01-02", "2025-01-03", freq="B"),
+                            YFinanceTicker.from_string(["HAHA", "MSFT"]),
+                            ["Close"], [[[nan], [418.58]], [[nan], [423.35]], ])),
     ]
 )
-def test_incorrect_inputs(tickers, fields, start_date, end_date, expected_type, expected_values, data_provider):
+def test_incorrect_inputs(tickers, fields, start_date, end_date, expected_values, data_provider):
     result = data_provider.get_history(YFinanceTicker.from_string(tickers), fields, str_to_date(start_date),
                                        str_to_date(end_date))
-    assert isinstance(result, expected_type), f"Expected type {expected_type}, but got {type(result)}"
 
-    if isinstance(result, float):
-        assert isnan(result)
-    elif isinstance(result, QFSeries):
-        assert_series_equal(expected_values, result, check_names=False, check_index_type=False)
-    elif isinstance(result, QFDataFrame):
-        assert_dataframes_equal(expected_values, result, check_names=False, check_index_type=False)
-    elif isinstance(result, QFDataArray):
-        assert_dataarrays_equal(expected_values, result, check_names=False, check_index_type=False)
+    assert_equal(result, expected_values)
+
 
 @pytest.mark.parametrize(
-    "tickers, fields, start_date, end_date, expected_type, frequency, expected_values",
+    "tickers, fields, start_date, end_date, frequency, expected_values",
     [
-        ("AAPL", "Close", datetime(2025, 1, 2, 14, 0), datetime(2025, 1, 2, 14, 1), float, Frequency.MIN_1, 242.11),
-        ("AAPL", "Close", datetime(2025, 1, 2, 14, 0), datetime(2025, 1, 2, 14, 3), QFSeries, Frequency.MIN_1,
-                QFSeries([242.11, 242.07, 242.11], index=date_range(start='2025-01-02 14:00', freq='T', periods=3,
-                                                                    tz='EST').tz_convert('UTC'))),
-
+        ("AAPL", "Close", datetime(2025, 1, 2, 14, 0), datetime(2025, 1, 2, 14, 1), Frequency.MIN_1, 242.11),
+        ("AAPL", "Close", datetime(2025, 1, 2, 14, 0), datetime(2025, 1, 2, 14, 3), Frequency.MIN_1,
+         QFSeries([242.11, 242.07, 242.11], index=date_range(start='2025-01-02 14:00', freq='T', periods=3,
+                                                             tz='EST').tz_convert('UTC'))),
+        ("AAPL", "Close", datetime(2025, 1, 1), datetime(2025, 1, 7), Frequency.WEEKLY, 242.21),
+        ("AAPL", "Close", datetime(2025, 1, 4), datetime(2025, 1, 7), Frequency.WEEKLY, 242.21),
+        ("AAPL", "Close", datetime(2025, 1, 4), datetime(2025, 1, 31), Frequency.MONTHLY, 223.66),
     ]
 )
-def test_get_history__various_frequencies_real_timer(tickers, fields, start_date, end_date, expected_type, frequency,
+def test_get_history__various_frequencies_real_timer(tickers, fields, start_date, end_date, frequency,
                                                      expected_values, data_provider):
     result = data_provider.get_history(YFinanceTicker.from_string(tickers), fields, start_date, end_date, frequency)
-    assert isinstance(result, expected_type), f"Expected type {expected_type}, but got {type(result)}"
+    assert_equal(result, expected_values)
 
-    if isinstance(result, float):
-        assert_almost_equal(expected_values, result, decimal=2)
-    elif isinstance(result, QFSeries):
-        assert_series_equal(expected_values, result, check_names=False, check_index_type=False)
-    elif isinstance(result, QFDataFrame):
-        assert_dataframes_equal(expected_values, result, check_names=False, check_index_type=False)
-    elif isinstance(result, QFDataArray):
-        assert_dataarrays_equal(expected_values, result, check_names=False, check_index_type=False)
+
+@pytest.mark.parametrize(
+    "tickers, fields, start_date, end_date, frequency, expected_values, current_time",
+    [
+        ("AAPL", "Close", datetime(2025, 1, 2, 14, 0), datetime(2025, 1, 2, 14, 1), Frequency.MIN_1,
+         242.11, datetime(2025, 1, 2, 14, 2)),
+        ("AAPL", "Close", datetime(2025, 1, 2, 14, 0), datetime(2025, 1, 2, 14, 2), Frequency.MIN_1,
+         QFSeries([242.11],
+                  index=date_range(start='2025-01-02 14:00', freq='T', periods=1, tz='EST').tz_convert('UTC')),
+         datetime(2025, 1, 2, 14, 2)),
+        ("AAPL", "Close", datetime(2025, 1, 2, 14, 0), datetime(2025, 1, 2, 14, 4), Frequency.MIN_5,
+         nan, datetime(2025, 1, 2, 14, 2)),
+        ("AAPL", "Close", datetime(2025, 1, 2, 14, 0), datetime(2025, 1, 2, 14, 17), Frequency.MIN_5,
+         QFSeries(index=DatetimeIndex([])), datetime(2025, 1, 2, 14, 2)),
+
+        (["AAPL"], "Close", datetime(2025, 1, 2), datetime(2025, 1, 6), Frequency.DAILY,
+         QFDataFrame({YFinanceTicker("AAPL"): [243.85, 243.36, 245.00]},
+                     index=date_range("2025-01-02", "2025-01-06", freq="B")),
+         datetime(2025, 1, 6, 15)),
+        (["AAPL"], "Close", datetime(2025, 1, 2), datetime(2025, 1, 6), Frequency.DAILY,
+         QFDataFrame({YFinanceTicker("AAPL"): [243.85, 243.36]},
+                     index=date_range("2025-01-02", "2025-01-05", freq="B")),
+         datetime(2025, 1, 6, 14)),
+        ("AAPL", "Close", datetime(2025, 1, 1), datetime(2025, 1, 7), Frequency.WEEKLY, 242.21, datetime(2025, 1, 8)),
+        ("AAPL", "Close", datetime(2025, 1, 1), datetime(2025, 1, 7), Frequency.WEEKLY, nan, datetime(2025, 1, 2)),
+        ("AAPL", "Close", datetime(2025, 1, 1), datetime(2025, 1, 7), Frequency.WEEKLY, 243.85, datetime(2025, 1, 3)),
+
+    ]
+)
+def test_get_history__settable_timer(tickers, fields, start_date, end_date, frequency,
+                                     expected_values, current_time, data_provider):
+    MarketCloseEvent.set_trigger_time({"hour": 15, "minute": 0, "second": 0, "microsecond": 0})
+    MarketOpenEvent.set_trigger_time({"hour": 9, "minute": 30, "second": 0, "microsecond": 0})
+
+    data_provider.timer = SettableTimer(current_time)
+    result = data_provider.get_history(YFinanceTicker.from_string(tickers), fields, start_date, end_date, frequency)
+    assert_equal(result, expected_values)

@@ -17,13 +17,10 @@ from typing import Set, Type, Union, Sequence, Dict
 
 from pandas import MultiIndex
 
-from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
-from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import Ticker
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
-from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.qf_data_array import QFDataArray
@@ -63,12 +60,11 @@ class YFinanceDataProvider(AbstractPriceDataProvider):
         tickers, got_single_ticker = convert_to_list(tickers, YFinanceTicker)
         fields, got_single_field = convert_to_list(fields, (PriceField, str))
 
-        tickers_str = {t.as_string() for t in tickers}
-        df = yf.download(tickers_str, start_date, end_date, keepna=True, interval=self._frequency_to_period(frequency),
+        tickers_str = [t.as_string() for t in tickers]
+        df = yf.download(list(set(tickers_str)), start_date, end_date, keepna=True, interval=self._frequency_to_period(frequency),
                          progress=False)
         df = df.reindex(columns=MultiIndex.from_product([fields, tickers_str]))
-        stacked_df = df.stack(level=1, dropna=False)
-        values = stacked_df.values.reshape(len(df), len(tickers), len(fields))
+        values = df.values.reshape(len(df), len(tickers), len(fields))
         qf_data_array = QFDataArray.create(df.index.rename("dates"), tickers, fields, values)
         return normalize_data_array(
             qf_data_array, tickers, fields, got_single_date, got_single_ticker, got_single_field, use_prices_types=False
@@ -96,15 +92,3 @@ class YFinanceDataProvider(AbstractPriceDataProvider):
         except KeyError:
             raise ValueError(f"Frequency must be one of the supported frequencies: {frequencies_mapping.keys()}.") \
                 from None
-
-
-if __name__ == '__main__':
-    ticker = [YFinanceTicker("AAPL"), YFinanceTicker("MSFTB"), YFinanceTicker("MSFT"), YFinanceTicker("MSFTx")]
-    dp = YFinanceDataProvider()
-    #MarketCloseEvent.set_trigger_time({"hour": 9, "minute": 0, "second": 0, "microsecond": 0})
-    #MarketOpenEvent.set_trigger_time({"hour": 15, "minute": 30, "second": 0, "microsecond": 0})
-
-    prices = dp.get_price(YFinanceTicker("6588.T"), PriceField.Close, datetime(2025, 1, 2),
-                          datetime(2025, 1, 30), Frequency.DAILY, look_ahead_bias=False)
-    print(prices)
-    print(prices.index[0])

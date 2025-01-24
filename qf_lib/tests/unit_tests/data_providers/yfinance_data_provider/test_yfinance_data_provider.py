@@ -12,7 +12,6 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 from datetime import datetime
-from sqlite3 import Timestamp
 from unittest.mock import patch
 
 import pytest
@@ -28,7 +27,7 @@ from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.yfinance.yfinance_data_provider import YFinanceDataProvider
 from qf_lib.data_providers.yfinance.yfinance_ticker import YFinanceTicker
-from qf_lib.tests.helpers.testing_tools.containers_comparison import assert_series_equal, assert_dataframes_equal
+from qf_lib.tests.helpers.testing_tools.containers_comparison import assert_series_equal
 
 
 @pytest.fixture
@@ -120,7 +119,7 @@ def test_get_history__real_timer(mock_download, tickers, fields, start_date,
         (["AAPL", "AAPL"], "Close", "2025-01-01", "2025-01-02", Frequency.DAILY, QFDataFrame,
          QFDataFrame.from_dict({YFinanceTicker('AAPL'): {str_to_date('2025-01-01'): 150.0,
                                                          str_to_date('2025-01-02'): 151.0},
-                                YFinanceTicker('MSFT'): {str_to_date('2025-01-01'): 150.0,
+                                YFinanceTicker('AAPL'): {str_to_date('2025-01-01'): 150.0,
                                                          str_to_date('2025-01-02'): 151.0}}),
          datetime(2025, 1, 2, 16)),
     ]
