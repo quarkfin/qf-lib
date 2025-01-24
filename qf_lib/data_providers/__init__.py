@@ -18,3 +18,4 @@ from qf_lib.data_providers.bloomberg_beap_hapi.bloomberg_beap_hapi_data_provider
 from qf_lib.data_providers.csv.csv_data_provider import CSVDataProvider
 from qf_lib.data_providers.haver import HaverDataProvider
 from qf_lib.data_providers.quandl.quandl_data_provider import QuandlDataProvider
+from qf_lib.data_providers.yfinance.yfinance_data_provider import YFinanceDataProvider

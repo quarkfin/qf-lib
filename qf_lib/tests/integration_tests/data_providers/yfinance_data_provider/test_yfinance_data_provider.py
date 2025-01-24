@@ -27,7 +27,7 @@ from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.qf_series import QFSeries
-from qf_lib.data_providers.yfinance.yfinance_data_provider import YFinanceDataProvider
+from qf_lib.data_providers.yfinance.yfinance_data_provider import YFinanceDataProvider, is_yfinance_intalled
 from qf_lib.data_providers.yfinance.yfinance_ticker import YFinanceTicker
 from qf_lib.tests.helpers.testing_tools.containers_comparison import assert_series_equal, assert_dataframes_equal, \
     assert_dataarrays_equal
@@ -54,7 +54,7 @@ def assert_equal(result, expected_value, decimals=2):
     elif isinstance(result, QFDataArray):
         assert_dataarrays_equal(expected_value, result, check_names=False, check_index_type=False)
 
-
+@pytest.mark.skipif(not is_yfinance_intalled, reason="requires yfinance")
 @pytest.mark.parametrize(
     "tickers, fields, start_date, end_date, expected_values",
     [
@@ -87,7 +87,7 @@ def test_get_history__daily__real_timer(tickers, fields, start_date, end_date, e
                                        str_to_date(end_date))
     assert_equal(result, expected_values)
 
-
+@pytest.mark.skipif(not is_yfinance_intalled, reason="requires yfinance")
 @pytest.mark.parametrize(
     "tickers, fields, start_date, end_date, expected_values",
     [
@@ -109,7 +109,7 @@ def test_incorrect_inputs(tickers, fields, start_date, end_date, expected_values
 
     assert_equal(result, expected_values)
 
-
+@pytest.mark.skipif(not is_yfinance_intalled, reason="requires yfinance")
 @pytest.mark.parametrize(
     "tickers, fields, start_date, end_date, frequency, expected_values",
     [
@@ -127,7 +127,7 @@ def test_get_history__various_frequencies_real_timer(tickers, fields, start_date
     result = data_provider.get_history(YFinanceTicker.from_string(tickers), fields, start_date, end_date, frequency)
     assert_equal(result, expected_values)
 
-
+@pytest.mark.skipif(not is_yfinance_intalled, reason="requires yfinance")
 @pytest.mark.parametrize(
     "tickers, fields, start_date, end_date, frequency, expected_values, current_time",
     [
