@@ -54,6 +54,7 @@ def assert_equal(result, expected_value, decimals=2):
     elif isinstance(result, QFDataArray):
         assert_dataarrays_equal(expected_value, result, check_names=False, check_index_type=False)
 
+
 @pytest.mark.skipif(not is_yfinance_intalled, reason="requires yfinance")
 @pytest.mark.parametrize(
     "tickers, fields, start_date, end_date, expected_values",
@@ -87,6 +88,7 @@ def test_get_history__daily__real_timer(tickers, fields, start_date, end_date, e
                                        str_to_date(end_date))
     assert_equal(result, expected_values)
 
+
 @pytest.mark.skipif(not is_yfinance_intalled, reason="requires yfinance")
 @pytest.mark.parametrize(
     "tickers, fields, start_date, end_date, expected_values",
@@ -109,6 +111,7 @@ def test_incorrect_inputs(tickers, fields, start_date, end_date, expected_values
 
     assert_equal(result, expected_values)
 
+
 @pytest.mark.skipif(not is_yfinance_intalled, reason="requires yfinance")
 @pytest.mark.parametrize(
     "tickers, fields, start_date, end_date, frequency, expected_values",
@@ -126,6 +129,7 @@ def test_get_history__various_frequencies_real_timer(tickers, fields, start_date
                                                      expected_values, data_provider):
     result = data_provider.get_history(YFinanceTicker.from_string(tickers), fields, start_date, end_date, frequency)
     assert_equal(result, expected_values)
+
 
 @pytest.mark.skipif(not is_yfinance_intalled, reason="requires yfinance")
 @pytest.mark.parametrize(

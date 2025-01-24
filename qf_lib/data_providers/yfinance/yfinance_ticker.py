@@ -1,7 +1,7 @@
 from typing import Union, Sequence, Optional
 
 from qf_lib.common.enums.security_type import SecurityType
-from qf_lib.common.tickers.tickers import Ticker, BloombergTicker
+from qf_lib.common.tickers.tickers import Ticker
 
 
 class YFinanceTicker(Ticker):
