@@ -56,6 +56,7 @@ setup(
         "bloomberg_beap_hapi": ["PyJWT>=0.2.3,<2.0.0", "retrying>=1.3.3", "beap-lib==0.0.1"],
         "blpapi": ["blpapi>=3.21.0,<=3.24.4"],
         "quandl": ["quandl>=3.6.1,<=3.7.0"],
+        "yfinance": ["yfinance>=0.2.50"]
     },
     keywords='quantitative finance backtester',
     python_requires='>=3.8.0'
