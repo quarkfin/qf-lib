@@ -122,7 +122,7 @@ def test_incorrect_inputs(tickers, fields, start_date, end_date, expected_values
                                                              tz='EST').tz_convert('UTC'))),
         ("AAPL", "Close", datetime(2025, 1, 1), datetime(2025, 1, 7), Frequency.WEEKLY, 242.21),
         ("AAPL", "Close", datetime(2025, 1, 4), datetime(2025, 1, 7), Frequency.WEEKLY, 242.21),
-        ("AAPL", "Close", datetime(2025, 1, 4), datetime(2025, 1, 31), Frequency.MONTHLY, 223.66),
+        ("AAPL", "Close", datetime(2024, 12, 1), datetime(2024, 12, 31), Frequency.MONTHLY, 250.42),
     ]
 )
 def test_get_history__various_frequencies_real_timer(tickers, fields, start_date, end_date, frequency,
