@@ -39,6 +39,15 @@ except ImportError:
 
 
 class YFinanceDataProvider(AbstractPriceDataProvider):
+    """
+    Data Provider using the yfinance library to provide historical data of various frequencies.
+
+    Parameters
+    -----------
+    timer: Timer
+        Might be either SettableTimer or RealTimer depending on the use case. If no parameter is passed, a default
+        RealTimer object will be used.
+    """
     def __init__(self, timer: Optional[Timer] = None):
         super().__init__(timer)
 
@@ -56,9 +65,40 @@ class YFinanceDataProvider(AbstractPriceDataProvider):
             PriceField.Volume: 'Volume'
         }
 
-    def get_history(self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[None, str, Sequence[str]],
+    def get_history(self, tickers: Union[YFinanceTicker, Sequence[YFinanceTicker]], fields: Union[None, str, Sequence[str]],
                     start_date: datetime, end_date: datetime = None, frequency: Frequency = None,
                     look_ahead_bias: bool = False, **kwargs) -> Union[QFSeries, QFDataFrame, QFDataArray]:
+        """
+        Gets historical attributes (fields) of different securities (tickers).
+
+        Parameters
+        ----------
+        tickers: YFinanceTicker, Sequence[YFinanceTicker]
+            tickers for securities which should be retrieved
+        fields: None, str, Sequence[str]
+            fields of securities which should be retrieved.
+        start_date: datetime
+            date representing the beginning of historical period from which data should be retrieved
+        end_date: datetime
+            date representing the end of historical period from which data should be retrieved;
+            if no end_date was provided, by default the current date will be used
+        frequency: Frequency
+            frequency of the data. This data provider supports Monthly, Weekly, Daily frequencies along with intraday
+            frequencies at the following intervals: 60, 30, 15, 5 and 1 minute.
+        look_ahead_bias: bool
+            if set to False, the look-ahead bias will be taken care of to make sure no future data is returned
+
+        Returns
+        -------
+        QFSeries, QFDataFrame, QFDataArray, float, str
+            If possible the result will be squeezed, so that instead of returning a QFDataArray, data of lower
+            dimensionality will be returned. The results will be either a QFDataArray (with 3 dimensions: date, ticker,
+            field), a QFDataFrame (with 2 dimensions: date, ticker or field; it is also possible to get 2 dimensions
+            ticker and field if single date was provided), a QFSeries (with 1 dimensions: date) or a float / str
+            (in case if a single ticker, field and date were provided).
+            If no data is available in the database or a non existing ticker was provided an empty structure
+            (nan, QFSeries, QFDataFrame or QFDataArray) will be returned.
+        """
 
         frequency = frequency or self.frequency or Frequency.DAILY
         original_end_date = (end_date or self.timer.now()) + RelativeDelta(second=0, microsecond=0)
