@@ -27,7 +27,6 @@ from qf_lib.data_providers.haver.haver_data_provider import is_haver_installed
 from qf_lib.tests.unit_tests.config.test_settings import get_test_settings
 
 
-
 @unittest.skipIf(not is_haver_installed, "No Haver installed, skipping tests")
 class TestHaverDataProvider(unittest.TestCase):
     START_DATE = str_to_date('2015-01-01')
