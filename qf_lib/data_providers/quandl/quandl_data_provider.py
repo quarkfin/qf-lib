@@ -35,10 +35,10 @@ from qf_lib.settings import Settings
 
 try:
     import quandl
+
     is_quandl_installed = True
 except ImportError:
     is_quandl_installed = False
-    warnings.warn("No quandl installed. If you would like to use QuandlDataProvider first install the quandl library.")
 
 
 class QuandlDataProvider(AbstractPriceDataProvider):
@@ -51,7 +51,10 @@ class QuandlDataProvider(AbstractPriceDataProvider):
     def __init__(self, settings: Settings):
         super().__init__()
         self.logger = qf_logger.getChild(self.__class__.__name__)
-
+        if not is_quandl_installed:
+            warnings.warn(
+                "No quandl installed. If you would like to use QuandlDataProvider first install the quandl library.")
+            exit(1)
         try:
             self.key = settings.quandl_key
             quandl.ApiConfig.api_key = self.key

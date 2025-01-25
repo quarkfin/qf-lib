@@ -35,8 +35,6 @@ try:
 
     is_beap_lib_installed = True
 except ImportError:
-    warnings.warn("No Bloomberg Beap HAPI installed. If you would like to use BloombergBeapHapiDataProvider first "
-                  "install the beap_lib with all necessary dependencies.")
     is_beap_lib_installed = False
 
 from qf_lib.data_providers.bloomberg.exceptions import BloombergError
@@ -126,8 +124,10 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
             self.request_hapi_provider = None
             self.connected = False
 
-            self.logger.warning("Couldn't import the Data License API (beap_lib). Check if all the necessary "
-                                "dependencies are installed.")
+            warnings.warn(
+                "No Bloomberg Beap HAPI installed. If you would like to use BloombergBeapHapiDataProvider first "
+                "install the beap_lib with all necessary dependencies.")
+            exit(1)
 
     def _get_settings_attribute(self, settings: Settings, attribute: str):
         try:
