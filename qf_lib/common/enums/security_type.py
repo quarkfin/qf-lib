@@ -36,3 +36,8 @@ class SecurityType(Enum):
     """"Crypto"""
     CONTFUT = "CONTFUT"
     """"Continuous future contract"""
+
+    def __lt__(self, other):
+        if not isinstance(other, SecurityType):
+            return NotImplemented
+        return self.value < other.value
