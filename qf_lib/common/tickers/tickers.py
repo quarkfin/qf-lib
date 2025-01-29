@@ -321,37 +321,3 @@ class QuandlTicker(Ticker):
             return to_ticker(ticker_str)
         else:
             return [to_ticker(t) for t in ticker_str]
-
-
-class CcyTicker(Ticker):
-    """ Representation of Cryptocurrency tickers.
-
-    Parameters
-    ------------
-    ticker: str
-        The name of the crypto currency. For example Bitcoin -> ticker: bitcoin
-    security_type: SecurityType
-        denotes the type of the security, that the ticker is representing e.g. SecurityType.STOCK for a stock,
-        SecurityType.FUTURE for a futures contract etc. By default equals SecurityType.CRYPTO.
-    point_value: int
-        size of the contract as given by the ticker's Data Provider. Used mostly by tickers of security_type FUTURE and
-        by default equals 1.
-    currency: str
-        ISO code of the currency of the ticker. Example "USD".
-    """
-    def __init__(self, ticker: str, security_type: SecurityType = SecurityType.CRYPTO, point_value: int = 1,
-                 currency: Optional[str] = None):
-        super().__init__(ticker, security_type, point_value, currency)
-
-    @classmethod
-    def from_string(cls, ticker_str: Union[str, Sequence[str]], security_type: SecurityType = SecurityType.CRYPTO,
-                    point_value: int = 1, currency: Optional[str] = None) -> Union["CcyTicker", Sequence["CcyTicker"]]:
-        """ Example: CcyTicker.from_string('Bitcoin'). """
-
-        def to_ticker(ticker_string: str,):
-            return CcyTicker(ticker_string.lower(), security_type, point_value, currency)
-
-        if isinstance(ticker_str, str):
-            return to_ticker(ticker_str)
-        else:
-            return [to_ticker(t) for t in ticker_str]
