@@ -104,7 +104,7 @@ class YFinanceDataProvider(AbstractPriceDataProvider):
         original_end_date = (end_date or self.timer.now()) + RelativeDelta(second=0, microsecond=0)
         # In case of low frequency (daily or lower) shift the original end date to point to 23:59
         if frequency <= Frequency.DAILY:
-            original_end_date += RelativeDelta(hours=23, minute=59)
+            original_end_date += RelativeDelta(hour=23, minute=59)
 
         end_date = original_end_date if look_ahead_bias else (
             self.get_end_date_without_look_ahead(original_end_date, frequency))
