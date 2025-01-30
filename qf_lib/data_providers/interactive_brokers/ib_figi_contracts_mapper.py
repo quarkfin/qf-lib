@@ -27,8 +27,6 @@ try:
     is_ibapi_installed = True
 except ImportError:
     is_ibapi_installed = False
-    warnings.warn(
-        "No ibapi installed. If you would like to use IBFIGItoIBContractMapper first install the ibapi library.")
 
 
 class IBFIGItoIBContractMapper:
@@ -85,7 +83,9 @@ class IBFIGItoIBContractMapper:
             if not self._wait_for_results():
                 raise ConnectionError("IB IBFIGItoIBContractMapper was not initialized correctly")
         else:
-            self.logger.warning("Couldn't import the IB API. Check if the necessary dependencies are installed.")
+            warnings.warn(
+                "No ibapi installed. If you would like to use IBFIGItoIBContractMapper first install the ibapi library.")
+            exit(1)
 
     def get_ticker_to_contract_mapping_from_figi_contracts(self, ticker_to_contract: Dict[Ticker, IBContract]) -> (
             Dict)[Ticker, IBContract]:

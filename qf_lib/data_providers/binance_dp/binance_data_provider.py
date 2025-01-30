@@ -40,8 +40,6 @@ try:
     is_binance_installed = True
 except ImportError:
     is_binance_installed = False
-    warnings.warn(
-        "No binance installed. If you would like to use BinanceDataProvider first install the binance library.")
 
 
 class BinanceDataProvider(CSVDataProvider):
@@ -74,6 +72,10 @@ class BinanceDataProvider(CSVDataProvider):
                  contract_ticker_mapper: BinanceContractTickerMapper, frequency: Frequency = Frequency.MIN_1):
 
         self.logger = qf_logger.getChild(self.__class__.__name__)
+        if not is_binance_installed:
+            warnings.warn(
+                "No binance installed. If you would like to use BinanceDataProvider first install the binance library.")
+            exit(1)
 
         if frequency not in [Frequency.DAILY, Frequency.MIN_1]:
             raise NotImplementedError("Only 1m and DAILY freq is supported now")
@@ -94,14 +96,11 @@ class BinanceDataProvider(CSVDataProvider):
 
         filepath = os.path.join(path, filename)
 
-        if is_binance_installed:
-            self.client = Client()
+        self.client = Client()
 
-            self._load_data(filepath, tickers, fields, start_date, end_date, frequency, index_col, ticker_col)
-            super().__init__(filepath, tickers, index_col, field_to_price_field_dict, fields, start_date, end_date,
-                             frequency, ticker_col=ticker_col)
-        else:
-            self.logger.warning("Couldn't import the Binance API. Check if the necessary dependencies are installed.")
+        self._load_data(filepath, tickers, fields, start_date, end_date, frequency, index_col, ticker_col)
+        super().__init__(filepath, tickers, index_col, field_to_price_field_dict, fields, start_date, end_date,
+                         frequency, ticker_col=ticker_col)
 
     def _load_data(self, filepath, tickers, fields, start_date, end_date, frequency, index_col, ticker_col):
         if not os.path.isfile(filepath):

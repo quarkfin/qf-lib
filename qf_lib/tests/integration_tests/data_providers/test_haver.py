@@ -23,14 +23,11 @@ from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.prices_series import PricesSeries
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.haver import HaverDataProvider
+from qf_lib.data_providers.haver.haver_data_provider import is_haver_installed
 from qf_lib.tests.unit_tests.config.test_settings import get_test_settings
 
-settings = get_test_settings()
-haver_provider = HaverDataProvider(settings)
-haver_provider.connect()
 
-
-@unittest.skipIf(not haver_provider.connected, "No Haver connection, skipping tests")
+@unittest.skipIf(not is_haver_installed, "No Haver installed, skipping tests")
 class TestHaverDataProvider(unittest.TestCase):
     START_DATE = str_to_date('2015-01-01')
     END_DATE = str_to_date('2017-01-01')
@@ -47,7 +44,12 @@ class TestHaverDataProvider(unittest.TestCase):
     SINGLE_PRICE_FIELD = PriceField.Close
 
     def setUp(self):
+        settings = get_test_settings()
+        haver_provider = HaverDataProvider(settings)
+        haver_provider.connect()
         self.data_provider = haver_provider
+        if not haver_provider.connected:
+            raise self.skipTest("No Haver connection")
 
     # =========================== Test invalid ticker ==========================================================
 

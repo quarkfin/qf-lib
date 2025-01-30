@@ -33,7 +33,6 @@ try:
     is_haver_installed = True
 except ImportError:
     is_haver_installed = False
-    warnings.warn("No Haver installed. If you would like to use HaverDataProvider first install the Haver library.")
 
 
 class HaverDataProvider(AbstractPriceDataProvider):
@@ -49,8 +48,14 @@ class HaverDataProvider(AbstractPriceDataProvider):
 
     def __init__(self, settings: Settings):
         super().__init__()
-        self.db_location = settings.haver_path
         self.connected = False
+
+        if is_haver_installed:
+            self.db_location = settings.haver_path
+        else:
+            warnings.warn(
+                "No Haver installed. If you would like to use HaverDataProvider first install the Haver library.")
+            exit(1)
 
     def get_history(self, tickers: Union[HaverTicker, Sequence[HaverTicker]], fields=None, start_date: datetime = None,
                     end_date: datetime = None, **kwargs) -> Union[QFSeries, QFDataFrame]:

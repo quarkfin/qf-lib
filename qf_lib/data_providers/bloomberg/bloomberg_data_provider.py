@@ -51,8 +51,6 @@ try:
     is_blpapi_installed = True
 except ImportError:
     is_blpapi_installed = False
-    warnings.warn("No Bloomberg API installed. If you would like to use BloombergDataProvider first install the blpapi"
-                  " library")
 
 
 class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider,
@@ -87,7 +85,10 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider,
             self._tabular_data_provider = None
             self._futures_data_provider = None
 
-            self.logger.warning("Couldn't import the Bloomberg API. Check if the necessary dependencies are installed.")
+            warnings.warn(
+                "No Bloomberg API installed. If you would like to use BloombergDataProvider first install the blpapi"
+                " library")
+            exit(1)
 
         self.connected = False
 
@@ -237,7 +238,7 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider,
         """
         currency_ticker = self.create_exchange_rate_ticker(base_currency, quote_currency)
         quote_factor = self.get_current_values(currency_ticker, fields="QUOTE_FACTOR")
-        return self.get_last_available_price(currency_ticker, frequency=frequency)/quote_factor
+        return self.get_last_available_price(currency_ticker, frequency=frequency) / quote_factor
 
     def get_history(self, tickers: Union[BloombergTicker, Sequence[BloombergTicker]], fields: Union[str, Sequence[str]],
                     start_date: datetime, end_date: datetime = None, frequency: Frequency = None,
@@ -285,7 +286,8 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider,
 
         frequency = frequency or self.frequency or Frequency.DAILY
         original_end_date = (end_date or self.timer.now()) + RelativeDelta(second=0, microsecond=0)
-        end_date = original_end_date if look_ahead_bias else self.get_end_date_without_look_ahead(original_end_date, frequency)
+        end_date = original_end_date if look_ahead_bias else self.get_end_date_without_look_ahead(original_end_date,
+                                                                                                  frequency)
         start_date = self._adjust_start_date(start_date, frequency)
 
         got_single_date = self._got_single_date(start_date, original_end_date, frequency)
