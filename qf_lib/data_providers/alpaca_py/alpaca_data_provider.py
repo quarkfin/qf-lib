@@ -21,7 +21,7 @@ from pandas import MultiIndex, concat, DataFrame
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.enums.security_type import SecurityType
-from qf_lib.common.tickers.tickers import Ticker
+from qf_lib.common.tickers.tickers import Ticker, AlpacaTicker
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.common.utils.miscellaneous.to_list_conversion import convert_to_list
@@ -29,7 +29,6 @@ from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
-from qf_lib.data_providers.alpaca_py.alpaca_ticker import AlpacaTicker
 from qf_lib.data_providers.helpers import normalize_data_array
 from qf_lib.tests.integration_tests.data_providers.alpaca.utilities import AlpacaDatesException
 

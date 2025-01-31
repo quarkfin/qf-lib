@@ -29,7 +29,7 @@ from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.alpaca_py.alpaca_data_provider import AlpacaDataProvider, is_alpaca_intalled
-from qf_lib.data_providers.alpaca_py.alpaca_ticker import AlpacaTicker
+from qf_lib.common.tickers.tickers import AlpacaTicker
 from qf_lib.tests.helpers.testing_tools.containers_comparison import assert_series_equal, assert_dataframes_equal, \
     assert_dataarrays_equal
 
