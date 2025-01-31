@@ -16,8 +16,7 @@ from abc import ABCMeta, abstractmethod
 from datetime import datetime
 from typing import Union, Sequence, Type, Set, Optional
 
-from pandas import Timestamp
-from pandas._libs.tslibs import to_offset
+from pandas import Timestamp, Timedelta
 
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.regular_market_event import RegularMarketEvent
@@ -48,27 +47,18 @@ class DataProvider(metaclass=ABCMeta):
 
     @abstractmethod
     def get_history(
-            self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[None, str, Sequence[str]],
+            self, tickers: Union[Ticker, Sequence[Ticker]], fields: Union[str, Sequence[str]],
             start_date: datetime, end_date: datetime = None, frequency: Frequency = None, look_ahead_bias: bool = False,
             **kwargs) -> Union[QFSeries, QFDataFrame, QFDataArray]:
         """
         Gets historical attributes (fields) of different securities (tickers).
-
-        All the duplicate fields and tickers will be removed (the first occurrence will remain). This is crucial
-        for having the expected behavior with using label-based indices. E.g. let's assume there is a duplicate ticker
-        'SPX Index' in tickers list and the result data frame has two columns 'SPX Index'. Then when someone
-        runs result.loc[:, 'SPX Index'], he expects to get a series of 'SPX Index' values. However
-        he'll get a data frame with two columns, both named 'SPX Index'.
-        If someone insists on keeping duplicate values in index/columns, then it's possible to reindex the result
-        (e.g. result.reindex(columns=tickers)).
 
         Parameters
         ----------
         tickers: Ticker, Sequence[Ticker]
             tickers for securities which should be retrieved
         fields: None, str, Sequence[str]
-            fields of securities which should be retrieved. If None, all available fields will be returned
-            (only supported by few DataProviders)
+            fields of securities which should be retrieved.
         start_date: datetime
             date representing the beginning of historical period from which data should be retrieved
         end_date: datetime
@@ -84,13 +74,14 @@ class DataProvider(metaclass=ABCMeta):
 
         Returns
         -------
-        QFSeries, QFDataFrame, QFDataArray
-            If possible the result will be squeezed, so that instead of returning QFDataArray, data of lower
-            dimensionality will be returned. The results will be either an QFDataArray (with 3 dimensions: date, ticker,
+        QFSeries, QFDataFrame, QFDataArray, float, str
+            If possible the result will be squeezed, so that instead of returning a QFDataArray, data of lower
+            dimensionality will be returned. The results will be either a QFDataArray (with 3 dimensions: date, ticker,
             field), a QFDataFrame (with 2 dimensions: date, ticker or field; it is also possible to get 2 dimensions
-            ticker and field if single date was provided) or QFSeries (with 1 dimensions: date).
-            If no data is available in the database or an non existing ticker was provided an empty structure
-            (QFSeries, QFDataFrame or QFDataArray) will be returned.
+            ticker and field if single date was provided), a QFSeries (with 1 dimensions: date) or a float / str
+            (in case if a single ticker, field and date were provided).
+            If no data is available in the database or a non existing ticker was provided an empty structure
+            (nan, QFSeries, QFDataFrame or QFDataArray) will be returned.
         """
         pass
 
@@ -108,7 +99,7 @@ class DataProvider(metaclass=ABCMeta):
             return end_date
 
         frequency = frequency or self.frequency
-        if frequency == Frequency.DAILY:
+        if frequency <= Frequency.DAILY:
             return self._get_last_available_market_event(end_date, MarketCloseEvent)
         else:
             return self._get_end_date_without_look_ahead_intraday(end_date, frequency)
@@ -124,7 +115,7 @@ class DataProvider(metaclass=ABCMeta):
             else today_market_event
 
         latest_market_event = min(latest_available_market_event, end_date)
-        return datetime(latest_market_event.year, latest_market_event.month, latest_market_event.day)
+        return latest_market_event
 
     def _get_end_date_without_look_ahead_intraday(self, end_date: Optional[datetime], frequency: Frequency):
         """
@@ -159,7 +150,7 @@ class DataProvider(metaclass=ABCMeta):
         end_date = end_date or current_time
         end_date += RelativeDelta(second=0, microsecond=0)
 
-        frequency_delta = to_offset(frequency.to_pandas_freq()).delta.value
+        frequency_delta = Timedelta((current_time + frequency.time_delta()) - current_time).value
         if current_time <= end_date:
             end_date_without_lookahead = Timestamp(math.floor(Timestamp(current_time).value / frequency_delta) *
                                                    frequency_delta).to_pydatetime() - frequency.time_delta()
