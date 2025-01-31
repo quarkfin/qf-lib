@@ -15,6 +15,7 @@ import warnings
 from datetime import datetime
 from itertools import groupby
 from typing import Union, Sequence, Dict
+from warnings import warn
 
 import pandas as pd
 
@@ -51,6 +52,9 @@ class QuandlDataProvider(AbstractPriceDataProvider):
     def __init__(self, settings: Settings):
         super().__init__()
         self.logger = qf_logger.getChild(self.__class__.__name__)
+        warn('QuandlDataProvider is deprecated and will be removed in a future version of qf_lib',
+             DeprecationWarning, stacklevel=2)
+
         if not is_quandl_installed:
             warnings.warn(
                 "No quandl installed. If you would like to use QuandlDataProvider first install the quandl library.")
