@@ -15,8 +15,8 @@
 from datetime import datetime
 from typing import Tuple
 
-from qf_lib.backtesting.alpha_model.alpha_model import AlphaModel
 from qf_lib.backtesting.alpha_model.exposure_enum import Exposure
+from qf_lib.backtesting.alpha_model.futures_model import FuturesModel
 from qf_lib.backtesting.events.time_event.regular_time_event.calculate_and_place_orders_event import \
     CalculateAndPlaceOrdersRegularEvent
 from qf_lib.backtesting.monitoring.backtest_monitor import BacktestMonitorSettings
@@ -31,16 +31,17 @@ from qf_lib.common.utils.miscellaneous.average_true_range import average_true_ra
 from qf_lib.containers.futures.future_tickers.bloomberg_future_ticker import BloombergFutureTicker
 from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 from qf_lib.containers.futures.futures_chain import FuturesChain
+from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 from qf_lib.data_providers.data_provider import DataProvider
 from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
 from qf_lib.documents_utils.excel.excel_exporter import ExcelExporter
 from qf_lib.tests.unit_tests.config.test_settings import get_test_settings
 
 
-class SimpleFuturesModel(AlphaModel):
+class SimpleFuturesModel(FuturesModel):
     def __init__(self, fast_time_period: int, slow_time_period: int,
-                 risk_estimation_factor: float, data_provider: DataProvider):
-        super().__init__(risk_estimation_factor, data_provider)
+                 risk_estimation_factor: float, data_provider: AbstractPriceDataProvider):
+        super().__init__(slow_time_period, risk_estimation_factor, data_provider)
 
         self.fast_time_period = fast_time_period
         self.slow_time_period = slow_time_period
