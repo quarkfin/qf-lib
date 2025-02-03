@@ -75,7 +75,6 @@ def minTRL(returns_timeseries: QFSeries, target_sharpe_ratio: float = 1.0, confi
     kurtosis = returns_series.kurt()
     sharpe_ratio_value = sharpe_ratio(returns_series, frequency=Frequency.DAILY)
 
-    minTRL_value = 1 + ((1 - skewness * sharpe_ratio_value + (kurtosis - 1) / 4.0) * sharpe_ratio_value ** 2) * \
-                   (NormalDist(mu=0, sigma=1).inv_cdf(confidence_level) / (
-                           sharpe_ratio_value - target_sharpe_ratio)) ** 2
+    minTRL_value = 1 + ((1 - skewness * sharpe_ratio_value + (kurtosis - 1) / 4.0) * sharpe_ratio_value ** 2) * (
+                NormalDist(mu=0, sigma=1).inv_cdf(confidence_level) / (sharpe_ratio_value - target_sharpe_ratio)) ** 2
     return minTRL_value
