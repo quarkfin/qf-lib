@@ -12,13 +12,10 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-import math as mt
 from typing import Union, Sequence
 
 import numpy as np
-from scipy.stats import zscore
 
-from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.portfolio_construction.optimizers.quadratic_optimizer import QuadraticOptimizer
@@ -26,12 +23,13 @@ from qf_lib.portfolio_construction.portfolio_models.portfolio import Portfolio
 
 
 class PortfolioParameters:
-    def __init__(self, scale, variance_weight, mean_weight, max_dd_weight, skewness_weight):
-        self.scale = scale
-        self.variance_weight = variance_weight
-        self.mean_weight = mean_weight
-        self.max_dd_weight = max_dd_weight
-        self.skewness_weight = skewness_weight
+    def __init__(self, min_port_vol_weight, max_mean_ret_weight, min_max_dd_weight, max_skewness_weight,
+                 max_up_vol_weight):
+        self.min_port_vol_weight = min_port_vol_weight
+        self.max_mean_ret_weight = max_mean_ret_weight
+        self.min_max_dd_weight = min_max_dd_weight
+        self.max_skewness_weight = max_skewness_weight
+        self.max_up_vol_weight = max_up_vol_weight
 
 
 class MultiFactorPortfolio(Portfolio):
@@ -43,65 +41,9 @@ class MultiFactorPortfolio(Portfolio):
     - max drawdown of the portfolio (minimizing).
     """
 
-    def __init__(self, covariance_matrix: QFDataFrame,
-                 variance: QFSeries, mean: QFSeries, max_drawdown: QFSeries, skewness: QFSeries,
-                 parameters: PortfolioParameters, upper_constraint: Union[float, Sequence[float]] = None):
-        self.covariance_matrix = covariance_matrix
-        self.variance = variance
-        self.mean = mean
-        self.max_dd = max_drawdown  # dd is expressed in positive numbers, for example 0.32 means max dd of 32%
-        self.skewness = skewness
-        self.parameters = parameters
-        self.upper_constraint = upper_constraint
-
-        self.logger = qf_logger.getChild(self.__class__.__name__)
-
-    def get_weights(self) -> QFSeries:
-        P = self.covariance_matrix
-
-        # normalize factors by assuring mean=0 and std=1 and multiply them by proper weights
-        variance_part = -self.parameters.variance_weight * zscore(self.variance)  # minus sign because it's maximised
-        mean_part = -self.parameters.mean_weight * zscore(self.mean)  # minus sign because it's maximised
-        max_dd_part = self.parameters.max_dd_weight * zscore(self.max_dd)  # this is minimised, so no minus sign
-        # this is maximized (we want right tale to be larger), minus sign
-        skewness_part = -self.parameters.skewness_weight * zscore(self.skewness)
-
-        # calculate and scale score of each assets
-        q = self.parameters.scale * (variance_part + mean_part + max_dd_part + skewness_part)
-
-        min_upper_constrain = (1/len(q)) * 1.3  # 30% above 1/N
-        if self.upper_constraint is not None and self.upper_constraint < min_upper_constrain:
-            self.logger.warning("MQP upper allocation constraint to tight,"
-                                " changing max upper allocation to {}".format(min_upper_constrain))
-            weights = QuadraticOptimizer.get_optimal_weights(P.values, q, upper_constraints=min_upper_constrain)
-        else:
-            weights = QuadraticOptimizer.get_optimal_weights(P.values, q, upper_constraints=self.upper_constraint)
-
-        return QFSeries(data=weights, index=self.covariance_matrix.columns)
-
-
-class PortfolioParameters_new:
-    def __init__(self, min_port_vol_weight, max_mean_ret_weight, min_max_dd_weight, max_skewness_weight,
-                 max_up_vol_weight):
-        self.min_port_vol_weight = min_port_vol_weight
-        self.max_mean_ret_weight = max_mean_ret_weight
-        self.min_max_dd_weight = min_max_dd_weight
-        self.max_skewness_weight = max_skewness_weight
-        self.max_up_vol_weight = max_up_vol_weight
-
-
-class MultiFactorPortfolio_new(Portfolio):
-    """
-    Class used for constructing a portfolio. It optimizes a portfolio considering:
-
-    - variance of a portfolio(minimizing),
-    - mean return of portfolio's assets (maximizing),
-    - max drawdown of the portfolio (minimizing).
-    """
-
     def __init__(self, covariance_matrix: QFDataFrame, mean_return: QFSeries, max_dd: QFSeries,
                  skewness: QFSeries, up_vol: QFSeries,
-                 parameters: PortfolioParameters_new, upper_constraint: Union[float, Sequence[float]] = None):
+                 parameters: PortfolioParameters, upper_constraint: Union[float, Sequence[float]] = None):
         self.covariance_matrix = covariance_matrix
         self.mean_return = mean_return
         self.max_dd = max_dd
@@ -156,33 +98,3 @@ class MultiFactorPortfolio_new(Portfolio):
         x = self.mean_return.copy()
         x[:] = 1/n
         return x
-
-
-class MultiFactorPortfolio_SingleFactor(Portfolio):
-    """
-        Class used to study single factor behaviour of the MQP concept
-    """
-
-    def __init__(self, covariance_matrix: QFDataFrame,
-                 variance: QFSeries, mean: QFSeries, max_drawdown: QFSeries, skewness: QFSeries,
-                 parameters: PortfolioParameters, upper_constraint: Union[float, Sequence[float]] = None):
-        self.covariance_matrix = covariance_matrix
-        self.variance = variance
-        self.mean = mean
-        self.max_dd = max_drawdown  # dd is expressed in positive numbers, for example 0.32 means max dd of 32%
-        self.skewness = skewness
-        self.parameters = parameters
-        self.upper_constraint = upper_constraint
-
-    def _get_nr_of_stocks(self):
-        nr_of_stocks = 1 / self.upper_constraint
-        return mt.floor(nr_of_stocks)
-
-    def get_weights(self) -> QFSeries:
-        selected_factor = self.variance
-        is_maximized = True
-
-        sorted_values = selected_factor.sort_values(ascending=is_maximized)
-        result = sorted_values.tail(self._get_nr_of_stocks())
-        result.values[:] = self.upper_constraint  # assign equal weights of the constraint
-        return result

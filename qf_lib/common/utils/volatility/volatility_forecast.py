@@ -11,9 +11,14 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
+import warnings
 
-from arch.univariate import ConstantMean, Normal
-from arch.univariate.volatility import VolatilityProcess
+try:
+    from arch.univariate import ConstantMean, Normal
+    from arch.univariate.volatility import VolatilityProcess
+    is_arch_installed = True
+except ImportError:
+    is_arch_installed = False
 
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.utils.miscellaneous.annualise_with_sqrt import annualise_with_sqrt
@@ -50,6 +55,15 @@ class VolatilityForecast:
     """
     def __init__(self, returns_tms: QFSeries, vol_process: VolatilityProcess, method: str = 'analytic',
                  horizon: int = 1, annualise: bool = True, frequency: Frequency = Frequency.DAILY):
+        if not is_arch_installed:
+            warnings.warn(
+                "Oops! It looks like 'arch' is missing. To unlock the full capabilities of this library,"
+                " install the extra dependencies with:\n"
+                "    pip install -e .[detailed_analysis]",
+                UserWarning
+            )
+            exit(1)
+
         self.vol_process = vol_process
         self.method = method
         self.horizon = horizon

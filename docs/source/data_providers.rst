@@ -21,7 +21,7 @@ data_providers
     haver.haver_data_provider.HaverDataProvider
     portara.portara_data_provider.PortaraDataProvider
     quandl.quandl_data_provider.QuandlDataProvider
-    data_providers.yfinance.yfinance_data_provider.YFinanceDataProvider
+    yfinance.yfinance_data_provider.YFinanceDataProvider
 
 .. automodule:: qf_lib.data_providers.helpers
     :autosummary:

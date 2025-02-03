@@ -86,10 +86,10 @@ class RegressionChart(Chart):
             tail_indices = get_tail_indices()
             strategy_tail_returns = strategy_rets.loc[tail_indices]
 
-            beta, alpha, r_value, p_value, std_err = beta_and_alpha_full_stats(
+            beta, alpha, r_value = beta_and_alpha_full_stats(
                 strategy_tms=strategy_tail_returns, benchmark_tms=benchmark_rets)
         else:
-            beta, alpha, r_value, p_value, std_err = beta_and_alpha_full_stats(
+            beta, alpha, r_value = beta_and_alpha_full_stats(
                 strategy_tms=strategy_rets, benchmark_tms=benchmark_rets)
 
         max_ret = datapoints_tms.abs().max().max()  # take max element from the whole data-frame

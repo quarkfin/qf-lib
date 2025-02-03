@@ -11,12 +11,21 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-
+import warnings
 from typing import Union, Sequence
 
 import numpy as np
-from cvxopt import matrix
-from cvxopt import solvers
+try:
+    from cvxopt import matrix
+    from cvxopt import solvers
+except ImportError:
+    warnings.warn(
+        "Oops! It looks like 'cvxopt' is missing. To unlock the full capabilities of this library,"
+        " install the extra dependencies with:\n"
+        "    pip install -e .[detailed_analysis]",
+        UserWarning
+    )
+    exit(1)
 
 import qf_lib.portfolio_construction.optimizers.helpers.quadratic_constraints_helpers as constr
 

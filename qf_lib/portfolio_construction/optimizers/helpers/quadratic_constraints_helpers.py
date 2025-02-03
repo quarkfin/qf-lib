@@ -11,10 +11,19 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-
+import warnings
 from typing import Union, Sequence, Tuple
 
-from cvxopt import matrix, spmatrix, sparse
+try:
+    from cvxopt import matrix, spmatrix, sparse
+except ImportError:
+    warnings.warn(
+        "Oops! It looks like 'cvxopt' is missing. To unlock the full capabilities of this library,"
+        " install the extra dependencies with:\n"
+        "    pip install -e .[detailed_analysis]",
+        UserWarning
+    )
+    exit(1)
 
 from qf_lib.portfolio_construction.optimizers.helpers.common_constraint_helpers import prepare_upper_bounds_vector
 

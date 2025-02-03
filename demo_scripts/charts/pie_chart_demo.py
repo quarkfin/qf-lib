@@ -21,8 +21,8 @@ from qf_lib.plotting.charts.pie_chart import PieChart
 def demo_with_5_data_points():
     my_series = QFSeries([10, 20, 3, 8.6, 4], ["Example 1", "Example 2", "Example 3", "Example 4", "Example 5"])
     pie_chart = PieChart(my_series)
-    pie_chart.plot()
-    plt.show(block=True)
+    pie_chart.plot(figsize=(10, 5))
+    plt.show()
 
 
 def demo_with_15_data_points():
@@ -33,8 +33,8 @@ def demo_with_15_data_points():
                           "Example 21", "Example 22", "Example 23", "Example 24", "Example 25",
                           "Example 31", "Example 32", "Example 33", "Example 34", "Example 35"])
     pie_chart = PieChart(my_series)
-    pie_chart.plot()
-    plt.show(block=True)
+    pie_chart.plot(figsize=(10, 5))
+    plt.show()
 
 
 def main():

@@ -11,9 +11,9 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-
+import math
+from statistics import NormalDist
 from typing import Tuple, Union, Any, Sequence
-from scipy.stats import norm
 
 from qf_lib.plotting.charts.chart import Chart
 
@@ -52,9 +52,10 @@ class HistogramChart(Chart):
 
         if self._best_fit:
             # Calculate the best fit for the data.
-            mu, sigma = norm.fit(self.series)
+            mu = sum(self.series) / len(self.series)
+            sigma = math.sqrt(sum((x - mu) ** 2 for x in self.series) / len(self.series))
             # Draw best fit line.
-            y = norm.pdf(bins, mu, sigma)
+            y = NormalDist(mu, sigma).pdf(bins)
             # Multiply by count of data and bin width to get unnormalised best fit line.
             unnormalised_y = y * len(self.series) * abs(bins[0] - bins[1])
             self.axes.plot(bins, unnormalised_y, "r--")

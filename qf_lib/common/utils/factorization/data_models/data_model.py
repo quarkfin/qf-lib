@@ -11,16 +11,21 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-
+import warnings
 from math import floor
 
 import numpy as np
 import pandas as pd
-import statsmodels.api as sm
 from numpy.linalg import inv, cond
-from statsmodels.stats.diagnostic import het_breuschpagan, acorr_ljungbox
-from statsmodels.stats.outliers_influence import OLSInfluence
-from statsmodels.stats.stattools import durbin_watson
+
+try:
+    import statsmodels.api as sm
+    from statsmodels.stats.diagnostic import het_breuschpagan, acorr_ljungbox
+    from statsmodels.stats.outliers_influence import OLSInfluence
+    from statsmodels.stats.stattools import durbin_watson
+    is_statsmodels_installed = True
+except ImportError:
+    is_statsmodels_installed = False
 
 from qf_lib.analysis.timeseries_analysis.timeseries_analysis import TimeseriesAnalysis
 from qf_lib.common.timeseries_analysis.return_attribution_analysis import ReturnAttributionAnalysis
@@ -58,6 +63,15 @@ class DataModel:
 
     def __init__(self, data_model_input: DataModelInput):
         self.logger = qf_logger.getChild(self.__class__.__name__)
+
+        if not is_statsmodels_installed:
+            warnings.warn(
+                "Oops! It looks like 'statsmodels' is missing. To unlock the full capabilities of this library,"
+                " install the extra dependencies with:\n"
+                "    pip install -e .[detailed_analysis]",
+                UserWarning
+            )
+            exit(1)
 
         self.input_data = data_model_input
 

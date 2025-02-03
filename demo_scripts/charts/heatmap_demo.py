@@ -35,7 +35,6 @@ def main():
     chart.add_decorator(AxisTickLabelsDecorator(labels=list(reversed(rows)), axis=Axis.Y))
 
     chart.plot()
-    chart.figure.tight_layout()
     plt.show(block=True)
 
 
