@@ -57,9 +57,9 @@ class VolatilityForecast:
                  horizon: int = 1, annualise: bool = True, frequency: Frequency = Frequency.DAILY):
         if not is_arch_installed:
             warnings.warn(
-                f"Oops! It looks like 'arch' is missing. To unlock the full capabilities of this library,"
-                f" install the extra dependencies with:\n"
-                f"    pip install -e .[detailed_analysis]",
+                "Oops! It looks like 'arch' is missing. To unlock the full capabilities of this library,"
+                " install the extra dependencies with:\n"
+                "    pip install -e .[detailed_analysis]",
                 UserWarning
             )
             exit(1)

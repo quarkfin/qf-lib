@@ -22,9 +22,9 @@ try:
     from cvxopt.coneprog import qp
 except ImportError:
     warnings.warn(
-        f"Oops! It looks like 'cvxopt' is missing. To unlock the full capabilities of this library,"
-        f" install the extra dependencies with:\n"
-        f"    pip install -e .[detailed_analysis]",
+        "Oops! It looks like 'cvxopt' is missing. To unlock the full capabilities of this library,"
+        " install the extra dependencies with:\n"
+        "    pip install -e .[detailed_analysis]",
         UserWarning
     )
     exit(1)

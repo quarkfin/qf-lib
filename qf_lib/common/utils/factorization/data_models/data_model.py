@@ -66,9 +66,9 @@ class DataModel:
 
         if not is_statsmodels_installed:
             warnings.warn(
-                f"Oops! It looks like 'statsmodels' is missing. To unlock the full capabilities of this library,"
-                f" install the extra dependencies with:\n"
-                f"    pip install -e .[detailed_analysis]",
+                "Oops! It looks like 'statsmodels' is missing. To unlock the full capabilities of this library,"
+                " install the extra dependencies with:\n"
+                "    pip install -e .[detailed_analysis]",
                 UserWarning
             )
             exit(1)
