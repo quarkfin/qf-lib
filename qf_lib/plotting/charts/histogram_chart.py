@@ -13,8 +13,9 @@
 #     limitations under the License.
 
 from typing import Tuple, Union, Any, Sequence
-from scipy.stats import norm
 
+from qf_lib.common.utils.numberutils.norm_fit import norm_fit
+from qf_lib.common.utils.numberutils.probability_density_function import probability_density_function
 from qf_lib.plotting.charts.chart import Chart
 
 
@@ -52,9 +53,9 @@ class HistogramChart(Chart):
 
         if self._best_fit:
             # Calculate the best fit for the data.
-            mu, sigma = norm.fit(self.series)
+            mu, sigma = norm_fit(self.series)
             # Draw best fit line.
-            y = norm.pdf(bins, mu, sigma)
+            y = probability_density_function(bins, mu, sigma)
             # Multiply by count of data and bin width to get unnormalised best fit line.
             unnormalised_y = y * len(self.series) * abs(bins[0] - bins[1])
             self.axes.plot(bins, unnormalised_y, "r--")
