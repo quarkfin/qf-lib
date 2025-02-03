@@ -20,7 +20,6 @@ from statistics import mode
 from typing import Dict
 
 import numpy as np
-import pandas
 from pandas import DatetimeIndex, infer_freq
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 
