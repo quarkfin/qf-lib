@@ -13,11 +13,21 @@
 #     limitations under the License.
 
 from typing import Union, Sequence
+import warnings
 
 import numpy as np
-from cvxopt import matrix
-from cvxopt.coneprog import qp
-import warnings
+
+try:
+    from cvxopt import matrix
+    from cvxopt.coneprog import qp
+except ImportError:
+    warnings.warn(
+        f"Oops! It looks like 'cvxopt' is missing. To unlock the full capabilities of this library,"
+        f" install the extra dependencies with:\n"
+        f"    pip install -e .[detailed_analysis]",
+        UserWarning
+    )
+    exit(1)
 
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
