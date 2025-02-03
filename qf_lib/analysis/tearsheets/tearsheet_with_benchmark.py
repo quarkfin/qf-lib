@@ -210,7 +210,7 @@ class TearsheetWithBenchmark(AbstractTearsheet):
         def alpha_function(df_in_window):
             strategy_returns = df_in_window.iloc[:, 0]
             benchmark_returns = df_in_window.iloc[:, 1]
-            beta, alpha = polyfit(benchmark_returns, strategy_returns)
+            beta, alpha = polyfit(benchmark_returns, strategy_returns, 1)
             return beta, alpha
 
         rolling = df.rolling_time_window(rolling_window_len, step, alpha_function)
