@@ -42,6 +42,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -e ".[blpapi]" --extra-index-url https://blpapi.bloomberg.com/repository/releases/python/simple
         pip install -e ".[yfinance]"
+        pip install -e ".[detailed_analysis]"
         pip install flake8==5.0.4 pytest
         pip install coverage
     - name: Unit tests
@@ -69,6 +70,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[blpapi]" --extra-index-url https://blpapi.bloomberg.com/repository/releases/python/simple
           pip install -e ".[yfinance]"
+          pip install -e ".[detailed_analysis]"
           pip install flake8==5.0.4 pytest
           pip install coverage
       - name: Integration tests
@@ -97,6 +99,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[blpapi]" --extra-index-url https://blpapi.bloomberg.com/repository/releases/python/simple
           pip install -e ".[yfinance]"
+          pip install -e ".[detailed_analysis]"
           pip install flake8==5.0.4 pytest
           pip install coverage
       - name: Integration tests
