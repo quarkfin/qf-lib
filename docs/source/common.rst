@@ -51,7 +51,6 @@ tickers
     BloombergTicker
     HaverTicker
     QuandlTicker
-    CcyTicker
     PortaraTicker
 
 
