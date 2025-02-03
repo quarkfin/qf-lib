@@ -52,7 +52,7 @@ setup(
     include_package_data=True,
     install_requires=requirements,
     extras_require={
-        "documentation": ["autodocsumm==0.2.9", "sphinx_rtd_theme==1.2.0", "Sphinx==5.0"],
+        "documentation": ["autodocsumm==0.2.9", "sphinx_rtd_theme==1.2.0", "Sphinx==5.0", "docutils==0.18.1", "markupsafe==2.0.1"],
         "interactive brokers": ["ibapi"],
         "bloomberg_beap_hapi": ["PyJWT>=0.2.3,<2.0.0", "retrying>=1.3.3", "beap-lib==0.0.1", "requests>=2.25.1,<=2.31.0"],
         "blpapi": ["blpapi>=3.21.0,<=3.24.4"],
