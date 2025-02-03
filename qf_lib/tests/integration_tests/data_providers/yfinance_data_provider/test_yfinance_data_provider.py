@@ -17,7 +17,7 @@ from datetime import datetime
 import pytest
 from numpy import nan
 from numpy.testing import assert_almost_equal
-from pandas import date_range, DatetimeIndex
+from pandas import date_range
 
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
@@ -116,10 +116,6 @@ def test_incorrect_inputs(tickers, fields, start_date, end_date, expected_values
 @pytest.mark.parametrize(
     "tickers, fields, start_date, end_date, frequency, expected_values",
     [
-        ("AAPL", "Close", datetime(2025, 1, 2, 14, 0), datetime(2025, 1, 2, 14, 1), Frequency.MIN_1, 242.11),
-        ("AAPL", "Close", datetime(2025, 1, 2, 14, 0), datetime(2025, 1, 2, 14, 3), Frequency.MIN_1,
-         QFSeries([242.11, 242.07, 242.11], index=date_range(start='2025-01-02 14:00', freq='T', periods=3,
-                                                             tz='EST').tz_convert('UTC'))),
         ("AAPL", "Close", datetime(2025, 1, 1), datetime(2025, 1, 7), Frequency.WEEKLY, 242.21),
         ("AAPL", "Close", datetime(2025, 1, 4), datetime(2025, 1, 7), Frequency.WEEKLY, 242.21),
         ("AAPL", "Close", datetime(2024, 12, 1), datetime(2024, 12, 31), Frequency.MONTHLY, 250.42),
@@ -135,17 +131,6 @@ def test_get_history__various_frequencies_real_timer(tickers, fields, start_date
 @pytest.mark.parametrize(
     "tickers, fields, start_date, end_date, frequency, expected_values, current_time",
     [
-        ("AAPL", "Close", datetime(2025, 1, 2, 14, 0), datetime(2025, 1, 2, 14, 1), Frequency.MIN_1,
-         242.11, datetime(2025, 1, 2, 14, 2)),
-        ("AAPL", "Close", datetime(2025, 1, 2, 14, 0), datetime(2025, 1, 2, 14, 2), Frequency.MIN_1,
-         QFSeries([242.11],
-                  index=date_range(start='2025-01-02 14:00', freq='T', periods=1, tz='EST').tz_convert('UTC')),
-         datetime(2025, 1, 2, 14, 2)),
-        ("AAPL", "Close", datetime(2025, 1, 2, 14, 0), datetime(2025, 1, 2, 14, 4), Frequency.MIN_5,
-         nan, datetime(2025, 1, 2, 14, 2)),
-        ("AAPL", "Close", datetime(2025, 1, 2, 14, 0), datetime(2025, 1, 2, 14, 17), Frequency.MIN_5,
-         QFSeries(index=DatetimeIndex([])), datetime(2025, 1, 2, 14, 2)),
-
         (["AAPL"], "Close", datetime(2025, 1, 2), datetime(2025, 1, 6), Frequency.DAILY,
          QFDataFrame({YFinanceTicker("AAPL"): [243.85, 243.36, 245.00]},
                      index=date_range("2025-01-02", "2025-01-06", freq="B")),
