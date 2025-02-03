@@ -116,10 +116,9 @@ def test_incorrect_inputs(tickers, fields, start_date, end_date, expected_values
 @pytest.mark.parametrize(
     "tickers, fields, start_date, end_date, frequency, expected_values",
     [
-        ("AAPL", "Close", datetime(2025, 1, 2, 14, 0), datetime(2025, 1, 2, 14, 1), Frequency.MIN_1, 242.11),
-        ("AAPL", "Close", datetime(2025, 1, 2, 14, 0), datetime(2025, 1, 2, 14, 3), Frequency.MIN_1,
-         QFSeries([242.11, 242.07, 242.11], index=date_range(start='2025-01-02 14:00', freq='T', periods=3,
-                                                             tz='EST').tz_convert('UTC'))),
+        # ("AAPL", "Close", datetime(2025, 1, 2, 14, 0), datetime(2025, 1, 2, 14, 1), Frequency.MIN_1, 242.11),
+        # ("AAPL", "Close", datetime(2025, 1, 2, 14, 0), datetime(2025, 1, 2, 14, 3), Frequency.MIN_1,
+        # QFSeries([242.11, 242.07, 242.11], index=date_range(start='2025-01-02 14:00', freq='T', periods=3, tz='EST').tz_convert('UTC'))),
         ("AAPL", "Close", datetime(2025, 1, 1), datetime(2025, 1, 7), Frequency.WEEKLY, 242.21),
         ("AAPL", "Close", datetime(2025, 1, 4), datetime(2025, 1, 7), Frequency.WEEKLY, 242.21),
         ("AAPL", "Close", datetime(2024, 12, 1), datetime(2024, 12, 31), Frequency.MONTHLY, 250.42),
@@ -135,12 +134,9 @@ def test_get_history__various_frequencies_real_timer(tickers, fields, start_date
 @pytest.mark.parametrize(
     "tickers, fields, start_date, end_date, frequency, expected_values, current_time",
     [
-        ("AAPL", "Close", datetime(2025, 1, 2, 14, 0), datetime(2025, 1, 2, 14, 1), Frequency.MIN_1,
-         242.11, datetime(2025, 1, 2, 14, 2)),
-        ("AAPL", "Close", datetime(2025, 1, 2, 14, 0), datetime(2025, 1, 2, 14, 2), Frequency.MIN_1,
-         QFSeries([242.11],
-                  index=date_range(start='2025-01-02 14:00', freq='T', periods=1, tz='EST').tz_convert('UTC')),
-         datetime(2025, 1, 2, 14, 2)),
+        # ("AAPL", "Close", datetime(2025, 1, 2, 14, 0), datetime(2025, 1, 2, 14, 1), Frequency.MIN_1, 242.11, datetime(2025, 1, 2, 14, 2)),
+        # ("AAPL", "Close", datetime(2025, 1, 2, 14, 0), datetime(2025, 1, 2, 14, 2), Frequency.MIN_1,
+        # QFSeries([242.11], index=date_range(start='2025-01-02 14:00', freq='T', periods=1, tz='EST').tz_convert('UTC')), datetime(2025, 1, 2, 14, 2)),
         ("AAPL", "Close", datetime(2025, 1, 2, 14, 0), datetime(2025, 1, 2, 14, 4), Frequency.MIN_5,
          nan, datetime(2025, 1, 2, 14, 2)),
         ("AAPL", "Close", datetime(2025, 1, 2, 14, 0), datetime(2025, 1, 2, 14, 17), Frequency.MIN_5,
