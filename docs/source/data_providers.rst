@@ -12,15 +12,16 @@ data_providers
     data_provider.DataProvider
     abstract_price_data_provider.AbstractPriceDataProvider
     futures_data_provider.FuturesDataProvider
-    bloomberg.bloomberg_data_provider.BloombergDataProvider
-    bloomberg_beap_hapi.bloomberg_beap_hapi_data_provider.BloombergBeapHapiDataProvider
     preset_data_provider.PresetDataProvider
     prefetching_data_provider.PrefetchingDataProvider
-    general_price_provider.GeneralPriceProvider
-    quandl.quandl_data_provider.QuandlDataProvider
+    binance_dp.binance_data_provider.BinanceDataProvider
+    bloomberg.bloomberg_data_provider.BloombergDataProvider
+    bloomberg_beap_hapi.bloomberg_beap_hapi_data_provider.BloombergBeapHapiDataProvider
+    csv.csv_data_provider.CSVDataProvider
     haver.haver_data_provider.HaverDataProvider
     portara.portara_data_provider.PortaraDataProvider
-    csv.csv_data_provider.CSVDataProvider
+    quandl.quandl_data_provider.QuandlDataProvider
+    data_providers.yfinance.yfinance_data_provider.YFinanceDataProvider
 
 .. automodule:: qf_lib.data_providers.helpers
     :autosummary:

@@ -31,7 +31,7 @@ from qf_lib.containers.series.qf_series import QFSeries
 
 
 class DataProvider(metaclass=ABCMeta):
-    """ An interface for data providers (for example AbstractPriceDataProvider or GeneralPriceProvider). """
+    """ An interface for data providers (for example AbstractPriceDataProvider). """
 
     frequency = None
 
