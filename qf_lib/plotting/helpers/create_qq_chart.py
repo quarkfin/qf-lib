@@ -11,8 +11,7 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-
-from scipy.stats import norm
+from statistics import NormalDist
 
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.plotting.charts.chart import Chart
@@ -48,7 +47,7 @@ def create_qq_chart(strategy: QFSeries) -> Chart:
     benchmark_values = list(range(1, len(strategy_values) + 1))
     n = len(strategy_values) + 1
     benchmark_values = map(lambda x: x / n, benchmark_values)
-    benchmark_values = list(map(lambda x: norm.ppf(x), benchmark_values))
+    benchmark_values = list(map(lambda x: NormalDist(mu=0, sigma=1).inv_cdf(x), benchmark_values))
 
     # Figure out the limits.
     maximum = max(max(benchmark_values), max(strategy_values))

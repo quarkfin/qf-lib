@@ -11,6 +11,7 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
+import warnings
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Dict
@@ -18,9 +19,17 @@ from typing import Optional, Dict
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
-from scipy.optimize import curve_fit
-from scipy.stats import linregress
-from statsmodels.distributions import ECDF
+from numpy.polynomial.polynomial import polyfit
+
+from qf_lib.analysis.backtests_overfitting.minimum_backtest_length import minBTL
+
+try:
+    from scipy.optimize import curve_fit
+    from scipy.stats import stats
+    is_scipy_installed = True
+except ImportError:
+    is_scipy_installed = False
+
 
 from qf_lib.analysis.common.abstract_document import AbstractDocument
 from qf_lib.common.enums.frequency import Frequency
@@ -53,7 +62,6 @@ from qf_lib.plotting.decorators.text_decorator import TextDecorator
 from qf_lib.plotting.decorators.title_decorator import TitleDecorator
 from qf_lib.settings import Settings
 
-from qf_lib.analysis.backtests_overfitting.minimum_backtest_length import minBTL
 from qf_lib.analysis.backtests_overfitting.overfitting_analysis import OverfittingAnalysis
 
 
@@ -74,6 +82,15 @@ class BacktestOverfittingSheet(AbstractDocument):
 
     def __init__(self, settings: Settings, pdf_exporter: PDFExporter, title: str = "Backtest overfitting"):
         super().__init__(settings, pdf_exporter, title)
+
+        if not is_scipy_installed:
+            warnings.warn(
+                f"Oops! It looks like 'scipy' is missing. To unlock the full capabilities of this library,"
+                f" install the extra dependencies with:\n"
+                f"    pip install -e .[detailed_analysis]",
+                UserWarning
+            )
+            exit(1)
 
         self.ranking_functions = {
             "Sharpe Ratio": lambda series: sharpe_ratio(series, Frequency.DAILY),
@@ -330,7 +347,7 @@ class BacktestOverfittingSheet(AbstractDocument):
                 AxesLabelDecorator(x_label="In-Sample performance", y_label="Out-Of-Sample performance"))
             grid.add_chart(chart)
 
-            slope, intercept, _, _, _ = linregress(df["IS"], df["OOS"])
+            slope, intercept = polyfit(df["IS"], df["OOS"])
             x_range = np.linspace(df["IS"].min(), df["IS"].max(), num=200)
             y_range = slope * x_range + intercept
             chart.add_decorator(DataElementDecorator(QFSeries(index=x_range, data=y_range),
@@ -424,12 +441,14 @@ class BacktestOverfittingSheet(AbstractDocument):
         grid = self._get_new_grid()
         for function_name, oa in self.overfitting_analysis.items():
             oos_qualities = oa.get_best_strategies_is_oos_qualities()["OOS"]
-            ecdf = ECDF(oos_qualities.values)
-            best_qualities = QFSeries(data=ecdf.y, index=ecdf.x)
+
+            x_values = np.sort(oos_qualities.values)
+            best_qualities = QFSeries(data=stats.ecdf(x_values).cdf.probabilities, index=x_values)
 
             all_oos_qualities = [oos_ranking["quality"].median() for oos_ranking in oa.oos_ranking]
-            ecdf = ECDF(all_oos_qualities)
-            qualities = QFSeries(data=ecdf.y, index=ecdf.x)
+
+            x_values = np.sort(all_oos_qualities)
+            qualities = QFSeries(data=stats.ecdf(x_values).cdf.probabilities, index=x_values)
 
             # Adjust the end of the lines
             if best_qualities.idxmax() < qualities.idxmax() and max(best_qualities) == 1:

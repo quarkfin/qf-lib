@@ -11,11 +11,10 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-
+from statistics import NormalDist
 from typing import Union, Tuple
 
 import numpy as np
-import scipy.stats as stats
 
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.utils.ratios.sharpe_ratio import sharpe_ratio
@@ -49,8 +48,9 @@ def minBTL(number_of_trials: Union[int, QFSeries], estimated_maximum: float = 1.
     minBTL_values = []
 
     for samples_number in samples_numbers:
-        expected_maximum = (1 - np.euler_gamma) * stats.norm.ppf(1 - 1 / samples_number, loc=0, scale=1) + \
-                           np.euler_gamma * stats.norm.ppf(1 - 1 / samples_number * np.exp(-1))
+        normal_dist = NormalDist(mu=0, sigma=1)
+        expected_maximum = (1 - np.euler_gamma) * normal_dist.inv_cdf(1 - 1 / samples_number, loc=0, scale=1) + \
+                           np.euler_gamma * normal_dist.inv_cdf(1 - 1 / samples_number * np.exp(-1))
 
         minimum_backtest_length = (expected_maximum / estimated_maximum) ** 2
         minBTL_values.append(minimum_backtest_length)
@@ -75,5 +75,5 @@ def minTRL(returns_timeseries: QFSeries, target_sharpe_ratio: float = 1.0, confi
     sharpe_ratio_value = sharpe_ratio(returns_series, frequency=Frequency.DAILY)
 
     minTRL_value = 1 + ((1 - skewness * sharpe_ratio_value + (kurtosis - 1) / 4.0) * sharpe_ratio_value ** 2) * \
-        (stats.norm.ppf(confidence_level) / (sharpe_ratio_value - target_sharpe_ratio)) ** 2
+        (NormalDist(mu=0, sigma=1).inv_cdf(confidence_level) / (sharpe_ratio_value - target_sharpe_ratio)) ** 2
     return minTRL_value

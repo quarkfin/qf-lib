@@ -14,8 +14,8 @@
 
 from datetime import datetime
 
-import scipy.stats as stats
 import pandas as pd
+from numpy.polynomial.polynomial import polyfit
 
 from qf_lib.analysis.rolling_analysis.rolling_analysis import RollingAnalysisFactory
 from qf_lib.analysis.tearsheets.abstract_tearsheet import AbstractTearsheet
@@ -210,7 +210,7 @@ class TearsheetWithBenchmark(AbstractTearsheet):
         def alpha_function(df_in_window):
             strategy_returns = df_in_window.iloc[:, 0]
             benchmark_returns = df_in_window.iloc[:, 1]
-            beta, alpha, _, _, _ = stats.linregress(benchmark_returns, strategy_returns)
+            beta, alpha = polyfit(benchmark_returns, strategy_returns)
             return beta, alpha
 
         rolling = df.rolling_time_window(rolling_window_len, step, alpha_function)
