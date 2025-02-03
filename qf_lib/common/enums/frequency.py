@@ -15,10 +15,12 @@
 import math
 from enum import Enum
 from functools import total_ordering
+from importlib.metadata import version
 from statistics import mode
 from typing import Dict
 
 import numpy as np
+import pandas
 from pandas import DatetimeIndex, infer_freq
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 
@@ -141,42 +143,78 @@ class Frequency(Enum):
 
     @classmethod
     def from_pandas_freq(cls, freq):
-        pandas_freq_to_frequency = {
-            "T": Frequency.MIN_1,
-            "5T": Frequency.MIN_5,
-            "10T": Frequency.MIN_10,
-            "15T": Frequency.MIN_15,
-            "30T": Frequency.MIN_30,
-            "60T": Frequency.MIN_60,
-            "H": Frequency.MIN_60,
-            "D": Frequency.DAILY,
-            "B": Frequency.DAILY,
-            "W": Frequency.WEEKLY,
-            "M": Frequency.MONTHLY,
-            "Q": Frequency.QUARTERLY,
-            "Q-DEC": Frequency.QUARTERLY,
-            "A": Frequency.YEARLY,
-            "Y": Frequency.YEARLY,
-            None: Frequency.IRREGULAR
-        }
+        if version("pandas") >= "2.2.0":
+            pandas_freq_to_frequency = {
+                "min": Frequency.MIN_1,
+                "5min": Frequency.MIN_5,
+                "10min": Frequency.MIN_10,
+                "15min": Frequency.MIN_15,
+                "30min": Frequency.MIN_30,
+                "60min": Frequency.MIN_60,
+                "h": Frequency.MIN_60,
+                "D": Frequency.DAILY,
+                "B": Frequency.DAILY,
+                "W": Frequency.WEEKLY,
+                "ME": Frequency.MONTHLY,
+                "QE": Frequency.QUARTERLY,
+                "Q-DEC": Frequency.QUARTERLY,
+                "A": Frequency.YEARLY,
+                "YE": Frequency.YEARLY,
+                None: Frequency.IRREGULAR
+            }
+        elif version("pandas") < "2.2.0":
+            pandas_freq_to_frequency = {
+                "T": Frequency.MIN_1,
+                "5T": Frequency.MIN_5,
+                "10T": Frequency.MIN_10,
+                "15T": Frequency.MIN_15,
+                "30T": Frequency.MIN_30,
+                "60T": Frequency.MIN_60,
+                "H": Frequency.MIN_60,
+                "D": Frequency.DAILY,
+                "B": Frequency.DAILY,
+                "W": Frequency.WEEKLY,
+                "M": Frequency.MONTHLY,
+                "Q": Frequency.QUARTERLY,
+                "Q-DEC": Frequency.QUARTERLY,
+                "A": Frequency.YEARLY,
+                "Y": Frequency.YEARLY,
+                None: Frequency.IRREGULAR
+            }
 
         return pandas_freq_to_frequency[freq]
 
     def to_pandas_freq(self):
-        frequency_to_pandas_freq = {
-            Frequency.MIN_1: "T",
-            Frequency.MIN_5: "5T",
-            Frequency.MIN_10: "10T",
-            Frequency.MIN_15: "15T",
-            Frequency.MIN_30: "30T",
-            Frequency.MIN_60: "60T",
-            Frequency.DAILY: "D",
-            Frequency.WEEKLY: "W",
-            Frequency.MONTHLY: "M",
-            Frequency.QUARTERLY: "Q",
-            Frequency.YEARLY: "A",
-            Frequency.IRREGULAR: None
-        }
+        if version("pandas") >= "2.2.0":
+            frequency_to_pandas_freq = {
+                Frequency.MIN_1: "min",
+                Frequency.MIN_5: "5min",
+                Frequency.MIN_10: "10min",
+                Frequency.MIN_15: "15min",
+                Frequency.MIN_30: "30min",
+                Frequency.MIN_60: "60min",
+                Frequency.DAILY: "D",
+                Frequency.WEEKLY: "W",
+                Frequency.MONTHLY: "ME",
+                Frequency.QUARTERLY: "Q",
+                Frequency.YEARLY: "A",
+                Frequency.IRREGULAR: None
+            }
+        elif version("pandas") < "2.2.0":
+            frequency_to_pandas_freq = {
+                Frequency.MIN_1: "T",
+                Frequency.MIN_5: "5T",
+                Frequency.MIN_10: "10T",
+                Frequency.MIN_15: "15T",
+                Frequency.MIN_30: "30T",
+                Frequency.MIN_60: "60T",
+                Frequency.DAILY: "D",
+                Frequency.WEEKLY: "W",
+                Frequency.MONTHLY: "M",
+                Frequency.QUARTERLY: "QE",
+                Frequency.YEARLY: "A",
+                Frequency.IRREGULAR: None
+            }
 
         try:
             return frequency_to_pandas_freq[self]

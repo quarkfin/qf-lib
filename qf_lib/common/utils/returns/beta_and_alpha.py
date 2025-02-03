@@ -15,7 +15,6 @@
 from typing import Union, Tuple
 
 import numpy as np
-from numpy.polynomial import polynomial
 
 from qf_lib.containers.series.qf_series import QFSeries
 
@@ -67,5 +66,6 @@ def beta_and_alpha(strategy_tms: QFSeries, benchmark_tms: QFSeries) -> Tuple[flo
     Calculates alpha and beta of the series versus the benchmark series.
     See: beta_and_alpha_full_stats()
     """
-    beta, alpha = polynomial.polyfit(strategy_tms, benchmark_tms)
+
+    beta, alpha, _ = beta_and_alpha_full_stats(strategy_tms, benchmark_tms)
     return beta, alpha
