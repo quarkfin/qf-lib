@@ -12,8 +12,7 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-from collections import Sequence
-from typing import Tuple
+from typing import Tuple, Sequence
 
 import numpy as np
 
