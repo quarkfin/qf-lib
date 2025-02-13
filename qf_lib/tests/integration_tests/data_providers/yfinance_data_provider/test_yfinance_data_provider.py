@@ -106,7 +106,7 @@ def test_get_history__daily__real_timer(tickers, fields, start_date, end_date, e
     ]
 )
 def test_incorrect_inputs(tickers, fields, start_date, end_date, expected_values, data_provider):
-    result = data_provider.get_price(YFinanceTicker.from_string(tickers), fields, str_to_date(start_date),
+    result = data_provider.get_history(YFinanceTicker.from_string(tickers), fields, str_to_date(start_date),
                                        str_to_date(end_date), auto_adjust=False)
 
     assert_equal(result, expected_values)
