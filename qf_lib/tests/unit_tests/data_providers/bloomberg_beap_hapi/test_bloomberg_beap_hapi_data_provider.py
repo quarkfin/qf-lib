@@ -2,7 +2,6 @@ from datetime import datetime, timedelta
 from unittest import TestCase
 from unittest.mock import patch, Mock
 
-from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.timer import SettableTimer
@@ -65,7 +64,8 @@ class TestBloombergBeapHapiDataProvider(TestCase):
         self.data_provider.parser.get_history.return_value = QFDataArray.create(data=data, dates=dates,
                                                                                 tickers=[ticker], fields=["PX_LAST"])
         result = self.data_provider.get_history(tickers=ticker, fields="PX_LAST", start_date=datetime(2025, 2, 7),
-                                                end_date=datetime(2025, 2, 7), frequency=Frequency.DAILY)
+                                                end_date=datetime(2025, 2, 7), frequency=Frequency.DAILY,
+                                                look_ahead_bias=True)
         expected_result = 100.0
         self.assertEqual(result, expected_result)
 
@@ -76,7 +76,8 @@ class TestBloombergBeapHapiDataProvider(TestCase):
         self.data_provider.parser.get_history.return_value = QFDataArray.create(data=data, dates=dates,
                                                                                 tickers=[ticker], fields=["PX_LAST"])
         result = self.data_provider.get_history(tickers=ticker, fields="PX_LAST", start_date=datetime(2025, 2, 6),
-                                                end_date=datetime(2025, 2, 7), frequency=Frequency.DAILY)
+                                                end_date=datetime(2025, 2, 7), frequency=Frequency.DAILY,
+                                                look_ahead_bias=True)
         expected_result = QFSeries([100.0, 101.0], index=dates)
         self.assertTrue(result.equals(expected_result))
 
@@ -88,5 +89,5 @@ class TestBloombergBeapHapiDataProvider(TestCase):
         self.data_provider.parser.get_history.return_value = data_array
         result = self.data_provider.get_history(tickers=tickers, fields=["PX_LAST", "VOLUME"],
                                                 start_date=datetime(2025, 2, 6), end_date=datetime(2025, 2, 7),
-                                                frequency=Frequency.DAILY)
+                                                frequency=Frequency.DAILY, look_ahead_bias=True)
         self.assertTrue(result.equals(data_array))
