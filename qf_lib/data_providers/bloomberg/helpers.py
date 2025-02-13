@@ -73,10 +73,9 @@ def convert_to_bloomberg_freq(frequency: Frequency) -> str:
         Frequency.DAILY: "DAILY",
         Frequency.WEEKLY: "WEEKLY",
         Frequency.MONTHLY: "MONTHLY",
-        Frequency.QUARTERLY: "QUARTERLY ",
+        Frequency.QUARTERLY: "QUARTERLY",
         Frequency.SEMI_ANNUALLY: "SEMI_ANNUALLY",
         Frequency.YEARLY: "YEARLY",
-        Frequency.IRREGULAR: "IRREGULAR"
     }
 
     return frequency_to_bloomberg[frequency]
