@@ -268,6 +268,7 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider,
         override_name: str
         override_value: str
         look_ahead_bias: bool
+            if set to False, the look-ahead bias will be taken care of to make sure no future data is returned
         Returns
         -------
         QFSeries, QFDataFrame, QFDataArray
