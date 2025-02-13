@@ -12,6 +12,7 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 from datetime import datetime, timedelta
+from typing import Optional
 from unittest import TestCase
 from unittest.mock import patch, Mock
 
@@ -73,6 +74,13 @@ class TestBloombergBeapHapiDataProvider(TestCase):
 
     """ Test get_history for SettableTimer """
 
+    def test_get_history__incorrect_frequency(self):
+        with self.assertRaises(NotImplementedError):
+            self.data_provider.get_history(tickers=BloombergTicker("AAPL US Equity"), fields="PX_LAST",
+                                           start_date=datetime(2025, 2, 7),
+                                           end_date=datetime(2025, 2, 7), frequency=Frequency.SEMI_ANNUALLY,
+                                           look_ahead_bias=True)
+
     def test_get_history__single_field_single_ticker_single_date_daily(self):
         ticker = BloombergTicker("AAPL US Equity")
         dates = [datetime(2025, 2, 7)]
@@ -118,7 +126,8 @@ class TestBloombergBeapHapiDataProvider(TestCase):
 
     """ Test the payload of created get_history requests """
 
-    def __test_payload_creation(self, current_time):
+    def __test_payload_creation(self, terminal_identity_user: Optional[str] = None,
+                                terminal_identity_sn: Optional[str] = None):
         # Step 1: Prepare the parser get_history dummy output and mock the datetime.now
         self.data_provider.parser.get_history.return_value = QFDataArray.create(
             data=[[[200]]], dates=[datetime(2025, 2, 6)], tickers=[BloombergTicker("AAPL US Equity")],
@@ -132,7 +141,8 @@ class TestBloombergBeapHapiDataProvider(TestCase):
         session.post.return_value = Mock(headers={'Location': '...'}, status_code=201)
 
         request_hapi_provider = BloombergBeapHapiRequestsProvider('https://api.bloomberg.com', session,
-                                                                  'account_url', 'trigger_url')
+                                                                  'account_url', 'trigger_url', terminal_identity_user,
+                                                                  terminal_identity_sn)
         self.data_provider.request_hapi_provider = request_hapi_provider
 
         fields_hapi_provider = Mock()
@@ -148,7 +158,7 @@ class TestBloombergBeapHapiDataProvider(TestCase):
     @patch('qf_lib.data_providers.bloomberg_beap_hapi.bloomberg_beap_hapi_data_provider.datetime')
     def test_get_history__test_request_data_provider_payload_creation(self, mock_now):
         current_time = datetime(2025, 2, 7, 12, 34, 56)
-        session = self.__test_payload_creation(current_time=current_time)
+        session = self.__test_payload_creation()
         mock_now.now.return_value = current_time
         mock_now.utcnow.return_value = current_time
 
@@ -193,3 +203,96 @@ class TestBloombergBeapHapiDataProvider(TestCase):
                 if currency is not None:
                     expected_payload['runtimeOptions']['historyPriceCurrency'] = currency
                 session.post.assert_called_with('requests/', json=expected_payload)
+
+    @patch('qf_lib.data_providers.bloomberg_beap_hapi.bloomberg_beap_hapi_data_provider.datetime')
+    def test_get_history__test_correct_terminal_identity_user_within_payload(self, mock_now):
+        current_time = datetime(2025, 2, 7, 12, 34, 56)
+        session = self.__test_payload_creation("1234567890")
+        mock_now.now.return_value = current_time
+        mock_now.utcnow.return_value = current_time
+
+        # Run the get history function
+        self.data_provider.get_history(tickers=BloombergTicker("AAPL US Equity"), fields="PX_LAST",
+                                       start_date=datetime(2025, 6, 2), end_date=datetime(2025, 6, 2),
+                                       frequency=Frequency.DAILY, look_ahead_bias=True)
+
+        expected_payload = {'@type': 'HistoryRequest',
+                            'description': 'Request History Payload used in creating fields component',
+                            'fieldList': 'fieldListURL',
+                            'formatting': {
+                                '@type': 'HistoryFormat',
+                                'dateFormat': 'yyyymmdd',
+                                'displayPricingSource': True,
+                                'fileType': 'unixFileType'},
+                            'identifier': f'hReq{current_time:%m%d%H%M%S%f}',
+                            'pricingSourceOptions': {
+                                '@type': 'HistoryPricingSourceOptions',
+                                'prefer': {'mnemonic': 'BGN'}
+                            },
+                            'runtimeOptions': {
+                                '@type': 'HistoryRuntimeOptions',
+                                'dateRange': {'@type': 'IntervalDateRange',
+                                              'endDate': '2025-06-02',
+                                              'startDate': '2025-06-02'},
+                                'period': 'daily'},
+                            'title': 'Request History Payload',
+                            'trigger': 'trigger_url',
+                            'universe': 'universeURL',
+                            'terminalIdentity': {
+                                '@type': 'BbaTerminalIdentity',
+                                'userNumber': 1234567890
+                            }}
+
+        session.post.assert_called_with('requests/', json=expected_payload)
+
+    def test_get_history__incorrect_user_identity(self):
+        with self.assertRaises(ValueError):
+            self.__test_payload_creation(terminal_identity_user="234567890!")
+
+    def test_get_history__incorrect_sn(self):
+        with self.assertRaises(ValueError):
+            self.__test_payload_creation(terminal_identity_user="234567890",
+                                         terminal_identity_sn="123-123-w")
+
+    @patch('qf_lib.data_providers.bloomberg_beap_hapi.bloomberg_beap_hapi_data_provider.datetime')
+    def test_get_history__test_correct_terminal_identity_user_sn_within_payload(self, mock_now):
+        current_time = datetime(2025, 2, 7, 12, 34, 56)
+        session = self.__test_payload_creation("1234567890", "123-456")
+        mock_now.now.return_value = current_time
+        mock_now.utcnow.return_value = current_time
+
+        # Run the get history function
+        self.data_provider.get_history(tickers=BloombergTicker("AAPL US Equity"), fields="PX_LAST",
+                                       start_date=datetime(2025, 6, 2), end_date=datetime(2025, 6, 2),
+                                       frequency=Frequency.DAILY, look_ahead_bias=True)
+
+        expected_payload = {'@type': 'HistoryRequest',
+                            'description': 'Request History Payload used in creating fields component',
+                            'fieldList': 'fieldListURL',
+                            'formatting': {
+                                '@type': 'HistoryFormat',
+                                'dateFormat': 'yyyymmdd',
+                                'displayPricingSource': True,
+                                'fileType': 'unixFileType'},
+                            'identifier': f'hReq{current_time:%m%d%H%M%S%f}',
+                            'pricingSourceOptions': {
+                                '@type': 'HistoryPricingSourceOptions',
+                                'prefer': {'mnemonic': 'BGN'}
+                            },
+                            'runtimeOptions': {
+                                '@type': 'HistoryRuntimeOptions',
+                                'dateRange': {'@type': 'IntervalDateRange',
+                                              'endDate': '2025-06-02',
+                                              'startDate': '2025-06-02'},
+                                'period': 'daily'},
+                            'title': 'Request History Payload',
+                            'trigger': 'trigger_url',
+                            'universe': 'universeURL',
+                            'terminalIdentity': {
+                                '@type': 'BlpTerminalIdentity',
+                                'userNumber': 1234567890,
+                                'serialNumber': 123,
+                                'workStation': 456
+                            }}
+
+        session.post.assert_called_with('requests/', json=expected_payload)

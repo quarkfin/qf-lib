@@ -200,9 +200,9 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
         """
         self._assert_is_connected()
         if frequency not in self.supported_frequencies():
-            raise NotImplemented(f"The provided frequency: {frequency} is not supported by the "
-                                 f"{self.__class__.__name__}. To review the list of supported frequencies, please "
-                                 f"consult the output of supported_frequencies() function.")
+            raise NotImplementedError(f"The provided frequency: {frequency} is not supported by the "
+                                      f"{self.__class__.__name__}. To review the list of supported frequencies, please "
+                                      f"consult the output of supported_frequencies() function.")
 
         original_end_date = (end_date or self.timer.now()) + RelativeDelta(second=0, microsecond=0)
         end_date = original_end_date if look_ahead_bias else self.get_end_date_without_look_ahead(original_end_date,
