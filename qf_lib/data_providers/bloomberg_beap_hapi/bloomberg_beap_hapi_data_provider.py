@@ -199,6 +199,10 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
             When unexpected response from Bloomberg HAPI happened
         """
         self._assert_is_connected()
+        if frequency not in self.supported_frequencies():
+            raise NotImplemented(f"The provided frequency: {frequency} is not supported by the "
+                                 f"{self.__class__.__name__}. To review the list of supported frequencies, please "
+                                 f"consult the output of supported_frequencies() function.")
 
         original_end_date = (end_date or self.timer.now()) + RelativeDelta(second=0, microsecond=0)
         end_date = original_end_date if look_ahead_bias else self.get_end_date_without_look_ahead(original_end_date,
@@ -541,3 +545,7 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
         # We exhausted the catalogs, but didn't find a non-'bbg' catalog.
         self.logger.error('Scheduled catalog not in %r', response.json()['contains'])
         raise BloombergError('Scheduled catalog not found')
+
+    @staticmethod
+    def supported_frequencies():
+        return {Frequency.DAILY, Frequency.WEEKLY, Frequency.MONTHLY, Frequency.QUARTERLY, Frequency.YEARLY}
