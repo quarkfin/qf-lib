@@ -16,18 +16,23 @@ from typing import Optional, Dict
 from unittest import TestCase, skipIf
 from unittest.mock import Mock
 
+from qf_lib.containers.qf_data_array import QFDataArray
+from qf_lib.tests.helpers.testing_tools.containers_comparison import assert_dataarrays_equal
+from qf_lib.tests.unit_tests.data_providers.bloomberg.config import REF_DATA_SERVICE_URI
+
 try:
     import blpapi
+    from blpapi.test import createEvent, appendMessage, MessageProperties, deserializeService
     from qf_lib.common.tickers.tickers import BloombergTicker
     from qf_lib.data_providers.bloomberg.bloomberg_names import SECURITIES, FIELDS, START_DATE, END_DATE, \
         PERIODICITY_SELECTION, PERIODICITY_ADJUSTMENT
     from qf_lib.data_providers.bloomberg.historical_data_provider import HistoricalDataProvider
+
     is_bloomberg_installed = True
 except ImportError:
     is_bloomberg_installed = False
 
 from qf_lib.common.enums.frequency import Frequency
-
 
 
 class Element:
@@ -48,7 +53,7 @@ class Element:
         return float(self.value)
 
     def getElementAsDatetime(self):
-        return self.value  # TODO ??
+        return self.value
 
     def getElementAsString(self):
         return str(self.value)
@@ -78,12 +83,18 @@ class Request:
     def __eq__(self, other):
         return self.elements == other.elements
 
+
 @skipIf(not is_bloomberg_installed, "No Bloomberg API installed. Tests are being skipped.")
 class TestHistoricalDataProvider(TestCase):
+    def setUp(self):
+        # Mock the Reference Data Service
+        self.ref_data_service = deserializeService(REF_DATA_SERVICE_URI)
+        self.request_name = blpapi.Name("HistoricalDataRequest")
+
     def test_get_daily_frequency__test_request_payload(self):
         session = Mock()
         session.getService.return_value.createRequest.return_value = Request()
-        session.nextEvent.return_value = blpapi.test.createEvent(5)
+        session.nextEvent.return_value = createEvent(5)
 
         data_provider = HistoricalDataProvider(session)
         data_provider.get([BloombergTicker("AAPL US Equity")], ["PX_LAST"], datetime(2025, 2, 6), datetime(2025, 2, 6),
@@ -98,3 +109,65 @@ class TestHistoricalDataProvider(TestCase):
             PERIODICITY_ADJUSTMENT: Element(PERIODICITY_ADJUSTMENT, "ACTUAL")
         })
         session.sendRequest.assert_called_once_with(expected_request)
+
+    def test_get_daily_frequency__single_ticker_multiple_dates_single_field(self):
+        session = Mock()
+        session.getService.return_value.createRequest.return_value = Request()
+        event = createEvent(blpapi.Event.RESPONSE)
+
+        schema = self.ref_data_service.getOperation(
+            self.request_name
+        ).getResponseDefinitionAt(0)
+
+        formatter = appendMessage(event, schema)
+        content = {
+            "securityData":
+                {
+                    "security": "AAPL US Equity",
+                    "sequenceNumber": 0,
+                    "fieldData": [
+                        {"date": "2025-02-06", "PX_LAST": 138.53},
+                        {"date": "2025-02-07", "PX_LAST": 138.72}
+                    ],
+                }
+        }
+        formatter.formatMessageDict(content)
+
+        session.nextEvent.return_value = event
+
+        data_provider = HistoricalDataProvider(session)
+        result = data_provider.get([BloombergTicker("AAPL US Equity")], ["PX_LAST"], datetime(2025, 2, 6),
+                                   datetime(2025, 2, 7), Frequency.DAILY)
+        expected = QFDataArray.create(data=[[[138.53]], [[138.72]]], dates=[datetime(2025, 2, 6), datetime(2025, 2, 7)],
+                                      tickers=[BloombergTicker("AAPL US Equity")], fields=["PX_LAST"])
+        assert_dataarrays_equal(result, expected)
+
+    def test_get_daily_frequency__single_ticker_single_date_multiple_fields(self):
+        session = Mock()
+        session.getService.return_value.createRequest.return_value = Request()
+        event = createEvent(blpapi.Event.RESPONSE)
+
+        schema = self.ref_data_service.getOperation(
+            self.request_name
+        ).getResponseDefinitionAt(0)
+
+        formatter = appendMessage(event, schema)
+        content = {
+            "securityData":
+                {
+                    "security": "AAPL US Equity",
+                    "sequenceNumber": 0,
+                    "fieldData": [
+                        {"date": "2025-02-06", "PX_LAST": 138.53, "PX_VOLUME": 1000000},
+                    ],
+                }
+        }
+        formatter.formatMessageDict(content)
+        session.nextEvent.return_value = event
+
+        data_provider = HistoricalDataProvider(session)
+        result = data_provider.get([BloombergTicker("AAPL US Equity")], ["PX_LAST", "PX_VOLUME"], datetime(2025, 2, 6),
+                                   datetime(2025, 2, 6), Frequency.DAILY)
+        expected = QFDataArray.create(data=[[[138.53, 1000000]]], dates=[datetime(2025, 2, 6)],
+                                      tickers=[BloombergTicker("AAPL US Equity")], fields=["PX_LAST", "PX_VOLUME"])
+        assert_dataarrays_equal(result, expected)
