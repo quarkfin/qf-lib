@@ -23,7 +23,7 @@ from qf_lib.tests.unit_tests.data_providers.bloomberg.mock_configs import Reques
 
 try:
     import blpapi
-    from blpapi.test import createEvent, appendMessage, MessageProperties, deserializeService
+    from blpapi.test import createEvent, appendMessage, deserializeService
     from qf_lib.common.tickers.tickers import BloombergTicker
     from qf_lib.data_providers.bloomberg.bloomberg_names import SECURITIES, FIELDS, START_DATE, END_DATE, \
         PERIODICITY_SELECTION, PERIODICITY_ADJUSTMENT
