@@ -12,13 +12,14 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 from datetime import datetime
-from typing import Optional, Dict
 from unittest import TestCase, skipIf
 from unittest.mock import Mock
 
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.tests.helpers.testing_tools.containers_comparison import assert_dataarrays_equal
 from qf_lib.tests.unit_tests.data_providers.bloomberg.config import REF_DATA_SERVICE_URI
+from qf_lib.common.enums.frequency import Frequency
+from qf_lib.tests.unit_tests.data_providers.bloomberg.mock_configs import Request, Element
 
 try:
     import blpapi
@@ -32,57 +33,6 @@ try:
 except ImportError:
     is_bloomberg_installed = False
 
-from qf_lib.common.enums.frequency import Frequency
-
-
-class Element:
-    def __init__(self, name, value: Optional = None):
-        self.name = name
-        self.value = value
-
-    def setValue(self, value):
-        self.value = value
-
-    def appendValue(self, value):
-        if self.value is None:
-            self.value = [value]
-        else:
-            self.value.append(value)
-
-    def getElementAsFloat(self):
-        return float(self.value)
-
-    def getElementAsDatetime(self):
-        return self.value
-
-    def getElementAsString(self):
-        return str(self.value)
-
-    def __eq__(self, other):
-        return self.name == other.name and self.value == other.value
-
-    def __hash__(self):
-        return hash(self.name, self.value)
-
-
-class Request:
-    def __init__(self, elements: Optional[Dict] = None):
-        self.elements = elements if elements is not None else {}
-
-    def getElement(self, name):
-        if name not in self.elements:
-            new_element = Element(name)
-            self.elements[name] = new_element
-
-        return self.elements[name]
-
-    def set(self, name, value):
-        element = self.getElement(name)
-        element.setValue(value)
-
-    def __eq__(self, other):
-        return self.elements == other.elements
-
 
 @skipIf(not is_bloomberg_installed, "No Bloomberg API installed. Tests are being skipped.")
 class TestHistoricalDataProvider(TestCase):
@@ -90,6 +40,7 @@ class TestHistoricalDataProvider(TestCase):
         # Mock the Reference Data Service
         self.ref_data_service = deserializeService(REF_DATA_SERVICE_URI)
         self.request_name = blpapi.Name("HistoricalDataRequest")
+        self.intraday_request_name = blpapi.Name("IntradayBarRequest")
 
     def test_get_daily_frequency__test_request_payload(self):
         session = Mock()
@@ -170,4 +121,117 @@ class TestHistoricalDataProvider(TestCase):
                                    datetime(2025, 2, 6), Frequency.DAILY)
         expected = QFDataArray.create(data=[[[138.53, 1000000]]], dates=[datetime(2025, 2, 6)],
                                       tickers=[BloombergTicker("AAPL US Equity")], fields=["PX_LAST", "PX_VOLUME"])
+        assert_dataarrays_equal(result, expected)
+
+    def test_get_daily_frequency__multiple_tickers_single_date_multiple_fields(self):
+        """ Multiple tickers come in separate events, which would be of Partial Response and Response types. """
+        session = Mock()
+        session.getService.return_value.createRequest.return_value = Request()
+        event = createEvent(blpapi.Event.PARTIAL_RESPONSE)
+
+        schema = self.ref_data_service.getOperation(
+            self.request_name
+        ).getResponseDefinitionAt(0)
+
+        # Message for first ticker
+        formatter = appendMessage(event, schema)
+        content = {
+            "securityData":
+                {
+                    "security": "AAPL US Equity",
+                    "sequenceNumber": 0,
+                    "fieldData": [
+                        {"date": "2025-02-06", "PX_LAST": 138.53, "PX_VOLUME": 1000000},
+                    ],
+                }
+        }
+        formatter.formatMessageDict(content)
+
+        event2 = createEvent(blpapi.Event.RESPONSE)
+        # Message for the second ticker
+        formatter2 = appendMessage(event2, schema)
+        content2 = {
+            "securityData":
+                {
+                    "security": "MSFT US Equity",
+                    "sequenceNumber": 0,
+                    "fieldData": [
+                        {"date": "2025-02-06", "PX_LAST": 238.53, "PX_VOLUME": 2000000},
+                    ],
+                }
+        }
+        formatter2.formatMessageDict(content2)
+
+        it = iter([event, event2])
+        session.nextEvent.side_effect = lambda: next(it)
+
+        data_provider = HistoricalDataProvider(session)
+        result = data_provider.get([BloombergTicker("AAPL US Equity"), BloombergTicker("MSFT US Equity")],
+                                   ["PX_LAST", "PX_VOLUME"], datetime(2025, 2, 6),
+                                   datetime(2025, 2, 6), Frequency.DAILY)
+        expected = QFDataArray.create(data=[[[138.53, 1000000], [238.53, 2000000]]], dates=[datetime(2025, 2, 6)],
+                                      tickers=[BloombergTicker("AAPL US Equity"), BloombergTicker("MSFT US Equity")],
+                                      fields=["PX_LAST", "PX_VOLUME"])
+        assert_dataarrays_equal(result, expected)
+
+    def test_get_intraday_frequency__single_ticker_multiple_dates_single_field(self):
+        session = Mock()
+        session.getService.return_value.createRequest.return_value = Request()
+        event = createEvent(blpapi.Event.RESPONSE)
+
+        schema = self.ref_data_service.getOperation(
+            self.intraday_request_name
+        ).getResponseDefinitionAt(0)
+
+        formatter = appendMessage(event, schema)
+        content = {
+            "barData":
+                {
+                    "barTickData": [
+                        {"time": "2025-02-06T14:30:00.000", "open": 138.00, "close": 138.53},
+                        {"time": "2025-02-06T15:30:00.000", "open": 139.00, "close": 138.72}
+                    ],
+                }
+        }
+        formatter.formatMessageDict(content)
+
+        session.nextEvent.return_value = event
+
+        data_provider = HistoricalDataProvider(session)
+        result = data_provider.get([BloombergTicker("AAPL US Equity")], ["close"], datetime(2025, 2, 6, 14, 30),
+                                   datetime(2025, 2, 6, 16, 30), Frequency.MIN_60)
+        expected = QFDataArray.create(data=[[[138.53]], [[138.72]]],
+                                      dates=[datetime(2025, 2, 6, 14, 30), datetime(2025, 2, 6, 15, 30)],
+                                      tickers=[BloombergTicker("AAPL US Equity")], fields=["close"])
+        assert_dataarrays_equal(result, expected)
+
+    def test_get_intraday_frequency__single_ticker_multiple_dates_single_field__old_fields_mapping(self):
+        session = Mock()
+        session.getService.return_value.createRequest.return_value = Request()
+        event = createEvent(blpapi.Event.RESPONSE)
+
+        schema = self.ref_data_service.getOperation(
+            self.intraday_request_name
+        ).getResponseDefinitionAt(0)
+
+        formatter = appendMessage(event, schema)
+        content = {
+            "barData":
+                {
+                    "barTickData": [
+                        {"time": "2025-02-06T14:30:00.000", "open": 138.00, "close": 138.53},
+                        {"time": "2025-02-06T15:30:00.000", "open": 139.00, "close": 138.72}
+                    ],
+                }
+        }
+        formatter.formatMessageDict(content)
+
+        session.nextEvent.return_value = event
+
+        data_provider = HistoricalDataProvider(session)
+        result = data_provider.get([BloombergTicker("AAPL US Equity")], ["PX_LAST"], datetime(2025, 2, 6, 14, 30),
+                                   datetime(2025, 2, 6, 16, 30), Frequency.MIN_60)
+        expected = QFDataArray.create(data=[[[138.53]], [[138.72]]],
+                                      dates=[datetime(2025, 2, 6, 14, 30), datetime(2025, 2, 6, 15, 30)],
+                                      tickers=[BloombergTicker("AAPL US Equity")], fields=["PX_LAST"])
         assert_dataarrays_equal(result, expected)
