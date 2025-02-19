@@ -173,7 +173,7 @@ class HistoricalDataProvider:
                 check_security_data_for_errors(security_data)
 
                 field_data_array = security_data.getElement(FIELD_DATA)
-                dates = [to_datetime(x.getElementAsDatetime(DATE)) for x in field_data_array.values()]
+                dates = [to_datetime(x.getElementAsString(DATE)) for x in field_data_array.values()]
 
                 dates_fields_values = QFDataFrame(np.nan, index=dates, columns=requested_fields)
 
@@ -206,7 +206,7 @@ class HistoricalDataProvider:
                 bar_data = extract_bar_data(event)
 
                 bar_tick_data_array = bar_data.getElement(BAR_TICK_DATA)
-                dates = [to_datetime(e.getElementAsDatetime("time")) for e in bar_tick_data_array.values()]
+                dates = [to_datetime(e.getElementAsString("time")) for e in bar_tick_data_array.values()]
                 dates_fields_values = QFDataFrame(np.nan, index=dates, columns=requested_fields)
 
                 for field_name in requested_fields:
