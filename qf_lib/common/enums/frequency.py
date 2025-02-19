@@ -195,7 +195,7 @@ class Frequency(Enum):
                 Frequency.DAILY: "D",
                 Frequency.WEEKLY: "W",
                 Frequency.MONTHLY: "ME",
-                Frequency.QUARTERLY: "Q",
+                Frequency.QUARTERLY: "QE",
                 Frequency.YEARLY: "A",
                 Frequency.IRREGULAR: None
             }
@@ -210,7 +210,7 @@ class Frequency(Enum):
                 Frequency.DAILY: "D",
                 Frequency.WEEKLY: "W",
                 Frequency.MONTHLY: "M",
-                Frequency.QUARTERLY: "QE",
+                Frequency.QUARTERLY: "Q",
                 Frequency.YEARLY: "A",
                 Frequency.IRREGULAR: None
             }
