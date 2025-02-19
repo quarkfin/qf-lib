@@ -39,7 +39,7 @@ def data_provider():
 def mock_daily_yfinance_download():
     """ Fixture to mock yfinance.download to return hardcoded data. """
 
-    def _mock_download(tickers, start, end, interval, keepna, progress):
+    def _mock_download(tickers, start, end, **kwargs):
         # Hardcoded data for testing
         data = {
             "AAPL": pd.DataFrame({
