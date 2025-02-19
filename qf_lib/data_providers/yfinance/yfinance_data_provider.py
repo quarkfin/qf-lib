@@ -67,7 +67,8 @@ class YFinanceDataProvider(AbstractPriceDataProvider):
 
     def get_history(self, tickers: Union[YFinanceTicker, Sequence[YFinanceTicker]], fields: Union[None, str, Sequence[str]],
                     start_date: datetime, end_date: datetime = None, frequency: Frequency = None,
-                    look_ahead_bias: bool = False, **kwargs) -> Union[QFSeries, QFDataFrame, QFDataArray]:
+                    look_ahead_bias: bool = False, auto_adjust: bool = True, **kwargs) \
+            -> Union[QFSeries, QFDataFrame, QFDataArray]:
         """
         Gets historical attributes (fields) of different securities (tickers).
 
@@ -87,6 +88,8 @@ class YFinanceDataProvider(AbstractPriceDataProvider):
             frequencies at the following intervals: 60, 30, 15, 5 and 1 minute.
         look_ahead_bias: bool
             if set to False, the look-ahead bias will be taken care of to make sure no future data is returned
+        auto_adjust: bool
+            Adjust back all OHLC prices automatically. Default values is True.
 
         Returns
         -------
@@ -117,6 +120,7 @@ class YFinanceDataProvider(AbstractPriceDataProvider):
         tickers_str = [t.as_string() for t in tickers]
         df = yf.download(list(set(tickers_str)), start_date, end_date, keepna=True,
                          interval=self._frequency_to_period(frequency),
+                         auto_adjust=auto_adjust,
                          progress=False)
         df = df.reindex(columns=MultiIndex.from_product([fields, tickers_str]))
         values = df.values.reshape(len(df), len(tickers), len(fields))

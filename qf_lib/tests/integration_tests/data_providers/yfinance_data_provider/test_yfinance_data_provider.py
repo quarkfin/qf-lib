@@ -85,7 +85,7 @@ def assert_equal(result, expected_value, decimals=2):
 )
 def test_get_history__daily__real_timer(tickers, fields, start_date, end_date, expected_values, data_provider):
     result = data_provider.get_history(YFinanceTicker.from_string(tickers), fields, str_to_date(start_date),
-                                       str_to_date(end_date))
+                                       str_to_date(end_date), auto_adjust=False)
     assert_equal(result, expected_values)
 
 
@@ -107,7 +107,7 @@ def test_get_history__daily__real_timer(tickers, fields, start_date, end_date, e
 )
 def test_incorrect_inputs(tickers, fields, start_date, end_date, expected_values, data_provider):
     result = data_provider.get_history(YFinanceTicker.from_string(tickers), fields, str_to_date(start_date),
-                                       str_to_date(end_date))
+                                       str_to_date(end_date), auto_adjust=False)
 
     assert_equal(result, expected_values)
 
@@ -123,7 +123,8 @@ def test_incorrect_inputs(tickers, fields, start_date, end_date, expected_values
 )
 def test_get_history__various_frequencies_real_timer(tickers, fields, start_date, end_date, frequency,
                                                      expected_values, data_provider):
-    result = data_provider.get_history(YFinanceTicker.from_string(tickers), fields, start_date, end_date, frequency)
+    result = data_provider.get_history(YFinanceTicker.from_string(tickers), fields, start_date, end_date, frequency,
+                                       auto_adjust=False)
     assert_equal(result, expected_values)
 
 
@@ -151,5 +152,6 @@ def test_get_history__settable_timer(tickers, fields, start_date, end_date, freq
     MarketOpenEvent.set_trigger_time({"hour": 9, "minute": 30, "second": 0, "microsecond": 0})
 
     data_provider.timer = SettableTimer(current_time)
-    result = data_provider.get_history(YFinanceTicker.from_string(tickers), fields, start_date, end_date, frequency)
+    result = data_provider.get_history(YFinanceTicker.from_string(tickers), fields, start_date, end_date, frequency,
+                                       auto_adjust=False)
     assert_equal(result, expected_values)
