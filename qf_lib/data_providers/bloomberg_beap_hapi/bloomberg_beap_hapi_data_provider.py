@@ -25,6 +25,7 @@ import requests
 
 from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
+from qf_lib.common.utils.dateutils.timer import Timer
 from qf_lib.containers.futures.future_tickers.future_ticker import FutureTicker
 from qf_lib.data_providers.futures_data_provider import FuturesDataProvider
 from qf_lib.data_providers.tickers_universe_provider import TickersUniverseProvider
@@ -77,8 +78,8 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
     the S/N value can be obtained by running IAM <GO> in the Bloomberg terminal)
     """
 
-    def __init__(self, settings: Settings, reply_timeout: int = 5):
-        super().__init__()
+    def __init__(self, settings: Settings, reply_timeout: int = 5, timer: Optional[Timer] = None):
+        super().__init__(timer=timer)
 
         self.parser = BloombergBeapHapiParser()
 
@@ -154,7 +155,7 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
     def get_history(self, tickers: Union[BloombergTicker, Sequence[BloombergTicker]], fields: Union[str, Sequence[str]],
                     start_date: datetime, end_date: datetime = None, frequency: Frequency = Frequency.DAILY,
                     universe_creation_time: Optional[datetime] = None, currency: Optional[str] = None,
-                    pricing_source: Optional[str] = "BGN") -> \
+                    pricing_source: Optional[str] = "BGN", look_ahead_bias: bool = False, **kwargs) -> \
             Union[QFSeries, QFDataFrame, QFDataArray]:
         """
         Gets historical data from Bloomberg HAPI from the (start_date - end_date) time range.
@@ -179,6 +180,8 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
         pricing_source: Optional[str]
             Allows a user to specify a pricing source that is applied to all financial instruments in the request
             universe. By default equals to 'BGN'.
+        look_ahead_bias: bool
+            if set to False, the look-ahead bias will be taken care of to make sure no future data is returned
 
         Returns
         -------
@@ -196,12 +199,16 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
             When unexpected response from Bloomberg HAPI happened
         """
         self._assert_is_connected()
+        if frequency not in self.supported_frequencies():
+            raise NotImplementedError(f"The provided frequency: {frequency} is not supported by the "
+                                      f"{self.__class__.__name__}. To review the list of supported frequencies, please "
+                                      f"consult the output of supported_frequencies() function.")
 
-        end_date = end_date or datetime.now()
-        end_date = end_date + RelativeDelta(second=0, microsecond=0)
+        original_end_date = (end_date or self.timer.now()) + RelativeDelta(second=0, microsecond=0)
+        end_date = original_end_date if look_ahead_bias else self.get_end_date_without_look_ahead(original_end_date,
+                                                                                                  frequency)
         start_date = self._adjust_start_date(start_date, frequency)
-
-        got_single_date = self._got_single_date(start_date, end_date, frequency)
+        got_single_date = self._got_single_date(start_date, original_end_date, frequency)
 
         tickers, got_single_ticker = convert_to_list(tickers, BloombergTicker)
         fields, got_single_field = convert_to_list(fields, str)
@@ -538,3 +545,7 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
         # We exhausted the catalogs, but didn't find a non-'bbg' catalog.
         self.logger.error('Scheduled catalog not in %r', response.json()['contains'])
         raise BloombergError('Scheduled catalog not found')
+
+    @staticmethod
+    def supported_frequencies():
+        return {Frequency.DAILY, Frequency.WEEKLY, Frequency.MONTHLY, Frequency.QUARTERLY, Frequency.YEARLY}

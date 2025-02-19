@@ -179,10 +179,12 @@ class TestPortaraDataProviderIntraday(TestCase):
         self.assertEqual(type(prices5), PricesSeries)
         self.assertEqual(Frequency.infer_freq(prices5.index), Frequency.MIN_5)
 
-        assert_series_equal(prices5, prices.loc[datetime(2021, 6, 11, 17, 15):].resample('5T').last().dropna(),
+        assert_series_equal(prices5, prices.loc[datetime(2021, 6, 11, 17, 15):].resample(
+            Frequency.MIN_5.to_pandas_freq()).last().dropna(),
                             check_names=False)
 
         self.assertTrue(len(prices15))
         self.assertEqual(type(prices15), PricesSeries)
-        assert_series_equal(prices15, prices.loc[datetime(2021, 6, 11, 17, 15):].resample('15T').last().dropna(),
+        assert_series_equal(prices15, prices.loc[datetime(2021, 6, 11, 17, 15):].resample(
+            Frequency.MIN_15.to_pandas_freq()).last().dropna(),
                             check_names=False)
