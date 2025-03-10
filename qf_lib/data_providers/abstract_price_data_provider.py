@@ -230,7 +230,6 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
         if isinstance(self.timer, SettableTimer) and frequency > Frequency.DAILY:
             return self._last_available_price_settable_timer_intraday(tickers, frequency, end_time)
 
-
     def str_to_price_field_map(self) -> Dict[str, PriceField]:
         """
         Inverse of price_field_to_str_map.
