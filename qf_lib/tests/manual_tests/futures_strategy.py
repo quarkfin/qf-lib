@@ -138,7 +138,7 @@ def run_strategy(data_provider: DataProvider) -> Tuple[float, str]:
 
     model_tickers = [BloombergFutureTicker("Corn", "C {} Comdty", 1, 10, 1)]
     start_date = str_to_date('2003-05-30')
-    end_date = str_to_date('2009-01-01')
+    end_date = str_to_date('2004-05-31')
     initial_risk = 0.006
 
     # ----- build trading session ----- #
@@ -169,4 +169,5 @@ def run_strategy(data_provider: DataProvider) -> Tuple[float, str]:
 
     data_checksum = ts.get_preloaded_data_checksum()
     actual_end_value = ts.portfolio.portfolio_eod_series()[-1]
+    print(actual_end_value, data_checksum)
     return actual_end_value, data_checksum

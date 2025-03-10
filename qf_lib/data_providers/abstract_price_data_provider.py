@@ -225,12 +225,11 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
             raise AttributeError(f"Data provider {self.__class__.__name__} has no set frequency. Please set it before "
                                  f"running a simulation with SettableTimer.")
 
-        if isinstance(self.timer, SettableTimer) and frequency == Frequency.DAILY:
+        if isinstance(self.timer, SettableTimer) and frequency <= Frequency.DAILY:
             return self._last_available_price_settable_timer_daily(tickers, frequency, end_time)
         if isinstance(self.timer, SettableTimer) and frequency > Frequency.DAILY:
             return self._last_available_price_settable_timer_intraday(tickers, frequency, end_time)
-        else:
-            raise NotImplementedError("TODO")
+
 
     def str_to_price_field_map(self) -> Dict[str, PriceField]:
         """
