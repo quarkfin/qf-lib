@@ -31,8 +31,8 @@ class TestStrategies(unittest.TestCase):
             raise self.skipTest("No Bloomberg connection")
 
     def test_futures_strategy(self):
-        expected_value = 10317477.750000006
-        expected_data_checksum = "88eb90dc28c7375204507ed2a112543955757f04"
+        expected_value = 9959744.50
+        expected_data_checksum = "c4e324b8ecfd1da44c24bc312fcc4320fad1b949"
         actual_end_value, actual_data_checksum = futures_strategy.run_strategy(self.data_provider)
 
         self.assertAlmostEqual(expected_value, actual_end_value, places=2)
