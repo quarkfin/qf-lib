@@ -139,7 +139,7 @@ REF_DATA_SERVICE_URI = """<?xml version="1.0" encoding="UTF-8" ?>\
     <sequenceType name="ReferenceDataResponseType">\
         <element name="responseError" type="ErrorInfo"       />\
         <element name="securityData"  type="ReferenceSecurityData"\
-                                         minOccurs="1" maxOccurs="unbounded"/>\
+                                         minOccurs="0" maxOccurs="unbounded"/>\
     </sequenceType>\
     <sequenceType name="ReferenceSecurityData">\
         <element name="security"         type="String"/>\

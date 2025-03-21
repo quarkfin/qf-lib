@@ -177,10 +177,9 @@ class TestReferenceDataProvider(TestCase):
                     "fieldData": {},
                     "fieldExceptions": [],
                     "securityError": {
-                        "source": "21932:rsfrdsvc1",
+                        "source": "something",
                         "code": 43,
                         "category": "BAD_SEC",
-                        "message": "Unknown/Invalid Security  [nid:21932]",
                         "subcategory": "INVALID_SECURITY"
                     }
                 },
@@ -229,3 +228,31 @@ class TestReferenceDataProvider(TestCase):
         expected = QFDataFrame(data={"PX_LAST": [138.53, 158.53]},
                                index=[BloombergTicker("AAPL US Equity"), BloombergTicker("IBM US Equity")])
         assert_dataframes_equal(result, expected)
+
+    def test_response_error(self):
+        session = Mock()
+        session.getService.return_value.createRequest.return_value = Request()
+        event = createEvent(blpapi.Event.RESPONSE)
+
+        schema = self.ref_data_service.getOperation(
+            self.request_name
+        ).getResponseDefinitionAt(0)
+
+        formatter = appendMessage(event, schema)
+        content = {
+            "responseError":
+                {
+                "source": "something",
+                "code": 43,
+                "category": "LIMIT",
+                "message": "Access pending review",
+                "subcategory": "REVIEW"
+            },
+        }
+        formatter.formatMessageDict(content)
+        session.nextEvent.return_value = event
+
+        data_provider = ReferenceDataProvider(session)
+        data_provider.logger = Mock()
+        data_provider.get([BloombergTicker("AAPL US Equity")], ["PX_LAST"])
+        data_provider.logger.error.assert_called_once()
