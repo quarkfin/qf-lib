@@ -17,7 +17,6 @@ import datetime
 import blpapi
 import numpy as np
 from blpapi import DataType
-from pandas import to_datetime
 
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
@@ -137,6 +136,7 @@ def check_security_data_for_errors(security_data):
         error_message = "Response contains security error:\n" + str(security_data)
         logger.error(error_message)
         raise BloombergError(error_message)
+
 
 def convert_field(field_data_array, field_name):
     if not field_data_array.hasElement(field_name, True):

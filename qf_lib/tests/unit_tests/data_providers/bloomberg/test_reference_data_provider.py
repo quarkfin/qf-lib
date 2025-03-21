@@ -17,7 +17,6 @@ from unittest.mock import Mock
 from numpy import nan
 
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
-from qf_lib.data_providers.bloomberg.reference_data_provider import ReferenceDataProvider
 from qf_lib.tests.helpers.testing_tools.containers_comparison import assert_dataframes_equal
 from qf_lib.tests.unit_tests.data_providers.bloomberg.config import REF_DATA_SERVICE_URI
 from qf_lib.tests.unit_tests.data_providers.bloomberg.mock_configs import Request
@@ -26,9 +25,7 @@ try:
     import blpapi
     from blpapi.test import createEvent, appendMessage, deserializeService
     from qf_lib.common.tickers.tickers import BloombergTicker
-    from qf_lib.data_providers.bloomberg.bloomberg_names import SECURITIES, FIELDS, START_DATE, END_DATE, \
-        PERIODICITY_SELECTION, PERIODICITY_ADJUSTMENT
-    from qf_lib.data_providers.bloomberg.historical_data_provider import HistoricalDataProvider
+    from qf_lib.data_providers.bloomberg.reference_data_provider import ReferenceDataProvider
 
     is_bloomberg_installed = True
 except ImportError:
@@ -242,12 +239,12 @@ class TestReferenceDataProvider(TestCase):
         content = {
             "responseError":
                 {
-                "source": "something",
-                "code": 43,
-                "category": "LIMIT",
-                "message": "Access pending review",
-                "subcategory": "REVIEW"
-            },
+                    "source": "something",
+                    "code": 43,
+                    "category": "LIMIT",
+                    "message": "Access pending review",
+                    "subcategory": "REVIEW"
+                },
         }
         formatter.formatMessageDict(content)
         session.nextEvent.return_value = event

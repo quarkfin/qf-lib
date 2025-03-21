@@ -13,11 +13,6 @@
 #     limitations under the License.
 from typing import Sequence, Dict, Any, Union, List
 
-import blpapi
-import numpy as np
-from blpapi import DataType
-from pandas import to_datetime
-
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame

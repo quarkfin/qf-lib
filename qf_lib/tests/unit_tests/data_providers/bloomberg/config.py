@@ -25,7 +25,6 @@ HIST_DATA_SERVICE_URI = """<?xml version="1.0" encoding="UTF-8" ?>\
         <response>Response</response>\
         <responseSelection>IntradayBarResponse</responseSelection>\
       </operation>\
-      
    </service>\
    <schema>\
     <sequenceType name="HistoricalDataRequest">\
