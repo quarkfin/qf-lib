@@ -16,10 +16,11 @@ from abc import abstractmethod, ABCMeta
 from datetime import datetime
 from typing import Union, Sequence, Dict, Optional
 
-from numpy import nan
+from numpy import nan, float64
 from pandas import concat
 from pandas._libs.tslibs.offsets import to_offset
 from pandas._libs.tslibs.timestamps import Timestamp
+from xarray import DataArray
 
 from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent
 from qf_lib.common.enums.frequency import Frequency
@@ -96,11 +97,12 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
 
         fields_str = self._map_field_to_str(fields)
         container = self.get_history(tickers, fields_str, start_date, end_date, frequency,
-                                     look_ahead_bias=look_ahead_bias, **kwargs)
+                                     look_ahead_bias=look_ahead_bias, **kwargs).astype(float64)
         str_to_field_dict = self.str_to_price_field_map()
 
         # Map the specific fields onto the fields given by the str_to_field_dict
-        if isinstance(container, QFDataArray):
+        if isinstance(container, DataArray):
+            container = QFDataArray.from_xr_data_array(container)
             container = container.assign_coords(
                 fields=[str_to_field_dict[field_str] for field_str in container.fields.values])
             normalized_result = normalize_data_array(

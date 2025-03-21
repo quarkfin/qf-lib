@@ -30,7 +30,7 @@ from qf_lib.data_providers.bloomberg.bloomberg_names import REF_DATA_SERVICE_URI
 from qf_lib.data_providers.bloomberg.exceptions import BloombergError
 from qf_lib.data_providers.bloomberg.helpers import set_tickers, set_fields, convert_to_bloomberg_date, \
     convert_to_bloomberg_freq, get_response_events, check_event_for_errors, check_security_data_for_errors, \
-    extract_security_data, set_ticker, extract_bar_data
+    extract_security_data, set_ticker, extract_bar_data, convert_field
 from qf_lib.data_providers.helpers import tickers_dict_to_data_array
 
 
@@ -148,17 +148,6 @@ class HistoricalDataProvider:
 
         return result
 
-    @staticmethod
-    def _get_float_or_nan(element, field_name):
-        if element.hasElement(field_name):
-            result = element.getElementAsFloat(field_name)
-            if result == '#N/A History':
-                result = float('nan')
-        else:
-            result = float("nan")
-
-        return result
-
     def _receive_historical_response(self, requested_tickers: Sequence[BloombergTicker], requested_fields: Sequence[str]):
         ticker_str_to_ticker: Dict[str, BloombergTicker] = {t.as_string(): t for t in requested_tickers}
 
@@ -179,7 +168,7 @@ class HistoricalDataProvider:
 
                 for field_name in requested_fields:
                     dates_fields_values.loc[:, field_name] = [
-                        self._get_float_or_nan(data_of_date_elem, field_name)
+                        convert_field(data_of_date_elem, field_name)
                         for data_of_date_elem in field_data_array.values()
                     ]
                 security_name = security_data.getElementAsString(SECURITY)

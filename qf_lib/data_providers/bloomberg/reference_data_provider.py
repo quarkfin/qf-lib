@@ -24,7 +24,7 @@ from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.data_providers.bloomberg.bloomberg_names import REF_DATA_SERVICE_URI, SECURITY, FIELD_DATA
 from qf_lib.data_providers.bloomberg.exceptions import BloombergError
 from qf_lib.data_providers.bloomberg.helpers import set_tickers, set_fields, get_response_events, \
-    check_event_for_errors, extract_security_data, check_security_data_for_errors
+    check_event_for_errors, extract_security_data, check_security_data_for_errors, convert_field
 
 
 class ReferenceDataProvider:
@@ -67,7 +67,7 @@ class ReferenceDataProvider:
 
                         ticker = ticker_str_to_ticker[security_name]
                         for field_name in fields:
-                            value = self._parse_value(field_data_array, field_name)
+                            value = convert_field(field_data_array, field_name)
                             tickers_fields_container.loc[ticker, field_name] = value
 
                     except KeyError:
@@ -87,27 +87,3 @@ class ReferenceDataProvider:
         override = overrides.appendElement()
         override.setElement("fieldId", override_name)
         override.setElement("value", override_value)
-
-    @staticmethod
-    def _parse_value(field_data_array, field_name):
-        if not field_data_array.hasElement(field_name, True):
-            return None
-        field_element = field_data_array.getElement(field_name)
-        element_data_type = field_element.datatype()
-        try:
-            if element_data_type in (DataType.FLOAT32, DataType.FLOAT64):
-                value = field_element.getValueAsFloat()
-            elif element_data_type in (DataType.INT32, DataType.INT64):
-                value = field_element.getValueAsInteger()
-            elif element_data_type is DataType.BOOL:
-                value = field_element.getValueAsBool()
-            elif element_data_type in (DataType.DATETIME, DataType.DATE):
-                value = to_datetime(field_element.getValueAsDatetime())
-            elif element_data_type is DataType.TIME:
-                value = field_element.getValueAsDatetime()
-            else:
-                value = field_element.getValueAsString()
-        except blpapi.exception.NotFoundException:
-            value = np.nan
-
-        return value

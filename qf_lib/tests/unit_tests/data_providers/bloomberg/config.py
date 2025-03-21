@@ -157,6 +157,7 @@ REF_DATA_SERVICE_URI = """<?xml version="1.0" encoding="UTF-8" ?>\
       <description>The contents of this type depends on the response</description>\
         <element name="LAST_PRICE" type="Float64"  />\
         <element name="PX_LAST"    type="Float64"  />\
+        <element name="NAME"    type="String"  />\
     </sequenceType>\
     <sequenceType name="FieldException">\
       <element name="fieldId"    type="String"/> \
