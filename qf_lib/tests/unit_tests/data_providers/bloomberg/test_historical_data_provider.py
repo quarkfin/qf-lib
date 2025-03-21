@@ -17,9 +17,9 @@ from unittest.mock import Mock
 
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.tests.helpers.testing_tools.containers_comparison import assert_dataarrays_equal
-from qf_lib.tests.unit_tests.data_providers.bloomberg.config import REF_DATA_SERVICE_URI
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.tests.unit_tests.data_providers.bloomberg.mock_configs import Request, Element
+from qf_lib.tests.unit_tests.data_providers.bloomberg.config import HIST_DATA_SERVICE_URI
 
 try:
     import blpapi
@@ -38,7 +38,7 @@ except ImportError:
 class TestHistoricalDataProvider(TestCase):
     def setUp(self):
         # Mock the Reference Data Service
-        self.ref_data_service = deserializeService(REF_DATA_SERVICE_URI)
+        self.ref_data_service = deserializeService(HIST_DATA_SERVICE_URI)
         self.request_name = blpapi.Name("HistoricalDataRequest")
         self.intraday_request_name = blpapi.Name("IntradayBarRequest")
 

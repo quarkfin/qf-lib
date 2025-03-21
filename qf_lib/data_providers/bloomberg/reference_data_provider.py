@@ -11,12 +11,7 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-from typing import Sequence, Dict, Any
-
-import blpapi
-import numpy as np
-from blpapi import DataType
-from pandas import to_datetime
+from typing import Sequence, Dict, Any, Union, List
 
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
@@ -24,7 +19,7 @@ from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.data_providers.bloomberg.bloomberg_names import REF_DATA_SERVICE_URI, SECURITY, FIELD_DATA
 from qf_lib.data_providers.bloomberg.exceptions import BloombergError
 from qf_lib.data_providers.bloomberg.helpers import set_tickers, set_fields, get_response_events, \
-    check_event_for_errors, extract_security_data, check_security_data_for_errors
+    check_event_for_errors, extract_security_data, check_security_data_for_errors, convert_field
 
 
 class ReferenceDataProvider:
@@ -34,7 +29,8 @@ class ReferenceDataProvider:
         self._session = session
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
-    def get(self, tickers: Sequence[BloombergTicker], fields, override_name: str = None, override_value: Any = None):
+    def get(self, tickers: Sequence[BloombergTicker], fields, override_name: Union[str, List] = None,
+            override_value: Union[Any, List] = None):
         ref_data_service = self._session.getService(REF_DATA_SERVICE_URI)
         request = ref_data_service.createRequest("ReferenceDataRequest")
 
@@ -57,17 +53,17 @@ class ReferenceDataProvider:
             try:
                 check_event_for_errors(ev)
                 security_data_array = extract_security_data(ev)
-                check_security_data_for_errors(security_data_array)
 
                 for security_data in security_data_array.values():
                     try:
+                        check_security_data_for_errors(security_data)
                         field_data_array = security_data.getElement(FIELD_DATA)
                         security_name = security_data.getElementAsString(SECURITY) if \
                             security_data.hasElement(SECURITY, True) else None
 
                         ticker = ticker_str_to_ticker[security_name]
                         for field_name in fields:
-                            value = self._parse_value(field_data_array, field_name)
+                            value = convert_field(field_data_array, field_name)
                             tickers_fields_container.loc[ticker, field_name] = value
 
                     except KeyError:
@@ -82,32 +78,9 @@ class ReferenceDataProvider:
         return tickers_fields_container.infer_objects()
 
     @classmethod
-    def _set_override(cls, request, override_name, override_value):
+    def _set_override(cls, request, override_names, override_values):
         overrides = request.getElement("overrides")
-        override = overrides.appendElement()
-        override.setElement("fieldId", override_name)
-        override.setElement("value", override_value)
-
-    @staticmethod
-    def _parse_value(field_data_array, field_name):
-        if not field_data_array.hasElement(field_name, True):
-            return None
-        field_element = field_data_array.getElement(field_name)
-        element_data_type = field_element.datatype()
-        try:
-            if element_data_type in (DataType.FLOAT32, DataType.FLOAT64):
-                value = field_element.getValueAsFloat()
-            elif element_data_type in (DataType.INT32, DataType.INT64):
-                value = field_element.getValueAsInteger()
-            elif element_data_type is DataType.BOOL:
-                value = field_element.getValueAsBool()
-            elif element_data_type in (DataType.DATETIME, DataType.DATE):
-                value = to_datetime(field_element.getValueAsDatetime())
-            elif element_data_type is DataType.TIME:
-                value = field_element.getValueAsDatetime()
-            else:
-                value = field_element.getValueAsString()
-        except blpapi.exception.NotFoundException:
-            value = np.nan
-
-        return value
+        for override_name, override_value in zip(override_names, override_values):
+            override = overrides.appendElement()
+            override.setElement("fieldId", override_name)
+            override.setElement("value", override_value)
