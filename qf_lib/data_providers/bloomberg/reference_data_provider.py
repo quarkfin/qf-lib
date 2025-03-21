@@ -11,7 +11,7 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-from typing import Sequence, Dict, Any
+from typing import Sequence, Dict, Any, Union, List
 
 import blpapi
 import numpy as np
@@ -34,7 +34,8 @@ class ReferenceDataProvider:
         self._session = session
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
-    def get(self, tickers: Sequence[BloombergTicker], fields, override_name: str = None, override_value: Any = None):
+    def get(self, tickers: Sequence[BloombergTicker], fields, override_name: Union[str, List] = None,
+            override_value: Union[Any, List] = None):
         ref_data_service = self._session.getService(REF_DATA_SERVICE_URI)
         request = ref_data_service.createRequest("ReferenceDataRequest")
 
@@ -82,8 +83,9 @@ class ReferenceDataProvider:
         return tickers_fields_container.infer_objects()
 
     @classmethod
-    def _set_override(cls, request, override_name, override_value):
+    def _set_override(cls, request, override_names, override_values):
         overrides = request.getElement("overrides")
-        override = overrides.appendElement()
-        override.setElement("fieldId", override_name)
-        override.setElement("value", override_value)
+        for override_name, override_value in zip(override_names, override_values):
+            override = overrides.appendElement()
+            override.setElement("fieldId", override_name)
+            override.setElement("value", override_value)

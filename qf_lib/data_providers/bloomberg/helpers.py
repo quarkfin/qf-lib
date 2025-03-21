@@ -143,19 +143,31 @@ def convert_field(field_data_array, field_name):
         return None
     field_element = field_data_array.getElement(field_name)
     element_data_type = field_element.datatype()
+
+    type_to_function = {
+        DataType.FLOAT32: 'getValueAsFloat',
+        DataType.FLOAT64: 'getValueAsFloat',
+        DataType.INT32: 'getValueAsInteger',
+        DataType.INT64: 'getValueAsInteger',
+        DataType.BOOL: 'getValueAsBool',
+        DataType.STRING: 'getValueAsString',
+        DataType.DATETIME: 'getValueAsDatetime',
+        DataType.TIME: 'getValueAsDatetime',
+        DataType.DATE: 'getValueAsDatetime',
+    }
+
     try:
-        if element_data_type in (DataType.FLOAT32, DataType.FLOAT64):
-            value = field_element.getValueAsFloat()
-        elif element_data_type in (DataType.INT32, DataType.INT64):
-            value = field_element.getValueAsInteger()
-        elif element_data_type is DataType.BOOL:
-            value = field_element.getValueAsBool()
-        elif element_data_type in (DataType.DATETIME, DataType.DATE):
-            value = to_datetime(field_element.getValueAsDatetime())
-        elif element_data_type is DataType.TIME:
-            value = field_element.getValueAsDatetime()
+        if element_data_type is DataType.SEQUENCE:
+            value = []
+            for element in field_element.values():
+                keys_values_dict = {}
+                for elem in element.elements():
+                    key = elem.name().__str__()
+                    keys_values_dict[key] = convert_field(element, key)
+                    value.append(keys_values_dict)
         else:
-            value = field_element.getValueAsString()
+            _fun = type_to_function.get(element_data_type, 'getValueAsString')
+            value = getattr(field_element, _fun)()
     except blpapi.exception.NotFoundException:
         value = np.nan
 

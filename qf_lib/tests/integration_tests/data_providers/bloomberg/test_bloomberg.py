@@ -306,7 +306,7 @@ class TestBloomberg(unittest.TestCase):
     def test_get_date_values(self):
         date_field = "LAST_UPDATE_DT"
         result = self.bbg_provider.get_current_values(self.SINGLE_TICKER, date_field)
-        self.assertIsInstance(result, datetime.datetime)
+        self.assertIsInstance(result, datetime.date)
 
     def test_get_time_values(self):
         time_field = "VWAP_END_TIME"
