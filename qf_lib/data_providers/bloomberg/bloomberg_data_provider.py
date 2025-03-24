@@ -43,7 +43,6 @@ try:
     from qf_lib.data_providers.bloomberg.futures_data_provider import BloombergFuturesDataProvider
     from qf_lib.data_providers.bloomberg.historical_data_provider import HistoricalDataProvider
     from qf_lib.data_providers.bloomberg.reference_data_provider import ReferenceDataProvider
-    from qf_lib.data_providers.bloomberg.tabular_data_provider import TabularDataProvider
     from qf_lib.data_providers.bloomberg.exceptions import BloombergError
     from qf_lib.data_providers.bloomberg.bloomberg_names import REF_DATA_SERVICE_URI
     from qf_lib.data_providers.bloomberg.helpers import convert_to_bloomberg_date
@@ -76,13 +75,11 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider,
 
             self._historical_data_provider = HistoricalDataProvider(self.session)
             self._reference_data_provider = ReferenceDataProvider(self.session)
-            self._tabular_data_provider = TabularDataProvider(self.session)
             self._futures_data_provider = BloombergFuturesDataProvider(self.session)
         else:
             self.session = None
             self._historical_data_provider = None
             self._reference_data_provider = None
-            self._tabular_data_provider = None
             self._futures_data_provider = None
 
             warnings.warn(
@@ -374,10 +371,7 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider,
                          override_names: Optional[Union[str, Sequence[str]]] = None,
                          override_values: Optional[Union[str, Sequence[str]]] = None) -> List:
         """
-        Provides current tabular data from Bloomberg.
-
-        Was tested on 'INDX_MEMBERS' and 'MERGERS_AND_ACQUISITIONS' requests. There is no guarantee that
-        all other request will be handled, as returned data structures might vary.
+        Provides current tabular data from Bloomberg. It is a wrapper around get_current_values.
 
         Parameters
         -----------
@@ -393,24 +387,7 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider,
         List
             tabular data for the given ticker and field
         """
-        if field is None:
-            raise ValueError("Field being None is not supported by {}".format(self.__class__.__name__))
-
-        self._connect_if_needed()
-        self._assert_is_connected()
-
-        if override_names is not None:
-            override_names, _ = convert_to_list(override_names, str)
-        if override_values is not None:
-            override_values, _ = convert_to_list(override_values, (str, int))
-
-        tickers, got_single_ticker = convert_to_list(ticker, BloombergTicker)
-        fields, got_single_field = convert_to_list(field, (PriceField, str))
-
-        tickers_str = [t.as_string() for t in tickers]
-        result = self._tabular_data_provider.get(tickers_str, fields, override_names, override_values)
-
-        return result
+        return self.get_current_values(ticker, field, override_names, override_values)
 
     def _connect_if_needed(self):
         if not self.connected:

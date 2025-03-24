@@ -15,6 +15,8 @@
 import datetime
 
 import blpapi
+import numpy as np
+from blpapi import DataType
 
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
@@ -134,3 +136,41 @@ def check_security_data_for_errors(security_data):
         error_message = "Response contains security error:\n" + str(security_data)
         logger.error(error_message)
         raise BloombergError(error_message)
+
+
+def convert_field(field_data_array, field_name):
+    if not field_data_array.hasElement(field_name, True):
+        return None
+    field_element = field_data_array.getElement(field_name)
+    element_data_type = field_element.datatype()
+
+    type_to_function = {
+        DataType.FLOAT32: 'getValueAsFloat',
+        DataType.FLOAT64: 'getValueAsFloat',
+        DataType.INT32: 'getValueAsInteger',
+        DataType.INT64: 'getValueAsInteger',
+        DataType.BOOL: 'getValueAsBool',
+        DataType.STRING: 'getValueAsString',
+        DataType.DATETIME: 'getValueAsDatetime',
+        DataType.TIME: 'getValueAsDatetime',
+        DataType.DATE: 'getValueAsDatetime',
+    }
+
+    try:
+        if element_data_type is DataType.SEQUENCE:
+            value = []
+            for element in field_element.values():
+                keys_values_dict = {}
+                for elem in element.elements():
+                    key = elem.name().__str__()
+                    keys_values_dict[key] = convert_field(element, key)
+                value.append(keys_values_dict)
+        else:
+            _fun = type_to_function.get(element_data_type, 'getValueAsString')
+            value = getattr(field_element, _fun)()
+            if isinstance(value, datetime.date):
+                value = datetime.datetime.combine(value, datetime.datetime.min.time())
+    except blpapi.exception.NotFoundException:
+        value = np.nan
+
+    return value

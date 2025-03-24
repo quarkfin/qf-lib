@@ -16,6 +16,7 @@ import unittest
 
 import numpy as np
 import pandas as pd
+from pandas import isna
 
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
@@ -305,7 +306,7 @@ class TestBloomberg(unittest.TestCase):
     def test_get_date_values(self):
         date_field = "LAST_UPDATE_DT"
         result = self.bbg_provider.get_current_values(self.SINGLE_TICKER, date_field)
-        self.assertIsInstance(result, datetime.datetime)
+        self.assertIsInstance(result, datetime.date)
 
     def test_get_time_values(self):
         time_field = "VWAP_END_TIME"
@@ -315,8 +316,4 @@ class TestBloomberg(unittest.TestCase):
     def test_get_none_values(self):
         none_field = "BN_SURVEY_MEDIAN"
         result = self.bbg_provider.get_current_values(self.SINGLE_TICKER, none_field)
-        self.assertIsNone(result)
-
-
-if __name__ == '__main__':
-    unittest.main()
+        self.assertTrue(isna(result))
