@@ -164,7 +164,7 @@ def convert_field(field_data_array, field_name):
                 for elem in element.elements():
                     key = elem.name().__str__()
                     keys_values_dict[key] = convert_field(element, key)
-                    value.append(keys_values_dict)
+                value.append(keys_values_dict)
         else:
             _fun = type_to_function.get(element_data_type, 'getValueAsString')
             value = getattr(field_element, _fun)()
