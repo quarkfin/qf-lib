@@ -168,6 +168,8 @@ def convert_field(field_data_array, field_name):
         else:
             _fun = type_to_function.get(element_data_type, 'getValueAsString')
             value = getattr(field_element, _fun)()
+            if isinstance(value, datetime.date):
+                value = datetime.datetime.combine(value, datetime.datetime.min.time())
     except blpapi.exception.NotFoundException:
         value = np.nan
 
