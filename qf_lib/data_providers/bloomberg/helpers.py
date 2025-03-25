@@ -129,12 +129,10 @@ def check_security_data_for_errors(security_data):
         field_exceptions = security_data.getElement(FIELD_EXCEPTIONS)
         if field_exceptions.numValues() > 0:
             error_message = "Response contains field exceptions:\n" + str(security_data)
-            logger.error(error_message)
             raise BloombergError(error_message)
 
     if security_data.hasElement(SECURITY_ERROR):
         error_message = "Response contains security error:\n" + str(security_data)
-        logger.error(error_message)
         raise BloombergError(error_message)
 
 

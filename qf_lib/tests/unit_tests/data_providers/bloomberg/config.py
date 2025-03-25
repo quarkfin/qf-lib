@@ -157,6 +157,12 @@ REF_DATA_SERVICE_URI = """<?xml version="1.0" encoding="UTF-8" ?>\
         <element name="LAST_PRICE" type="Float64"  />\
         <element name="PX_LAST"    type="Float64"  />\
         <element name="NAME"    type="String"  />\
+        <element name="INDEX_MEMBERS_WEIGHTS"    type="IndexMember" minOccurs="0" maxOccurs="unbounded"  />\
+    </sequenceType>\
+    <sequenceType name="IndexMember">\
+      <description>The contents of this type depends on the response</description>\
+        <element name="Index Member" type="String"  />\
+        <element name="Weight"    type="Float64"  />\
     </sequenceType>\
     <sequenceType name="FieldException">\
       <element name="fieldId"    type="String"/> \

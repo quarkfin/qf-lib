@@ -17,6 +17,7 @@ import pandas as pd
 from datetime import datetime
 from typing import Union, Sequence, Dict, List, Optional
 
+from pandas import isnull
 from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
@@ -340,29 +341,36 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider,
             date for which current universe members' tickers will be returned
         display_figi
             the following flag can be used to have this field return Financial Instrument Global Identifiers (FIGI).
+
+        Returns
+        --------
+        List[BloombergTicker]
+            list of all BloombergTickers belonging to the requested index
         """
-        date = date or datetime.now()
-        field = 'INDEX_MEMBERS_WEIGHTS'
+        members_and_weights = self._get_index_members_and_weights(universe_ticker, date, display_figi)
+        return members_and_weights.index.tolist()
 
-        MAX_PAGE_NUMBER = 7
-        MAX_MEMBERS_PER_PAGE = 3000
-        universe = []
+    def get_tickers_universe_with_weights(self, universe_ticker: BloombergTicker, date: Optional[datetime] = None,
+                                          display_figi: bool = False) -> QFSeries:
+        """
+        Returns a list of all members of an index. It will not return any data for indices with more than
+        20,000 members.
 
-        def str_to_bbg_ticker(identifier: str, figi: bool):
-            ticker_str = f"/bbgid/{identifier}" if figi else f"{identifier} Equity"
-            return BloombergTicker(ticker_str, SecurityType.STOCK, 1)
+        Parameters
+        ----------
+        universe_ticker
+            ticker that describes a specific universe, which members will be returned
+        date
+            date for which current universe members' tickers will be returned
+        display_figi
+            the following flag can be used to have this field return Financial Instrument Global Identifiers (FIGI).
 
-        for page_no in range(1, MAX_PAGE_NUMBER + 1):
-            ticker_data = self.get_tabular_data(universe_ticker, field,
-                                                ["END_DT", "PAGE_NUMBER_OVERRIDE", "DISPLAY_ID_BB_GLOBAL_OVERRIDE"],
-                                                [convert_to_bloomberg_date(date), page_no,
-                                                 "Y" if display_figi else "N"])
-            tickers_chunk = [str_to_bbg_ticker(fields['Index Member'], display_figi) for fields in ticker_data]
-            universe.extend(tickers_chunk)
-            if len(tickers_chunk) < MAX_MEMBERS_PER_PAGE:
-                break
-
-        return universe
+        Returns
+        --------
+        QFSeries
+            a series of the weights of all BloombergTickers within the requested Index, indexed by those tickers
+        """
+        return self._get_index_members_and_weights(universe_ticker, date, display_figi)
 
     def get_unique_tickers(self, universe_ticker: Ticker) -> List[Ticker]:
         raise ValueError("BloombergDataProvider does not provide historical tickers_universe data")
@@ -387,7 +395,43 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider,
         List
             tabular data for the given ticker and field
         """
-        return self.get_current_values(ticker, field, override_names, override_values)
+        tabular_data = self.get_current_values(ticker, field, override_names, override_values)
+        if not isinstance(tabular_data, list):
+            if isnull(tabular_data):
+                return []
+            else:
+                raise ValueError("The requested field does not return tabular data. Please use get_current_values() "
+                                 "instead.")
+        return tabular_data
+
+    def _get_index_members_and_weights(self, universe_ticker: BloombergTicker, date: Optional[datetime] = None,
+                                       display_figi: bool = False) -> QFSeries:
+        date = date or datetime.now()
+        field = 'INDEX_MEMBERS_WEIGHTS'
+
+        MAX_PAGE_NUMBER = 7
+        MAX_MEMBERS_PER_PAGE = 3000
+        universe = []
+
+        def str_to_bbg_ticker(identifier: str, figi: bool):
+            ticker_str = f"/bbgid/{identifier}" if figi else f"{identifier} Equity"
+            return BloombergTicker(ticker_str, SecurityType.STOCK, 1)
+
+        for page_no in range(1, MAX_PAGE_NUMBER + 1):
+            ticker_data = self.get_tabular_data(universe_ticker, field,
+                                                ["END_DT", "PAGE_NUMBER_OVERRIDE", "DISPLAY_ID_BB_GLOBAL_OVERRIDE"],
+                                                [convert_to_bloomberg_date(date), page_no,
+                                                 "Y" if display_figi else "N"])
+
+            df = QFDataFrame(ticker_data) if len(ticker_data) > 0 else QFDataFrame(columns=["Index Member", "Weight"])
+            df = df.set_index("Index Member")
+            df.index = df.index.map(lambda s: str_to_bbg_ticker(s, display_figi))
+            universe.append(df)
+            if len(df) < MAX_MEMBERS_PER_PAGE:
+                break
+
+        universe_series = pd.concat(universe).iloc[:, 0]
+        return universe_series
 
     def _connect_if_needed(self):
         if not self.connected:
