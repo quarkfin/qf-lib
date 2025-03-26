@@ -11,12 +11,16 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
+import random
+import string
 from unittest import TestCase
 from unittest.mock import patch
 
 from numpy import nan
 
+from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.tickers.tickers import BloombergTicker
+from qf_lib.common.utils.helpers import grouper
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.data_providers import BloombergDataProvider
 from qf_lib.data_providers.bloomberg.reference_data_provider import ReferenceDataProvider
@@ -51,3 +55,54 @@ class TestBloombergDataProvider(TestCase):
         result = self.bbg_provider.get_tabular_data(BloombergTicker('TPX Index'), "PX_LAST")
         expected = []
         self.assertCountEqual(result, expected)
+
+    def test_create_exchange_rate_ticker(self):
+        result = self.bbg_provider.create_exchange_rate_ticker("PLN", "CHF")
+        expected = BloombergTicker("PLNCHF Curncy", SecurityType.FX)
+        self.assertEqual(result, expected)
+
+    @patch.object(ReferenceDataProvider, "get")
+    def test_get_tickers_universe__single_page(self, get_mock):
+        mocked_function, index_weights = self._mock_index_members_weights(n_elements=2999)
+        get_mock.side_effect = mocked_function
+
+        result = self.bbg_provider.get_tickers_universe(BloombergTicker('TPX Index'))
+        expected = [BloombergTicker(f"{el['Index Member']} Equity") for el in index_weights]
+
+        self.assertCountEqual(result, expected)
+
+    @patch.object(ReferenceDataProvider, "get")
+    def test_get_tickers_universe__single_page_max_members_per_page(self, get_mock):
+        mocked_function, index_weights = self._mock_index_members_weights(n_elements=3000)
+
+        get_mock.side_effect = mocked_function
+        result = self.bbg_provider.get_tickers_universe(BloombergTicker('TPX Index'))
+        expected = [BloombergTicker(f"{el['Index Member']} Equity") for el in index_weights]
+        self.assertCountEqual(result, expected)
+
+    @patch.object(ReferenceDataProvider, "get")
+    def test_get_tickers_universe__multiple_pages(self, get_mock):
+        mocked_function, index_weights = self._mock_index_members_weights(n_elements=11500)
+
+        get_mock.side_effect = mocked_function
+        result = self.bbg_provider.get_tickers_universe(BloombergTicker('TPX Index'))
+        expected = [BloombergTicker(f"{el['Index Member']} Equity") for el in index_weights]
+        self.assertCountEqual(result, expected)
+
+    def _mock_index_members_weights(self, n_elements: int):
+        """ Create randomized elements for the index, for the test Weights don't need to sum up to 1.0. """
+        MAX_MEMBERS_PER_PAGE = 3000
+        index_weights = [{'Index Member': ''.join(random.choices(string.ascii_uppercase, k=3)),
+                          'Weight': random.uniform(0, 1)} for _ in range(n_elements)]
+
+        weights_iter = iter(grouper(MAX_MEMBERS_PER_PAGE, index_weights))
+
+        def get_next_weights_page(*args, **kwargs):
+            try:
+                return QFDataFrame.from_dict({'INDEX_MEMBERS_WEIGHTS': {
+                    BloombergTicker('TPX Index'): next(weights_iter)}})
+            except StopIteration:
+                return QFDataFrame.from_dict({'INDEX_MEMBERS_WEIGHTS': {
+                    BloombergTicker('TPX Index'): []}})
+
+        return get_next_weights_page, index_weights
