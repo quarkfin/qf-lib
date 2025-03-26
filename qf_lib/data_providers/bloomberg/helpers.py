@@ -19,7 +19,6 @@ import numpy as np
 from blpapi import DataType
 
 from qf_lib.common.enums.frequency import Frequency
-from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.data_providers.bloomberg.bloomberg_names import SECURITIES, SECURITY, FIELDS, RESPONSE_ERROR, SECURITY_DATA, \
     BAR_DATA, FIELD_EXCEPTIONS, SECURITY_ERROR
 from qf_lib.data_providers.bloomberg.exceptions import BloombergError
