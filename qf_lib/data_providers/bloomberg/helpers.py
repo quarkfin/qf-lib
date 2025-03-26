@@ -124,7 +124,6 @@ def get_response_events(session):
 
 
 def check_security_data_for_errors(security_data):
-    logger = qf_logger.getChild(__name__)
     if security_data.hasElement(FIELD_EXCEPTIONS):
         field_exceptions = security_data.getElement(FIELD_EXCEPTIONS)
         if field_exceptions.numValues() > 0:

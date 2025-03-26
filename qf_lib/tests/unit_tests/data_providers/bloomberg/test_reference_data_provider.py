@@ -287,4 +287,4 @@ class TestReferenceDataProvider(TestCase):
                                                                 {"Index Member": "B US", "Weight": 0.02}]]},
                                index=[BloombergTicker("Test Index")])
         self.assertEqual(result.shape, expected.shape)
-        self.assertCountEqual(result.iloc[0,0], expected.iloc[0,0])
+        self.assertCountEqual(result.iloc[0, 0], expected.iloc[0, 0])
