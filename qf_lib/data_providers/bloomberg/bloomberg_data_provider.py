@@ -358,7 +358,7 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider,
         members_and_weights = self._get_index_members_and_weights(universe_ticker, date, display_figi)
         return members_and_weights.index.tolist()
 
-    def get_tickers_universe_with_weights(self, universe_ticker: BloombergTicker, date: datetime,
+    def get_tickers_universe_with_weights(self, universe_ticker: BloombergTicker, date: Optional[datetime] = None,
                                           display_figi: bool = False) -> QFSeries:
         """
         Returns the tickers belonging to a specified universe, along with their corresponding weights, at a given date.
@@ -372,7 +372,7 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider,
         universe_ticker: Ticker
             The ticker symbol representing the index or universe for which the tickers are being queried.
         date: datetime
-            The date for which the tickers' universe data is requested.
+            The date for which the tickers' universe data is requested. If not provided, it defaults to current date.
         display_figi: bool
             The following flag can be used to have this field return Financial Instrument Global Identifiers (FIGI).
             By default set to False, which results in returning tickers identifiers instead of FIGI.
