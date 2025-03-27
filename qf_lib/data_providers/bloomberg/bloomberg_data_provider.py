@@ -445,10 +445,11 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider,
             return BloombergTicker(ticker_str, SecurityType.STOCK, 1)
 
         for page_no in range(1, MAX_PAGE_NUMBER + 1):
-            ticker_data = self.get_tabular_data(universe_ticker, field,
-                                                ["END_DT", "PAGE_NUMBER_OVERRIDE", "DISPLAY_ID_BB_GLOBAL_OVERRIDE"],
-                                                [convert_to_bloomberg_date(date), page_no,
-                                                 "Y" if display_figi else "N"])
+            ticker_data = self.get_tabular_data(universe_ticker, field,{
+                "END_DT": convert_to_bloomberg_date(date),
+                "PAGE_NUMBER_OVERRIDE": page_no,
+                "DISPLAY_ID_BB_GLOBAL_OVERRIDE": "Y" if display_figi else "N"
+            })
 
             df = QFDataFrame(ticker_data) if len(ticker_data) > 0 else QFDataFrame(columns=["Index Member", "Weight"])
             df = df.set_index("Index Member")
