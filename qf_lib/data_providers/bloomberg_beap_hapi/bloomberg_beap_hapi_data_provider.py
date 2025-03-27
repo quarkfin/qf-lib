@@ -289,9 +289,10 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
             return BloombergTicker(ticker_str, SecurityType.STOCK, 1)
 
         for page_no in range(1, MAX_PAGE_NUMBER + 1):
-            ticker_data = self.get_current_values(universe_ticker, field, fields_overrides=[
-                ("DISPLAY_ID_BB_GLOBAL_OVERRIDE", "Y" if display_figi else "N"),
-                ("PAGE_NUMBER_OVERRIDE", str(page_no))])
+            ticker_data = self.get_current_values(universe_ticker, field, overrides={
+                "DISPLAY_ID_BB_GLOBAL_OVERRIDE": "Y" if display_figi else "N",
+                "PAGE_NUMBER_OVERRIDE": str(page_no)
+            })
             tickers_chunk = [str_to_bbg_ticker(data, display_figi) for data in ticker_data]
             universe.extend(tickers_chunk)
             if len(tickers_chunk) < MAX_MEMBERS_PER_PAGE:
@@ -396,7 +397,7 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
 
     def get_current_values(self, tickers: Union[BloombergTicker, Sequence[BloombergTicker]],
                            fields: Union[str, Sequence[str]], universe_creation_time: datetime = None,
-                           fields_overrides: Optional[List[Tuple]] = None, pricing_source: Optional[str] = "BGN") -> \
+                           overrides: Optional[Dict[str, str]] = None, pricing_source: Optional[str] = "BGN") -> \
             Union[None, float, str, List, QFSeries, QFDataFrame]:
         """
         Gets from the Bloomberg HAPI the current values of fields for given tickers.
@@ -409,10 +410,12 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
             fields of securities which should be retrieved
         universe_creation_time: datetime
             Used only if we want to get previously created universe, fields universe or request
-        fields_overrides: Optional[List[Tuple]]
-            list of tuples representing overrides, where first element is always the name of the override and second
-            element is the value e.g. in case if we want to download 'FUT_CHAIN' and include expired
-            contracts we add the following overrides [('INCLUDE_EXPIRED_CONTRACTS', 'Y'),]
+        overrides: Optional[Dict[str, str]]
+            A dictionary where each key is a field name (as a string) that corresponds to a default field in the
+            Bloomberg request, and the value is the new value (as a string) to override the default value for that field.
+            The dictionary allows for multiple fields to be overridden at once, with each key representing a specific
+            field to be modified, and the associated value specifying the replacement value for that field.
+            If not provided, the default values for all fields will be used. Example: {'INCLUDE_EXPIRED_CONTRACTS': 'Y'}
         pricing_source: Optional[str]
             Allows a user to specify a pricing source that is applied to all financial instruments in the request
             universe. By default equals to 'BGN'.
@@ -433,9 +436,10 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
         fields, got_single_field = convert_to_list(fields, str)
 
         tickers_str_to_obj = {t.as_string(): t for t in tickers}
-        universe_id = self._get_universe_id(tickers, universe_creation_time, fields_overrides)
+        overrides = [tuple(it) for it in overrides.items()]
+        universe_id = self._get_universe_id(tickers, universe_creation_time, overrides)
         universe_url = self.universe_hapi_provider.get_universe_url(universe_id, list(tickers_str_to_obj.keys()),
-                                                                    fields_overrides)
+                                                                    overrides)
 
         fields_list_id = self._get_fields_id(fields)
         fields_list_url, field_to_type = self.fields_hapi_provider.get_fields_url(fields_list_id, fields)

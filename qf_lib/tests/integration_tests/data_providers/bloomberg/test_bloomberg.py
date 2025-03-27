@@ -270,7 +270,7 @@ class TestBloomberg(unittest.TestCase):
 
         override_data = self.bbg_provider.get_history(tickers=ticker, fields='ACTUAL_RELEASE',
                                                       start_date=start_date, end_date=end_date,
-                                                      override_name='RELEASE_STAGE_OVERRIDE', override_value='P')
+                                                      overrides={'RELEASE_STAGE_OVERRIDE': 'P'})
 
         data_model = [0.5, 0, -1, 1.7, -1.3, -0.2]
         override_data_model = [0.5, -0.1, -1.2, 1.8, -1, -0.2]

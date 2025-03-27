@@ -18,6 +18,7 @@ from datetime import datetime
 from typing import Union, Sequence, Dict, List, Optional
 
 from pandas import isnull
+
 from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
@@ -168,7 +169,7 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider,
         return ticker_to_future_expiration_dates
 
     def get_current_values(self, tickers: Union[BloombergTicker, Sequence[BloombergTicker]],
-                           fields: Union[str, Sequence[str]], override_name: str = None, override_value: str = None
+                           fields: Union[str, Sequence[str]], overrides: Optional[Dict[str, str]] = None,
                            ) -> Union[None, float, str, QFSeries, QFDataFrame]:
         """
         Gets the current values of fields for given tickers.
@@ -185,6 +186,12 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider,
         QFDataFrame/QFSeries
             Either QFDataFrame with 2 dimensions: ticker, field or QFSeries with 1 dimensions: ticker of field
             (depending if many tickers or fields was provided) is returned.
+        overrides: Optional[Dict[str, str]]
+            A dictionary where each key is a field name (as a string) that corresponds to a default field in the
+            Bloomberg request, and the value is the new value (as a string) to override the default value for that field.
+            The dictionary allows for multiple fields to be overridden at once, with each key representing a specific
+            field to be modified, and the associated value specifying the replacement value for that field.
+            If not provided, the default values for all fields will be used.
 
         Raises
         -------
@@ -197,6 +204,9 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider,
         tickers, got_single_ticker = convert_to_list(tickers, BloombergTicker)
         fields, got_single_field = convert_to_list(fields, (PriceField, str))
 
+        overrides = overrides or {}
+        override_name = list(overrides.keys())
+        override_value = list(overrides.values())
         data_frame = self._reference_data_provider.get(tickers, fields, override_name, override_value)
 
         # to keep the order of tickers and fields we reindex the data frame
@@ -240,9 +250,7 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider,
 
     def get_history(self, tickers: Union[BloombergTicker, Sequence[BloombergTicker]], fields: Union[str, Sequence[str]],
                     start_date: datetime, end_date: datetime = None, frequency: Frequency = None,
-                    currency: str = None, override_names: Optional[Union[str, Sequence[str]]] = None,
-                    override_values: Optional[Union[str, Sequence[str]]] = None,
-                    look_ahead_bias: bool = False, **kwargs) \
+                    currency: str = None, overrides: Optional[Dict] = None, look_ahead_bias: bool = False, **kwargs) \
             -> Union[QFSeries, QFDataFrame, QFDataArray]:
         """
         Gets historical data from Bloomberg from the (start_date - end_date) time range. In case of frequency, which is
@@ -264,14 +272,12 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider,
         frequency: Frequency
             Frequency of the data. It defaults to DAILY.
         currency: str
-        override_names: Optional[Union[str, Sequence[str]]]
-            A list of field names (as strings) to override the default fields in the Bloomberg request. Each entry
-            corresponds to a field that should be overridden with a new value provided in 'override_values'.
-            If not provided, default values will be used.
-        override_values: Optional[Union[str, Sequence[str]]]
-            A list of values (as strings) that correspond to the 'override_names'. Each value in this list will replace
-            the default value for the respective field name in the 'override_names' list. The order of the values should
-            align with the order of the field names. If not provided, default values will be used.
+        overrides: Optional[Dict[str, str]]
+            A dictionary where each key is a field name (as a string) that corresponds to a default field in the
+            Bloomberg request, and the value is the new value (as a string) to override the default value for that field.
+            The dictionary allows for multiple fields to be overridden at once, with each key representing a specific
+            field to be modified, and the associated value specifying the replacement value for that field.
+            If not provided, the default values for all fields will be used.
         look_ahead_bias: bool
             If set to False, the look-ahead bias will be taken care of to make sure no future data is returned.
         Returns
@@ -305,6 +311,11 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider,
             return t.get_current_specific_ticker() if isinstance(t, BloombergFutureTicker) else t
 
         tickers_mapping = {current_ticker(t): t for t in tickers}
+
+        overrides = overrides or {}
+        override_names = list(overrides.keys())
+        override_values = list(overrides.values())
+
         data_array = self._historical_data_provider.get(
             tickers, fields, start_date, end_date, frequency, currency, override_names, override_values)
         data_array = data_array.assign_coords(tickers=[tickers_mapping.get(t, t) for t in data_array.tickers.values])
@@ -389,8 +400,7 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider,
         raise NotImplementedError("get_unique_tickers is not supported by BloombergDataProvider.")
 
     def get_tabular_data(self, ticker: BloombergTicker, field: str,
-                         override_names: Optional[Union[str, Sequence[str]]] = None,
-                         override_values: Optional[Union[str, Sequence[str]]] = None) -> List:
+                         overrides: Optional[Dict[str, str]] = None) -> List:
         """
         Provides current tabular data from Bloomberg. It is a wrapper around get_current_values.
 
@@ -400,22 +410,19 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider,
             ticker for security that should be retrieved
         field: str
             field of security that should be retrieved
-        override_names: Optional[Union[str, Sequence[str]]]
-            A list of field names (as strings) to override the default fields in the Bloomberg request. Each entry
-            corresponds to a field that should be overridden with a new value provided in 'override_values'.
-            If not provided, default values will be used. For example a valid override for 'INDEX_MEMBER_WEIGHT'
-            is 'END_DT' with a corresponding value '20200101'.
-        override_values: Optional[Union[str, Sequence[str]]]
-            A list of values (as strings) that correspond to the 'override_names'. Each value in this list will replace
-            the default value for the respective field name in the 'override_names' list. The order of the values should
-            align with the order of the field names. If not provided, default values will be used.
+        overrides: Optional[Dict[str, str]]
+            A dictionary where each key is a field name (as a string) that corresponds to a default field in the
+            Bloomberg request, and the value is the new value (as a string) to override the default value for that field.
+            The dictionary allows for multiple fields to be overridden at once, with each key representing a specific
+            field to be modified, and the associated value specifying the replacement value for that field.
+            If not provided, the default values for all fields will be used.
 
         Returns
         -------
         List
             tabular data for the given ticker and field
         """
-        tabular_data = self.get_current_values(ticker, field, override_names, override_values)
+        tabular_data = self.get_current_values(ticker, field, overrides)
         if not isinstance(tabular_data, list):
             if isnull(tabular_data):
                 return []

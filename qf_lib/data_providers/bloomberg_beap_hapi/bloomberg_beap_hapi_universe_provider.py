@@ -43,7 +43,7 @@ class BloombergBeapHapiUniverseProvider:
         self.logger = qf_logger.getChild(self.__class__.__name__)
 
     def get_universe_url(self, universe_id: str, tickers: Union[str, Sequence[str]],
-                         fields_overrides: Optional[List[Tuple]] = None) -> str:
+                         overrides: Optional[List[Tuple]] = None) -> str:
         """
         Method to create hapi universe and get universe address URL
 
@@ -53,7 +53,7 @@ class BloombergBeapHapiUniverseProvider:
             ID of the hapi universe
         tickers: Union[str, Sequence[str]]
             Ticker str, list of tickers str
-        fields_overrides: Optional[List[Tuple]]
+        overrides: Optional[List[Tuple]]
             list of tuples representing overrides, where first element is always the name of the override and second
             element is the value e.g. in case if we want to download 'FUT_CHAIN' and include expired
             contracts we add the following overrides [('INCLUDE_EXPIRED_CONTRACTS', 'Y'),]
@@ -71,13 +71,13 @@ class BloombergBeapHapiUniverseProvider:
             raise ValueError("No valid identifiers (tickers) were provided. Please refer to the logs and adjust your "
                              "data request accordingly.")
 
-        if fields_overrides:
+        if overrides:
             # noinspection PyTypeChecker
             contains[0]['fieldOverrides'] = [{
                 '@type': 'FieldOverride',
                 'mnemonic': key,
                 'override': value
-            } for key, value in fields_overrides
+            } for key, value in overrides
             ]
         universe_payload = {
             '@type': 'Universe',
