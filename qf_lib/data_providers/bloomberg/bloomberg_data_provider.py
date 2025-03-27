@@ -445,7 +445,7 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider,
             return BloombergTicker(ticker_str, SecurityType.STOCK, 1)
 
         for page_no in range(1, MAX_PAGE_NUMBER + 1):
-            ticker_data = self.get_tabular_data(universe_ticker, field,{
+            ticker_data = self.get_tabular_data(universe_ticker, field, {
                 "END_DT": convert_to_bloomberg_date(date),
                 "PAGE_NUMBER_OVERRIDE": page_no,
                 "DISPLAY_ID_BB_GLOBAL_OVERRIDE": "Y" if display_figi else "N"
