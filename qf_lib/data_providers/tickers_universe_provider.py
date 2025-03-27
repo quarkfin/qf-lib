@@ -17,39 +17,69 @@ from datetime import datetime
 from typing import List
 
 from qf_lib.common.tickers.tickers import Ticker
+from qf_lib.containers.series.qf_series import QFSeries
 
 
-class TickersUniverseProvider(object, metaclass=ABCMeta):
+class TickersUniverseProvider(metaclass=ABCMeta):
     """
-    An interface for providers of tickers' universe data - list of Tickers included
-    in the index at a specified date.
+    An interface for data providers that supply the universe of tickers included in an index on a specified date.
+    The class serves as a blueprint for implementing methods to retrieve tickers' data based on date criteria.
     """
 
     @abstractmethod
     def get_tickers_universe(self, universe_ticker: Ticker, date: datetime) -> List[Ticker]:
         """
+        Retrieves the list of tickers included in the specified index at a given date.
+
         Parameters
         ----------
-        universe_ticker
-            ticker that describes a specific universe, which members will be returned
-        date
-            date for which current universe members' tickers will be returned
+        universe_ticker: Ticker
+            The ticker symbol representing the index or universe for which the tickers are being queried.
+        date: datetime
+            The date for which the tickers' universe data is requested.
+
+        Returns
+        -------
+        List[Ticker]
+            A list of tickers (Ticker objects) that were included in the index on the specified date.
         """
         pass
 
     @abstractmethod
     def get_unique_tickers(self, universe_ticker: Ticker) -> List[Ticker]:
         """
-        Returns the unique list of Tickers belonging to a specified universe regardless of the date.
+        Retrieves a list of unique tickers that belong to the specified universe, regardless of the date.
 
         Parameters
         ----------
-        universe_ticker
-            ticker that describes a specific universe, which members will be returned
+        universe_ticker: Ticker
+            The ticker symbol representing the index or universe for which the tickers are being queried.
 
         Returns
         -------
         List[Ticker]
-            list of Tickers belonging to the universe
+            A list of unique tickers (Ticker objects) that are part of the specified universe (regardless of the date).
+        """
+        pass
+
+    @abstractmethod
+    def get_tickers_universe_with_weights(self, universe_ticker: Ticker, date: datetime) -> QFSeries:
+        """
+        Returns the tickers belonging to a specified universe, along with their corresponding weights, at a given date.
+        The result is a QFSeries indexed by ticker objects, with the values representing the respective weights of
+        each ticker in the universe.
+
+        Parameters
+        ----------
+        universe_ticker: Ticker
+            The ticker symbol representing the index or universe for which the tickers are being queried.
+        date: datetime
+            The date for which the tickers' universe data is requested.
+
+        Returns
+        -------
+        QFSeries
+            A QFSeries indexed by Ticker objects, where the values are the weights of the respective tickers
+            in the universe at a given date.
         """
         pass

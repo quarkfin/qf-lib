@@ -240,7 +240,8 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider,
 
     def get_history(self, tickers: Union[BloombergTicker, Sequence[BloombergTicker]], fields: Union[str, Sequence[str]],
                     start_date: datetime, end_date: datetime = None, frequency: Frequency = None,
-                    currency: str = None, override_name: str = None, override_value: str = None,
+                    currency: str = None, override_names: Optional[Union[str, Sequence[str]]] = None,
+                    override_values: Optional[Union[str, Sequence[str]]] = None,
                     look_ahead_bias: bool = False, **kwargs) \
             -> Union[QFSeries, QFDataFrame, QFDataArray]:
         """
@@ -251,22 +252,28 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider,
         Parameters
         ----------
         tickers: Ticker, Sequence[Ticker]
-            tickers for securities which should be retrieved
+            Tickers' of securities which should be retrieved.
         fields: None, str, Sequence[str]
-            fields of securities which should be retrieved. If None, all available fields will be returned
-            (only supported by few DataProviders)
+            Fields of securities which should be retrieved. If None, all available fields will be returned
+            (only supported by few DataProviders).
         start_date: datetime
-            date representing the beginning of historical period from which data should be retrieved
+            Date representing the beginning of historical period from which data should be retrieved.
         end_date: datetime
-            date representing the end of historical period from which data should be retrieved;
-            if no end_date was provided, by default the current date will be used
+            Date representing the end of historical period from which data should be retrieved;
+            if no end_date was provided, by default the current date will be used.
         frequency: Frequency
-            frequency of the data. It defaults to DAILY.
+            Frequency of the data. It defaults to DAILY.
         currency: str
-        override_name: str
-        override_value: str
+        override_names: Optional[Union[str, Sequence[str]]]
+            A list of field names (as strings) to override the default fields in the Bloomberg request. Each entry
+            corresponds to a field that should be overridden with a new value provided in 'override_values'.
+            If not provided, default values will be used.
+        override_values: Optional[Union[str, Sequence[str]]]
+            A list of values (as strings) that correspond to the 'override_names'. Each value in this list will replace
+            the default value for the respective field name in the 'override_names' list. The order of the values should
+            align with the order of the field names. If not provided, default values will be used.
         look_ahead_bias: bool
-            if set to False, the look-ahead bias will be taken care of to make sure no future data is returned
+            If set to False, the look-ahead bias will be taken care of to make sure no future data is returned.
         Returns
         -------
         QFSeries, QFDataFrame, QFDataArray
@@ -299,7 +306,7 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider,
 
         tickers_mapping = {current_ticker(t): t for t in tickers}
         data_array = self._historical_data_provider.get(
-            tickers, fields, start_date, end_date, frequency, currency, override_name, override_value)
+            tickers, fields, start_date, end_date, frequency, currency, override_names, override_values)
         data_array = data_array.assign_coords(tickers=[tickers_mapping.get(t, t) for t in data_array.tickers.values])
 
         normalized_result = normalize_data_array(
@@ -335,45 +342,51 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider,
 
         Parameters
         ----------
-        universe_ticker
-            ticker that describes a specific universe, which members will be returned
-        date
-            date for which current universe members' tickers will be returned
-        display_figi
-            the following flag can be used to have this field return Financial Instrument Global Identifiers (FIGI).
+        universe_ticker: Ticker
+            The ticker symbol representing the index or universe for which the tickers are being queried.
+        date: datetime
+            The date for which the tickers' universe data is requested.
+        display_figi: bool
+            The following flag can be used to have this field return Financial Instrument Global Identifiers (FIGI).
+            By default set to False, which results in returning tickers identifiers instead of FIGI.
 
         Returns
-        --------
-        List[BloombergTicker]
-            list of all BloombergTickers belonging to the requested index
+        -------
+        List[Ticker]
+            A list of tickers (Ticker objects) that were included in the index on the specified date.
         """
         members_and_weights = self._get_index_members_and_weights(universe_ticker, date, display_figi)
         return members_and_weights.index.tolist()
 
-    def get_tickers_universe_with_weights(self, universe_ticker: BloombergTicker, date: Optional[datetime] = None,
+    def get_tickers_universe_with_weights(self, universe_ticker: BloombergTicker, date: datetime,
                                           display_figi: bool = False) -> QFSeries:
         """
-        Returns a list of all members of an index. It will not return any data for indices with more than
-        20,000 members.
+        Returns the tickers belonging to a specified universe, along with their corresponding weights, at a given date.
+        The result is a QFSeries indexed by ticker objects, with the values representing the respective weights of
+        each ticker in the universe.
+
+        Important: It will not return any data for indices with more than 20,000 members.
 
         Parameters
         ----------
-        universe_ticker
-            ticker that describes a specific universe, which members will be returned
-        date
-            date for which current universe members' tickers will be returned
-        display_figi
-            the following flag can be used to have this field return Financial Instrument Global Identifiers (FIGI).
+        universe_ticker: Ticker
+            The ticker symbol representing the index or universe for which the tickers are being queried.
+        date: datetime
+            The date for which the tickers' universe data is requested.
+        display_figi: bool
+            The following flag can be used to have this field return Financial Instrument Global Identifiers (FIGI).
+            By default set to False, which results in returning tickers identifiers instead of FIGI.
 
         Returns
-        --------
+        -------
         QFSeries
-            a series of the weights of all BloombergTickers within the requested Index, indexed by those tickers
+            A QFSeries indexed by Ticker objects, where the values are the weights of the respective tickers
+            in the universe at a given date.
         """
         return self._get_index_members_and_weights(universe_ticker, date, display_figi)
 
     def get_unique_tickers(self, universe_ticker: Ticker) -> List[Ticker]:
-        raise ValueError("BloombergDataProvider does not provide historical tickers_universe data")
+        raise NotImplementedError("get_unique_tickers is not supported by BloombergDataProvider.")
 
     def get_tabular_data(self, ticker: BloombergTicker, field: str,
                          override_names: Optional[Union[str, Sequence[str]]] = None,
@@ -387,8 +400,15 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider,
             ticker for security that should be retrieved
         field: str
             field of security that should be retrieved
-        override_names: str
-        override_values: str
+        override_names: Optional[Union[str, Sequence[str]]]
+            A list of field names (as strings) to override the default fields in the Bloomberg request. Each entry
+            corresponds to a field that should be overridden with a new value provided in 'override_values'. 
+            If not provided, default values will be used. For example a valid override for 'INDEX_MEMBER_WEIGHT'
+            is 'END_DT' with a corresponding value '20200101'.
+        override_values: Optional[Union[str, Sequence[str]]]
+            A list of values (as strings) that correspond to the 'override_names'. Each value in this list will replace
+            the default value for the respective field name in the 'override_names' list. The order of the values should
+            align with the order of the field names. If not provided, default values will be used.
 
         Returns
         -------
