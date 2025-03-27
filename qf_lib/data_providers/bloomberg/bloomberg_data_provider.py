@@ -402,7 +402,7 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider,
             field of security that should be retrieved
         override_names: Optional[Union[str, Sequence[str]]]
             A list of field names (as strings) to override the default fields in the Bloomberg request. Each entry
-            corresponds to a field that should be overridden with a new value provided in 'override_values'. 
+            corresponds to a field that should be overridden with a new value provided in 'override_values'.
             If not provided, default values will be used. For example a valid override for 'INDEX_MEMBER_WEIGHT'
             is 'END_DT' with a corresponding value '20200101'.
         override_values: Optional[Union[str, Sequence[str]]]
