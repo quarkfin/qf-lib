@@ -19,7 +19,6 @@ import numpy as np
 from blpapi import DataType
 
 from qf_lib.common.enums.frequency import Frequency
-from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.data_providers.bloomberg.bloomberg_names import SECURITIES, SECURITY, FIELDS, RESPONSE_ERROR, SECURITY_DATA, \
     BAR_DATA, FIELD_EXCEPTIONS, SECURITY_ERROR
 from qf_lib.data_providers.bloomberg.exceptions import BloombergError
@@ -124,17 +123,14 @@ def get_response_events(session):
 
 
 def check_security_data_for_errors(security_data):
-    logger = qf_logger.getChild(__name__)
     if security_data.hasElement(FIELD_EXCEPTIONS):
         field_exceptions = security_data.getElement(FIELD_EXCEPTIONS)
         if field_exceptions.numValues() > 0:
             error_message = "Response contains field exceptions:\n" + str(security_data)
-            logger.error(error_message)
             raise BloombergError(error_message)
 
     if security_data.hasElement(SECURITY_ERROR):
         error_message = "Response contains security error:\n" + str(security_data)
-        logger.error(error_message)
         raise BloombergError(error_message)
 
 
