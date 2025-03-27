@@ -299,6 +299,28 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
 
         return universe
 
+    def get_tickers_universe_with_weights(self, universe_ticker: BloombergTicker, date: Optional[datetime] = None,
+                                          display_figi: bool = False) -> QFSeries:
+        """
+        Returns a list of all members of an index. It will not return any data for indices with more than
+        20,000 members.
+
+        Parameters
+        ----------
+        universe_ticker
+            ticker that describes a specific universe, which members will be returned
+        date
+            date for which current universe members' tickers will be returned
+        display_figi
+            the following flag can be used to have this field return Financial Instrument Global Identifiers (FIGI).
+
+        Returns
+        --------
+        QFSeries
+            a series of the weights of all BloombergTickers within the requested Index, indexed by those tickers
+        """
+        raise NotImplementedError("get_tickers_universe_with_weights is not implemented yet.")
+
     def get_unique_tickers(self, universe_ticker: BloombergTicker) -> List[BloombergTicker]:
         raise ValueError(f"{self.__class__.__name__} does not provide historical tickers_universe data")
 
