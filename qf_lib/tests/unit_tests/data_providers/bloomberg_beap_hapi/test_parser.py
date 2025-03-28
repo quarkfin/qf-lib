@@ -657,6 +657,25 @@ class TestBloombergBeapHapiParser(unittest.TestCase):
         df = parser.get_current_values(Mock(), {"NAME": "String", "PX_LAST": "Price"})
         assert_frame_equal(expected_df, df, check_names=False)
 
-
-if __name__ == '__main__':
-    unittest.main()
+    @patch('qf_lib.data_providers.bloomberg_beap_hapi.bloomberg_beap_hapi_parser.gzip')
+    def test_get_current_values_get_tickers_universe_with_weights(self, mock):
+        mock.open.return_value = BytesIO(str.encode(dedent(
+            """
+            START-OF-FIELDS
+            INDEX_MEMBERS_WEIGHTS
+            END-OF-FIELDS
+            ...
+            START-OF-DATA
+            SECURITIES|ERROR CODE|NUM FLDS|INDEX_MEMBERS_WEIGHTS|
+            Hello Index|0|1|;2;1692;2;4;BBG000HIHIHA;2;.006329;4;BBG000HOHOHO;2;.032735;|
+            END-OF-DATA
+            ...
+            END-OF-FILE
+            """
+        )))
+        expected_df = QFDataFrame(
+            data={"INDEX_MEMBERS_WEIGHTS": [["BBG000HIHIHA;2;.006329", "BBG000HOHOHO;2;.032735"]]},
+            index=[BloombergTicker("Hello Index")])
+        parser = BloombergBeapHapiParser()
+        df = parser.get_current_values(Mock(), {'INDEX_MEMBERS_WEIGHTS': 'Bulk Format'})
+        assert_frame_equal(expected_df, df, check_names=False)

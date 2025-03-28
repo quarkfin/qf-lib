@@ -26,6 +26,7 @@ from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.bloomberg_beap_hapi.bloomberg_beap_hapi_data_provider import BloombergBeapHapiDataProvider
 from qf_lib.data_providers.bloomberg_beap_hapi.bloomberg_beap_hapi_request_provider import \
     BloombergBeapHapiRequestsProvider
+from qf_lib.tests.helpers.testing_tools.containers_comparison import assert_series_equal
 
 
 class TestBloombergBeapHapiDataProvider(TestCase):
@@ -57,6 +58,10 @@ class TestBloombergBeapHapiDataProvider(TestCase):
         with self.assertRaises(ValueError):
             self.data_provider.get_tickers_universe(BloombergTicker("Example Index"), datetime(1970, 1, 1))
 
+    def test_get_tickers_universe_with_weights__invalid_date(self):
+        with self.assertRaises(ValueError):
+            self.data_provider.get_tickers_universe_with_weights(BloombergTicker("Example Index"), datetime(1970, 1, 1))
+
     def test_get_tickers_universe__valid_ticker(self):
         self.data_provider.parser.get_current_values.return_value = QFDataFrame.from_records(
             [(BloombergTicker("SPX Index"), ["Member1", "Member2"]), ],
@@ -65,12 +70,16 @@ class TestBloombergBeapHapiDataProvider(TestCase):
         universe = self.data_provider.get_tickers_universe(BloombergTicker("SPX Index"))
         self.assertCountEqual(universe, [BloombergTicker("Member1 Equity"), BloombergTicker("Member2 Equity")])
 
-    def test_get_tickers_universe__invalid_ticker(self):
-        self.data_provider.parser.get_current_values.return_value = QFDataFrame.from_records(
-            [(BloombergTicker("Invalid Index"), []), ], columns=["Ticker", "INDEX_MEMBERS_WEIGHTS"]).set_index("Ticker")
+    def test_get_tickers_universe_with_weights__valid_ticker(self):
+        self.data_provider.parser.get_current_values.return_value = QFDataFrame(
+            data={"INDEX_MEMBERS_WEIGHTS": [["BBG000HIHIHA;2;.006329", "BBG000HOHOHO;2;.032735"]]},
+            index=[BloombergTicker("Hello Index")])
 
-        universe = self.data_provider.get_tickers_universe(BloombergTicker("Invalid Index"))
-        self.assertCountEqual(universe, [])
+        universe = self.data_provider.get_tickers_universe_with_weights(BloombergTicker("Hello Index"), datetime.now(),
+                                                                        display_figi=True)
+        expected_df = QFSeries(data=[0.006329, 0.032735],
+                               index=[BloombergTicker("/bbgid/BBG000HIHIHA"), BloombergTicker("/bbgid/BBG000HOHOHO")])
+        assert_series_equal(universe, expected_df, check_names=False)
 
     """ Test get_history for SettableTimer """
 

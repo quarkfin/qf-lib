@@ -273,32 +273,8 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
         display_figi
             the following flag can be used to have this field return Financial Instrument Global Identifiers (FIGI).
         """
-        date = date or datetime.now()
-        if date.date() != datetime.today().date():
-            raise ValueError(f"{self.__class__.__name__} does not provide historical tickers universe data")
-
-        field = 'INDEX_MEMBERS_WEIGHTS'
-
-        MAX_PAGE_NUMBER = 7
-        MAX_MEMBERS_PER_PAGE = 3000
-        universe = []
-
-        def str_to_bbg_ticker(data: str, figi: bool):
-            identifier = data.split(";")[0]
-            ticker_str = f"/bbgid/{identifier}" if figi else f"{identifier} Equity"
-            return BloombergTicker(ticker_str, SecurityType.STOCK, 1)
-
-        for page_no in range(1, MAX_PAGE_NUMBER + 1):
-            ticker_data = self.get_current_values(universe_ticker, field, overrides={
-                "DISPLAY_ID_BB_GLOBAL_OVERRIDE": "Y" if display_figi else "N",
-                "PAGE_NUMBER_OVERRIDE": str(page_no)
-            })
-            tickers_chunk = [str_to_bbg_ticker(data, display_figi) for data in ticker_data]
-            universe.extend(tickers_chunk)
-            if len(tickers_chunk) < MAX_MEMBERS_PER_PAGE:
-                break
-
-        return universe
+        members_and_weights = self._get_index_members_and_weights(universe_ticker, date, display_figi)
+        return members_and_weights.index.tolist()
 
     def get_tickers_universe_with_weights(self, universe_ticker: BloombergTicker, date: Optional[datetime] = None,
                                           display_figi: bool = False) -> QFSeries:
@@ -320,10 +296,49 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
         QFSeries
             a series of the weights of all BloombergTickers within the requested Index, indexed by those tickers
         """
-        raise NotImplementedError("get_tickers_universe_with_weights is not implemented yet.")
+        return self._get_index_members_and_weights(universe_ticker, date, display_figi)
 
     def get_unique_tickers(self, universe_ticker: BloombergTicker) -> List[BloombergTicker]:
-        raise ValueError(f"{self.__class__.__name__} does not provide historical tickers_universe data")
+        raise NotImplementedError(f"{self.__class__.__name__} does not provide historical tickers_universe data")
+
+    def _get_index_members_and_weights(self, universe_ticker: BloombergTicker, date: Optional[datetime] = None,
+                                       display_figi: bool = False) -> QFSeries:
+        date = date or datetime.now()
+        if date.date() != datetime.today().date():
+            raise ValueError(f"{self.__class__.__name__} does not provide historical tickers universe data")
+
+        field = 'INDEX_MEMBERS_WEIGHTS'
+
+        MAX_PAGE_NUMBER = 7
+        MAX_MEMBERS_PER_PAGE = 3000
+        universe = []
+
+        def str_to_bbg_ticker(identifier: str, figi: bool):
+            ticker_str = f"/bbgid/{identifier}" if figi else f"{identifier} Equity"
+            return BloombergTicker(ticker_str, SecurityType.STOCK, 1)
+
+        def cast_weight_to_float(weight: str):
+            try:
+                return float(weight)
+            except ValueError:
+                return float("nan")
+
+        for page_no in range(1, MAX_PAGE_NUMBER + 1):
+            ticker_data = self.get_current_values(universe_ticker, field, overrides={
+                "DISPLAY_ID_BB_GLOBAL_OVERRIDE": "Y" if display_figi else "N",
+                "PAGE_NUMBER_OVERRIDE": str(page_no)
+            })
+            ticker_data = [{"Index Member": el.split(";")[0], "Weight": cast_weight_to_float(el.split(";")[-1])}
+                           for el in ticker_data]
+            df = QFDataFrame(ticker_data) if len(ticker_data) > 0 else QFDataFrame(columns=["Index Member", "Weight"])
+            df = df.set_index("Index Member")
+            df.index = df.index.map(lambda s: str_to_bbg_ticker(s, display_figi))
+            universe.append(df)
+            if len(df) < MAX_MEMBERS_PER_PAGE:
+                break
+
+        universe_series = pd.concat(universe).iloc[:, 0]
+        return universe_series
 
     def _get_futures_chain_dict(self, tickers: Union[BloombergFutureTicker, Sequence[BloombergFutureTicker]],
                                 expiration_date_fields: Union[str, Sequence[str]],
@@ -362,7 +377,7 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
         }
         active_bbg_tickers = list(active_ticker_string_to_future_ticker.keys())
 
-        field_overrides = [("CHAIN_DATE", datetime.now().strftime('%Y%m%d')), ('INCLUDE_EXPIRED_CONTRACTS', 'Y')]
+        field_overrides = {"CHAIN_DATE": datetime.now().strftime('%Y%m%d'), 'INCLUDE_EXPIRED_CONTRACTS': 'Y'}
         active_ticker_to_chain_tickers_list = self.get_current_values(active_bbg_tickers, "FUT_CHAIN",
                                                                       universe_creation_time, field_overrides).to_dict()
         future_ticker_to_chain_tickers_list = {
