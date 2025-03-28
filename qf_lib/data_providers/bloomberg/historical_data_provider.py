@@ -122,9 +122,10 @@ class HistoricalDataProvider:
     @classmethod
     def _set_override(cls, request, override_name, override_value):
         overrides = request.getElement("overrides")
-        override = overrides.appendElement()
-        override.setElement("fieldId", override_name)
-        override.setElement("value", override_value)
+        for override_name, override_value in zip(override_name, override_value):
+            override = overrides.appendElement()
+            override.setElement("fieldId", override_name)
+            override.setElement("value", override_value)
 
     @staticmethod
     def _get_float_or_nan_intraday(element, field_name):
@@ -148,7 +149,8 @@ class HistoricalDataProvider:
 
         return result
 
-    def _receive_historical_response(self, requested_tickers: Sequence[BloombergTicker], requested_fields: Sequence[str]):
+    def _receive_historical_response(self, requested_tickers: Sequence[BloombergTicker],
+                                     requested_fields: Sequence[str]):
         ticker_str_to_ticker: Dict[str, BloombergTicker] = {t.as_string(): t for t in requested_tickers}
 
         response_events = get_response_events(self._session)
