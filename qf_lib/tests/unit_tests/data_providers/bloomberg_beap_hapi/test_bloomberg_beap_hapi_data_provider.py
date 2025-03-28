@@ -16,8 +16,6 @@ from typing import Optional
 from unittest import TestCase
 from unittest.mock import patch, Mock
 
-from statsmodels.compat.pandas import assert_frame_equal
-
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.timer import SettableTimer
