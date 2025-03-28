@@ -323,7 +323,6 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
             except ValueError:
                 return float("nan")
 
-
         for page_no in range(1, MAX_PAGE_NUMBER + 1):
             ticker_data = self.get_current_values(universe_ticker, field, overrides={
                 "DISPLAY_ID_BB_GLOBAL_OVERRIDE": "Y" if display_figi else "N",
