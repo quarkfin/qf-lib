@@ -57,6 +57,10 @@ class TestBloombergBeapHapiDataProvider(TestCase):
         with self.assertRaises(ValueError):
             self.data_provider.get_tickers_universe(BloombergTicker("Example Index"), datetime(1970, 1, 1))
 
+    def test_get_tickers_universe_with_weights__invalid_date(self):
+        with self.assertRaises(ValueError):
+            self.data_provider.get_tickers_universe_with_weights(BloombergTicker("Example Index"), datetime(1970, 1, 1))
+
     def test_get_tickers_universe__valid_ticker(self):
         self.data_provider.parser.get_current_values.return_value = QFDataFrame.from_records(
             [(BloombergTicker("SPX Index"), ["Member1", "Member2"]), ],
