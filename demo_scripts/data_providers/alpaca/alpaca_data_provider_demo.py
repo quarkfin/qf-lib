@@ -11,13 +11,10 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-from datetime import datetime
 
-from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.tickers.tickers import AlpacaTicker
-from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.data_providers.alpaca_py.alpaca_data_provider import AlpacaDataProvider
 
 """
