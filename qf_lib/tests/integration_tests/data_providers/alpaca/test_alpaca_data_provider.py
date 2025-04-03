@@ -17,7 +17,7 @@ from datetime import datetime
 import pytest
 from numpy import nan
 from numpy.testing import assert_almost_equal
-from pandas import date_range, DatetimeIndex
+from pandas import date_range
 
 from qf_lib.backtesting.events.time_event.regular_time_event.market_close_event import MarketCloseEvent
 from qf_lib.backtesting.events.time_event.regular_time_event.market_open_event import MarketOpenEvent

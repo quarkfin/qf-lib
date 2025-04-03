@@ -31,13 +31,10 @@ def main():
     data_provider = AlpacaDataProvider()
 
     # Return the latest 5 close prices of ETH/USD
-    #prices = data_provider.historical_price(AlpacaTicker("ETH/USD", SecurityType.CRYPTO), PriceField.Close,
-    #                                        nr_of_bars=5)
-    #print(prices)
+    prices = data_provider.historical_price(AlpacaTicker("ETH/USD", SecurityType.CRYPTO), PriceField.Close,
+                                            nr_of_bars=5)
+    print(prices)
 
-    x = data_provider.get_history(AlpacaTicker("ETH/USD", SecurityType.CRYPTO), "close", datetime(2025, 4, 2), datetime(2025, 4, 8),
-         Frequency.WEEKLY)
-    print(x)
 
 if __name__ == '__main__':
     main()
