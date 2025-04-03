@@ -13,7 +13,7 @@
 #     limitations under the License.
 from collections import defaultdict
 from datetime import datetime
-from typing import Any, Sequence, Dict
+from typing import Any, Sequence, Dict, List
 
 import numpy as np
 import pandas as pd
@@ -67,7 +67,7 @@ class HistoricalDataProvider:
 
     def _get_historical_data(self, ref_data_service, tickers: Sequence[BloombergTicker], fields: Sequence[str],
                              start_date: datetime, end_date: datetime, frequency: Frequency, currency: str,
-                             override_name: str, override_value: Any):
+                             override_name: List, override_value: List):
         request = ref_data_service.createRequest("HistoricalDataRequest")
 
         ticker_strings = [t.as_string() for t in tickers]
@@ -76,7 +76,7 @@ class HistoricalDataProvider:
 
         self._set_time_period(request, start_date, end_date, frequency)
         self._set_currency(currency, request)
-        if override_name is not None:
+        if len(override_name) > 0:
             self._set_override(request, override_name, override_value)
 
         self._session.sendRequest(request)
