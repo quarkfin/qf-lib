@@ -54,6 +54,8 @@ class HistoricalDataProvider:
         Request. In case of intraday data, the currency and override parameters should not be used, as none of them
         is a valid Intraday Bar Request parameter.
         """
+        override_name = override_name or []
+        override_value = override_value or []
         ref_data_service = self._session.getService(REF_DATA_SERVICE_URI)
         if frequency > Frequency.DAILY:
             assert currency is None and len(override_name) + len(override_value) == 0
