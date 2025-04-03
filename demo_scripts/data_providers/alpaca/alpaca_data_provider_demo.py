@@ -20,7 +20,7 @@ from qf_lib.data_providers.alpaca_py.alpaca_data_provider import AlpacaDataProvi
 """
 The purpose of this script is to provide an example of how to use the AlpacaDataProvider.
 No authentication or API key is needed to run this demo as it uses only the freely available
-cryptocurrencies data. 
+cryptocurrencies data.
 """
 
 
