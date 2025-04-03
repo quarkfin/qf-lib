@@ -11,10 +11,13 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
+from datetime import datetime
 
+from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.tickers.tickers import AlpacaTicker
+from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.data_providers.alpaca_py.alpaca_data_provider import AlpacaDataProvider
 
 """
@@ -23,14 +26,18 @@ No authentication or API key is needed to run this demo as it uses only the free
 cryptocurrencies data. 
 """
 
+
 def main():
     data_provider = AlpacaDataProvider()
 
     # Return the latest 5 close prices of ETH/USD
-    prices = data_provider.historical_price(AlpacaTicker("ETH/USD", SecurityType.CRYPTO), PriceField.Close,
-                                            nr_of_bars=5)
-    print(prices)
+    #prices = data_provider.historical_price(AlpacaTicker("ETH/USD", SecurityType.CRYPTO), PriceField.Close,
+    #                                        nr_of_bars=5)
+    #print(prices)
 
+    x = data_provider.get_history(AlpacaTicker("ETH/USD", SecurityType.CRYPTO), "close", datetime(2025, 4, 2), datetime(2025, 4, 8),
+         Frequency.WEEKLY)
+    print(x)
 
 if __name__ == '__main__':
     main()

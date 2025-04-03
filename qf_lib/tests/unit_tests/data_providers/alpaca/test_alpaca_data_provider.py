@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 from unittest import TestCase
 from unittest.mock import patch, Mock
 
+import pytest
 from numpy import nan
 from pandas import Timestamp, DataFrame, isnull
 from statsmodels.compat.pandas import assert_frame_equal
@@ -29,14 +30,12 @@ from qf_lib.data_providers.alpaca_py.alpaca_data_provider import AlpacaDataProvi
 from qf_lib.tests.helpers.testing_tools.containers_comparison import assert_series_equal, assert_dataarrays_equal
 
 try:
-    from alpaca.data import StockHistoricalDataClient, StockBarsRequest, TimeFrame, CryptoHistoricalDataClient, \
-        CryptoBarsRequest
-
+    from alpaca.data import CryptoHistoricalDataClient
     is_alpaca_intalled = True
 except ImportError:
     is_alpaca_intalled = False
 
-
+@pytest.mark.skipif(not is_alpaca_intalled, reason="requires alpaca")
 class TestAlpacaDataProvider(TestCase):
 
     def setUp(self):

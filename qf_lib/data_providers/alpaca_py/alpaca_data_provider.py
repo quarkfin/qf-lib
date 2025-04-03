@@ -30,7 +30,7 @@ from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceDataProvider
 from qf_lib.data_providers.helpers import normalize_data_array
-from qf_lib.tests.integration_tests.data_providers.alpaca.utilities import AlpacaDatesException
+from qf_lib.data_providers.alpaca_py.utilities import AlpacaDatesException
 
 try:
     from alpaca.data import StockHistoricalDataClient, StockBarsRequest, TimeFrame, CryptoHistoricalDataClient, \
@@ -42,10 +42,7 @@ except ImportError:
 
 
 class AlpacaDataProvider(AbstractPriceDataProvider):
-    _security_type_to_request = {
-        SecurityType.STOCK: StockBarsRequest,
-        SecurityType.CRYPTO: CryptoBarsRequest,
-    }
+    _security_type_to_request = {}
 
     _security_type_to_function = {
         SecurityType.STOCK: 'get_stock_bars',
@@ -86,6 +83,11 @@ class AlpacaDataProvider(AbstractPriceDataProvider):
             "secret_key": secret_key,
             "oauth_token": oauth_token,
             "use_basic_auth": use_basic_auth
+        }
+
+        self._security_type_to_request = {
+            SecurityType.STOCK: StockBarsRequest,
+            SecurityType.CRYPTO: CryptoBarsRequest
         }
 
         self.security_type_to_client[SecurityType.CRYPTO] = CryptoHistoricalDataClient(**params)
@@ -191,7 +193,7 @@ class AlpacaDataProvider(AbstractPriceDataProvider):
         try:
             # In case of intraday data, Alpaca returns a single bar when start date equals to end date. In order to
             # match the behaviour of other data providers
-            if frequency > Frequency.DAILY and start_date >= end_date:
+            if frequency > Frequency.DAILY and start_date > end_date:
                 raise AlpacaDatesException()
 
             client = self.security_type_to_client[sec_type]

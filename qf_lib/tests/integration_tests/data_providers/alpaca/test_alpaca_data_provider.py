@@ -40,23 +40,20 @@ def data_provider():
 
 
 def assert_equal(result, expected_value, decimals=2):
-    try:
-        expected_type = type(expected_value)
-        assert isinstance(result, expected_type), f"Expected type {expected_type}, but got {type(result)}"
+    expected_type = type(expected_value)
+    assert isinstance(result, expected_type), f"Expected type {expected_type}, but got {type(result)}"
 
-        if isinstance(result, float):
-            if isnan(result):
-                assert isnan(expected_value)
-            else:
-                assert_almost_equal(expected_value, result, decimal=decimals)
-        elif isinstance(result, QFSeries):
-            assert_series_equal(expected_value, result, check_names=False, check_index_type=False)
-        elif isinstance(result, QFDataFrame):
-            assert_dataframes_equal(expected_value, result, check_names=False, check_index_type=False)
-        elif isinstance(result, QFDataArray):
-            assert_dataarrays_equal(expected_value, result, check_names=False, check_index_type=False)
-    except:
-        print("A")
+    if isinstance(result, float):
+        if isnan(result):
+            assert isnan(expected_value)
+        else:
+            assert_almost_equal(expected_value, result, decimal=decimals)
+    elif isinstance(result, QFSeries):
+        assert_series_equal(expected_value, result, check_names=False, check_index_type=False)
+    elif isinstance(result, QFDataFrame):
+        assert_dataframes_equal(expected_value, result, check_names=False, check_index_type=False)
+    elif isinstance(result, QFDataArray):
+        assert_dataarrays_equal(expected_value, result, check_names=False, check_index_type=False)
 
 
 @pytest.mark.skipif(not is_alpaca_intalled, reason="requires alpaca-py")
@@ -177,7 +174,7 @@ def test_get_history__various_frequencies_real_timer(tickers, fields, start_date
                 Frequency.MIN_1,
                 QFSeries([3462.499],
                          index=date_range(start='2025-01-02 14:00', freq='T', periods=1)),
-                datetime(2025, 1, 2, 14, 2)),
+                datetime(2025, 1, 2, 14, 1)),
         (
                 AlpacaTicker("ETH/USD", SecurityType.CRYPTO), "close", datetime(2025, 1, 2, 14, 0),
                 datetime(2025, 1, 2, 14, 4),
@@ -185,7 +182,7 @@ def test_get_history__various_frequencies_real_timer(tickers, fields, start_date
                 nan, datetime(2025, 1, 2, 14, 2)),
         (AlpacaTicker("ETH/USD", SecurityType.CRYPTO), "close", datetime(2025, 1, 2, 14, 0),
          datetime(2025, 1, 2, 14, 17), Frequency.MIN_60,
-         QFSeries(index=DatetimeIndex([])), datetime(2025, 1, 2, 14, 2)),
+         nan, datetime(2025, 1, 2, 14, 2)),
 
         ([AlpacaTicker("ETH/USD", SecurityType.CRYPTO)], "close", datetime(2025, 1, 2), datetime(2025, 1, 6),
          Frequency.DAILY,
@@ -197,13 +194,13 @@ def test_get_history__various_frequencies_real_timer(tickers, fields, start_date
          Frequency.DAILY,
          QFDataFrame({AlpacaTicker("ETH/USD", SecurityType.CRYPTO): [3454.4500, 3595.7875]},
                      index=date_range("2025-01-02", "2025-01-03", freq="D")),
-         datetime(2025, 1, 3, 14)),
+         datetime(2025, 1, 3, 16)),
         (AlpacaTicker("ETH/USD", SecurityType.CRYPTO), "close", datetime(2025, 1, 1), datetime(2025, 1, 7),
          Frequency.WEEKLY, 3223.9195, datetime(2025, 1, 8)),
         (AlpacaTicker("ETH/USD", SecurityType.CRYPTO), "close", datetime(2025, 1, 1), datetime(2025, 1, 7),
          Frequency.WEEKLY, nan, datetime(2025, 1, 2)),
         (AlpacaTicker("ETH/USD", SecurityType.CRYPTO), "close", datetime(2025, 1, 1), datetime(2025, 1, 7),
-         Frequency.WEEKLY, 3454.4500, datetime(2025, 1, 3)),
+         Frequency.WEEKLY, nan, datetime(2025, 1, 3)),
 
     ]
 )

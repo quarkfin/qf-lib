@@ -56,7 +56,7 @@ class HistoricalDataProvider:
         """
         ref_data_service = self._session.getService(REF_DATA_SERVICE_URI)
         if frequency > Frequency.DAILY:
-            assert all(parameter is None for parameter in (currency, override_name, override_value))
+            assert currency is None and len(override_name) + len(override_value) == 0
             qf_data_array = self._get_intraday_data(ref_data_service, tickers, fields, start_date, end_date, frequency)
         else:
             qf_data_array = self._get_historical_data(ref_data_service, tickers, fields, start_date, end_date,
