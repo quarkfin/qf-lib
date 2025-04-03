@@ -158,7 +158,7 @@ class AlpacaDataProvider(AbstractPriceDataProvider):
             _dfs.append(self._request_data(sec_type, tickers_group, fields, start_date, end_date, frequency))
 
         df = concat(_dfs, axis=1, ignore_index=False)
-        df = df.reindex(columns=MultiIndex.from_product([fields, [t.as_string() for t in tickers]], ))
+        df = df.reindex(columns=MultiIndex.from_product([[t.as_string() for t in tickers], fields], ))
         data_array = QFDataArray.create(df.index, tickers, fields,
                                         df.values.reshape(len(df.index), len(tickers), len(fields)))
         return normalize_data_array(
@@ -204,11 +204,15 @@ class AlpacaDataProvider(AbstractPriceDataProvider):
                 end=end_date
             )).df.reindex(columns=fields)
             df = df.unstack(level=0)
+            df.columns = df.columns.swaplevel(0, 1)
 
             if not df.empty:
                 df.index = df.index.tz_convert(None).values if frequency > Frequency.DAILY else \
                     [d + RelativeDelta(hour=0, minute=0, second=0, microsecond=0) for d in df.index.tz_convert(None)]
         except (KeyError, AlpacaDatesException):
+            df = DataFrame([], columns=fields)
+        except Exception as e:
+            self.logger.error(f"No data could be returned for the given parameters due to the following exception: {e}")
             df = DataFrame([], columns=fields)
 
         return df
