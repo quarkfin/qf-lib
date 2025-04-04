@@ -251,6 +251,8 @@ class Frequency(Enum):
                     result = Frequency.MIN_60
             elif most_popular == 1:
                 result = Frequency.DAILY
+            elif 7 <= most_popular <= 8:
+                result = Frequency.WEEKLY
             elif 29 <= most_popular <= 31:
                 result = Frequency.MONTHLY
             elif 88 <= most_popular <= 92:
