@@ -32,12 +32,12 @@ from qf_lib.tests.helpers.testing_tools.containers_comparison import assert_seri
 try:
     from alpaca.data import CryptoHistoricalDataClient
 
-    is_alpaca_intalled = True
+    is_alpaca_installed = True
 except ImportError:
-    is_alpaca_intalled = False
+    is_alpaca_installed = False
 
 
-@pytest.mark.skipif(not is_alpaca_intalled, reason="requires alpaca")
+@pytest.mark.skipif(not is_alpaca_installed, reason="requires alpaca")
 class TestAlpacaDataProvider(TestCase):
 
     def setUp(self):

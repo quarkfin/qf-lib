@@ -32,9 +32,9 @@ from qf_lib.data_providers.helpers import normalize_data_array
 try:
     import yfinance as yf
 
-    is_yfinance_intalled = True
+    is_yfinance_installed = True
 except ImportError:
-    is_yfinance_intalled = False
+    is_yfinance_installed = False
 
 
 class YFinanceDataProvider(AbstractPriceDataProvider):
@@ -50,7 +50,7 @@ class YFinanceDataProvider(AbstractPriceDataProvider):
     def __init__(self, timer: Optional[Timer] = None):
         super().__init__(timer)
 
-        if not is_yfinance_intalled:
+        if not is_yfinance_installed:
             warnings.warn("yfinance ist not installed. If you would like to use YFinanceDataProvider first install the"
                           " yfinance library.")
             exit(1)

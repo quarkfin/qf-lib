@@ -36,9 +36,9 @@ try:
     from alpaca.data import StockHistoricalDataClient, StockBarsRequest, TimeFrame, CryptoHistoricalDataClient, \
         CryptoBarsRequest
 
-    is_alpaca_intalled = True
+    is_alpaca_installed = True
 except ImportError:
-    is_alpaca_intalled = False
+    is_alpaca_installed = False
 
 
 class AlpacaDataProvider(AbstractPriceDataProvider):
@@ -73,7 +73,7 @@ class AlpacaDataProvider(AbstractPriceDataProvider):
         """
         super().__init__(timer)
 
-        if not is_alpaca_intalled:
+        if not is_alpaca_installed:
             warnings.warn(f"alpaca-py ist not installed. If you would like to use {self.__class__.__name__} first"
                           f" install the alpaca-py library.")
             exit(1)
