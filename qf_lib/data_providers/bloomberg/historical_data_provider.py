@@ -13,7 +13,7 @@
 #     limitations under the License.
 from collections import defaultdict
 from datetime import datetime
-from typing import Any, Sequence, Dict
+from typing import Any, Sequence, Dict, List
 
 import numpy as np
 import pandas as pd
@@ -54,9 +54,11 @@ class HistoricalDataProvider:
         Request. In case of intraday data, the currency and override parameters should not be used, as none of them
         is a valid Intraday Bar Request parameter.
         """
+        override_name = override_name or []
+        override_value = override_value or []
         ref_data_service = self._session.getService(REF_DATA_SERVICE_URI)
         if frequency > Frequency.DAILY:
-            assert all(parameter is None for parameter in (currency, override_name, override_value))
+            assert currency is None and len(override_name) + len(override_value) == 0
             qf_data_array = self._get_intraday_data(ref_data_service, tickers, fields, start_date, end_date, frequency)
         else:
             qf_data_array = self._get_historical_data(ref_data_service, tickers, fields, start_date, end_date,
@@ -65,7 +67,7 @@ class HistoricalDataProvider:
 
     def _get_historical_data(self, ref_data_service, tickers: Sequence[BloombergTicker], fields: Sequence[str],
                              start_date: datetime, end_date: datetime, frequency: Frequency, currency: str,
-                             override_name: str, override_value: Any):
+                             override_name: List, override_value: List):
         request = ref_data_service.createRequest("HistoricalDataRequest")
 
         ticker_strings = [t.as_string() for t in tickers]
@@ -74,7 +76,7 @@ class HistoricalDataProvider:
 
         self._set_time_period(request, start_date, end_date, frequency)
         self._set_currency(currency, request)
-        if override_name is not None:
+        if len(override_name) > 0:
             self._set_override(request, override_name, override_value)
 
         self._session.sendRequest(request)

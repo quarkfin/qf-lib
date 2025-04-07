@@ -25,8 +25,8 @@ from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.common.utils.dateutils.timer import SettableTimer
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
-from qf_lib.data_providers.yfinance.yfinance_data_provider import YFinanceDataProvider, is_yfinance_intalled
-from qf_lib.data_providers.yfinance.yfinance_ticker import YFinanceTicker
+from qf_lib.data_providers.yfinance.yfinance_data_provider import YFinanceDataProvider, is_yfinance_installed
+from qf_lib.common.tickers.tickers import YFinanceTicker
 from qf_lib.tests.helpers.testing_tools.containers_comparison import assert_series_equal
 
 
@@ -64,7 +64,7 @@ def mock_daily_yfinance_download():
     return _mock_download
 
 
-@pytest.mark.skipif(not is_yfinance_intalled, reason="requires yfinance")
+@pytest.mark.skipif(not is_yfinance_installed, reason="requires yfinance")
 @patch("yfinance.download")
 @pytest.mark.parametrize(
     "tickers, fields, start_date, end_date, frequency, expected_type, expected_values",
@@ -91,7 +91,7 @@ def test_get_history__real_timer(mock_download, tickers, fields, start_date,
         assert_series_equal(expected_values, result, check_names=False, check_index_type=False)
 
 
-@pytest.mark.skipif(not is_yfinance_intalled, reason="requires yfinance")
+@pytest.mark.skipif(not is_yfinance_installed, reason="requires yfinance")
 @patch("yfinance.download")
 @pytest.mark.parametrize(
     "tickers, fields, start_date, end_date, frequency, expected_type, expected_values, current_time",
