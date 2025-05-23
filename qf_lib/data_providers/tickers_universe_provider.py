@@ -27,7 +27,7 @@ class TickersUniverseProvider(metaclass=ABCMeta):
     """
 
     @abstractmethod
-    def get_tickers_universe(self, universe_ticker: Ticker, date: datetime) -> List[Ticker]:
+    def get_tickers_universe(self, universe_ticker: Ticker, date: datetime, **kwargs) -> List[Ticker]:
         """
         Retrieves the list of tickers included in the specified index at a given date.
 
@@ -63,7 +63,7 @@ class TickersUniverseProvider(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def get_tickers_universe_with_weights(self, universe_ticker: Ticker, date: datetime) -> QFSeries:
+    def get_tickers_universe_with_weights(self, universe_ticker: Ticker, date: datetime, **kwargs) -> QFSeries:
         """
         Returns the tickers belonging to a specified universe, along with their corresponding weights, at a given date.
         The result is a QFSeries indexed by ticker objects, with the values representing the respective weights of
