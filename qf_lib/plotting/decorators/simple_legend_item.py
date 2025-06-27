@@ -11,6 +11,7 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
+from typing import Optional
 
 
 class SimpleLegendItem:
@@ -21,6 +22,6 @@ class SimpleLegendItem:
     Object which holds a reference to matplotlib's object which can be plotted on the chart (so called Artist).
     """
 
-    def __init__(self):
+    def __init__(self, legend_artist: Optional = None) -> None:
 
-        self.legend_artist = None  # type: matplotlib.artist.Artist
+        self.legend_artist = legend_artist  # type: matplotlib.artist.Artist

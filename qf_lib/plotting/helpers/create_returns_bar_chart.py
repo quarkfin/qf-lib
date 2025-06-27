@@ -29,6 +29,7 @@ from qf_lib.plotting.decorators.data_element_decorator import DataElementDecorat
 from qf_lib.plotting.decorators.legend_decorator import LegendDecorator
 from qf_lib.plotting.decorators.line_decorators import VerticalLineDecorator
 from qf_lib.plotting.decorators.title_decorator import TitleDecorator
+from qf_lib.plotting.helpers.index_translator import IndexTranslator
 
 
 def create_returns_bar_chart(returns: QFSeries, frequency: Frequency = Frequency.YEARLY, title: str = None) -> BarChart:
@@ -55,9 +56,11 @@ def create_returns_bar_chart(returns: QFSeries, frequency: Frequency = Frequency
     aggregate_returns = get_aggregate_returns(returns, frequency, multi_index=False)
     data_series = QFSeries(_convert_date(aggregate_returns, frequency).sort_index(ascending=True))
 
-    chart = BarChart(Orientation.Horizontal, align="center")
+    index_translator = IndexTranslator({d: int(d) for d in data_series.index})
+    chart = BarChart(Orientation.Horizontal, align="center", stacked=False,
+                     index_translator=index_translator)
     chart.add_decorator(DataElementDecorator(data_series, key="data_element"))
-    chart.add_decorator(BarValuesDecorator(data_series))
+    chart.add_decorator(BarValuesDecorator(PercentageFormatter()))
 
     # Format the x-axis so that its labels are shown as a percentage.
     chart.add_decorator(AxesFormatterDecorator(x_major=PercentageFormatter()))
@@ -67,7 +70,7 @@ def create_returns_bar_chart(returns: QFSeries, frequency: Frequency = Frequency
     if data_series_length > 10:
         data_series = data_series[np.arange(data_series_length) % math.ceil(data_series_length / 10) == 0]
 
-    y_labels = data_series.index
+    y_labels = index_translator.translate(data_series.index)
     chart.add_decorator(AxisTickLabelsDecorator(labels=y_labels, axis=Axis.Y, tick_values=y_labels))
 
     # Add an average line.

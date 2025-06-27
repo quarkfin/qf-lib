@@ -64,6 +64,14 @@ class BarChart(Chart):
         self._thickness = thickness
         self._plot_settings = plot_settings
 
+    @property
+    def stacked(self):
+        return self._stacked
+
+    @property
+    def orientation(self):
+        return self._orientation
+
     def plot(self, figsize: Tuple[float, float] = None):
         self._setup_axes_if_necessary(figsize)
 
@@ -79,6 +87,7 @@ class BarChart(Chart):
             self.axes.axhline(0.0, color='black', linewidth=1)  # horizontal line at y=0
 
     def apply_data_element_decorators(self, data_element_decorators: List[DataElementDecorator]) -> Any:
+        # TODO exception if no indextranslator and data element decorators is more than 1 and not stacked
         default_colors = Chart.get_axes_colors()
         default_color_iter = cycle(default_colors)
 

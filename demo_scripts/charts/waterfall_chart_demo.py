@@ -13,8 +13,11 @@
 #     limitations under the License.
 from matplotlib import pyplot as plt
 
+from qf_lib.common.enums.axis import Axis
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.plotting.charts.waterfall_chart import WaterfallChart
+from qf_lib.plotting.decorators.axes_formatter_decorator import AxesFormatterDecorator, PercentageFormatter
+from qf_lib.plotting.decorators.axis_tick_labels_decorator import AxisTickLabelsDecorator
 from qf_lib.plotting.decorators.data_element_decorator import DataElementDecorator
 from qf_lib.plotting.decorators.title_decorator import TitleDecorator
 
@@ -34,18 +37,22 @@ def waterfall_demo_without_total():
 
 
 def waterfall_demo_with_total():
+    labels = ["Fixed Income", "Equities", "Real Assets", "Private Assets",
+                                         "Hedge Funds", "Commodities", "Cash",
+                                         "Overlay"]
+    data_element = DataElementDecorator(QFSeries([0.22, -0.13, 0.06, 0.23, -0.12, 0.6, 0.02, -0.13],
+                                        labels)/100)
 
-    data_element = DataElementDecorator(QFSeries([4.55, 5.23, -3.03],
-                                        ['Value 1', 'Value 2', 'Value 3']))
-
-    chart = WaterfallChart()
+    chart = WaterfallChart(percentage=True)
     chart.add_decorator(data_element)
-    chart.add_total(6.75, title="Value 4")
+    chart.add_total(0.75/100 , title="Total")
 
-    chart_title = TitleDecorator("Waterfall Chart With Total")
+    chart_title = TitleDecorator("Q1 2025 Performance Contribution (Nominal)")
     chart.add_decorator(chart_title)
+    chart.add_decorator(AxisTickLabelsDecorator(labels=[''] + labels + ["Total", ""], axis=Axis.X, rotation=30))
+    chart.add_decorator(AxesFormatterDecorator(y_major=PercentageFormatter(".2f")))
 
-    chart.plot()
+    chart.plot(figsize=(10, 8))
     plt.show(block=True)
 
 
@@ -84,10 +91,10 @@ def waterfall_demo_with_percentage():
 
 
 def main():
-    waterfall_demo_without_total()
+    #waterfall_demo_without_total()
     waterfall_demo_with_total()
-    waterfall_demo_flag_total()
-    waterfall_demo_with_percentage()
+    #waterfall_demo_flag_total()
+    #waterfall_demo_with_percentage()
 
 
 if __name__ == '__main__':
