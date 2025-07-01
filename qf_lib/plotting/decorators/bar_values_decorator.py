@@ -12,10 +12,10 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 import warnings
-from logging import Formatter
 from typing import Optional
 
 import matplotlib as mpl
+from matplotlib.ticker import Formatter
 import numpy as np
 
 from qf_lib.plotting.decorators.chart_decorator import ChartDecorator

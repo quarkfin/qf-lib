@@ -134,7 +134,7 @@ class PieChart(Chart):
                     kw["arrowprops"].update({"connectionstyle": connection_style})
                     horizontal_alignment = "right" if x <= 0 else "left"
 
-                    label_pos = ((1.3 + (i % 2) * 0.4) * np.sign(x), 1.4 * yc)
+                    label_pos = ((1.1 + (i % 2) * 0.2) * np.sign(x), 1.2 * yc)
 
-                    self.axes.annotate(labels[i], xy=(0.8 * x, 0.8 * y), xytext=label_pos,
+                    self.axes.annotate(labels[i], xy=(0.9 * x, 0.9 * y), xytext=label_pos,
                                        horizontalalignment=horizontal_alignment, **kw)
