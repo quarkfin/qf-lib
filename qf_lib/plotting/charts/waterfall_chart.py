@@ -56,7 +56,7 @@ class WaterfallChart(Chart):
                                              verticalalignment='bottom',
                                              horizontalalignment='center',
                                              fontsize=10))
-        self.axes.set_ylim(0 , self.cumulative_sum[:-1].max() + 0.0002)
+        self.axes.set_ylim(0, self.cumulative_sum[:-1].max() + 0.0002)
 
     def _plot_waterfall(self, index, value):
         if index == 0 or value[0] == self.total_value:
