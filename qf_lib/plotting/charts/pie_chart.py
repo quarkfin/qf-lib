@@ -20,11 +20,6 @@ from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.plotting.charts.chart import Chart
 from qf_lib.plotting.decorators.simple_legend_item import SimpleLegendItem
 
-"""
-Changes
-- removes slices distance, now explode needs to be provided, default is stil 0.01
-"""
-
 
 class PieChart(Chart):
     """
@@ -34,16 +29,20 @@ class PieChart(Chart):
     ----------
     data: QFSeries
         The series to plot in the pie chart.
-    sort_values:
+    sort_values: bool
+        whether values should be sorted before plotting the PieChart.
     plot_settings
         Options to pass to the ``pie`` function.
     """
-    def __init__(self, sort_values: Optional[bool] = True, arrows: Optional[bool] = True, **plot_settings):
+
+    def __init__(self, sort_values: Optional[bool] = True, arrows: Optional[bool] = True,
+                 autotext_colour: Optional[str] = None, **plot_settings):
         super().__init__()
         self.plot_settings = plot_settings
         self.sort_values = sort_values
         self.arrows = arrows
         self._item_labels = []
+        self._autotext_colour = autotext_colour
 
     def plot(self, figsize: Tuple[float, float] = None) -> None:
         self._setup_axes_if_necessary(figsize=figsize)
@@ -96,15 +95,19 @@ class PieChart(Chart):
 
             series = series.sort_values() if self.sort_values else series
 
-
             if not self.arrows:
                 if 'autopct' not in plot_kwargs:
                     plot_kwargs['autopct'] = '%1.1f%%'
 
                 labels = [f"{index}" for index, value in series.items()]
-                plot = self.axes.pie(series, labels=labels, startangle=90, counterclock=False, **plot_kwargs)
-                self._item_labels = [(SimpleLegendItem(w), t.get_text()) for w, t in zip(plot[0], plot[1])]
+                wedges, texts, autotexts = self.axes.pie(series, labels=labels, startangle=90, counterclock=False,
+                                                         **plot_kwargs)
+                self._item_labels = [(SimpleLegendItem(w), t.get_text()) for w, t in zip(wedges, texts)]
 
+                # Adjust autotext colours
+                if self._autotext_colour is not None:
+                    for autotext in autotexts:
+                        autotext.set_color(self._autotext_colour)
             else:
 
                 plot = self.axes.pie(series, labels=None, startangle=90, counterclock=False, **plot_kwargs)
@@ -121,7 +124,7 @@ class PieChart(Chart):
                     'arrowprops': arrow_props,
                     'zorder': 0,
                     'va': 'center',
-                    **plot_kwargs['textprops']
+                    **plot_kwargs.get('textprops', {})
                 }
 
                 for i, p in enumerate(plot[0]):
