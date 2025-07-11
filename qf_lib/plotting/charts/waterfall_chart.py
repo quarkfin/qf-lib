@@ -50,12 +50,13 @@ class WaterfallChart(Chart):
         for index, value in enumerate([value for data_element in data_element_decorators
                                        for value in data_element.data.items()]):
             y_loc = value[1] if index == 0 or value[0] == self.total_value else self.cumulative_sum[index]
-            text = "{:.2f}%".format(value[1]) if self.percentage else value[1]
-            self.add_decorator(TextDecorator(text, y=DataCoordinate(y_loc + 0.02),
+            text = "{:.2%}".format(value[1]) if self.percentage else value[1]
+            self.add_decorator(TextDecorator(text, y=DataCoordinate(y_loc),
                                              x=DataCoordinate(index + 1),
                                              verticalalignment='bottom',
                                              horizontalalignment='center',
                                              fontsize=10))
+        self.axes.set_ylim(0, self.cumulative_sum[:-1].max() + 0.0002)
 
     def _plot_waterfall(self, index, value):
         if index == 0 or value[0] == self.total_value:

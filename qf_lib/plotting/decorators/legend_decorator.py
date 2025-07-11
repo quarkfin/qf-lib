@@ -35,10 +35,11 @@ class LegendDecorator(ChartDecorator):
         the identifier of the decorator
     """
 
-    def __init__(self, legend_placement: Location = Location.BEST, key: str = None):
+    def __init__(self, legend_placement: Location = Location.BEST, key: str = None, **plot_settings):
         super().__init__(key)
         self.legend_placement = legend_placement
         self.item_labels = []
+        self.plot_settings = plot_settings
 
     def add_entry(self, item: SimpleLegendItem, label: str) -> None:
         """
@@ -75,7 +76,7 @@ class LegendDecorator(ChartDecorator):
             adjusted_label = "\n".join(textwrap.wrap(label, width=60))
             labels.append(adjusted_label)
 
-        axes.legend(handles, labels, loc=self.legend_placement.code)
+        axes.legend(handles, labels, loc=self.legend_placement.code, **self.plot_settings)
 
     def decorate_html(self, chart: "Chart", chart_id: str) -> str:
         # For docs relating to this, see: http://api.highcharts.com/highcharts/legend
