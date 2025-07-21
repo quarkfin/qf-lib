@@ -205,11 +205,14 @@ class TestHistoricalDataProvider(TestCase):
         session.nextEvent.return_value = event
 
         data_provider = HistoricalDataProvider(session)
+        data_provider.logger = Mock()
+
         result = data_provider.get([BloombergTicker("AAPL US Equity")], ["PX_LAST", "DUMMY_FIELD"], datetime(2025, 2, 6),
                                    datetime(2025, 2, 6), Frequency.DAILY)
         expected = QFDataArray.create(data=[[[138.53, None]]], dates=[datetime(2025, 2, 6)],
                                       tickers=[BloombergTicker("AAPL US Equity")], fields=["PX_LAST", "DUMMY_FIELD"])
         assert_dataarrays_equal(result, expected)
+        data_provider.logger.warning.assert_called_once()
 
     def test_get_daily_frequency__multiple_tickers_multiple_dates_multiple_fields_with_invalid(self):
         session = Mock()
@@ -267,6 +270,7 @@ class TestHistoricalDataProvider(TestCase):
         session.nextEvent.side_effect = lambda: next(it)
 
         data_provider = HistoricalDataProvider(session)
+        data_provider.logger = Mock()
 
         tickers = [BloombergTicker("AAPL US Equity"), BloombergTicker("MSFT US Equity")]
         fields = ["PX_LAST", "DUMMY_FIELD"]
@@ -276,6 +280,7 @@ class TestHistoricalDataProvider(TestCase):
         expected = QFDataArray.create(data=[[[138.53, None], [238.53, None]], [[139.0, None], [235.0, None]]],
                                       dates=[start_date, end_date], tickers=tickers, fields=fields)
         assert_dataarrays_equal(result, expected)
+        self.assertEqual(data_provider.logger.warning.call_count, len(tickers))
 
     def test_get_intraday_frequency__single_ticker_multiple_dates_single_field(self):
         session = Mock()

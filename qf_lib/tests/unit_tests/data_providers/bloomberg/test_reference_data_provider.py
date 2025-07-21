@@ -111,7 +111,7 @@ class TestReferenceDataProvider(TestCase):
         expected = QFDataFrame(data={"Bonjour!": [None], "PX_LAST": [138.53]},
                                index=[BloombergTicker("AAPL US Equity")])
         assert_dataframes_equal(result, expected)
-        data_provider.logger.error.assert_called_once()
+        data_provider.logger.warning.assert_called_once()
 
     def test_get__multiple_tickers_security_error(self):
         session = Mock()

@@ -19,7 +19,7 @@ import numpy as np
 from blpapi import DataType
 
 from qf_lib.common.enums.frequency import Frequency
-from qf_lib.data_providers.bloomberg.bloomberg_names import ERROR_INFO, FIELD_ID, SECURITIES, SECURITY, FIELDS, RESPONSE_ERROR, SECURITY_DATA, \
+from qf_lib.data_providers.bloomberg.bloomberg_names import SECURITIES, SECURITY, FIELDS, RESPONSE_ERROR, SECURITY_DATA, \
     BAR_DATA, FIELD_EXCEPTIONS, SECURITY_ERROR
 from qf_lib.data_providers.bloomberg.exceptions import BloombergError
 
@@ -128,10 +128,10 @@ def check_security_data_for_errors(security_data):
         raise BloombergError(error_message)
 
 
-def get_fields_with_exception_from_security_data(security_data):
+def get_field_exceptions_from_security_data(security_data):
     if security_data.hasElement(FIELD_EXCEPTIONS):
         field_exceptions = security_data.getElement(FIELD_EXCEPTIONS)
-        return {exc.getElement(FIELD_ID): exc.getElement(ERROR_INFO) for exc in field_exceptions}
+        return field_exceptions if field_exceptions.numValues() > 0 else None
 
 
 def convert_field(field_data_array, field_name):
