@@ -167,7 +167,7 @@ class HistoricalDataProvider:
 
                 fields_with_exceptions = get_fields_with_exception_from_security_data(security_data)
                 if fields_with_exceptions:
-                    self.logger.error(f"Response contains fields with exceptions: {fields_with_exceptions}")
+                    self.logger.warning(f"Response contains fields with exceptions: {fields_with_exceptions}")
 
                 field_data_array = security_data.getElement(FIELD_DATA)
                 dates = [to_datetime(x.getElementAsString(DATE)) for x in field_data_array.values()]
