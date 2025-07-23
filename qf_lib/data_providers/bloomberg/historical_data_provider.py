@@ -28,7 +28,7 @@ from qf_lib.data_providers.bloomberg.bloomberg_names import REF_DATA_SERVICE_URI
     PERIODICITY_SELECTION, PERIODICITY_ADJUSTMENT, SECURITY, FIELD_DATA, DATE, \
     START_DATE_TIME, END_DATE_TIME, INTERVAL, BAR_TICK_DATA
 from qf_lib.data_providers.bloomberg.exceptions import BloombergError
-from qf_lib.data_providers.bloomberg.helpers import set_tickers, set_fields, convert_to_bloomberg_date, \
+from qf_lib.data_providers.bloomberg.helpers import get_field_exceptions_from_security_data, set_tickers, set_fields, convert_to_bloomberg_date, \
     convert_to_bloomberg_freq, get_response_events, check_event_for_errors, check_security_data_for_errors, \
     extract_security_data, set_ticker, extract_bar_data, convert_field
 from qf_lib.data_providers.helpers import tickers_dict_to_data_array
@@ -164,6 +164,10 @@ class HistoricalDataProvider:
 
                 security_data = extract_security_data(event)
                 check_security_data_for_errors(security_data)
+
+                fields_with_exceptions = get_field_exceptions_from_security_data(security_data)
+                if fields_with_exceptions:
+                    self.logger.warning(f"Response contains fields with exceptions:\n {fields_with_exceptions}")
 
                 field_data_array = security_data.getElement(FIELD_DATA)
                 dates = [to_datetime(x.getElementAsString(DATE)) for x in field_data_array.values()]

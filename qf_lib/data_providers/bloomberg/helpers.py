@@ -123,15 +123,15 @@ def get_response_events(session):
 
 
 def check_security_data_for_errors(security_data):
-    if security_data.hasElement(FIELD_EXCEPTIONS):
-        field_exceptions = security_data.getElement(FIELD_EXCEPTIONS)
-        if field_exceptions.numValues() > 0:
-            error_message = "Response contains field exceptions:\n" + str(security_data)
-            raise BloombergError(error_message)
-
     if security_data.hasElement(SECURITY_ERROR):
         error_message = "Response contains security error:\n" + str(security_data)
         raise BloombergError(error_message)
+
+
+def get_field_exceptions_from_security_data(security_data):
+    if security_data.hasElement(FIELD_EXCEPTIONS):
+        field_exceptions = security_data.getElement(FIELD_EXCEPTIONS)
+        return field_exceptions if field_exceptions.numValues() > 0 else None
 
 
 def convert_field(field_data_array, field_name):
