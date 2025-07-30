@@ -451,7 +451,7 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
         fields, got_single_field = convert_to_list(fields, str)
 
         tickers_str_to_obj = {t.as_string(): t for t in tickers}
-        overrides = [tuple(it) for it in overrides.items()]
+        overrides = [tuple(it) for it in (overrides or dict()).items()]
         universe_id = self._get_universe_id(tickers, universe_creation_time, overrides)
         universe_url = self.universe_hapi_provider.get_universe_url(universe_id, list(tickers_str_to_obj.keys()),
                                                                     overrides)
