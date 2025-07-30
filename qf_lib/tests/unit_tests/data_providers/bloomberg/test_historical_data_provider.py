@@ -174,6 +174,114 @@ class TestHistoricalDataProvider(TestCase):
                                       fields=["PX_LAST", "PX_VOLUME"])
         assert_dataarrays_equal(result, expected)
 
+    def test_get_daily_frequency__single_ticker_single_date_multiple_fields_with_invalid(self):
+        session = Mock()
+        session.getService.return_value.createRequest.return_value = Request()
+        event = createEvent(blpapi.Event.RESPONSE)
+
+        schema = self.ref_data_service.getOperation(
+            self.request_name
+        ).getResponseDefinitionAt(0)
+
+        formatter = appendMessage(event, schema)
+        content = {
+            "securityData":
+                {
+                    "security": "AAPL US Equity",
+                    "sequenceNumber": 0,
+                    "fieldExceptions": [{
+                        "fieldId": "DUMMY_FIELD",
+                        "errorInfo": {
+                            "category": "BAD_FLD",
+                            "message": "Not valid historical field",
+                        },
+                    }],
+                    "fieldData": [
+                        {"date": "2025-02-06", "PX_LAST": 138.53},
+                    ],
+                }
+        }
+        formatter.formatMessageDict(content)
+        session.nextEvent.return_value = event
+
+        data_provider = HistoricalDataProvider(session)
+        data_provider.logger = Mock()
+
+        result = data_provider.get([BloombergTicker("AAPL US Equity")], ["PX_LAST", "DUMMY_FIELD"], datetime(2025, 2, 6),
+                                   datetime(2025, 2, 6), Frequency.DAILY)
+        expected = QFDataArray.create(data=[[[138.53, None]]], dates=[datetime(2025, 2, 6)],
+                                      tickers=[BloombergTicker("AAPL US Equity")], fields=["PX_LAST", "DUMMY_FIELD"])
+        assert_dataarrays_equal(result, expected)
+        data_provider.logger.warning.assert_called_once()
+
+    def test_get_daily_frequency__multiple_tickers_multiple_dates_multiple_fields_with_invalid(self):
+        session = Mock()
+        session.getService.return_value.createRequest.return_value = Request()
+
+        schema = self.ref_data_service.getOperation(
+            self.request_name
+        ).getResponseDefinitionAt(0)
+
+        event = createEvent(blpapi.Event.PARTIAL_RESPONSE)
+        formatter = appendMessage(event, schema)
+        content = {
+            "securityData":
+                {
+                    "security": "AAPL US Equity",
+                    "sequenceNumber": 0,
+                    "fieldExceptions": [{
+                        "fieldId": "DUMMY_FIELD",
+                        "errorInfo": {
+                            "category": "BAD_FLD",
+                            "message": "Not valid historical field",
+                        },
+                    }],
+                    "fieldData": [
+                        {"date": "2025-02-06", "PX_LAST": 138.53},
+                        {"date": "2025-02-07", "PX_LAST": 139.0},
+                    ],
+                }
+        }
+        formatter.formatMessageDict(content)
+
+        event2 = createEvent(blpapi.Event.RESPONSE)
+        formatter2 = appendMessage(event2, schema)
+        content2 = {
+            "securityData":
+                {
+                    "security": "MSFT US Equity",
+                    "sequenceNumber": 0,
+                    "fieldExceptions": [{
+                        "fieldId": "DUMMY_FIELD",
+                        "errorInfo": {
+                            "category": "BAD_FLD",
+                            "message": "Not valid historical field",
+                        },
+                    }],
+                    "fieldData": [
+                        {"date": "2025-02-06", "PX_LAST": 238.53},
+                        {"date": "2025-02-07", "PX_LAST": 235.0},
+                    ],
+                }
+        }
+        formatter2.formatMessageDict(content2)
+
+        it = iter([event, event2])
+        session.nextEvent.side_effect = lambda: next(it)
+
+        data_provider = HistoricalDataProvider(session)
+        data_provider.logger = Mock()
+
+        tickers = [BloombergTicker("AAPL US Equity"), BloombergTicker("MSFT US Equity")]
+        fields = ["PX_LAST", "DUMMY_FIELD"]
+        start_date = datetime(2025, 2, 6)
+        end_date = datetime(2025, 2, 7)
+        result = data_provider.get(tickers, fields, start_date, end_date, Frequency.DAILY)
+        expected = QFDataArray.create(data=[[[138.53, None], [238.53, None]], [[139.0, None], [235.0, None]]],
+                                      dates=[start_date, end_date], tickers=tickers, fields=fields)
+        assert_dataarrays_equal(result, expected)
+        self.assertEqual(data_provider.logger.warning.call_count, len(tickers))
+
     def test_get_intraday_frequency__single_ticker_multiple_dates_single_field(self):
         session = Mock()
         session.getService.return_value.createRequest.return_value = Request()

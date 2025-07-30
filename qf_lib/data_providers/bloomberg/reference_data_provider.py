@@ -18,7 +18,7 @@ from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.data_providers.bloomberg.bloomberg_names import REF_DATA_SERVICE_URI, SECURITY, FIELD_DATA
 from qf_lib.data_providers.bloomberg.exceptions import BloombergError
-from qf_lib.data_providers.bloomberg.helpers import set_tickers, set_fields, get_response_events, \
+from qf_lib.data_providers.bloomberg.helpers import get_field_exceptions_from_security_data, set_tickers, set_fields, get_response_events, \
     check_event_for_errors, extract_security_data, check_security_data_for_errors, convert_field
 
 
@@ -57,6 +57,10 @@ class ReferenceDataProvider:
                 for security_data in security_data_array.values():
                     try:
                         check_security_data_for_errors(security_data)
+                        fields_with_exceptions = get_field_exceptions_from_security_data(security_data)
+                        if fields_with_exceptions:
+                            self.logger.warning(f"Response contains fields with exceptions\n: {fields_with_exceptions}")
+
                         field_data_array = security_data.getElement(FIELD_DATA)
                         security_name = security_data.getElementAsString(SECURITY) if \
                             security_data.hasElement(SECURITY, True) else None
