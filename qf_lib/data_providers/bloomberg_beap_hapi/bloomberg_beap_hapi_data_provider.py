@@ -217,7 +217,7 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
         universe_id = self._get_universe_id(tickers, universe_creation_time)
         universe_url = self.universe_hapi_provider.get_universe_url(universe_id, tickers_str, False)
 
-        fields_list_id = self._get_fields_id(fields)
+        fields_list_id = f"H{self._get_fields_id(fields)}"
         fields_list_url, field_to_type = self.fields_hapi_provider.get_fields_history_url(fields_list_id, fields)
 
         # for requests - always create a new request with current time
@@ -456,7 +456,7 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
         universe_url = self.universe_hapi_provider.get_universe_url(universe_id, list(tickers_str_to_obj.keys()),
                                                                     overrides)
 
-        fields_list_id = self._get_fields_id(fields)
+        fields_list_id = f"C{self._get_fields_id(fields)}"
         fields_list_url, field_to_type = self.fields_hapi_provider.get_fields_url(fields_list_id, fields)
         # for requests - always create a new request with current time
         request_id = f'cReq{datetime.now():%m%d%H%M%S%f}'
