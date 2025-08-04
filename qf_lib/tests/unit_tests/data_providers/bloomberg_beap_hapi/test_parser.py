@@ -13,12 +13,13 @@
 #     limitations under the License.
 
 import unittest
+from datetime import datetime
 from io import BytesIO
 from textwrap import dedent
 from unittest.mock import patch, Mock
 
 from numpy import datetime64, datetime_as_string, float64, nan
-from pandas import isna
+from pandas import isna, Index
 from pandas._testing import assert_frame_equal
 
 from qf_lib.common.tickers.tickers import BloombergTicker
@@ -678,4 +679,32 @@ class TestBloombergBeapHapiParser(unittest.TestCase):
             index=[BloombergTicker("Hello Index")])
         parser = BloombergBeapHapiParser()
         df = parser.get_current_values(Mock(), {'INDEX_MEMBERS_WEIGHTS': 'Bulk Format'})
+        assert_frame_equal(expected_df, df, check_names=False)
+
+    @patch('qf_lib.data_providers.bloomberg_beap_hapi.bloomberg_beap_hapi_parser.gzip')
+    def test_get_current_values_get_time_field(self, mock):
+        mock.open.return_value = BytesIO(str.encode(dedent(
+            """
+            START-OF-FIELDS
+            ECO_RELEASE_TIME
+            END-OF-FIELDS
+            ...
+            START-OF-DATA
+            SECURITIES|ERROR CODE|NUM FLDS|ECO_RELEASE_TIME|
+            FDIDFDMO Index|0|1|13:30|
+            CPUPXCHG Index|0|1|13:30|
+            ECI SA% Index|0|1|12:30|
+            PCE CMOM Index|0|1|13:30|
+            END-OF-DATA
+            ...
+            END-OF-FILE
+            """
+        )))
+        str_data = ["13:30:00", "13:30:00", "12:30:00", "13:30:00"]
+        expected_df = QFDataFrame(
+            data={"ECO_RELEASE_TIME": [datetime.strptime(time_value, "%H:%M:%S").time() for time_value in str_data]},
+            index=Index(BloombergTicker.from_string(["FDIDFDMO Index", "CPUPXCHG Index", "ECI SA% Index", "PCE CMOM Index"]), name="Ticker"))
+        expected_df.index.name = "Ticker"
+        parser = BloombergBeapHapiParser()
+        df = parser.get_current_values(Mock(), {'ECO_RELEASE_TIME': 'Time'})
         assert_frame_equal(expected_df, df, check_names=False)
