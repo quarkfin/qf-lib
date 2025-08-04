@@ -16,7 +16,6 @@ from typing import List
 from numpy import float64
 from pandas import to_datetime, notna
 from pandas._libs.tslibs.nattype import NaT
-from pandas.conftest import series_with_simple_index
 
 from qf_lib.containers.series.qf_series import QFSeries
 
