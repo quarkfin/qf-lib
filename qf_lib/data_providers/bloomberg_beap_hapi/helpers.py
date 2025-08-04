@@ -16,6 +16,7 @@ from typing import List
 from numpy import float64
 from pandas import to_datetime, notna
 from pandas._libs.tslibs.nattype import NaT
+from pandas.conftest import series_with_simple_index
 
 from qf_lib.containers.series.qf_series import QFSeries
 
@@ -28,6 +29,7 @@ class BloombergDataLicenseTypeConverter:
             "Character": self._string_conversion,
             "Long Character": self._string_conversion,
             "Date or Time": self._date_conversion,
+            "Time": self._time_conversion,
             "Integer": self._float_conversion,  # To support NaN values all Integers are mapped to floats
             "Integer/Real": self._float_conversion,
             "Date": self._date_conversion,
@@ -43,6 +45,10 @@ class BloombergDataLicenseTypeConverter:
     @staticmethod
     def _date_conversion(series: QFSeries) -> QFSeries:
         return to_datetime(series, format="%Y%m%d", errors='coerce').replace({NaT: None})
+
+    @staticmethod
+    def _time_conversion(series: QFSeries) -> QFSeries:
+        return to_datetime(series, errors='coerce').dt.time.replace({NaT: None})
 
     @staticmethod
     def _string_conversion(series: QFSeries) -> QFSeries:
