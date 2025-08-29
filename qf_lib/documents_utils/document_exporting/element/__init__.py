@@ -28,3 +28,6 @@ class Element:
 
     def get_grid_proportion_css_class(self) -> str:
         return str(self.grid_proportion)
+
+    def get_grid_proportion(self) -> int:
+        return self.grid_proportion.to_int()
