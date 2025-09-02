@@ -19,6 +19,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Union, Sequence, Dict, List, Optional, Tuple
 from urllib.parse import urljoin
+from warnings import warn
 
 import pandas as pd
 import requests
@@ -80,6 +81,12 @@ class BloombergBeapHapiDataProvider(AbstractPriceDataProvider, TickersUniversePr
 
     def __init__(self, settings: Settings, reply_timeout: int = 5, timer: Optional[Timer] = None):
         super().__init__(timer=timer)
+        warn(
+            f'{self.__class__.__name__} is deprecated due to the removal of the beap_lib library. '
+            f'It will be replaced with a new data provider that communicates with Bloomberg DL via the REST API.',
+            DeprecationWarning,
+            stacklevel=2
+        )
 
         self.parser = BloombergBeapHapiParser()
 
