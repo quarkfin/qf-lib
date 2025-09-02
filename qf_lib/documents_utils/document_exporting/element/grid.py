@@ -67,7 +67,29 @@ class GridElement(Element):
         env = templates.environment
 
         template = env.get_template("grid.html")
-        return template.render(elements=self._elements, document=document, pdf_mode=self.mode == PlottingMode.PDF)
+
+        def compute_grid_rows(elements, max_span=16):
+            rows = []
+            current_row = []
+            current_span = 0
+
+            for el in elements:
+                span = el.grid_proportion.to_int()
+                if current_span + span > max_span:
+                    rows.append(current_row)
+                    current_row = [el]
+                    current_span = span
+                else:
+                    current_row.append(el)
+                    current_span += span
+
+            if current_row:
+                rows.append(current_row)
+
+            return rows
+
+        rows = compute_grid_rows(self._elements)
+        return template.render(rows=rows, document=document, pdf_mode=self.mode == PlottingMode.PDF)
 
     def generate_data(self):
         return [element.generate_data() for element in self._elements]
