@@ -14,10 +14,9 @@
 from typing import Tuple, Optional, List
 from itertools import chain
 
-from matplotlib.ticker import FuncFormatter
 import numpy as np
 
-from qf_lib.plotting.decorators.axes_formatter_decorator import AxesFormatterDecorator
+from qf_lib.plotting.decorators.axes_formatter_decorator import AxesFormatterDecorator, PercentageFormatter
 from qf_lib.plotting.decorators.coordinate import DataCoordinate
 from qf_lib.plotting.decorators.data_element_decorator import DataElementDecorator
 from qf_lib.plotting.decorators.text_decorator import TextDecorator
@@ -68,7 +67,7 @@ class WaterfallChart(Chart):
                                              fontsize=10))
 
         if self.percentage:
-            self.add_decorator(AxesFormatterDecorator(y_major=FuncFormatter(lambda x, _: f"{x:.2%}")))
+            self.add_decorator(AxesFormatterDecorator(y_major=PercentageFormatter(value_format=".2f")))
 
         # calculate padding dynamically based on the difference between highest and lowest points of the chart
         # for all parts of the charts to be visible
