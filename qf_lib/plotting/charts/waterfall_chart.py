@@ -16,6 +16,7 @@ from itertools import chain
 
 import numpy as np
 
+from qf_lib.plotting.decorators.axes_formatter_decorator import AxesFormatterDecorator, PercentageFormatter
 from qf_lib.plotting.decorators.coordinate import DataCoordinate
 from qf_lib.plotting.decorators.data_element_decorator import DataElementDecorator
 from qf_lib.plotting.decorators.text_decorator import TextDecorator
@@ -24,6 +25,14 @@ from qf_lib.plotting.charts.chart import Chart
 
 
 class WaterfallChart(Chart):
+    """
+    Creates a waterfall chart.
+
+    Parameters
+    ----------
+    percentage: Optional[bool]
+        If True, data will be converted to percentages (e.g. 0.1 to 10%).
+    """
     def __init__(self, percentage: Optional[bool] = False):
         super().__init__()
         self.total_value = None
@@ -32,9 +41,15 @@ class WaterfallChart(Chart):
 
     def plot(self, figsize: Tuple[float, float] = None) -> None:
         self._setup_axes_if_necessary(figsize)
+        self._calculate_cumulative_sum()
         self._configure_axis()
         self._add_text()
         self._apply_decorators()
+
+    def _calculate_cumulative_sum(self):
+        self.cumulative_sum = np.cumsum([0 if data[0] == self.total_value else data[1]
+                                         for d in self.get_data_element_decorators()
+                                         for data in d.data.items()])
 
     def _configure_axis(self):
         data_element_decorators = self.get_data_element_decorators()
@@ -44,19 +59,27 @@ class WaterfallChart(Chart):
         self.axes.set_xticks(range(len(indices) + 2))
         self.axes.set_xticklabels(['', *indices, ''])
 
+        if self.percentage:
+            self.add_decorator(AxesFormatterDecorator(y_major=PercentageFormatter(value_format=".2f")))
+
+        # calculate padding dynamically based on the difference between highest and lowest points of the chart
+        # for all parts of the charts to be visible
+        padding = (self.cumulative_sum.max() - self.cumulative_sum.min()) * 0.1
+        ymin = min(-padding, self.cumulative_sum.min() - padding)
+        ymax = max(padding, self.cumulative_sum.max() + padding)
+        self.axes.set_ylim(ymin, ymax)
+
     def _add_text(self):
         data_element_decorators = self.get_data_element_decorators()
-        self.cumulative_sum = np.cumsum(np.concatenate([d.data.values for d in data_element_decorators]))
         for index, value in enumerate([value for data_element in data_element_decorators
                                        for value in data_element.data.items()]):
             y_loc = value[1] if index == 0 or value[0] == self.total_value else self.cumulative_sum[index]
-            text = "{:.2%}".format(value[1]) if self.percentage else value[1]
+            text = f"{value[1]:.2%}" if self.percentage else f"{value[1]:.2f}"
             self.add_decorator(TextDecorator(text, y=DataCoordinate(y_loc),
                                              x=DataCoordinate(index + 1),
                                              verticalalignment='bottom',
                                              horizontalalignment='center',
                                              fontsize=10))
-        self.axes.set_ylim(0, self.cumulative_sum[:-1].max() + 0.0002)
 
     def _plot_waterfall(self, index, value):
         if index == 0 or value[0] == self.total_value:
