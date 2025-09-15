@@ -91,12 +91,12 @@ class WaterfallChart(Chart):
         self.add_decorator(DataElementDecorator(series))
 
     def _plot_waterfall(self, index, value):
-        if index == 0 or value[0] == self.total_label:
-            color = '#A6A6A6' if value[0] == self.total_label else '#4472C4' if value[1] > 0 else '#ED7D31'
+        if value[0] == self.total_label:
+            color = '#A6A6A6'
             bottom = 0
         else:
             color = '#4472C4' if value[1] > 0 else '#ED7D31'
-            bottom = self.cumulative_sum[index - 1]
+            bottom = self.cumulative_sum[index - 1] if index >= 1 else 0
 
         self.axes.bar(index + 1, value[1], bottom=bottom, color=color)
 
