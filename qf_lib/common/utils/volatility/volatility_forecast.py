@@ -152,7 +152,7 @@ class VolatilityForecast:
         column_str = 'h.{}'.format(self.horizon)  # take value for the selected horizon
         forecasts_series = forecasts.variance[column_str]
         # take the last value (most recent forecast)
-        forecasted_value = forecasts_series[-1]
+        forecasted_value = forecasts_series.iloc[-1]
         # convert to volatility (if power=2, forecasted_value corresponds to variance, etc.)
         forecasted_vol = forecasted_value ** (1 / float(am.volatility.power))
         return forecasted_vol

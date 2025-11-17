@@ -17,13 +17,11 @@ from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 
 from qf_lib.data_providers.bloomberg import BloombergDataProvider
-from qf_lib.data_providers.quandl.quandl_data_provider import QuandlDataProvider
 from demo_scripts.demo_configuration.demo_settings import get_demo_settings
 from qf_lib.common.enums.price_field import PriceField
 from qf_lib.common.tickers.tickers import BloombergTicker
 from qf_lib.common.utils.dateutils.string_to_date import str_to_date
 from qf_lib.containers.series.simple_returns_series import SimpleReturnsSeries
-from qf_lib.data_providers.general_price_provider import GeneralPriceProvider
 from qf_lib.indicators.market_stress_indicator_us import MarketStressIndicator
 from qf_lib.plotting.charts.histogram_chart import HistogramChart
 from qf_lib.plotting.helpers.create_line_chart import create_line_chart
@@ -46,13 +44,10 @@ weights = [1, 1, 1, 1, 1, 1, 3]
 
 def main():
     settings = get_demo_settings()
-    bbg = BloombergDataProvider(settings)
-    quandl = QuandlDataProvider(settings)
-    data_provider = GeneralPriceProvider(bbg, quandl)  # type: GeneralPriceProvider
+    data_provider = BloombergDataProvider(settings)
 
     msi = MarketStressIndicator(tickers, weights, data_provider)
     stress_indicator_tms = msi.get_indicator(years_rolling, start_date, end_date, step)
-    # stress_indicator_tms = cached_value(_get_indicator, indicator_cache_path)  # type: QFSeries
 
     fig_size = (10, 5)
     title = "Stress Indicator US {}Y rolling".format(years_rolling)

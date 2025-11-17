@@ -44,6 +44,6 @@ def cagr(qf_series: QFSeries, frequency=None):
     period_length = last_date - first_date
     period_length_in_years = to_days(period_length) / DAYS_PER_YEAR_AVG
 
-    total_return = prices_tms[-1] / prices_tms[0] - 1
+    total_return = prices_tms.iloc[-1] / prices_tms.iloc[0] - 1
     return annualise_total_return(
         total_return=total_return, period_length_in_years=period_length_in_years, returns_type=SimpleReturnsSeries)

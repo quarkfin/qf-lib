@@ -182,8 +182,11 @@ class HistoricalDataProvider:
                 security_name = security_data.getElementAsString(SECURITY)
 
                 try:
-                    ticker = ticker_str_to_ticker[security_name]
-                    tickers_data_dict[ticker] = QFDataFrame(pd.concat([dates_fields_values, tickers_data_dict[ticker]]))
+                    if not dates_fields_values.empty:
+                        ticker = ticker_str_to_ticker[security_name]
+                        tickers_data_dict[ticker] = QFDataFrame(pd.concat(
+                            [dates_fields_values, tickers_data_dict[ticker]])
+                        )
                 except KeyError:
                     self.logger.warning(f"Received data for a ticker which was not present in the request: "
                                         f"{security_name}. The data for that ticker will be excluded from parsing.")

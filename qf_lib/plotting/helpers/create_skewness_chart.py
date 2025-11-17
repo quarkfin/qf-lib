@@ -64,7 +64,7 @@ def create_skewness_chart(series: QFSeries, title: str = None) -> LineChart:
     line_chart.add_decorator(skewed_series_element)
 
     # Add a point at the end
-    point = (skewed_price_series.index[-1], skewed_price_series[-1])
+    point = (skewed_price_series.index[-1], skewed_price_series.iloc[-1])
     point_emphasis = PointEmphasisDecorator(skewed_series_element, point, font_size=9)
     line_chart.add_decorator(point_emphasis)
 

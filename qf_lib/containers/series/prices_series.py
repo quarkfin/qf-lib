@@ -53,7 +53,7 @@ class PricesSeries(QFSeries):
         if initial_price is None:
             return self.copy()
 
-        return self / self[0] * initial_price
+        return self / self.iloc[0] * initial_price
 
     def total_cumulative_return(self) -> float:
         return self.values[-1] / self.values[0] - 1.0

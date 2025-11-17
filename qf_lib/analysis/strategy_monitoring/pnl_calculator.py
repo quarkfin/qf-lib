@@ -13,6 +13,7 @@
 #     limitations under the License.
 from datetime import datetime
 from typing import List, Dict
+from warnings import warn
 
 from pandas import concat, date_range
 
@@ -50,6 +51,8 @@ class PnLCalculator:
         """
         self._data_provider = data_provider
         self._data_provider.set_timer(SettableTimer())
+        warn('PnLCalculator is deprecated and will be removed in the next version of qf_lib',
+             DeprecationWarning, stacklevel=2)
 
     def compute_pnl(self, ticker: Ticker, transactions: List[Transaction], start_date: datetime, end_date: datetime) \
             -> PricesSeries:

@@ -8,7 +8,7 @@
 [![Documentation Status](https://readthedocs.org/projects/qf-lib/badge/)](https://qf-lib.readthedocs.io/)
 [![CI](https://github.com/quarkfin/qf-lib/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/quarkfin/qf-lib/actions/workflows/tests.yml)
 ![PyPI - Format](https://img.shields.io/pypi/format/qf-lib?color=lightgrey)
-![PyPI - Status](https://img.shields.io/pypi/status/qf-lib?color=darkred)
+![PyPI - Status](https://img.shields.io/pypi/status/qf-lib?color=darkgreen)
 
 ## What is QF-lib?
 **QF-Lib** is a Python library that provides high quality tools for quantitative finance. 
@@ -50,3 +50,15 @@ In order to facilitate the GTK3+ installation process for Windows you can use
 * Installation guide: https://qf-lib.readthedocs.io/en/latest/installation.html
 * Configuration guide: https://qf-lib.readthedocs.io/en/latest/configuration.html
 * API documentation: https://qf-lib.readthedocs.io/
+
+## How to Contribute
+
+We welcome all contributions - bug reports, fixes, documentation improvements, new features, or ideas! Here’s how you can get involved:
+
+* Find an Issue: Check out the GitHub Issues tab. Look for labels like *documentation* or *good first issue* to get started.
+* Triage Issues: Help by reproducing bugs, asking for missing details (e.g., version numbers, steps to reproduce), or clarifying discussions.
+* Share Your Ideas: If you spot something missing or have an improvement in mind, open an issue or submit a pull request.
+* Join the Discussion: Have questions or want to collaborate? Join our [Discord community](https://discord.gg/CfMf8zaeX9).
+
+Code of Conduct: All participants are expected to follow our [Code of Conduct](https://github.com/quarkfin/qf-lib/blob/master/CODE_OF_CONDUCT.md).
+

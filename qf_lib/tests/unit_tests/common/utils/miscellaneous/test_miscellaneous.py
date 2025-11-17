@@ -157,10 +157,10 @@ class TestMiscellaneousUtils(TestCase):
         managed_series, weights_series = vol_manager.get_managed_series(vol_level=0.1, window_size=window_size, lag=1)
 
         ret = 0.005750
-        self.assertAlmostEqual(abs(managed_series[window_size]), ret, places=5)
-        self.assertAlmostEqual(abs(managed_series[window_size + 1]), ret, places=5)
-        self.assertAlmostEqual(abs(managed_series[-2]), ret, places=5)
-        self.assertAlmostEqual(abs(managed_series[-1]), ret, places=5)
+        self.assertAlmostEqual(abs(managed_series.iloc[window_size]), ret, places=5)
+        self.assertAlmostEqual(abs(managed_series.iloc[window_size + 1]), ret, places=5)
+        self.assertAlmostEqual(abs(managed_series.iloc[-2]), ret, places=5)
+        self.assertAlmostEqual(abs(managed_series.iloc[-1]), ret, places=5)
 
     def test_volatility_manager_min_max_leverage(self):
         periods = 20
@@ -181,8 +181,8 @@ class TestMiscellaneousUtils(TestCase):
         managed_series, weights_series = vol_manager.get_managed_series(vol_level=0.2, window_size=window_size, lag=1,
                                                                         min_leverage=min_lev, max_leverage=max_lev)
 
-        self.assertAlmostEqual(abs(managed_series[window_size]), abs(max_lev * series[window_size]), places=5)
-        self.assertAlmostEqual(abs(managed_series[-1]), abs(min_lev * series[-1]), places=5)
+        self.assertAlmostEqual(abs(managed_series.iloc[window_size]), abs(max_lev * series.iloc[window_size]), places=5)
+        self.assertAlmostEqual(abs(managed_series.iloc[-1]), abs(min_lev * series.iloc[-1]), places=5)
 
-        self.assertAlmostEqual(abs(weights_series[window_size]), abs(max_lev), places=5)
-        self.assertAlmostEqual(abs(weights_series[-1]), abs(min_lev), places=5)
+        self.assertAlmostEqual(abs(weights_series.iloc[window_size]), abs(max_lev), places=5)
+        self.assertAlmostEqual(abs(weights_series.iloc[-1]), abs(min_lev), places=5)

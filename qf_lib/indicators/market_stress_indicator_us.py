@@ -79,5 +79,5 @@ class MarketStressIndicator:
 
         last_row = zscore_df.tail(1)
         result = last_row.dot(self.weights)  # produces a weighted sum of the z-scored values
-        result = result[0] / sum(self.weights)  # result was a single element series, return the value only
+        result = result.iloc[0] / sum(self.weights)  # result was a single element series, return the value only
         return result

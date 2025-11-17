@@ -14,6 +14,7 @@
 
 from datetime import datetime
 from typing import List, Union, Dict
+from warnings import warn
 
 import numpy as np
 import matplotlib as plt
@@ -92,6 +93,8 @@ class AssetPerfAndDrawdownSheet(AbstractDocument):
                  frequency: Frequency = Frequency.YEARLY):
 
         super().__init__(settings, pdf_exporter, title=title)
+        warn('AssetPerfAndDrawdownSheet is deprecated and will be removed in the next version of qf_lib',
+             DeprecationWarning, stacklevel=2)
 
         self.tickers = [t for tickers_list in category_to_model_tickers.values() for t in tickers_list]
         self._ticker_to_category = {ticker: c for c, tickers_list in category_to_model_tickers.items()
