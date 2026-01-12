@@ -278,16 +278,8 @@ class ModelController:
 
     def iterrows(self):
         for (idx, row), (_, styles_row) in zip(self.data.iterrows(), self.styles.iterrows()):
-            # Explicitly iterate to extract actual values, ensuring we get CellStyle objects
             row_list = [row_val for _, row_val in row.items()]
-            styles_list = []
-
-            for col_name, style_val in styles_row.items():
-                # Ensure we have a CellStyle object, not a QFSeries
-                if isinstance(style_val, QFSeries):
-                    # This shouldn't happen, but if it does, get the first value
-                    style_val = style_val.iloc[0] if len(style_val) > 0 else CellStyle(RowStyle(idx), ColumnStyle(col_name))
-                styles_list.append(style_val)
+            styles_list = [style_val for _, style_val in styles_row.items()]
 
             yield ((idx, row_list), (idx, styles_list))
 
