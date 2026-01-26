@@ -21,13 +21,11 @@ class Document:
     create.
     """
 
-    def __init__(self, name: str, optimise: bool = False, image_format: str = "PNG"):
+    def __init__(self, name: str, image_format: str = "PNG"):
         """
         Args:
             name: str
                 Name of the document.
-            optimise: bool
-                Reduces size of the produced document by lowering the quality of the image.
             image_format: str
                 Select which format to use for rendering the image. The options are PNG and SVG with SVG generally
                 reducing the image memory requirements.
@@ -38,7 +36,7 @@ class Document:
         self._generated_html = None  # Caching for generate_html.
         self.image_format = image_format
 
-    def generate_html(self, optimise: bool=False, image_format: str="PNG") -> str:
+    def generate_html(self, image_format: str="PNG") -> str:
         """
         Generates the HTML based on the elements in this document and returns it as a string.
         """

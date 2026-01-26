@@ -34,8 +34,8 @@ class PDFExporter(DocumentExporter):
 
     DEFAULT_CSS_DIR_NAME = 'default_css'
 
-    def __init__(self, settings: Settings, optimise: bool=False, image_format: str="PNG"):
-        super().__init__(settings, optimise, image_format)
+    def __init__(self, settings: Settings, image_format: str="PNG"):
+        super().__init__(settings, image_format)
 
         if hasattr(settings, 'document_css_directory'):
             self._document_css_dir = join(get_starting_dir_abs_path(), settings.document_css_directory)
