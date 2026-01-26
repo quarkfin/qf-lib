@@ -159,7 +159,7 @@ class Chart:
             buffer.seek(0)
 
         # Optimise file size.
-        if optimise and image_format != "SVG":
+        if optimise and image_format != "SVG" and image_format != "SVGZ":
             img = Image.open(buffer)
             # Optimise image by changing its color space
             img = img.convert("RGB").convert("P", palette=Image.Palette.ADAPTIVE)
