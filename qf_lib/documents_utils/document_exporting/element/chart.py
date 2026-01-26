@@ -89,6 +89,7 @@ class ChartElement(Element):
         -------
         A string with the base64 image (with encoding prefix) of the chart.
         """
+        self.logger.warning("This method is deprecated and will be deleted in the next major release.")
         if self._chart.closed:
             error_message = 'Chart generation error: The chart you are trying to generate has been already closed. ' \
                             'Check if you are not trying to regenerate the json for an already processed chart.'
@@ -120,7 +121,7 @@ class ChartElement(Element):
             return result
 
         try:
-            base64 = self._chart.render_as_base64_image(self.figsize, self.dpi, self.optimise,
+            base64 = self._chart.render_as_base64_image(self.figsize, self.dpi, document.optimise, document.image_format,
                                                         **self.savefig_settings)
             env = templates.environment
             template = env.get_template("chart.html")

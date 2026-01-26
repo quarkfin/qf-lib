@@ -34,8 +34,8 @@ class PDFExporter(DocumentExporter):
 
     DEFAULT_CSS_DIR_NAME = 'default_css'
 
-    def __init__(self, settings: Settings):
-        super().__init__(settings)
+    def __init__(self, settings: Settings, optimise: bool=False, image_format: str="PNG"):
+        super().__init__(settings, optimise, image_format)
 
         if hasattr(settings, 'document_css_directory'):
             self._document_css_dir = join(get_starting_dir_abs_path(), settings.document_css_directory)
@@ -82,37 +82,38 @@ class PDFExporter(DocumentExporter):
         the absolute path to the output PDF file that was saved
         """
         css_file_paths = []
-        documents = [self._merge_documents(documents, filename)]
+        document = self._merge_documents(documents, filename)
+        document.optimise = self.optimise
+        document.image_format = self.image_format
 
         # Find the output directory
         output_dir = self.get_output_dir(export_dir)
         output_filename = os.path.join(output_dir, filename)
 
-        for document in documents:
-            if include_table_of_contents:
-                self._add_table_of_contents(document)
+        if include_table_of_contents:
+            self._add_table_of_contents(document)
 
-            # Generate the full document HTML
-            self.logger.info("Generating HTML for PDF...")
-            html = document.generate_html()
+        # Generate the full document HTML
+        self.logger.info("Generating HTML for PDF...")
+        html = document.generate_html()
 
-            # Automatically include all the css files in the `document_css/base` directory
-            base_css = os.listdir(self._document_css_dir)
-            for name in base_css:
-                path = os.path.join(self._document_css_dir, name)
-                if os.path.isfile(path):
-                    css_file_paths.append(CSS(path))
+        # Automatically include all the css files in the `document_css/base` directory
+        base_css = os.listdir(self._document_css_dir)
+        for name in base_css:
+            path = os.path.join(self._document_css_dir, name)
+            if os.path.isfile(path):
+                css_file_paths.append(CSS(path))
 
-            # If we've set custom css files, add them to the pdf
-            if css_file_names is not None:
-                for name in css_file_names:
-                    css_file_paths.append(CSS(os.path.join(self._document_css_dir, name + ".css")))
+        # If we've set custom css files, add them to the pdf
+        if css_file_names is not None:
+            for name in css_file_names:
+                css_file_paths.append(CSS(os.path.join(self._document_css_dir, name + ".css")))
 
-            # Parse the HTML.
-            html = HTML(string=html)
+        # Parse the HTML.
+        html = HTML(string=html)
 
-            # Write out the PDF.
-            self.logger.info("Rendering PDF in {}...".format(output_filename))
-            html.write_pdf(output_filename, css_file_paths)
+        # Write out the PDF.
+        self.logger.info("Rendering PDF in {}...".format(output_filename))
+        html.write_pdf(output_filename, css_file_paths)
 
         return output_filename

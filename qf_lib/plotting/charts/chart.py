@@ -129,9 +129,19 @@ class Chart:
         raise NotImplementedError
 
     def render_as_base64_image(
-            self, figsize: Tuple[float, float] = None, dpi: int = 250, optimise: bool = False, **savefig_settings) -> str:
+            self, figsize: Tuple[float, float] = None, dpi: int = 250, optimise: bool = False, image_format: str = "PNG", **savefig_settings) -> str:
         """
         Plots the chart and returns the base64 image.
+        Args:
+            figsize: Size of the plot.
+            dpi: Dots per inch. Resolution of the produced plot.
+            optimise: Reduces size of the produced document by lowering the quality of the image.
+            image_format: Select which format to use for rendering the image. The options are PNG and SVG with SVG
+            generally reducing the image memory requirements.
+            **savefig_settings: Other arguments.
+
+        Returns:
+            Rendered base64 image.
         """
         # Lock the plot_lock.
         with Chart.plot_lock:
@@ -140,7 +150,7 @@ class Chart:
 
             # Render as PNG.
             buffer = io.BytesIO()
-            self.figure.savefig(buffer, format="PNG", dpi=dpi, **savefig_settings)
+            self.figure.savefig(buffer, format="SVG", dpi=dpi, **savefig_settings)
 
             buffer.seek(0)
 
@@ -152,7 +162,7 @@ class Chart:
             buffer.seek(0)
             # Re-save the image with the converted color space and with the optimise flag set to ensure PIL performs
             # an optimise pass on the file.
-            img.save(buffer, format="PNG", optimize=True, quality=70)
+            img.save(buffer, format="SVG", optimize=True, quality=70)
             buffer.seek(0)
 
         # Encode as base64.
