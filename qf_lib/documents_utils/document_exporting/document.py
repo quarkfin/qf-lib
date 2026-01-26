@@ -36,7 +36,6 @@ class Document:
         self.parent_builder = None
         self.name = name
         self._generated_html = None  # Caching for generate_html.
-        self.optimise = optimise
         self.image_format = image_format
 
     def generate_html(self, optimise: bool=False, image_format: str="PNG") -> str:

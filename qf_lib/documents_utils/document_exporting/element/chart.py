@@ -121,7 +121,7 @@ class ChartElement(Element):
             return result
 
         try:
-            base64 = self._chart.render_as_base64_image(self.figsize, self.dpi, document.optimise, document.image_format,
+            base64 = self._chart.render_as_base64_image(self.figsize, self.dpi, self.optimise, document.image_format,
                                                         **self.savefig_settings)
             env = templates.environment
             template = env.get_template("chart.html")

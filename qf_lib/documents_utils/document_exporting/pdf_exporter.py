@@ -83,7 +83,6 @@ class PDFExporter(DocumentExporter):
         """
         css_file_paths = []
         document = self._merge_documents(documents, filename)
-        document.optimise = self.optimise
         document.image_format = self.image_format
 
         # Find the output directory
