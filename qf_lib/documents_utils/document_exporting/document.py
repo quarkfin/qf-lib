@@ -36,7 +36,7 @@ class Document:
         self._generated_html = None  # Caching for generate_html.
         self.image_format = image_format
 
-    def generate_html(self, image_format: str="PNG") -> str:
+    def generate_html(self, image_format: str = "PNG") -> str:
         """
         Generates the HTML based on the elements in this document and returns it as a string.
         """

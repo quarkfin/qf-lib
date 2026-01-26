@@ -29,7 +29,7 @@ class DocumentExporter:
     Abstract class for document_exporting of documents.
     """
 
-    def __init__(self, settings: Settings, image_format: str="PNG"):
+    def __init__(self, settings: Settings, image_format: str = "PNG"):
         self._output_root_dir = join(get_starting_dir_abs_path(), settings.output_directory)
         self.image_format = image_format
 
