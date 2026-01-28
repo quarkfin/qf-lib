@@ -31,6 +31,7 @@ class DocumentExporter:
 
     def __init__(self, settings: Settings):
         self._output_root_dir = join(get_starting_dir_abs_path(), settings.output_directory)
+        self.image_format = settings.image_format if hasattr(settings, 'image_format') else "PNG"
 
     def get_output_dir(self, export_dir: str) -> str:
         """
@@ -54,8 +55,7 @@ class DocumentExporter:
 
         return output_dir
 
-    @staticmethod
-    def _merge_documents(documents: Sequence[Document], filename: str) -> Document:
+    def _merge_documents(self, documents: Sequence[Document], filename: str) -> Document:
         """
         Merges documents into a single document. All elements inside the documents are placed in the returned document.
 
@@ -70,6 +70,8 @@ class DocumentExporter:
         for document in documents:
             for element in document.elements:
                 result.add_element(element)
+
+        result.image_format = self.image_format
 
         return result
 

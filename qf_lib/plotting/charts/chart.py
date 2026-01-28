@@ -129,9 +129,29 @@ class Chart:
         raise NotImplementedError
 
     def render_as_base64_image(
-            self, figsize: Tuple[float, float] = None, dpi: int = 250, optimise: bool = False, **savefig_settings) -> str:
+            self, figsize: Tuple[float, float] = None, dpi: int = 250, optimise: bool = False, image_format: str = "PNG", **savefig_settings) -> str:
         """
         Plots the chart and returns the base64 image.
+
+        Parameters
+        ----------
+        figsize: Tuple[float, float]
+            Size of the plot.
+        dpi: int
+            Dots per inch. Resolution of the produced plot.
+        optimise: bool
+            Reduces size of the produced document by lowering the quality of the image. The optimised is
+            skipped when vector image format is selected as the optimise code is written for raster images.
+        image_format: str
+            Select which format to use for rendering the image. The options depend on the used matplotlib
+            backend. Most of them support png, pdf, ps, eps and svg.
+        **savefig_settings:
+            Other arguments.
+
+        Returns
+        -------
+        str
+            Rendered base64 image.
         """
         # Lock the plot_lock.
         with Chart.plot_lock:
@@ -140,19 +160,21 @@ class Chart:
 
             # Render as PNG.
             buffer = io.BytesIO()
-            self.figure.savefig(buffer, format="PNG", dpi=dpi, **savefig_settings)
+            if image_format.lower() not in list(self.figure.canvas.get_supported_filetypes().keys()):
+                raise Exception("Unsupported image format")
+            self.figure.savefig(buffer, format=image_format, dpi=dpi, **savefig_settings)
 
             buffer.seek(0)
 
         # Optimise file size.
-        if optimise:
+        if optimise and image_format not in ("SVG", "SVGZ"):
             img = Image.open(buffer)
             # Optimise image by changing its color space
             img = img.convert("RGB").convert("P", palette=Image.Palette.ADAPTIVE)
             buffer.seek(0)
             # Re-save the image with the converted color space and with the optimise flag set to ensure PIL performs
             # an optimise pass on the file.
-            img.save(buffer, format="PNG", optimize=True, quality=70)
+            img.save(buffer, format=image_format, optimize=True, quality=70)
             buffer.seek(0)
 
         # Encode as base64.

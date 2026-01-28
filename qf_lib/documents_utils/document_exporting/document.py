@@ -21,11 +21,25 @@ class Document:
     create.
     """
 
-    def __init__(self, name: str):
+    def __init__(self, name: str, image_format: str = "PNG"):
+        """
+        Parameters
+        ----------
+        name: str
+            Name of the document.
+        image_format: str
+            Format used for rendering images within the document. The options are PNG and SVG, with SVG generally
+            reducing the image memory requirements.
+        """
         self.elements = []
         self.parent_builder = None
         self.name = name
         self._generated_html = None  # Caching for generate_html.
+
+        if image_format not in ("PNG", "SVG"):
+            raise ValueError("image_format must be either 'PNG' or 'SVG'")
+
+        self.image_format = image_format
 
     def generate_html(self) -> str:
         """
