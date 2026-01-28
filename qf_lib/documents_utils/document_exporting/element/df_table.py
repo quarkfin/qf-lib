@@ -247,7 +247,13 @@ class ModelController:
                 list_of_modified_elements = [self.index_styling[i] for i in location if
                                              0 <= i < len(self.index_styling)]
         elif data_type == DataType.ROW:
-            list_of_modified_elements = self.rows_styles.loc[location].tolist()
+            # Handle both single row index and sequence of row indices
+            row_styles_result = self.rows_styles.loc[location]
+            if isinstance(row_styles_result, QFSeries):
+                list_of_modified_elements = row_styles_result.tolist()
+            else:
+                # Single RowStyle object
+                list_of_modified_elements = [row_styles_result]
         elif data_type == DataType.COLUMN:
             location = location if isinstance(location, list) else [location]
             list_of_modified_elements = [self.columns_styles[column_name] for column_name in location]
@@ -271,7 +277,11 @@ class ModelController:
             self._add_styles_classes(modified_element, data_to_update, styling_type, modify_data)
 
     def iterrows(self):
-        return zip(self.data.iterrows(), self.styles.iterrows())
+        for (idx, row), (_, styles_row) in zip(self.data.iterrows(), self.styles.iterrows()):
+            row_list = [row_val for _, row_val in row.items()]
+            styles_list = [style_val for _, style_val in styles_row.items()]
+
+            yield ((idx, row_list), (idx, styles_list))
 
     @property
     def styles(self):
