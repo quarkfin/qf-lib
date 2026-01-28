@@ -13,6 +13,7 @@
 #     limitations under the License.
 import traceback
 import uuid
+import warnings
 from typing import Tuple, Optional
 
 from jinja2 import Template
@@ -89,7 +90,9 @@ class ChartElement(Element):
         -------
         A string with the base64 image (with encoding prefix) of the chart.
         """
-        self.logger.warning("This method is deprecated and will be deleted in the next major release.")
+        warnings.warn(DeprecationWarning(
+            "This method is deprecated and will be deleted in the next major release."
+        ), stacklevel=3)
         if self._chart.closed:
             error_message = 'Chart generation error: The chart you are trying to generate has been already closed. ' \
                             'Check if you are not trying to regenerate the json for an already processed chart.'
