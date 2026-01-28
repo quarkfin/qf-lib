@@ -34,8 +34,8 @@ class PDFExporter(DocumentExporter):
 
     DEFAULT_CSS_DIR_NAME = 'default_css'
 
-    def __init__(self, settings: Settings, image_format: str = "PNG"):
-        super().__init__(settings, image_format)
+    def __init__(self, settings: Settings):
+        super().__init__(settings)
 
         if hasattr(settings, 'document_css_directory'):
             self._document_css_dir = join(get_starting_dir_abs_path(), settings.document_css_directory)
@@ -83,7 +83,6 @@ class PDFExporter(DocumentExporter):
         """
         css_file_paths = []
         document = self._merge_documents(documents, filename)
-        document.image_format = self.image_format
 
         # Find the output directory
         output_dir = self.get_output_dir(export_dir)

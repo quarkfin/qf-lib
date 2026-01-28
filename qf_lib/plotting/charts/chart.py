@@ -132,17 +132,25 @@ class Chart:
             self, figsize: Tuple[float, float] = None, dpi: int = 250, optimise: bool = False, image_format: str = "PNG", **savefig_settings) -> str:
         """
         Plots the chart and returns the base64 image.
-        Args:
-            figsize: Size of the plot.
-            dpi: Dots per inch. Resolution of the produced plot.
-            optimise: Reduces size of the produced document by lowering the quality of the image. The optimised is
-                skipped when vector image format is selected as the optimise code is written for raster images.
-            image_format: Select which format to use for rendering the image. The options depend on the used matplotlib
-                backend. Most of them support png, pdf, ps, eps and svg.
-            generally reducing the image memory requirements.
-            **savefig_settings: Other arguments.
 
-        Returns:
+        Parameters
+        ----------
+        figsize: Tuple[float, float]
+            Size of the plot.
+        dpi: int
+            Dots per inch. Resolution of the produced plot.
+        optimise: bool
+            Reduces size of the produced document by lowering the quality of the image. The optimised is
+            skipped when vector image format is selected as the optimise code is written for raster images.
+        image_format: str
+            Select which format to use for rendering the image. The options depend on the used matplotlib
+            backend. Most of them support png, pdf, ps, eps and svg.
+        **savefig_settings:
+            Other arguments.
+
+        Returns
+        -------
+        str
             Rendered base64 image.
         """
         # Lock the plot_lock.
@@ -159,7 +167,7 @@ class Chart:
             buffer.seek(0)
 
         # Optimise file size.
-        if optimise and image_format != "SVG" and image_format != "SVGZ":
+        if optimise and image_format not in ("SVG", "SVGZ"):
             img = Image.open(buffer)
             # Optimise image by changing its color space
             img = img.convert("RGB").convert("P", palette=Image.Palette.ADAPTIVE)
