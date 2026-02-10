@@ -355,7 +355,8 @@ class PortfolioAnalysisSheet(AbstractDocument):
 
             pnl_series = QFSeries(
                 data=closed_positions_pnl["Realised PnL"] + open_positions_pnl['Total PnL of open position'],
-                index=time_index).ffill().fillna(0.0)
+                index=time_index).ffill().fillna(0.0).infer_objects(copy=False)
+
             return_data[title] = pnl_series
 
         return return_data
