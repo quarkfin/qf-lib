@@ -15,7 +15,6 @@
 import hashlib
 import json
 import re
-import threading
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Union, Sequence, Dict, List, Optional, Tuple
@@ -102,8 +101,6 @@ class BloombergDLDataProvider(AbstractPriceDataProvider, TickersUniverseProvider
         self.reply_timeout: RelativeDelta = RelativeDelta(minutes=reply_timeout)
         self.save_to_disk = save_to_disk
         self.downloads_path = self._prepare_downloads_path(settings) if save_to_disk else None
-
-        self._resource_lock = threading.Lock()
 
         self._terminal_identity_user = self._get_settings_attribute(settings.bbg_dl, "user")
         self._terminal_identity_sn = self._get_settings_attribute(settings.bbg_dl, "sn")

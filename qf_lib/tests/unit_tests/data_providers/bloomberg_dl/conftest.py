@@ -38,7 +38,6 @@ def data_provider():
         self.parser = Mock()
         self.save_to_disk = False
         self.downloads_path = None
-        self._resource_lock = Mock()
         self._terminal_identity_user = None
         self._terminal_identity_sn = None
         self.session = Mock()
