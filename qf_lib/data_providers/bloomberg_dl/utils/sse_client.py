@@ -180,4 +180,3 @@ class SSEClient:
         self.logger.debug(f'Sleeping {self.retry_interval}s before reconnecting')
         time.sleep(self.retry_interval)
         self._connect()
-
