@@ -54,13 +54,13 @@ setup(
     extras_require={
         "documentation": ["autodocsumm==0.2.9", "sphinx_rtd_theme==1.2.0", "Sphinx==5.0", "docutils==0.18.1", "markupsafe==2.0.1"],
         "interactive brokers": ["ibapi"],
-        "bloomberg_beap_hapi": ["PyJWT>1.,<2.0.0", "retrying>=1.3.3", "beap-lib==0.0.1", "requests>=2.25.1,<=2.31.0"],
+        "bloomberg_beap_hapi": ["PyJWT>1.0,<2.0.0", "retrying>=1.3.3", "beap-lib==0.0.1", "requests>=2.25.1,<=2.31.0"],
         "bloomberg_dl": ["cryptography", "fastparquet", "oauthlib", "PyJWT>=2.0.0,<2.11.0", "retrying>=1.3.3",
                          "requests>=2.25.1,<=2.31.0", "requests_oauthlib", "urllib3"],
         "blpapi": ["blpapi>=3.21.0,<=3.24.4"],
         "quandl": ["quandl>=3.6.1,<=3.7.0"],
         "yfinance": ["yfinance>=0.2.55"],
-        "detailed_analysis": ["statsmodels>=0.13.0,<0.14.0", "scipy>=1.6.3 ,<1.12.0", "cvxopt>=1.2.7,<=1.3.2",
+        "detailed_analysis": ["statsmodels>=0.13.0,<0.14.0", "scipy>=1.6.3,<1.12.0", "cvxopt>=1.2.7,<=1.3.2",
                               "arch>=5.4,<=7.0"],
         "alpaca": ["alpaca-py>=0.37.0"]
     },

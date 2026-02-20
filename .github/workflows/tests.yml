@@ -103,6 +103,7 @@ jobs:
           pip install -e ".[yfinance]"
           pip install -e ".[detailed_analysis]"
           pip install -e ".[alpaca]"
+          pip install -e ".[bloomberg_dl]"
           pip install flake8==5.0.4 pyflakes==2.5.0 pytest
           pip install coverage
       - name: Integration tests
