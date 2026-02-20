@@ -19,8 +19,8 @@ import pytest
 from requests.exceptions import ChunkedEncodingError, HTTPError
 
 from qf_lib.data_providers.bloomberg_dl.utils.sse_client import SSEEvent, SSEClient
-from qf_lib.tests.unit_tests.data_providers.bloomberg_dl.conftest import get_mock_session, get_mock_response, event, \
-    RESPONSE_401_UNAUTHORIZED, RESPONSE_500_INTERNAL_SERVER_ERROR, client
+from qf_lib.tests.unit_tests.data_providers.bloomberg_dl.conftest import get_mock_session, get_mock_response, \
+    RESPONSE_401_UNAUTHORIZED, RESPONSE_500_INTERNAL_SERVER_ERROR
 
 
 @pytest.mark.parametrize("raw,expected_heartbeat", [

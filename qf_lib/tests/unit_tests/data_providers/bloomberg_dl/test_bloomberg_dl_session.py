@@ -19,8 +19,7 @@ import pytest
 from requests.exceptions import HTTPError
 
 from qf_lib.data_providers.bloomberg_dl.utils.bloomberg_dl_session import BloombergDLSession
-from qf_lib.tests.unit_tests.data_providers.bloomberg_dl.conftest import get_mock_token, get_mock_response, session, \
-    expired_session
+from qf_lib.tests.unit_tests.data_providers.bloomberg_dl.conftest import get_mock_token, get_mock_response
 
 
 def test_init_(session):
