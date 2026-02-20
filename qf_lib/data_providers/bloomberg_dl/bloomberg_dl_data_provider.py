@@ -163,7 +163,7 @@ class BloombergDLDataProvider(AbstractPriceDataProvider, TickersUniverseProvider
         look_ahead_bias: bool
             If set to False, the look-ahead bias will be taken care of to make sure no future data is returned.
         overrides: dict, optional
-            A dictionary of field overrides, e.g. ``{'INCLUDE_EXPIRED_CONTRACTS': 'Y'}``.
+            A dictionary of field overrides, e.g. {'INCLUDE_EXPIRED_CONTRACTS': 'Y'}.
 
         Returns
         -------
@@ -233,7 +233,7 @@ class BloombergDLDataProvider(AbstractPriceDataProvider, TickersUniverseProvider
             Fields of securities which should be retrieved.
         overrides: dict, optional
             A dictionary where each key is a field mnemonic and the value is the override string.
-            Example: ``{'INCLUDE_EXPIRED_CONTRACTS': 'Y'}``.
+            Example: {'INCLUDE_EXPIRED_CONTRACTS': 'Y'}.
         pricing_source: str, optional
             Pricing source applied to all financial instruments in the request universe.
             By default equals to 'BGN'.
