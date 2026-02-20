@@ -16,7 +16,7 @@ data_providers
     prefetching_data_provider.PrefetchingDataProvider
     binance_dp.binance_data_provider.BinanceDataProvider
     bloomberg.bloomberg_data_provider.BloombergDataProvider
-    bloomberg_beap_hapi.bloomberg_beap_hapi_data_provider.BloombergBeapHapiDataProvider
+    bloomberg_dl.bloomberg_dl_data_provider.BloombergDLDataProvider
     csv.csv_data_provider.CSVDataProvider
     haver.haver_data_provider.HaverDataProvider
     portara.portara_data_provider.PortaraDataProvider

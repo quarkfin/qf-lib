@@ -22,7 +22,7 @@ from typing import Union, Sequence, Dict, List, Optional, Tuple
 from urllib.parse import urljoin
 
 import pandas as pd
-from pandas import DataFrame
+from pandas import DataFrame, read_json
 
 from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
@@ -51,6 +51,33 @@ from qf_lib.starting_dir import get_starting_dir_abs_path
 
 
 class BloombergDLDataProvider(AbstractPriceDataProvider, TickersUniverseProvider, FuturesDataProvider):
+    """
+    Data Provider which provides financial data from Bloomberg Data License REST API.
+
+    The settings file requires the following variables:
+
+    - bbg_dl.client_id
+    - bbg_dl.client_secret
+
+    Other optional settings parameters:
+
+    - bbg_dl.user (parameter to link the Data License to a Bloomberg Anywhere or Bloomberg Professional
+      account; the User value can be obtained by running IAM <GO> in the Bloomberg terminal)
+    - bbg_dl.sn (parameter to link the Data License to a Bloomberg Professional account;
+      the S/N value can be obtained by running IAM <GO> in the Bloomberg terminal)
+
+    Parameters
+    ----------
+    settings: Settings
+        Settings object containing bbg_dl credentials and output_directory.
+    reply_timeout: int
+        Maximum time in minutes to wait for an SSE delivery notification.
+    timer: Timer, optional
+        Timer instance used for end-date calculations.
+    save_to_disk: bool
+        If True, raw JSON responses are persisted under the output_directory.
+    """
+
     HOST = "https://api.bloomberg.com"
     TIMEZONE = timezone.utc
 
@@ -95,6 +122,7 @@ class BloombergDLDataProvider(AbstractPriceDataProvider, TickersUniverseProvider
 
     @staticmethod
     def _prepare_downloads_path(settings: Settings):
+        """Create and return the directory used to persist raw JSON responses."""
         try:
             output_folder = "dl_responses"
             downloads_path: Optional[Path] = (
@@ -111,6 +139,43 @@ class BloombergDLDataProvider(AbstractPriceDataProvider, TickersUniverseProvider
                     currency: Optional[str] = None, pricing_source: Optional[str] = "BGN",
                     look_ahead_bias: bool = False, overrides: Optional[Dict[str, str]] = None,
                     **kwargs) -> Union[QFSeries, QFDataFrame, QFDataArray]:
+        """
+        Gets historical data from Bloomberg DL REST API from the (start_date - end_date) time range.
+
+        Parameters
+        ----------
+        tickers: BloombergTicker or Sequence[BloombergTicker]
+            Tickers for securities which should be retrieved.
+        fields: str or Sequence[str]
+            Fields of securities which should be retrieved.
+        start_date: datetime
+            Date representing the beginning of historical period from which data should be retrieved.
+        end_date: datetime, optional
+            Date representing the end of historical period from which data should be retrieved;
+            if not provided, the current date will be used.
+        frequency: Frequency
+            Frequency of the data.
+        currency: str, optional
+            Currency which should be used to obtain the historical data (by default local currency is used).
+        pricing_source: str, optional
+            Pricing source applied to all financial instruments in the request universe.
+            By default equals to 'BGN'.
+        look_ahead_bias: bool
+            If set to False, the look-ahead bias will be taken care of to make sure no future data is returned.
+        overrides: dict, optional
+            A dictionary of field overrides, e.g. ``{'INCLUDE_EXPIRED_CONTRACTS': 'Y'}``.
+
+        Returns
+        -------
+        QFSeries or QFDataFrame or QFDataArray
+            If possible the result will be squeezed so that instead of returning QFDataArray, data of lower
+            dimensionality will be returned.
+
+        Raises
+        ------
+        BloombergError
+            When unexpected response from Bloomberg DL REST API occurred.
+        """
         if frequency not in self.supported_frequencies():
             raise NotImplementedError(f"The provided frequency: {frequency} is not supported by the "
                                       f"{self.__class__.__name__}. To review the list of supported frequencies, please "
@@ -157,6 +222,33 @@ class BloombergDLDataProvider(AbstractPriceDataProvider, TickersUniverseProvider
                            fields: Union[str, Sequence[str]],
                            overrides: Optional[Dict[str, str]] = None, pricing_source: Optional[str] = "BGN") -> \
             Union[None, float, str, list, QFSeries, QFDataFrame]:
+        """
+        Gets from the Bloomberg DL REST API the current values of fields for given tickers.
+
+        Parameters
+        ----------
+        tickers: BloombergTicker or Sequence[BloombergTicker]
+            Tickers for securities which should be retrieved.
+        fields: str or Sequence[str]
+            Fields of securities which should be retrieved.
+        overrides: dict, optional
+            A dictionary where each key is a field mnemonic and the value is the override string.
+            Example: ``{'INCLUDE_EXPIRED_CONTRACTS': 'Y'}``.
+        pricing_source: str, optional
+            Pricing source applied to all financial instruments in the request universe.
+            By default equals to 'BGN'.
+
+        Returns
+        -------
+        float or QFSeries or QFDataFrame
+            Either QFDataFrame with 2 dimensions: ticker, field or QFSeries with 1 dimension: ticker or field
+            (depending on whether many tickers or fields were provided).
+
+        Raises
+        ------
+        BloombergError
+            When unexpected response from Bloomberg DL REST API occurred.
+        """
         fields, got_single_field = convert_to_list(fields, str)
         field_overrides = self._build_field_overrides(overrides)
 
@@ -183,11 +275,42 @@ class BloombergDLDataProvider(AbstractPriceDataProvider, TickersUniverseProvider
 
     def get_tickers_universe(self, universe_ticker: BloombergTicker, date: Optional[datetime] = None,
                              display_figi: bool = False) -> List[BloombergTicker]:
+        """
+        Returns a list of all members of an index. Bloomberg Data License supports only fetching constituents for
+        the current date and it will not return any data for indices with more than 20,000 members.
+
+        Parameters
+        ----------
+        universe_ticker: BloombergTicker
+            Ticker that describes a specific universe, which members will be returned.
+        date: datetime, optional
+            Date for which current universe members' tickers will be returned.
+        display_figi: bool
+            If True, return Financial Instrument Global Identifiers (FIGI) instead of standard tickers.
+        """
         members_and_weights = self._get_index_members_and_weights(universe_ticker, date, display_figi)
         return members_and_weights.index.tolist()
 
     def get_tickers_universe_with_weights(self, universe_ticker: BloombergTicker, date: Optional[datetime] = None,
                                           display_figi: bool = False) -> QFSeries:
+        """
+        Returns a series of all members of an index with their weights. It will not return any data for indices
+        with more than 20,000 members.
+
+        Parameters
+        ----------
+        universe_ticker: BloombergTicker
+            Ticker that describes a specific universe, which members will be returned.
+        date: datetime, optional
+            Date for which current universe members' tickers will be returned.
+        display_figi: bool
+            If True, return Financial Instrument Global Identifiers (FIGI) instead of standard tickers.
+
+        Returns
+        -------
+        QFSeries
+            A series of the weights of all BloombergTickers within the requested index, indexed by those tickers.
+        """
         return self._get_index_members_and_weights(universe_ticker, date, display_figi)
 
     def get_unique_tickers(self, universe_ticker: BloombergTicker) -> List[BloombergTicker]:
@@ -217,10 +340,12 @@ class BloombergDLDataProvider(AbstractPriceDataProvider, TickersUniverseProvider
 
     @staticmethod
     def _current_ticker(t: BloombergTicker):
+        """Resolve a FutureTicker to its current specific ticker, or return the ticker as-is."""
         return t.get_current_specific_ticker() if isinstance(t, BloombergFutureTicker) else t
 
     def _generate_request_payload(self, tickers_str: Sequence[str], fields: Sequence[str], historical: bool,
                                   pricing_source: Optional[str], field_overrides):
+        """Build the JSON payload for a HistoryRequest or DataRequest submission."""
         contains = [self._build_identifier_dict(t, field_overrides) for t in tickers_str]
         contains = [c for c in contains if c is not None]
 
@@ -260,6 +385,25 @@ class BloombergDLDataProvider(AbstractPriceDataProvider, TickersUniverseProvider
     def _get_futures_chain_dict(self, tickers: Union[BloombergFutureTicker, Sequence[BloombergFutureTicker]],
                                 expiration_date_fields: Union[str, Sequence[str]],
                                 universe_creation_time: datetime = None) -> Dict[FutureTicker, QFDataFrame]:
+        """
+        Returns tickers of futures contracts, which belong to the same futures contract chain as the provided
+        ticker, along with their expiration dates.
+
+        Parameters
+        ----------
+        tickers: BloombergFutureTicker or Sequence[BloombergFutureTicker]
+            Future tickers for which future chains should be retrieved.
+        expiration_date_fields: str or Sequence[str]
+            Field(s) that should be downloaded as the expiration date field.
+        universe_creation_time: datetime, optional
+            Unused; kept for interface compatibility.
+
+        Returns
+        -------
+        Dict[BloombergFutureTicker, QFDataFrame]
+            Dictionary mapping each BloombergFutureTicker to a QFDataFrame containing specific future
+            contract tickers (BloombergTickers), indexed by those tickers.
+        """
         tickers, _ = convert_to_list(tickers, BloombergFutureTicker)
         expiration_date_fields, _ = convert_to_list(expiration_date_fields, str)
 
@@ -302,6 +446,7 @@ class BloombergDLDataProvider(AbstractPriceDataProvider, TickersUniverseProvider
 
     def _get_index_members_and_weights(self, universe_ticker: BloombergTicker, date: Optional[datetime] = None,
                                        display_figi: bool = False) -> QFSeries:
+        """Fetch paginated index constituents and their weights as a QFSeries."""
         date = date or datetime.now()
         if date.date() != datetime.today().date():
             raise ValueError(f"{self.__class__.__name__} does not provide historical tickers universe data")
@@ -338,13 +483,9 @@ class BloombergDLDataProvider(AbstractPriceDataProvider, TickersUniverseProvider
         universe_series = pd.concat(universe).iloc[:, 0]
         return universe_series
 
-    def _build_formatting(self) -> dict:
-        return {
-            '@type': 'MediaType',
-            'outputMediaType': "application/json"
-        }
-
     def _submit_and_download(self, request_payload: dict):
+        """Submit a request to the Bloomberg DL REST API, wait for an SSE delivery notification and download
+        the result. Returns None if the request fails or times out."""
         # Open SSE connection before submitting the request
         sse_url = urljoin(self.HOST, '/eap/notifications/content/responses')
         sse_client = SSEClient(sse_url, self.session)
@@ -409,6 +550,7 @@ class BloombergDLDataProvider(AbstractPriceDataProvider, TickersUniverseProvider
             sse_client.disconnect()
 
     def _log_request_submission_error(self, status_code: int, resp_json: dict):
+        """Log a structured warning when a request submission returns an HTTP error."""
         title = resp_json.get('title', resp_json.get('error', 'Unknown Error'))
         description = resp_json.get('description', resp_json.get('error_description', ''))
         errors = resp_json.get('errors', [])
@@ -420,12 +562,14 @@ class BloombergDLDataProvider(AbstractPriceDataProvider, TickersUniverseProvider
 
     @staticmethod
     def _event_matches_request(event_data: dict, server_request_id: str) -> bool:
+        """Check whether an SSE event belongs to the given request."""
         metadata = event_data.get('metadata', {})
         if server_request_id == metadata.get('DL_REQUEST_ID', ''):
             return True
         return False
 
     def _download_and_parse(self, output_url: str, request_id: str) -> DataFrame:
+        """Download the response payload from output_url and parse it into a DataFrame."""
         with self.session.get(output_url, stream=True) as response:
             raw_bytes = response.content
 
@@ -434,10 +578,11 @@ class BloombergDLDataProvider(AbstractPriceDataProvider, TickersUniverseProvider
                 file_path.write_bytes(raw_bytes)
                 self.logger.debug(f"Response saved to {file_path}")
 
-            return self.parser.decompress_response(raw_bytes)
+            return read_json(raw_bytes.decode("utf-8"))
 
     def _build_identifier_dict(self, ticker_str: str,
                                field_overrides: Optional[List[Dict]] = None) -> Optional[Dict]:
+        """Build an Identifier dict for the request universe, or None if the ticker cannot be parsed."""
         id_type, id_value = self._parse_identifier(ticker_str)
         if id_type is None:
             return None
@@ -493,7 +638,6 @@ class BloombergDLDataProvider(AbstractPriceDataProvider, TickersUniverseProvider
         return QFSeries([d for d in mapping.values()], index=[d for d in mapping.keys()])
 
     def _set_terminal_identity(self, payload: dict):
-        """Inject terminalIdentity into payload when credentials are available."""
         user = self._parse_terminal_identity_user(self._terminal_identity_user)
         sn = self._parse_terminal_identity_sn(self._terminal_identity_sn)
 

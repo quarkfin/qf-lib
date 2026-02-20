@@ -12,53 +12,14 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-import gzip
-import json
 from datetime import time, datetime
 
 import numpy as np
 import pandas as pd
 import pytest
-from numpy import float64
 from numpy.testing import assert_array_almost_equal
 from pandas import DataFrame
 from pandas.testing import assert_frame_equal
-
-
-def test_decompress_response__plain_json_bytes(parser):
-    records = [{"DATE": "20250101", "IDENTIFIER": "AAPL US Equity", "PX_LAST": 100.0}]
-    result = parser.decompress_response(json.dumps(records).encode("utf-8"))
-    expected = DataFrame([{"DATE": 20250101, "IDENTIFIER": "AAPL US Equity", "PX_LAST": 100.0}])
-    assert_frame_equal(result, expected, check_dtype=False)
-
-
-def test_decompress_response__gzipped_json_bytes(parser):
-    records = [{"DATE": "20250101", "IDENTIFIER": "AAPL US Equity", "PX_LAST": 200.0}]
-    result = parser.decompress_response(gzip.compress(json.dumps(records).encode("utf-8")))
-    expected = DataFrame([{"DATE": 20250101, "IDENTIFIER": "AAPL US Equity", "PX_LAST": 200.0}])
-    assert_frame_equal(result, expected, check_dtype=False)
-
-
-def test_decompress_response__multiple_records(parser):
-    records_str = [
-        {"DATE": "20250101", "IDENTIFIER": "AAPL US Equity", "PX_LAST": 100.0},
-        {"DATE": "20250102", "IDENTIFIER": "AAPL US Equity", "PX_LAST": 101.0},
-        {"DATE": "20250101", "IDENTIFIER": "MSFT", "PX_LAST": 200.0},
-        {"DATE": "20250102", "IDENTIFIER": "MSFT", "PX_LAST": 201.0},
-    ]
-    expected = DataFrame([
-        {"DATE": 20250101, "IDENTIFIER": "AAPL US Equity", "PX_LAST": 100.0},
-        {"DATE": 20250102, "IDENTIFIER": "AAPL US Equity", "PX_LAST": 101.0},
-        {"DATE": 20250101, "IDENTIFIER": "MSFT", "PX_LAST": 200.0},
-        {"DATE": 20250102, "IDENTIFIER": "MSFT", "PX_LAST": 201.0},
-    ])
-    assert_frame_equal(parser.decompress_response(json.dumps(records_str).encode("utf-8")),
-                       expected, check_dtype=False)
-
-
-def test_decompress_response__empty_array(parser):
-    result = parser.decompress_response(json.dumps([]).encode("utf-8"))
-    assert_frame_equal(result, DataFrame())
 
 
 def test_get_current_values__single_ticker_single_real_field(parser):
@@ -170,6 +131,7 @@ def test_get_history__multiple_tickers_multiple_fields(parser):
     assert_array_almost_equal(result.sel(tickers="MSFT", fields="PX_OPEN").values, [299.0, 300.0, 301.0])
     assert list(result.tickers.values) == ["AAPL US Equity", "MSFT"]
     assert list(result.fields.values) == ["PX_LAST", "PX_OPEN"]
+
 
 def test_get_history__date_field_in_history(parser):
     df = DataFrame([

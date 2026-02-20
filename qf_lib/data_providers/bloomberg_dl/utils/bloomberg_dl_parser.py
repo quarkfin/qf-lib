@@ -12,17 +12,22 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-import gzip
 from typing import Dict
 
 import numpy as np
-from pandas import read_json, DataFrame, Series, to_datetime, NaT, notna
+from pandas import Series, to_datetime, NaT, notna
 
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.qf_data_array import QFDataArray
 
 
 class BloombergDLParser:
+    """
+    Parser for Bloomberg DL REST API JSON responses.
+
+    Converts raw DataFrames (returned by the DL API) into typed QFDataFrame or QFDataArray objects,
+    casting each column according to the field-type mapping provided by Bloomberg.
+    """
 
     def __init__(self):
         self._TYPE_TO_CAST_FUNCTION = {
@@ -40,16 +45,8 @@ class BloombergDLParser:
             "Bulk Format": self._bulk_conversion
         }
 
-    @staticmethod
-    def decompress_response(raw_bytes: bytes) -> DataFrame:
-        try:
-            data = gzip.decompress(raw_bytes)
-        except (gzip.BadGzipFile, OSError):
-            data = raw_bytes
-
-        return read_json(data.decode("utf-8"))
-
     def get_current_values(self, data_frame, field_mapping: Dict) -> QFDataFrame:
+        """Parse a DataRequest response into a QFDataFrame indexed by ticker identifier."""
         data_frame = data_frame.set_index(["IDENTIFIER"])[[*field_mapping.keys()]]
         data_frame.index = data_frame.index.rename("tickers")
 
@@ -59,6 +56,7 @@ class BloombergDLParser:
         return data_frame
 
     def get_history(self, data_frame, field_mapping: Dict) -> QFDataArray:
+        """Parse a HistoryRequest response into a QFDataArray with dimensions (date, ticker, field)."""
         data_frame["DATE"] = to_datetime(data_frame["DATE"])
         data_frame = data_frame.dropna(subset=["DATE", "IDENTIFIER"])
         data_frame = data_frame.set_index(["DATE", "IDENTIFIER"])[[*field_mapping.keys()]]
