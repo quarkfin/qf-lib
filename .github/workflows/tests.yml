@@ -24,7 +24,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install flake8==7.2.0 pytest
+        pip install flake8==7.2.0 pyflakes==3.3.2 pytest
     - name: Style check
       run: flake8 .
 
@@ -44,7 +44,7 @@ jobs:
         pip install -e ".[yfinance]"
         pip install -e ".[detailed_analysis]"
         pip install -e ".[alpaca]"
-        pip install flake8==7.2.0 pytest
+        pip install flake8==7.2.0 pyflakes==3.3.2 pytest
         pip install coverage
     - name: Unit tests
       env:
@@ -73,7 +73,7 @@ jobs:
           pip install -e ".[yfinance]"
           pip install -e ".[detailed_analysis]"
           pip install -e ".[alpaca]"
-          pip install flake8==7.2.0 pytest
+          pip install flake8==7.2.0 pyflakes==3.3.2 pytest
           pip install coverage
       - name: Integration tests
         env:
@@ -103,7 +103,7 @@ jobs:
           pip install -e ".[yfinance]"
           pip install -e ".[detailed_analysis]"
           pip install -e ".[alpaca]"
-          pip install flake8==7.2.0 pytest
+          pip install flake8==7.2.0 pyflakes==3.3.2 pytest
           pip install coverage
       - name: Integration tests
         env:
@@ -141,7 +141,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flake8==7.2.0 pytest
+          pip install flake8==7.2.0 pyflakes==3.3.2 pytest
           pip install coverage
       - name: Upload to Codecov
         uses: codecov/codecov-action@v4
