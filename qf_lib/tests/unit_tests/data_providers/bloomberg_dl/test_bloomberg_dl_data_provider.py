@@ -24,26 +24,16 @@ from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.tickers.tickers import BloombergTicker
+from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.futures.future_tickers.bloomberg_future_ticker import BloombergFutureTicker
 from qf_lib.containers.qf_data_array import QFDataArray
 from qf_lib.containers.series.qf_series import QFSeries
 from pandas.testing import assert_frame_equal, assert_series_equal
 
-
-def _history_array(tickers=("AAPL US Equity",), fields=("PX_LAST",), dates=None, data=None):
-    dates = dates or [datetime(2025, 6, 6)]
-    tickers, fields = list(tickers), list(fields)
-    if data is None:
-        data = np.full((len(dates), len(tickers), len(fields)), 100.0).tolist()
-    return QFDataArray.create(data=data, dates=dates, tickers=tickers, fields=fields)
-
-
-def _current_df(tickers=("AAPL US Equity",), columns=("PX_LAST",), data=None):
-    tickers = list(tickers)
-    if data is None:
-        data = {col: [100.0] * len(tickers) for col in columns}
-    return QFDataFrame(data=data, index=pd.Index(tickers, name="tickers"))
+from qf_lib.tests.unit_tests.data_providers.bloomberg_dl.conftest import SSE_PATH, RESPONSE_201_CREATED, \
+    RESPONSE_500_INTERNAL_SERVER_ERROR, RESPONSE_400_BAD_REQUEST, mock_used_for__submit_and_download, _delivery_event, \
+    get_mock_heartbeat_event, _history_array, _current_df
 
 
 def test_get_history__single_ticker_single_field_single_date(data_provider, aapl_ticker):
@@ -437,3 +427,112 @@ def test_get_futures_chain_tickers__tickers_inherit_future_ticker_properties(
     assert specific_ticker.name == "S&P 500 E-mini"
     assert specific_ticker.security_type == SecurityType.FUTURE
     assert specific_ticker.point_value == 50
+
+
+def test__submit_and_download__session_post(data_provider, aapl_ticker):
+    with patch(SSE_PATH) as m:
+        mock_used_for__submit_and_download(data_provider, m)
+        data_provider.get_history(tickers=aapl_ticker, fields="PX_LAST",
+                                  start_date=datetime(2025, 6, 6), end_date=datetime(2025, 6, 6),
+                                  frequency=Frequency.DAILY, look_ahead_bias=True)
+
+    url = data_provider.session.post.call_args[0][0]
+    assert url == "https://api.bloomberg.com/eap/catalogs/bbg0001/requests/"
+
+    json_request_payload = data_provider.session.post.call_args.kwargs['json']
+
+    assert json_request_payload['@type'] == 'HistoryRequest'
+    assert json_request_payload['fieldList'] == {'@type': 'HistoryFieldList', 'contains': [{'mnemonic': 'PX_LAST'}]}
+    assert json_request_payload['formatting'] == {'@type': 'MediaType', 'outputMediaType': 'application/json'}
+    assert json_request_payload['pricingSourceOptions'] == {'@type': 'HistoryPricingSourceOptions',
+                                                            'prefer': {'mnemonic': 'BGN'}}
+    assert json_request_payload['runtimeOptions'] == {'@type': 'HistoryRuntimeOptions',
+                                                      'dateRange': {'@type': 'IntervalDateRange',
+                                                                    'endDate': '2025-06-06', 'startDate': '2025-06-06'},
+                                                      'period': 'daily'}
+    assert json_request_payload['trigger'] == {'@type': 'SubmitTrigger'}
+    assert json_request_payload['universe'] == {'@type': 'Universe', 'contains': [
+        {'@type': 'Identifier', 'identifierType': 'TICKER', 'identifierValue': 'AAPL US Equity'}]}
+
+    data_provider.session.post.assert_called_once()
+
+
+def test__submit_and_download__get_field_list_url(data_provider, aapl_ticker):
+    with patch(SSE_PATH) as m:
+        mock_used_for__submit_and_download(data_provider, m)
+        data_provider.get_history(tickers=aapl_ticker, fields="PX_LAST",
+                                  start_date=datetime(2025, 6, 6), end_date=datetime(2025, 6, 6),
+                                  frequency=Frequency.DAILY, look_ahead_bias=True)
+
+    first_get = data_provider.session.get.call_args_list[0]
+    expected = f"https://api.bloomberg.com/eap/catalogs/bbg0001/requests/{RESPONSE_201_CREATED['request']['identifier']}/fieldList"
+    assert first_get[0][0] == expected
+
+
+def test__submit_and_download__get_download_url_contains_output_key(data_provider, aapl_ticker):
+    with patch(SSE_PATH) as m:
+        mock_used_for__submit_and_download(data_provider, m)
+        data_provider.get_history(tickers=aapl_ticker, fields="PX_LAST",
+                                  start_date=datetime(2025, 6, 6), end_date=datetime(2025, 6, 6),
+                                  frequency=Frequency.DAILY, look_ahead_bias=True)
+
+    download_url = data_provider.session.get.call_args_list[1][0][0]
+    assert f"content/responses/{RESPONSE_201_CREATED['request']['identifier']}-output.bbg" in download_url
+
+
+def test__submit_and_download__sse_client_tests(data_provider, aapl_ticker):
+    with patch(SSE_PATH) as m:
+        sse = mock_used_for__submit_and_download(data_provider, m)
+        data_provider.get_history(tickers=aapl_ticker, fields="PX_LAST",
+                                  start_date=datetime(2025, 6, 6), end_date=datetime(2025, 6, 6),
+                                  frequency=Frequency.DAILY, look_ahead_bias=True)
+
+    m.assert_called_once_with(
+        "https://api.bloomberg.com/eap/notifications/content/responses",
+        data_provider.session,
+    )
+    assert sse.disconnect.called
+
+
+def test__submit_and_download__non_matching_event_skipped(data_provider, aapl_ticker):
+    with patch(SSE_PATH) as m:
+        sse = mock_used_for__submit_and_download(data_provider, m)
+        other = _delivery_event(request_id="differentReqId")
+        matching = _delivery_event()
+        sse.read_event.side_effect = [other, matching]
+        data_provider.get_history(tickers=aapl_ticker, fields="PX_LAST",
+                                  start_date=datetime(2025, 6, 6), end_date=datetime(2025, 6, 6),
+                                  frequency=Frequency.DAILY, look_ahead_bias=True)
+
+    assert sse.read_event.call_count == 2
+    assert data_provider.session.get.call_count == 2
+
+
+def test__submit_and_download__multiple_heartbeats_then_delivery(data_provider, aapl_ticker):
+    with patch(SSE_PATH) as m:
+        sse = mock_used_for__submit_and_download(data_provider, m)
+        sse.read_event.side_effect = [
+            get_mock_heartbeat_event(), get_mock_heartbeat_event(), get_mock_heartbeat_event(),
+            _delivery_event(),
+        ]
+        data_provider.get_history(tickers=aapl_ticker, fields="PX_LAST",
+                                  start_date=datetime(2025, 6, 6), end_date=datetime(2025, 6, 6),
+                                  frequency=Frequency.DAILY, look_ahead_bias=True)
+
+    assert sse.read_event.call_count == 4
+
+
+def test__submit_and_download__post_exception_handled_gracefully(data_provider, aapl_ticker):
+    with patch(SSE_PATH) as m:
+        sse = m.return_value
+        sse.disconnect = Mock()
+        post_resp = Mock(status_code=400)
+        post_resp.json.return_value = RESPONSE_400_BAD_REQUEST
+        data_provider.session.post.return_value = post_resp
+
+        data_provider.get_history(tickers=aapl_ticker, fields="PX_LAST",
+                                  start_date=datetime(2025, 6, 6), end_date=datetime(2025, 6, 6),
+                                  frequency=Frequency.DAILY, look_ahead_bias=True)
+
+    data_provider.session.get.assert_not_called()
+    assert sse.disconnect.called
