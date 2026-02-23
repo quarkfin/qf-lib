@@ -24,7 +24,6 @@ from qf_lib.common.enums.expiration_date_field import ExpirationDateField
 from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.enums.security_type import SecurityType
 from qf_lib.common.tickers.tickers import BloombergTicker
-from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.futures.future_tickers.bloomberg_future_ticker import BloombergFutureTicker
 from qf_lib.containers.qf_data_array import QFDataArray
@@ -32,7 +31,7 @@ from qf_lib.containers.series.qf_series import QFSeries
 from pandas.testing import assert_frame_equal, assert_series_equal
 
 from qf_lib.tests.unit_tests.data_providers.bloomberg_dl.conftest import SSE_PATH, RESPONSE_201_CREATED, \
-    RESPONSE_500_INTERNAL_SERVER_ERROR, RESPONSE_400_BAD_REQUEST, mock_used_for__submit_and_download, _delivery_event, \
+    RESPONSE_400_BAD_REQUEST, mock_used_for__submit_and_download, _delivery_event, \
     get_mock_heartbeat_event, _history_array, _current_df
 
 
