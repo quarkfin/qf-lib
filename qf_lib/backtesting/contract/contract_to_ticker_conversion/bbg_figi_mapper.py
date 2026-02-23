@@ -173,9 +173,13 @@ class BloombergTickerMapper(ContractTickerMapper):
             parameters, match_params = sec_type_to_parameters[ticker.security_type]
             # Remove the /ticker/ part if applicable
             ticker_str = ticker.as_string().replace("/ticker/", "")
-            ticker_str = re.sub("^" + re.escape("USD"), '', ticker_str) \
-                if ticker.security_type is SecurityType.FX else ticker_str
-            request = dict(zip(parameters, re.match(match_params, ticker_str).groups()))
+
+            if ticker.security_type is SecurityType.FX:
+                ticker_str = re.sub("^" + re.escape("USD"), '', ticker_str)
+                request = dict(zip(parameters, re.match(match_params, ticker_str).groups()))
+                request["securityType"] = "SPOT"
+            else:
+                request = dict(zip(parameters, re.match(match_params, ticker_str).groups()))
             return {"idType": "TICKER", **request}
         except KeyError:
             raise ValueError(f"The {ticker.security_type} is not supported by the {self.__class__.__name__}.") from None
