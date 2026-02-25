@@ -361,7 +361,7 @@ class BloombergDLDataProvider(AbstractPriceDataProvider, TickersUniverseProvider
             },
             'fieldList': {
                 '@type': 'HistoryFieldList' if historical else 'DataFieldList',
-                'contains': [{'mnemonic': f for f in fields}],
+                'contains': [{'mnemonic': f} for f in fields],
             },
             'trigger': {'@type': 'SubmitTrigger'},
             'formatting': {
