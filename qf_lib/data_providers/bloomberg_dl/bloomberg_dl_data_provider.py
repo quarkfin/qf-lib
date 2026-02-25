@@ -210,7 +210,7 @@ class BloombergDLDataProvider(AbstractPriceDataProvider, TickersUniverseProvider
         if data_array is None:
             data_array = QFDataArray.create(dates=[], tickers=tickers, fields=fields)
         data_array = data_array.reindex(tickers=id_value_to_ticker.index).assign_coords(
-            tickers=id_value_to_ticker.values)
+            tickers=id_value_to_ticker.values).dropna(how="all", dim="tickers")
         normalized_result = normalize_data_array(data_array, tickers, fields, got_single_date, got_single_ticker,
                                                  got_single_field)
         return normalized_result
