@@ -83,8 +83,8 @@ class PeriodicEvent(TimeEvent, metaclass=ABCMeta):
     @classmethod
     def set_frequency(cls, frequency: Frequency):
         if frequency < Frequency.DAILY:
-            raise ValueError("PeriodicEvent does not support frequency lower than DAILY. If you want to use event with "
-                             "frequency like MONTHLY or QUARTERLY, we suggest you to use "
+            raise ValueError("PeriodicEvent does not support frequency lower than DAILY. If you want to use an event "
+                             "with frequency like MONTHLY or QUARTERLY, we suggest you to use "
                              "CalculateAndPlaceOrdersRegularEvent.")
 
         cls.frequency = frequency
