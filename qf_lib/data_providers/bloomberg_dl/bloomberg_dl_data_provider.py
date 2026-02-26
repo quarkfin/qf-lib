@@ -15,6 +15,7 @@
 import hashlib
 import json
 import re
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Union, Sequence, Dict, List, Optional, Tuple
@@ -75,6 +76,9 @@ class BloombergDLDataProvider(AbstractPriceDataProvider, TickersUniverseProvider
         Timer instance used for end-date calculations.
     save_to_disk: bool
         If True, raw JSON responses are persisted under the output_directory.
+    push_notification: bool
+        If True (default), SSE Event Stream for DL Platform Content Endpoint Notifications is used to notify about the
+        delivered content. If False, the endpoints are polled regularly every 30 seconds.
     """
 
     HOST = "https://api.bloomberg.com"
@@ -94,7 +98,7 @@ class BloombergDLDataProvider(AbstractPriceDataProvider, TickersUniverseProvider
     }
 
     def __init__(self, settings: Settings, reply_timeout: int = 5, timer: Optional[Timer] = None,
-                 save_to_disk: bool = False):
+                 save_to_disk: bool = False, push_notification: bool = True):
         super().__init__(timer=timer)
 
         self.parser = BloombergDLParser()
@@ -104,6 +108,7 @@ class BloombergDLDataProvider(AbstractPriceDataProvider, TickersUniverseProvider
 
         self._terminal_identity_user = self._get_settings_attribute(settings.bbg_dl, "user")
         self._terminal_identity_sn = self._get_settings_attribute(settings.bbg_dl, "sn")
+        self._push_notification = push_notification
 
         try:
             self.session = BloombergDLSession(
@@ -483,11 +488,16 @@ class BloombergDLDataProvider(AbstractPriceDataProvider, TickersUniverseProvider
     def _submit_and_download(self, request_payload: dict):
         """Submit a request to the Bloomberg DL REST API, wait for an SSE delivery notification and download
         the result. Returns None if the request fails or times out."""
-        # Open SSE connection before submitting the request
-        sse_url = urljoin(self.HOST, '/eap/notifications/content/responses')
-        sse_client = SSEClient(sse_url, self.session)
+
+        request_name = request_payload["name"]
+        sse_client = None
 
         try:
+            if self._push_notification:
+                # Open SSE connection before submitting the request
+                sse_url = urljoin(self.HOST, '/eap/notifications/content/responses')
+                sse_client = SSEClient(sse_url, self.session)
+
             requests_url = urljoin(self.account_url, 'requests/')
             response = self.session.post(requests_url, json=request_payload, raise_on_error=False)
             resp_json = response.json()
@@ -503,48 +513,93 @@ class BloombergDLDataProvider(AbstractPriceDataProvider, TickersUniverseProvider
             # Obtain the {field: fields_group} mapping from Bloomberg, used to infer fields' types
             fields_url = urljoin(self.account_url, f'requests/{server_request_id}/fieldList')
             fields_response = self.session.get(fields_url)
-            field_mapping = {field['mnemonic']: field['type'] for field in fields_response.json().get('contains', [])}
+            field_mapping = {
+                field['mnemonic']: field['type']
+                for field in fields_response.json().get('contains', [])
+            }
 
             expiration = datetime.now(self.TIMEZONE) + self.reply_timeout
-            while datetime.now(self.TIMEZONE) < expiration:
-                event = sse_client.read_event()
+            if self._push_notification:
+                return self._wait_for_sse_delivery(sse_client, server_request_id, field_mapping, expiration)
+            else:
+                return self._wait_for_polling_delivery(request_name, server_request_id, field_mapping, expiration)
 
-                if event.is_heartbeat():
-                    self.logger.debug('Received heartbeat event, keep waiting for events')
-                    continue
+        except Exception as e:
+            self.logger.warning(f"Bloomberg DL request submission failed: {e}. No data obtained.")
+            return None
 
-                self.logger.info(f'Received reply delivery notification event: {event}')
-                event_data = json.loads(event.data)
-
-                if not self._event_matches_request(event_data, server_request_id):
-                    self.logger.debug("Some other delivery occurred - continue waiting")
-                    continue
-
-                output_key = event_data['key']
+        finally:
+            # Ensure cleanup always happens, even if an exception is raised
+            if sse_client:
                 sse_client.disconnect()
 
-                output_url = urljoin(self.HOST, f"{self.account_url}content/responses/{output_key}")
-                self.logger.info(f"Response ready for '{server_request_id}' - downloading {output_key}")
+    def _wait_for_sse_delivery(self, sse_client, server_request_id, field_mapping, expiration):
+        """Wait for Bloomberg data via SSE Push Notifications."""
 
-                df = self._download_and_parse(output_url, server_request_id)
-                request_type = event_data.get('metadata', {}).get('DL_REQUEST_TYPE', None)
-                if request_type == 'HistoryRequest':
-                    return self.parser.get_history(df, field_mapping)
-                elif request_type == 'DataRequest':
-                    return self.parser.get_current_values(df, field_mapping)
-                else:
-                    raise NotImplementedError("Currently only HistoryRequest and DataRequest are requests types "
-                                              "are supported by the Bloomberg DL Data Provider.")
+        while datetime.now(self.TIMEZONE) < expiration:
+            event = sse_client.read_event()
 
-            self.logger.warning(f"Response for '{server_request_id}' not received within {self.reply_timeout} - "
-                                f"returning empty")
-            return None
-        except Exception as e:
-            self.logger.warning(f"Bloomberg DL request submission failed with the following exception:"
-                                f" {e}. No response data can be obtained for this request.")
-            return None
-        finally:
+            if event.is_heartbeat():
+                self.logger.debug('Received heartbeat event, keep waiting for events')
+                continue
+
+            self.logger.info(f'Received reply delivery notification event: {event}')
+            output = json.loads(event.data)
+
+            if not self._output_matches_request(output, server_request_id):
+                self.logger.debug("Some other delivery occurred - continue waiting")
+                continue
+
             sse_client.disconnect()
+            return self._extract_response(output, server_request_id, field_mapping)
+
+        self.logger.warning(f"SSE response for '{server_request_id}' timed out after {self.reply_timeout}.")
+        return None
+
+    def _wait_for_polling_delivery(self, request_name, server_request_id, field_mapping, expiration):
+        """Wait for Bloomberg data via traditional REST API polling."""
+        poll_url = urljoin(self.account_url, "content/responses/")
+
+        while datetime.now(self.TIMEZONE) < expiration:
+            response = self.session.get(poll_url, params={
+                'prefix': request_name,
+                'requestIdentifier': server_request_id,
+            })
+
+            response_contains = response.json().get('contains', [])
+
+            if not response_contains:
+                self.logger.debug('Received empty data, polling in 10 seconds again')
+                time.sleep(30)
+                continue
+
+            output = response_contains[0]
+            if not self._output_matches_request(output, server_request_id):
+                self.logger.debug("Some other delivery occurred - continue waiting")
+                time.sleep(30)
+                continue
+
+            self.logger.info('Received delivery via polling')
+            return self._extract_response(output, server_request_id, field_mapping)
+
+        self.logger.warning(f"Polling response for '{server_request_id}' timed out after {self.reply_timeout}.")
+        return None
+
+    def _extract_response(self, output: dict, server_request_id: str, field_mapping: dict):
+        output_key = output['key']
+        output_url = urljoin(self.HOST, f"{self.account_url}content/responses/{output_key}")
+        self.logger.info(f"Response ready for '{server_request_id}' - downloading {output_key}")
+
+        df = self._download_and_parse(output_url, server_request_id)
+        request_type = output.get('metadata', {}).get('DL_REQUEST_TYPE', None)
+        if request_type == 'HistoryRequest':
+            return self.parser.get_history(df, field_mapping)
+        elif request_type == 'DataRequest':
+            return self.parser.get_current_values(df, field_mapping)
+        else:
+            raise NotImplementedError(
+                "Currently only HistoryRequest and DataRequest are requests types "
+                "are supported by the Bloomberg DL Data Provider.")
 
     def _log_request_submission_error(self, status_code: int, resp_json: dict):
         """Log a structured warning when a request submission returns an HTTP error."""
@@ -558,9 +613,8 @@ class BloombergDLDataProvider(AbstractPriceDataProvider, TickersUniverseProvider
         self.logger.warning(msg)
 
     @staticmethod
-    def _event_matches_request(event_data: dict, server_request_id: str) -> bool:
-        """Check whether an SSE event belongs to the given request."""
-        metadata = event_data.get('metadata', {})
+    def _output_matches_request(output: dict, server_request_id: str) -> bool:
+        metadata = output.get('metadata', {})
         if server_request_id == metadata.get('DL_REQUEST_ID', ''):
             return True
         return False
