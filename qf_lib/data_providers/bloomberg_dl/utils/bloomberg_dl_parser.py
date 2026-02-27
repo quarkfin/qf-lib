@@ -15,7 +15,7 @@
 from typing import Dict
 
 import numpy as np
-from pandas import Series, to_datetime, NaT, notna
+from pandas import Series, to_datetime, NaT, notna, MultiIndex
 
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.qf_data_array import QFDataArray
@@ -67,6 +67,9 @@ class BloombergDLParser:
         fetched_dates = data_frame.index.unique(level=0).values
         fetched_fields = data_frame.columns
         fetched_tickers = data_frame.index.unique(level=1).values
+
+        multi_index = MultiIndex.from_product([fetched_dates, fetched_tickers])
+        data_frame = data_frame.reindex(multi_index)
 
         data_reshaped = np.reshape(data_frame.values, (len(fetched_dates), len(fetched_tickers), len(fetched_fields)))
         data_array = QFDataArray.create(fetched_dates, fetched_tickers, fetched_fields, data_reshaped)
