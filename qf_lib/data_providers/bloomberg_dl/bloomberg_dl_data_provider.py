@@ -569,7 +569,7 @@ class BloombergDLDataProvider(AbstractPriceDataProvider, TickersUniverseProvider
             response_contains = response.json().get('contains', [])
 
             if not response_contains:
-                self.logger.debug('Received empty data, polling in 10 seconds again')
+                self.logger.debug('Received empty data, polling in 30 seconds again')
                 time.sleep(30)
                 continue
 
