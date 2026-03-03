@@ -68,7 +68,7 @@ class BloombergDLParser:
         fetched_fields = data_frame.columns
         fetched_tickers = data_frame.index.unique(level=1).values
 
-        multi_index = MultiIndex.from_product([fetched_dates, fetched_tickers])
+        multi_index = MultiIndex.from_product([sorted(fetched_dates), sorted(fetched_tickers)])
         data_frame = data_frame.reindex(multi_index)
 
         data_reshaped = np.reshape(data_frame.values, (len(fetched_dates), len(fetched_tickers), len(fetched_fields)))
