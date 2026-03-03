@@ -64,7 +64,7 @@ class BloombergDLParser:
         for column, group in field_mapping.items():
             data_frame[column] = self._TYPE_TO_CAST_FUNCTION[group](data_frame[column])
 
-        fetched_dates = data_frame.index.unique(level=0).values
+        fetched_dates = sorted(data_frame.index.unique(level=0).values)
         fetched_fields = data_frame.columns
         fetched_tickers = data_frame.index.unique(level=1).values
 
