@@ -64,11 +64,11 @@ class BloombergDLParser:
         for column, group in field_mapping.items():
             data_frame[column] = self._TYPE_TO_CAST_FUNCTION[group](data_frame[column])
 
-        fetched_dates = data_frame.index.unique(level=0).values
+        fetched_dates = sorted(data_frame.index.unique(level=0).values)
         fetched_fields = data_frame.columns
         fetched_tickers = data_frame.index.unique(level=1).values
 
-        multi_index = MultiIndex.from_product([sorted(fetched_dates), sorted(fetched_tickers)])
+        multi_index = MultiIndex.from_product([fetched_dates, fetched_tickers])
         data_frame = data_frame.reindex(multi_index)
 
         data_reshaped = np.reshape(data_frame.values, (len(fetched_dates), len(fetched_tickers), len(fetched_fields)))
