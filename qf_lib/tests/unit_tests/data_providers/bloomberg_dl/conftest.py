@@ -48,6 +48,7 @@ def data_provider():
         self.catalog_id = "bbg0001"
         self.account_url = "https://api.bloomberg.com/eap/catalogs/bbg0001/"
         self.logger = Mock()
+        self._push_notification = True
 
     with patch.object(BloombergDLDataProvider, "__init__", _patched_init):
         provider = BloombergDLDataProvider(Mock())
