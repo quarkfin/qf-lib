@@ -178,6 +178,16 @@ class TestRules(TestCase):
         next_trigger_time = periodic_event.next_trigger_time(now)
         self.assertEqual(str_to_date("2022-06-13 09:45:00.000000", DateFormat.FULL_ISO), next_trigger_time)
 
+    def test_periodic_event_supported_frequency(self):
+        self.assertRaises(ValueError, PeriodicEvent.set_frequency, Frequency.WEEKLY)
+        self.assertRaises(ValueError, PeriodicEvent.set_frequency, Frequency.MONTHLY)
+        self.assertRaises(ValueError, PeriodicEvent.set_frequency, Frequency.QUARTERLY)
+        self.assertRaises(ValueError, PeriodicEvent.set_frequency, Frequency.YEARLY)
+
+        PeriodicEvent.set_frequency(Frequency.DAILY)
+        PeriodicEvent.set_frequency(Frequency.MIN_60)
+        PeriodicEvent.set_frequency(Frequency.MIN_5)
+
     def test_single_time_events(self):
         self.timer.set_current_time(str_to_date("2018-01-01 13:00:00.000000", DateFormat.FULL_ISO))
         now = self.timer.now()
