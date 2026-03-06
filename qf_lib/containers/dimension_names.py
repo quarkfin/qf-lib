@@ -15,3 +15,4 @@
 DATES = "dates"
 TICKERS = "tickers"
 FIELDS = "fields"
+FILING_DATE = "filingdate"
