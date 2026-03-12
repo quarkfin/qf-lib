@@ -489,7 +489,7 @@ class BloombergDLDataProvider(AbstractPriceDataProvider, TickersUniverseProvider
 
     @staticmethod
     def _payload_hash(payload: dict) -> str:
-        """Deterministic hash of request payload (excluding 'name')."""
+        """Deterministic hash of request payload."""
         return hashlib.md5(json.dumps(payload, sort_keys=True).encode('utf-8')).hexdigest()
 
     def _try_fetch_from_bloomberg(self, request_name: str):
