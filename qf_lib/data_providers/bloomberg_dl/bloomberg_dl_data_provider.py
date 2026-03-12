@@ -490,7 +490,7 @@ class BloombergDLDataProvider(AbstractPriceDataProvider, TickersUniverseProvider
     @staticmethod
     def _payload_hash(payload: dict) -> str:
         """Deterministic hash of request payload (excluding 'name')."""
-        return hashlib.sha256(json.dumps(payload, sort_keys=True).encode('utf-8')).hexdigest()
+        return hashlib.md5(json.dumps(payload, sort_keys=True).encode('utf-8')).hexdigest()
 
     def _try_fetch_from_bloomberg(self, request_name: str):
         """
@@ -522,8 +522,7 @@ class BloombergDLDataProvider(AbstractPriceDataProvider, TickersUniverseProvider
         """Submit a request to the Bloomberg DL REST API, wait for an SSE delivery notification and download
         the result. Returns None if the request fails or times out."""
 
-        payload_hash = self._payload_hash(request_payload)
-        request_name = f"r{payload_hash[:32]}"
+        request_name = self._payload_hash(request_payload)
         request_payload["name"] = request_name
 
         if self._check_existing_first:
