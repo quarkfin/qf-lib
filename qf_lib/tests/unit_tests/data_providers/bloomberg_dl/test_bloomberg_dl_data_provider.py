@@ -535,3 +535,32 @@ def test__submit_and_download__post_exception_handled_gracefully(data_provider, 
 
     data_provider.session.get.assert_not_called()
     assert sse.disconnect.called
+
+
+def test_check_existing_first__no_poll(data_provider, aapl_ticker):
+    """When check_existing_first=False, no poll, direct POST."""
+    data_provider._check_existing_first = False
+    data_provider._try_fetch_from_bloomberg = Mock()
+    with patch(SSE_PATH) as sse_cls_mock:
+        mock_used_for__submit_and_download(data_provider, sse_cls_mock, parser_result=_history_array())
+        data_provider.get_history(
+            tickers=aapl_ticker, fields="PX_LAST",
+            start_date=datetime(2025, 6, 6), end_date=datetime(2025, 6, 6),
+            frequency=Frequency.DAILY, look_ahead_bias=True)
+    data_provider.session.post.assert_called_once()
+    data_provider._try_fetch_from_bloomberg.assert_not_called()
+
+
+def test_check_existing_first__poll_hit_skips_post(data_provider, aapl_ticker):
+    """When check_existing_first=True and poll finds existing response, session.post is not called."""
+    data_provider._check_existing_first = True
+    data_provider._try_fetch_from_bloomberg = Mock(return_value=_history_array())
+
+    result = data_provider.get_history(
+        tickers=aapl_ticker, fields="PX_LAST",
+        start_date=datetime(2025, 6, 6), end_date=datetime(2025, 6, 6),
+        frequency=Frequency.DAILY, look_ahead_bias=True)
+
+    assert result == 100.0
+    data_provider.session.post.assert_not_called()
+    data_provider._try_fetch_from_bloomberg.assert_called_once()

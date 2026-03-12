@@ -79,6 +79,10 @@ class BloombergDLDataProvider(AbstractPriceDataProvider, TickersUniverseProvider
     push_notification: bool
         If True (default), SSE Event Stream for DL Platform Content Endpoint Notifications is used to notify about the
         delivered content. If False, the endpoints are polled regularly every 30 seconds.
+    check_existing_first: bool
+        If True, before POSTing a new request, first polls Bloomberg to see if data for this request already
+        exists (using a deterministic request name from the payload hash). If found, fetches it via GET;
+        otherwise creates a new request.
     """
 
     HOST = "https://api.bloomberg.com"
@@ -98,7 +102,7 @@ class BloombergDLDataProvider(AbstractPriceDataProvider, TickersUniverseProvider
     }
 
     def __init__(self, settings: Settings, reply_timeout: int = 5, timer: Optional[Timer] = None,
-                 save_to_disk: bool = False, push_notification: bool = True):
+                 save_to_disk: bool = False, push_notification: bool = True, check_existing_first: bool = False):
         super().__init__(timer=timer)
 
         self.parser = BloombergDLParser()
@@ -109,7 +113,7 @@ class BloombergDLDataProvider(AbstractPriceDataProvider, TickersUniverseProvider
         self._terminal_identity_user = self._get_settings_attribute(settings.bbg_dl, "user")
         self._terminal_identity_sn = self._get_settings_attribute(settings.bbg_dl, "sn")
         self._push_notification = push_notification
-
+        self._check_existing_first = check_existing_first
         try:
             self.session = BloombergDLSession(
                 client_id=settings.bbg_dl.client_id,
@@ -348,18 +352,16 @@ class BloombergDLDataProvider(AbstractPriceDataProvider, TickersUniverseProvider
     def _generate_request_payload(self, tickers_str: Sequence[str], fields: Sequence[str], historical: bool,
                                   pricing_source: Optional[str], field_overrides):
         """Build the JSON payload for a HistoryRequest or DataRequest submission."""
+        tickers_str = sorted(tickers_str)
+        fields = sorted(fields)
         contains = [self._build_identifier_dict(t, field_overrides) for t in tickers_str]
         contains = [c for c in contains if c is not None]
 
         if len(contains) == 0:
             raise ValueError("No valid tickers were provided. Please refer to the logs and adjust your data request.")
 
-        request_name = (f"r{datetime.now():%Y%m%d%H%M%S%f}"
-                        f"{hashlib.md5(''.join(sorted(tickers_str + fields)).encode()).hexdigest()[:10]}")
-
         request_payload = {
             '@type': 'HistoryRequest' if historical else 'DataRequest',
-            'name': request_name,
             'universe': {
                 '@type': 'Universe',
                 'contains': contains,
@@ -485,11 +487,50 @@ class BloombergDLDataProvider(AbstractPriceDataProvider, TickersUniverseProvider
         universe_series = pd.concat(universe).iloc[:, 0]
         return universe_series
 
+    @staticmethod
+    def _payload_hash(payload: dict) -> str:
+        """Deterministic hash of request payload."""
+        return hashlib.md5(json.dumps(payload, sort_keys=True).encode('utf-8')).hexdigest()
+
+    def _try_fetch_from_bloomberg(self, request_name: str):
+        """
+        Try to fetch existing data from Bloomberg by request name prefix.
+        Fetches content/responses and fieldList. Returns parsed data if both succeed else None.
+        """
+        try:
+            poll_url = urljoin(self.account_url, "content/responses/")
+            response = self.session.get(poll_url, params={'prefix': request_name})
+
+            response_contains = response.json()['contains']
+            output = next(i for i in response_contains if i.get('metadata', {}).get('DL_REQUEST_ID') and 'key' in i)
+            request_id = output['metadata']['DL_REQUEST_ID']
+            fields_url = urljoin(self.account_url, f'requests/{request_id}/fieldList')
+            fields_response = self.session.get(fields_url)
+
+            field_mapping = {
+                field['mnemonic']: field['type']
+                for field in fields_response.json()['contains']
+            }
+
+            return self._extract_response(output, request_id, field_mapping)
+
+        except Exception as e:
+            self.logger.debug(f"Failed to fetch existing data for request '{request_name}': {e}")
+            return None
+
     def _submit_and_download(self, request_payload: dict):
         """Submit a request to the Bloomberg DL REST API, wait for an SSE delivery notification and download
         the result. Returns None if the request fails or times out."""
 
-        request_name = request_payload["name"]
+        request_name = self._payload_hash(request_payload)
+        request_payload["name"] = request_name
+
+        if self._check_existing_first:
+            result = self._try_fetch_from_bloomberg(request_name)
+            if result is not None:
+                self.logger.info(f"Retrieved data from existing request '{request_name}' (no new request).")
+                return result
+
         sse_client = None
 
         try:
@@ -520,9 +561,11 @@ class BloombergDLDataProvider(AbstractPriceDataProvider, TickersUniverseProvider
 
             expiration = datetime.now(self.TIMEZONE) + self.reply_timeout
             if self._push_notification:
-                return self._wait_for_sse_delivery(sse_client, server_request_id, field_mapping, expiration)
+                result = self._wait_for_sse_delivery(sse_client, server_request_id, field_mapping, expiration)
             else:
-                return self._wait_for_polling_delivery(request_name, server_request_id, field_mapping, expiration)
+                result = self._wait_for_polling_delivery(request_name, server_request_id, field_mapping, expiration)
+
+            return result
 
         except Exception as e:
             self.logger.warning(f"Bloomberg DL request submission failed: {e}. No data obtained.")
