@@ -17,7 +17,7 @@ from datetime import datetime
 from typing import Union, Sequence, Dict, Optional
 
 from numpy import nan, float64
-from pandas import concat
+from pandas import concat, Timedelta
 from pandas._libs.tslibs.offsets import to_offset
 from pandas._libs.tslibs.timestamps import Timestamp
 from xarray import DataArray
@@ -277,7 +277,7 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
 
     def _adjust_start_date(self, start_date: datetime, frequency: Frequency):
         if frequency > Frequency.DAILY:
-            frequency_delta = to_offset(frequency.to_pandas_freq()).delta.value
+            frequency_delta = Timedelta(to_offset(frequency.to_pandas_freq())).value
             new_start_date = Timestamp(math.ceil(Timestamp(start_date).value / frequency_delta) * frequency_delta) \
                 .to_pydatetime()
             if new_start_date != start_date:
