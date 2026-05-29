@@ -36,26 +36,48 @@ from qf_lib.data_providers.data_provider import DataProvider
 
 class InitialRiskWithVolumePositionSizer(InitialRiskPositionSizer):
     """
-    Variant of initial risk position sizer, which additionally controls the target size based on the mean daily volume.
+    Extends :class:`InitialRiskPositionSizer` with a liquidity cap based on recent volume.
+
+    After computing the initial-risk target value, order size is limited so that implied
+    quantity does not exceed ``max_volume_percentage * mean(daily volume)`` over the last 100 days.
+    Uses ``OrderFactory.target_value_orders`` instead of ``target_percent_orders``.
 
     Parameters
     ----------
     broker: Broker
     data_provider: DataProvider
     order_factory: OrderFactory
+    signals_register: SignalsRegister
     initial_risk: float
-       should be set once for all signals. It corresponds to the value that we are willing to lose
-       on single trade. For example: initial_risk = 0.02, means that we are willing to lose 2% of portfolio value in
-       single trade
-    max_target_percentage: float
-       max leverage that is accepted by the position sizer.
-       if None, no max_target_percentage is used.
+        Maximum portfolio fraction at risk per trade (same as ``InitialRiskPositionSizer``).
+    max_target_percentage: float, optional
+        Upper cap on absolute target weight before the volume check.
     tolerance_percentage: float
-       percentage used by OrdersFactory target_percent_orders function; it defines tolerance to the
-       target percentages
+        Passed to ``OrderFactory.target_value_orders``.
     max_volume_percentage: float
-        percentage used to cap the target value, so that according to historical volume data, the position will not
-        exceed max_volume_percentage * mean volume within last 100 days
+        Multiplier on mean daily volume (default ``1.0``). Lower values produce smaller positions
+        in illiquid names.
+
+    Examples
+    --------
+    Without a volume cap, ``initial_risk=0.05`` and ``fraction_at_risk=0.02`` would target 2,500 shares
+    (same as :class:`InitialRiskPositionSizer`). With ``max_volume_percentage=0.1`` and mean daily
+    volume 1,000, ``size_signals`` caps the market order at 100 shares:
+
+    >>> sizer = InitialRiskWithVolumePositionSizer(
+    ...         broker, data_provider, order_factory, BacktestSignalsRegister(),
+    ...         initial_risk=0.05, max_volume_percentage=0.1)
+    >>> signal = Signal(ticker, Exposure.LONG, fraction_at_risk=0.02,
+    ...                     last_available_price=100.0, creation_time=now)
+    >>> orders = sizer.size_signals([signal], use_stop_losses=False)
+    >>> orders[0].quantity
+    100.0
+
+    In case the volume of the given day was 5,000, the cap will be set to 500 shares (10% of mean volume):
+
+    >>> orders = sizer.size_signals([signal], use_stop_losses=False)
+    >>> orders[0].quantity
+    500.0
     """
 
     def __init__(self, broker: Broker, data_provider: DataProvider, order_factory: OrderFactory,

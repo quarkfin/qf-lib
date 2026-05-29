@@ -6,70 +6,81 @@
 
 # -- Path setup --------------------------------------------------------------
 
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-#
 import os
 import sys
 from datetime import datetime
 
-sys.path.append(os.path.abspath('../..'))
+sys.path.insert(0, os.path.abspath('../..'))
+
+import qf_lib
 
 # -- Project information -----------------------------------------------------
 
-project = 'QF Lib'
-copyright = datetime.today().strftime("%Y") + ', Karolina Cynk'
+project = 'QF-Lib'
+copyright = datetime.today().strftime("%Y") + ', CERN Pension Fund'
 
-# The full version, including alpha/beta/rc tags
-# release = 'release...'
+release = qf_lib.__version__
+version = '.'.join(release.split('+')[0].split('.')[:2])
 
 
 # -- General configuration ---------------------------------------------------
 
-# Add any Sphinx extension module names here, as strings. They can be
-# extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
-# ones.
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
-    'sphinx_rtd_theme',
     'sphinx.ext.autosummary',
     'sphinx.ext.viewcode',
-    'autodocsumm',
-    'sphinx.ext.intersphinx'
+    'sphinx.ext.intersphinx',
+    'sphinx_copybutton',
 ]
-numpydoc_show_class_members = False
 
-# Add any paths that contain templates here, relative to this directory.
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3', None),
+    'numpy': ('https://numpy.org/doc/stable/', None),
+    'pandas': ('https://pandas.pydata.org/docs/', None),
+    'matplotlib': ('https://matplotlib.org/stable/', None),
+}
+
 templates_path = ['_templates']
 pygments_style = 'default'
 
-# List of patterns, relative to source directory, that match files and
-# directories to ignore when looking for source files.
-# This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
 
 # -- Options for HTML output -------------------------------------------------
 
-# The theme to use for HTML and HTML Help pages.  See the documentation for
-# a list of builtin themes.
-#
-html_theme = "sphinx_rtd_theme"
+html_theme = "pydata_sphinx_theme"
 html_theme_options = {
-    'logo_only': True,
-    'navigation_depth': 5,
+    'show_nav_level': 1,
+    'show_toc_level': 2,
+    'navigation_depth': 4,
+    'collapse_navigation': False,
+    'navigation_with_keys': True,
+    'navbar_align': 'left',
+    'logo_text': 'QF-Lib',
+    'pygments_light_style': 'default',
+    'pygments_dark_style': 'native',
 }
 
-# Add any paths that contain custom static files (such as style sheets) here,
-# relative to this directory. They are copied after the builtin static files,
-# so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 html_css_files = [
     'theme_overrides.css',
 ]
 
+# -- sphinx-copybutton -------------------------------------------------------
+
+# Strip shell/Python REPL prompts when copying; leave full blocks without prompts unchanged.
+copybutton_prompt_text = (
+    r">>> |\.\.\. "
+    r"|\$ "
+    r"|In \[\d*\]: "
+    r"| {2,5}\.\.\.: "
+    r"| {5,8}: "
+)
+copybutton_only_copy_prompt_lines = False
+copybutton_remove_prompts = True
+
 # -- Extension configuration -------------------------------------------------
+
 autosummary_generate = True
 autodoc_mock_imports = ["cvxopt", "ibapi", "blpapi", "PyJWT", "retrying", "beap_lib"]
 html_show_sourcelink = False

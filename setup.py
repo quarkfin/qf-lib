@@ -24,9 +24,7 @@ setup(
     name='qf-lib',
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
-    author='Jacek Witkowski, Marcin Borratynski, Thomas Ruxton, Dominik Picheta, Olga Kalinowska, Karolina Cynk, '
-           'Jakub Czerski, Bartlomiej Czajewski, Zeynep Gültuğ Aydemir, Octavian-Mihai Matei, Eirik Thorp Eythorsson, '
-           'Marek Bais',
+    author='CERN Pension Fund',
     description='Quantitative Finance Library',
     long_description=long_description,
     license='Apache License 2.0',
@@ -52,7 +50,12 @@ setup(
     include_package_data=True,
     install_requires=requirements,
     extras_require={
-        "documentation": ["autodocsumm==0.2.9", "sphinx_rtd_theme==1.2.0", "Sphinx==5.0", "docutils==0.18.1", "markupsafe==2.0.1"],
+        "documentation": [
+            "pydata-sphinx-theme>=0.15.0",
+            "Sphinx>=7.0",
+            "docutils>=0.19",
+            "sphinx-copybutton>=0.5.0",
+        ],
         "interactive brokers": ["ibapi"],
         "bloomberg_beap_hapi": ["PyJWT>1.0,<2.0.0", "retrying>=1.3.3", "beap-lib==0.0.1", "requests>=2.25.1,<=2.31.0"],
         "bloomberg_dl": ["cryptography", "fastparquet", "oauthlib", "PyJWT>=2.0.0,<2.11.0", "retrying>=1.3.3",

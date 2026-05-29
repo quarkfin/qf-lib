@@ -18,7 +18,12 @@ Alternatively, to install the library from sources, you can download the project
 Prerequisites
 --------------
 
-QF-Lib currently supports Python 3.8-3.11. The library has been tested on Windows, macOS, and Ubuntu.
+QF-Lib supports the Python versions declared on PyPI:
+
+.. image:: https://img.shields.io/pypi/pyversions/qf-lib
+   :alt: Supported Python versions on PyPI
+
+The library has been tested on Windows, macOS, and Ubuntu.
 
 The library uses `WeasyPrint <https://weasyprint.readthedocs.io>`__ to
 export documents to PDF. WeasyPrint requires additional dependencies,
@@ -36,33 +41,47 @@ file to install the GTK3+.
 Installing optional data providers
 ------------------------------------
 
-Bloomberg Data Provider
-^^^^^^^^^^^^^^^^^^^^^^^^^
-For Bloomberg API there are prebuilt binaries in both 32 and 64 bits, for Windows, macOS, and most versions
-of Linux. On Linux, ‘pip’ >= 19.0 is required to install these binaries. You can install Bloomberg using the pip command:
+The core installation already includes the common built-in providers (for example ``CSVDataProvider`` and
+``PortaraDataProvider``). The table below summarises providers that require extra setup.
 
-.. code:: console
+.. list-table::
+   :header-rows: 1
+   :widths: 30 27 27 16
 
-   $ pip install --index-url=https://bcms.bloomberg.com/pip/simple/ blpapi==3.20.1
+   * - Data provider
+     - Short description
+     - Prerequisites
+     - Installation command
+   * - ``BloombergDataProvider`` (BLPAPI)
+     - Direct Bloomberg Terminal/API market data access.
+     - Bloomberg Terminal/API access and local Bloomberg runtime.
+     - ``pip install --index-url=https://bcms.bloomberg.com/pip/simple/ blpapi``
+   * - ``BloombergDLDataProvider``
+     - Bloomberg Data License downloader.
+     - Bloomberg Data License credentials and account configuration.
+     - ``pip install -e ".[bloomberg_dl]"``
+   * - ``QuandlDataProvider``
+     - Nasdaq Data Link (Quandl) datasets.
+     - Quandl API key for most datasets.
+     - ``pip install -e ".[quandl]"``
+   * - ``YFinanceDataProvider``
+     - Yahoo Finance downloader for quick external data usage.
+     - None for common public datasets.
+     - ``pip install -e ".[yfinance]"``
+   * - ``AlpacaDataProvider``
+     - Alpaca stocks and crypto data.
+     - API key for equities (crypto can be used without key).
+     - ``pip install -e ".[alpaca]"``
+   * - ``BinanceDataProvider``
+     - Binance crypto market data.
+     - Optional Binance credentials depending on endpoint usage.
+     - ``pip install python-binance``
+   * - ``HaverDataProvider``
+     - Haver Analytics data access.
+     - Licensed Haver SDK and local Haver environment.
+     - Install using Haver official instructions.
+   * - Interactive Brokers integration
+     - Interactive Brokers API support for broker/data workflows.
+     - TWS or IB Gateway and official TWS API installation.
+     - ``pip install -e ".[interactive brokers]"``
 
-
-Quandl Data Provider
-^^^^^^^^^^^^^^^^^^^^^
-You can install Quandl using the pip command:
-
-.. code:: console
-
-   $  pip install quandl==3.6.1
-
-
-Interactive Brokers
-^^^^^^^^^^^^^^^^^^^
-In order to install all dependencies necessary to use the Interactive Brokers platform:
-
-   -  Download the TWS API Stable for your operating system (Version:
-      API 9.76).
-   -  Link for windows msi file:
-      ``http://interactivebrokers.github.io/downloads/TWS%20API%20Install%20976.01.msi``.
-   -  Install TWS API by running the downloaded file.
-   -  Go to ``TWS API\source\pythonclient`` and run
-      ``python setup.py install``.

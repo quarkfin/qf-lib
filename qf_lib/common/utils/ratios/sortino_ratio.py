@@ -18,10 +18,10 @@ from qf_lib.common.utils.volatility.get_volatility import get_volatility
 from qf_lib.containers.series.qf_series import QFSeries
 
 
-def sorino_ratio(qf_series: QFSeries, frequency: Frequency, risk_free: float = 0) -> float:
+def sortino_ratio(qf_series: QFSeries, frequency: Frequency, risk_free: float = 0) -> float:
     """
-    Calculates the Sorino ratio for a given timeseries of returns.
-    sorino_ratio = (CAGR - risk free) / annualised downside volatility
+    Calculates the Sortino ratio for a given timeseries of returns.
+    sortino_ratio = (CAGR - risk free) / annualised downside volatility
 
     Parameters
     ----------

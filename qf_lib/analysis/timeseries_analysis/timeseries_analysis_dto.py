@@ -29,7 +29,7 @@ class TimeseriesAnalysisDTO:
         self.omega_ratio = None
         self.calmar_ratio = None
         self.gain_to_pain_ratio = None
-        self.sorino_ratio = None
+        self.sortino_ratio = None
 
         self.cvar = None        # 5% CVaR expressed related to the specified frequency
         self.annualised_cvar = None        # annualised 5% CVaR

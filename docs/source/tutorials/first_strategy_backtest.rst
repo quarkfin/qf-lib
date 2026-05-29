@@ -26,15 +26,15 @@ In order to implement and afterwards backtest a strategy, the following steps ar
 3. Schedule the strategy execution
 4. Start the backtest by calling `start_trading()` method on the `TradingSession`
 
-**********************************
+*******************************************************
 Create a simple trading session
-**********************************
+*******************************************************
 
 Backtest Trading Session contains the full configuration of all elements, connections and dependencies, which belong to your
 trading environment. It contains parameters like backtest frequency, data provider and also more complicated elements like
 commission or slippage model. To simplify the setup, we will use predefined demo settings available in the `demo_scripts`.
 
-.. code-block::
+.. code-block:: python
     :caption: Backtest a daily strategy for ticker AAA between 01/01/2010 and 01/03/2015
 
     def main():
@@ -52,7 +52,7 @@ commission or slippage model. To simplify the setup, we will use predefined demo
 
         ts = session_builder.build(start_date, end_date)
 
-.. code-block::
+.. code-block:: python
     :caption: Backtest an intraday strategy for ticker AAA between 01/07/2019 and 08/31/2019
 
     def main():
@@ -75,38 +75,36 @@ commission or slippage model. To simplify the setup, we will use predefined demo
 .. _container: https://github.com/quarkfin/qf-lib/blob/master/demo_scripts/demo_configuration/demo_ioc.py
 
 
-**********************************
+*******************************************************
 Create Moving Average strategy
-**********************************
+*******************************************************
 
 Now, after we configured the necessary dependencies, we can finally go to the next, more interesting step, which is the strategy
 implementation. The first strategy we will implement will be a **simple moving average strategy**. We will compute two moving averages -
 long moving average (20 bars) and a short moving average (5 bars), and we will create a **BUY order in case if the short moving average
 is greater or equal to the long moving average**. Otherwise - we will remove any remaining assets in our portfolio and will not make any new orders.
 
-All the next steps will use various utility classes (`DataHandler`, `OrderFactory` and `BacktestBroker`), created
+All the next steps will use various utility classes (`DataProvider`, `OrderFactory` and `BacktestBroker`), created
 automatically inside the `BacktestTradingSession`.
 
 Download historical prices
 ==========================
-
 At first, we will need to download the historical prices from our data provider. To achieve this we can
-use the `historical_price` function of the  `DataHandler` objects. This function will return a pandas-compatible `QFSeries`.
+use the `historical_price` function of the ``DataProvider`` (available as ``self.data_provider`` on the strategy). This function will return a pandas-compatible `QFSeries`.
 
-.. code-block::
+.. code-block:: python
     :caption: Return latest 10 Close prices of AAA
 
-    series = self.data_handler.historical_price(DummyTicker("AAA"), PriceField.Close, 10)
+    series = self.data_provider.historical_price(DummyTicker("AAA"), PriceField.Close, 10)
 
 
 Create orders
 ===============
-
 In order to create necessary orders we will use the `target_percent_orders` function of the `OrderFactory` object.
 This function takes a dictionary, which maps tickers onto desired percentages of your portfolio. For example, if you would like to invest 75% of your portfolio
 into ticker AAA you can use the following function:
 
-.. code::
+.. code-block:: python
 
     self.order_factory.target_percent_orders({DummyTicker("AAA"): 0.75}, MarketOrder(), TimeInForce.DAY)
 
@@ -120,10 +118,9 @@ In case if 75% of your portfolio is already invested into AAA, no order will be 
 
 Place orders
 ===============
+Finally, we will use the `Broker` object to cancel any existing, not filled orders and place the newly created ones.
 
-Finally, we will yse the `Broker` object to cancel any existing, not filled orders and place the newly created ones.
-
-.. code-block::
+.. code-block:: python
 
     self.broker.cancel_all_open_orders()
     self.broker.place_orders(orders)
@@ -131,12 +128,11 @@ Finally, we will yse the `Broker` object to cancel any existing, not filled orde
 
 Create strategy
 ===================
-
-Finally, we can start writing the code of our strategy! The only requirement is that the our strategy class extends the `AbstractStrategy`,
+Finally, we can start writing the code of our strategy! The only requirement is that our strategy class extends the `AbstractStrategy`,
 which means that at least it should implement the `calculate_and_place_orders` function. Everything, that we described (downloading the data, computing the moving averages, creating and placing the orders), should happen inside this function. As we will see later, this function
 is used by the Backtest Trading Session to execute our trading strategy, so it's important that all the logic is encapsulated within it.
 
-.. code-block::
+.. code-block:: python
 
     class SimpleMAStrategy(AbstractStrategy):
         """
@@ -152,11 +148,9 @@ is used by the Backtest Trading Session to execute our trading strategy, so it's
             self.ticker = ticker
 
         def calculate_and_place_orders(self):
-            # Compute the moving averages
             long_ma_len = 20
             short_ma_len = 5
 
-            # Use data handler to download last 20 daily close prices and use them to compute the moving averages
             long_ma_series = self.data_provider.historical_price(self.ticker, PriceField.Close, long_ma_len)
             long_ma_price = long_ma_series.mean()
 
@@ -164,22 +158,20 @@ is used by the Backtest Trading Session to execute our trading strategy, so it's
             short_ma_price = short_ma_series.mean()
 
             if short_ma_price >= long_ma_price:
-                # Place a buy Market Order, adjusting the position to a value equal to 100% of the portfolio
                 orders = self.order_factory.target_percent_orders({self.ticker: 1.0},
                     MarketOrder(), TimeInForce.DAY)
             else:
                 orders = self.order_factory.target_percent_orders({self.ticker: 0.0},
                     MarketOrder(), TimeInForce.DAY)
 
-            # Cancel any open orders and place the newly created ones
             self.broker.cancel_all_open_orders()
             self.broker.place_orders(orders)
 
-**********************************
+*******************************************************
 Schedule strategy execution
-**********************************
+*******************************************************
 
-At this point, what is left is subscribing our strategy to a certain event (e.g. `CalculateAndPlaceOrdersRegularEventt` etc).
+At this point, what is left is subscribing our strategy to a certain event (e.g. `CalculateAndPlaceOrdersRegularEvent` etc).
 Every time this event will occur, the `calculate_and_place_orders` of our strategy will be invoked.
 
 In our demo  we will use a predefined signal generation event  - `CalculateAndPlaceOrdersRegularEvent`. The default time of the
@@ -190,9 +182,9 @@ After the creation of a strategy object, in order to proceed with the signal gen
 every day at the `CalculateAndPlaceOrdersRegularEvent` event time, we will need to subscribe the strategy to the event
 in the following way:
 
-.. code::
+.. code-block:: python
 
-    strategy = ExampleStrategy(trading_session)
+    strategy = SimpleMAStrategy(trading_session)
     CalculateAndPlaceOrdersRegularEvent.set_daily_default_trigger_time()
     CalculateAndPlaceOrdersRegularEvent.exclude_weekends()
     strategy.subscribe(CalculateAndPlaceOrdersRegularEvent)
@@ -200,14 +192,14 @@ in the following way:
 If we will add these two lines into our script, every day - at the chosen time (1 a.m. in our case) - we will compute
 and place market orders for the AAA ticker.
 
-**********************************
+*******************************************************
 Let's start the backtest!
-**********************************
+*******************************************************
 
 After finishing all the necessary configuration we can finally put all the above lines together and run the backtest by calling
 the `start_trading()` on the Backtest Trading Session!
 
-.. code-block::
+.. code-block:: python
 
     import matplotlib.pyplot as plt
 
@@ -242,7 +234,7 @@ the `start_trading()` on the Backtest Trading Session!
             super().__init__(ts)
             self.broker = ts.broker
             self.order_factory = ts.order_factory
-            self.data_handler = ts.data_handler
+            self.data_provider = ts.data_provider
             self.ticker = ticker
 
         def calculate_and_place_orders(self):
@@ -251,7 +243,7 @@ the `start_trading()` on the Backtest Trading Session!
             short_ma_len = 5
 
             # Use data handler to download last 20 daily close prices and use them to compute the moving averages
-            long_ma_series = self.data_handler.historical_price(self.ticker, PriceField.Close, long_ma_len)
+            long_ma_series = self.data_provider.historical_price(self.ticker, PriceField.Close, long_ma_len)
             long_ma_price = long_ma_series.mean()
 
             short_ma_series = long_ma_series.tail(short_ma_len)
@@ -296,15 +288,17 @@ the `start_trading()` on the Backtest Trading Session!
 
         ts.start_trading()
 
+    if __name__ == '__main__':
+        main()
+
 Intraday strategy example
 ==========================
-
 For intraday strategies, one needs to remember that the backtest flow supports only one-minute data bars.
 Setting up a strategy that calculates orders at the same frequency as the data frequency (every minute) is fairly
 straightforward. Below, we use the same moving average strategy as before. Note that at the one-minute frequency,
 data bars used to compute the average now correspond to minutes not days.
 
-.. code-block::
+.. code-block:: python
 
     class IntradayMAStrategy(AbstractStrategy):
         """
@@ -316,7 +310,7 @@ data bars used to compute the average now correspond to minutes not days.
             super().__init__(ts)
             self.broker = ts.broker
             self.order_factory = ts.order_factory
-            self.data_handler = ts.data_handler
+            self.data_provider = ts.data_provider
             self.position_sizer = ts.position_sizer
             self.timer = ts.timer
             self.ticker = ticker
@@ -331,7 +325,7 @@ data bars used to compute the average now correspond to minutes not days.
             short_ma_len = 5
 
             # Use data handler to download last 20 daily close prices and use them to compute the moving averages
-            long_ma_series = self.data_handler.historical_price(self.ticker, PriceField.Close, long_ma_len,
+            long_ma_series = self.data_provider.historical_price(self.ticker, PriceField.Close, long_ma_len,
                                                                 frequency=Frequency.MIN_1)
             long_ma_price = long_ma_series.mean()
 
@@ -372,7 +366,8 @@ data bars used to compute the average now correspond to minutes not days.
         pdf_exporter = PDFExporter(settings)
         excel_exporter = ExcelExporter(settings)
 
-        session_builder = BacktestTradingSessionBuilder(settings, pdf_exporter, excel_exporter)        session_builder.set_frequency(Frequency.MIN_1)
+        session_builder = BacktestTradingSessionBuilder(settings, pdf_exporter, excel_exporter)
+        session_builder.set_frequency(Frequency.MIN_1)
         session_builder.set_market_open_and_close_time({"hour": 9, "minute": 15}, {"hour": 13, "minute": 15})
         session_builder.set_backtest_name(backtest_name)
         session_builder.set_data_provider(intraday_data_provider)
@@ -383,6 +378,9 @@ data bars used to compute the average now correspond to minutes not days.
         strategy.subscribe(CalculateAndPlaceOrdersPeriodicEvent)
 
         ts.start_trading()
+
+    if __name__ == '__main__':
+        main()
 
 As you can see above, you need to specify the market open and market close times. Matching the times of the first and
 the last price data of the day is recommended. Similarly, you need to define the exact hours of the signal generation event,
@@ -398,18 +396,18 @@ a strategy where we only trade once per hour using 30-minute data bars to comput
 the trading session frequency as it still requires 1-minute data bars. Instead, we can simulate the scenario by 
 changing the price calculation of the strategy and the signal generation frequency accordingly.
 
-.. code::
+.. code-block:: python
 
-    long_ma_series = self.data_handler.historical_price(self.ticker, PriceField.Close, long_ma_len,
+    long_ma_series = self.data_provider.historical_price(self.ticker, PriceField.Close, long_ma_len,
                                                         frequency=Frequency.MIN_30)
 
-.. code::
+.. code-block:: python
 
     CalculateAndPlaceOrdersPeriodicEvent.set_frequency(Frequency.MIN_60)
 
-**********************************
+*******************************************************
 I run the backtest. What now?
-**********************************
+*******************************************************
 
 If you used the above linked code, along with all the imports, you should have been able to see a dynamic chart,
 presenting the performance of your strategy:
@@ -418,7 +416,7 @@ presenting the performance of your strategy:
 
 Additionally, you should be able to see the following output in the console, after your backtest finishes:
 
-.. code::
+.. code-block:: text
 
                              Simple MA Strategy Demo
     Start Date                         2010-01-02
@@ -432,7 +430,7 @@ Additionally, you should be able to see the following output in the console, aft
     Omega Ratio                              1.12
     Calmar Ratio                             0.43
     Gain to Pain Ratio                       0.53
-    Sorino Ratio                             0.63
+    Sortino Ratio                            0.63
     5% CVaR                                 -0.94 %
     Annualised 5% CVaR                     -13.89 %
     Max Drawdown                             8.70 %
@@ -452,8 +450,13 @@ By default, after the backtest execution you should be able to access the follow
 
 * Transactions - CSV file containing a list of all fills that were created within your backtests
 * Config - YAML file containing all configuration details, which you have added to the backtest trading session
-* Portfolio Analysis Sheet  - document with many details related to the performance of assets, number and concertation of assets in the portfolio over time etc.
+* Portfolio Analysis Sheet  - document with many details related to the performance of assets, number and concentration of assets in the portfolio over time etc.
 * Tearsheet - summary of the whole backtest
 * Timeseries - timeseries of your portfolio
-* Trades Analysis Sheet - trade related details (e.g. number of long / short trades, avergare trade duration, average trade return, best trade return etc)
+* Trades Analysis Sheet - trade related details (e.g. number of long / short trades, average trade duration, average trade return, best trade return etc)
+
+
+
+
+
 

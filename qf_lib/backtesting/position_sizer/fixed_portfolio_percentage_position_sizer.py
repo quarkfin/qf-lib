@@ -27,21 +27,32 @@ from qf_lib.data_providers.data_provider import DataProvider
 
 class FixedPortfolioPercentagePositionSizer(PositionSizer):
     """
-    This PositionSizer converts signals to orders using Fixed Percentage value.
-    Each signal will be sized based on that percentage of the portfolio.
+    Scales each signal to a fixed fraction of portfolio value.
+
+    Target weight per asset: ``suggested_exposure.value * fixed_percentage``.
 
     Parameters
     ----------
     broker: Broker
     data_provider: DataProvider
     order_factory: OrderFactory
+    signals_register: SignalsRegister
     fixed_percentage: float
-        should be set once for all signals. It corresponds to the fraction of a portfolio that we
-        are investing in every asset on single trade.
-        For example: fixed_percentage = 0.2, means that we are investing 20% of portfolio to
-        any signal that is long or short.
+        Fraction of portfolio allocated per signal. For example ``0.2`` invests 20% of portfolio
+        per long signal (and -20% per short signal).
     tolerance_percentage: float
-        used by OrderFactory
+        Passed to ``OrderFactory.target_percent_orders``; skips rebalancing when current weight
+        is already within tolerance of the target.
+
+    Examples
+    --------
+
+    >>> sizer = FixedPortfolioPercentagePositionSizer(
+    ...     broker, data_provider, order_factory, BacktestSignalsRegister(), fixed_percentage=0.2)
+    >>> signal = Signal(ticker, Exposure.LONG, 0.02, 100.0, now)
+    >>> orders = sizer.size_signals([signal], use_stop_losses=False)
+    >>> orders[0].quantity
+    200.0
     """
 
     def __init__(self, broker: Broker, data_provider: DataProvider, order_factory: OrderFactory,
