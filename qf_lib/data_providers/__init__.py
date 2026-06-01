@@ -11,6 +11,7 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
+from qf_lib.data_providers.adanos.adanos_data_provider import AdanosDataProvider
 from qf_lib.data_providers.binance_dp.binance_data_provider import BinanceDataProvider
 from qf_lib.data_providers.bloomberg import BloombergDataProvider
 from qf_lib.data_providers.bloomberg_beap_hapi.bloomberg_beap_hapi_data_provider import BloombergBeapHapiDataProvider

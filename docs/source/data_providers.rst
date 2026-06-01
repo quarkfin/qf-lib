@@ -14,6 +14,7 @@ data_providers
     futures_data_provider.FuturesDataProvider
     preset_data_provider.PresetDataProvider
     prefetching_data_provider.PrefetchingDataProvider
+    adanos.adanos_data_provider.AdanosDataProvider
     binance_dp.binance_data_provider.BinanceDataProvider
     bloomberg.bloomberg_data_provider.BloombergDataProvider
     bloomberg_dl.bloomberg_dl_data_provider.BloombergDLDataProvider
