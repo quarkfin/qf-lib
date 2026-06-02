@@ -141,6 +141,57 @@ class TestSeriesLastValueThenFormat(TestCase):
         _assert_no_applymap_warning(
             lambda: numeric_df.map(lambda p: '{:,.2f}'.format(p)))
 
+    def test_chained_map_calls(self):
+        """
+        Mirrors the exact chain in portfolio_analysis_sheet.py lines 319-321:
+            performance_df
+                .map(lambda pnl_series: pnl_series.iloc[-1] if not pnl_series.empty else 0.0)
+                .sort_values(by="Overall performance", ascending=False)
+                .map(lambda p: '{:,.2f}'.format(p))
+                .reset_index()
+        """
+        df = pd.DataFrame({
+            "Overall performance": [
+                pd.Series([100.0, 200.0, 500.0]),
+                pd.Series([10.0, 20.0]),
+                pd.Series([], dtype=float),
+            ],
+            "Long PnL": [
+                pd.Series([50.0, 150.0]),
+                pd.Series([5.0]),
+                pd.Series([0.0, 1000.0]),
+            ],
+        })
+
+        result = (
+            df
+            .map(lambda s: s.iloc[-1] if not s.empty else 0.0)
+            .sort_values(by="Overall performance", ascending=False)
+            .map(lambda p: '{:,.2f}'.format(p))
+            .reset_index(drop=True)
+        )
+
+        # After extracting last values: [500.0, 20.0, 0.0] — sorted descending
+        self.assertEqual(result.loc[0, "Overall performance"], "500.00")
+        self.assertEqual(result.loc[1, "Overall performance"], "20.00")
+        self.assertEqual(result.loc[2, "Overall performance"], "0.00")
+        # Corresponding Long PnL last values: 150.0, 5.0, 1000.0
+        self.assertEqual(result.loc[0, "Long PnL"], "150.00")
+        self.assertEqual(result.loc[1, "Long PnL"], "5.00")
+        self.assertEqual(result.loc[2, "Long PnL"], "1,000.00")
+
+    def test_no_applymap_warning_chained(self):
+        df = pd.DataFrame({
+            "Overall performance": [pd.Series([1.0, 2.0]), pd.Series([3.0])],
+            "Long PnL":            [pd.Series([0.5]),       pd.Series([1.5])],
+        })
+        _assert_no_applymap_warning(lambda: (
+            df
+            .map(lambda s: s.iloc[-1] if not s.empty else 0.0)
+            .sort_values(by="Overall performance", ascending=False)
+            .map(lambda p: '{:,.2f}'.format(p))
+        ))
+
 
 # ---------------------------------------------------------------------------
 # backtest_monitor.py – applying a Signal-field extraction function
