@@ -138,7 +138,7 @@ class PortfolioAnalysisSheet(AbstractDocument):
         if positions_history.empty:
             raise ValueError("No positions found in positions history")
 
-        positions_history = positions_history.applymap(
+        positions_history = positions_history.map(
             lambda x: x.total_exposure if isinstance(x, BacktestPositionSummary) else 0)
 
         # Group all the tickers by their names and take the maximal total exposure for each of the groups - in case
@@ -210,7 +210,7 @@ class PortfolioAnalysisSheet(AbstractDocument):
 
         # Get the assets history
         assets_history = self.backtest_result.portfolio.positions_history()
-        assets_history = assets_history.applymap(
+        assets_history = assets_history.map(
             lambda x: x.total_exposure if isinstance(x, BacktestPositionSummary) else 0)
 
         def gini(group):
@@ -273,7 +273,7 @@ class PortfolioAnalysisSheet(AbstractDocument):
                 positions[column] = 0.0
 
         positions["Out"] = 1.0 - positions["Long"] - positions["Short"]
-        positions[["Long", "Short", "Out"]] = positions[["Long", "Short", "Out"]].applymap(lambda x: '{:.2%}'.format(x))
+        positions[["Long", "Short", "Out"]] = positions[["Long", "Short", "Out"]].map(lambda x: '{:.2%}'.format(x))
         positions = positions.fillna(0.0)
 
         table = DFTable(positions, css_classes=['table', 'left-align'])
@@ -316,9 +316,9 @@ class PortfolioAnalysisSheet(AbstractDocument):
         self.document.add_element(NewPageElement())
         self.document.add_element(HeadingElement(level=2, text="Performance of each asset"))
         final_performance = performance_df. \
-            applymap(lambda pnl_series: pnl_series.iloc[-1] if not pnl_series.empty else 0.0). \
+            map(lambda pnl_series: pnl_series.iloc[-1] if not pnl_series.empty else 0.0). \
             sort_values(by="Overall performance", ascending=False). \
-            applymap(lambda p: '{:,.2f}'.format(p)). \
+            map(lambda p: '{:,.2f}'.format(p)). \
             reset_index()
         table = DFTable(final_performance, css_classes=['table', 'left-align'])
         table.add_columns_classes(["Tickers name"], 'wide-column')

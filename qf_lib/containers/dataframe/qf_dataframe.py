@@ -218,7 +218,7 @@ class QFDataFrame(pd.DataFrame, TimeIndexedContainer):
     def _get_iterator_for_pandas(self, result_values):
         """
         Creates iterator suitable to be used with pandas.apply function.
-        As since pandas 1.1.0 apply and applymap on DataFrame evaluates first row/column only once there is no need to
+        As since pandas 1.1.0 apply and map on DataFrame evaluates first row/column only once there is no need to
         iterate over the first element twice in the generator.
         """
         if isinstance(result_values, np.ndarray):
