@@ -75,6 +75,18 @@ def _autolink_bare_urls(text: str) -> str:
     return _BARE_URL_PATTERN.sub(r"<\1>", text)
 
 
+def _normalize_github_tables(text: str) -> str:
+    """GitHub often uses tabs between pipe columns; MyST needs space-separated GFM tables."""
+    lines: list[str] = []
+    for line in text.splitlines():
+        if line.count("|") >= 2 and "\t" in line:
+            line = line.replace("\t", " ")
+            while "  " in line:
+                line = line.replace("  ", " ")
+        lines.append(line)
+    return "\n".join(lines)
+
+
 def generate_release_notes(source_dir: str) -> None:
     """Write release_notes_generated.md next to release_notes.rst."""
     output_path = Path(source_dir) / OUTPUT_FILENAME
@@ -113,7 +125,7 @@ def generate_release_notes(source_dir: str) -> None:
             parts.append(f"**Released:** {published}")
             parts.append("")
         if body:
-            parts.append(_autolink_bare_urls(body))
+            parts.append(_autolink_bare_urls(_normalize_github_tables(body)))
         else:
             pass
         parts.append("")
