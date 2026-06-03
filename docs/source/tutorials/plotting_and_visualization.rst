@@ -65,9 +65,12 @@ Basic line chart
     chart.plot()
     plt.show(block=True)
 
+
 Plotting multiple series on one chart
 =======================================
+
 .. code-block:: python
+
     import matplotlib.pyplot as plt
 
     from qf_lib.common.enums.price_field import PriceField

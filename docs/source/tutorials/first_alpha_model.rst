@@ -2,14 +2,13 @@
 Create an Alpha Model based strategy
 ###########################################
 
-A different approach to strategies implementation involves the use of Alpha Models. The :doc:`backtesting` module contains
+A different approach to strategies implementation involves the use of Alpha Models. The :doc:`../api_docs/backtesting` module contains
 both an abstract AlphaModel and an AlphaModelStrategy - a base strategy, which puts together models and all settings around it.
 
 .. note::
-    Some of the concepts used in this tutorial were described in the `How to backtest your strategy`_ tutorial.
-    It is strongly advised to review that one first, before learning about the Alpha models.
-
-    .. _`How to backtest your strategy`: first_strategy_backtest.html
+    Review :doc:`first_strategy_backtest` first - especially the **Prerequisites** section
+    (``DummyTicker``, ``demo_data_provider``, and ``get_demo_settings()``). The alpha-model tutorial
+    uses the same demo setup so you can run examples without downloading the entire ``demo_scripts`` folder.
 
 
 Alpha Model vs Abstract Strategy
@@ -253,7 +252,7 @@ Built-in position sizers
    * - :class:`~qf_lib.backtesting.position_sizer.initial_risk_with_volume_position_sizer.InitialRiskWithVolumePositionSizer`
      - Same risk formula as ``InitialRiskPositionSizer``, then caps notional using recent average volume.
 
-See the :doc:`backtesting` API reference (``position_sizer`` section) for parameters and sizing examples in each class docstring.
+See the :doc:`../api_docs/backtesting` API reference (``position_sizer`` section) for parameters and sizing examples in each class docstring.
 
 Final thoughts
 ---------------------------

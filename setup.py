@@ -52,8 +52,9 @@ setup(
     extras_require={
         "documentation": [
             "pydata-sphinx-theme>=0.15.0",
-            "Sphinx>=7.0",
+            "Sphinx>=7.2",
             "docutils>=0.19",
+            "myst-parser>=2.0",
             "sphinx-copybutton>=0.5.0",
         ],
         "interactive brokers": ["ibapi"],

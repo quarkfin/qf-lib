@@ -7,17 +7,52 @@ This document will guide you through the process of implementing and backtesting
 * run a backtest of your own strategy in python,
 * view the historical performance of your strategy (and various related measures like Sharpe Ratio or Max Drawdown),
 
-All the used code samples can be found in the `demo scripts`_ directory of the qf-lib project.
+The runnable script lives in ``demo_scripts/strategies/simple_ma_strategy.py``. You do **not** need to
+copy the whole ``demo_scripts`` tree if you add the three building blocks below to your own project.
 
-.. _demo scripts: https://github.com/quarkfin/qf-lib/tree/master/demo_scripts
+Prerequisites
+=============
 
+The tutorial examples use bundled CSV data and lightweight stand-ins for tickers and settings.
+Copy these three modules (and the ``demo_configuration/input/`` CSV files for daily/intraday data)
+into your project, or keep them under ``demo_scripts`` on your ``PYTHONPATH``.
+
+DummyTicker
+-----------
+
+A minimal ``Ticker`` implementation for backtests that do not need real exchange metadata:
+
+.. literalinclude:: ../../../demo_scripts/common/utils/dummy_ticker.py
+   :language: python
+   :lines: 14-
+
+demo_data_provider
+------------------
+
+Loads OHLCV history from ``demo_configuration/input/daily_data.csv`` and
+``intraday_data.csv`` for tickers ``AAA``–``FFF``:
+
+.. literalinclude:: ../../../demo_scripts/demo_configuration/demo_data_provider.py
+   :language: python
+   :lines: 14-
+
+demo_settings
+-------------
+
+Loads ``demo_settings.json`` and ``demo_secret_settings.json`` (output directory, exporters, etc.):
+
+.. literalinclude:: ../../../demo_scripts/demo_configuration/demo_settings.py
+   :language: python
+   :lines: 14-
+
+Example ``demo_settings.json`` (adjust paths for your machine):
+
+.. literalinclude:: ../../../demo_scripts/demo_configuration/config_files/demo_settings.json
+   :language: json
 
 .. note::
-    This demo uses dummy data, generated just for the purpose of this tutorial, which can be found in the
-    `demo_data_provider`_.  The data is saved in a CSV file, with each line containing the ticker name and prices
-    (open, high, low, close and volume).
-
-    .. _demo_data_provider: https://github.com/quarkfin/qf-lib/blob/master/demo_scripts/demo_configuration/demo_data_provider.py
+    CSV rows contain ``dates``, ``open``, ``high``, ``low``, ``close``, ``volume``, and ``tickers``.
+    The files ship with the repository under ``demo_scripts/demo_configuration/input/``.
 
 In order to implement and afterwards backtest a strategy, the following steps are needed:
 
@@ -405,9 +440,9 @@ changing the price calculation of the strategy and the signal generation frequen
 
     CalculateAndPlaceOrdersPeriodicEvent.set_frequency(Frequency.MIN_60)
 
-*******************************************************
+
 I run the backtest. What now?
-*******************************************************
+=============================
 
 If you used the above linked code, along with all the imports, you should have been able to see a dynamic chart,
 presenting the performance of your strategy:
@@ -454,6 +489,96 @@ By default, after the backtest execution you should be able to access the follow
 * Tearsheet - summary of the whole backtest
 * Timeseries - timeseries of your portfolio
 * Trades Analysis Sheet - trade related details (e.g. number of long / short trades, average trade duration, average trade return, best trade return etc)
+
+
+Complete example with Yahoo Finance
+===================================
+
+The steps above use ``DummyTicker`` and CSV demo data so the tutorial runs offline. The same moving-average
+logic works with live market data from Yahoo Finance - install the optional dependency
+(``pip install qf-lib[yfinance]`` or ``yfinance``) and swap the ticker and data provider:
+
+.. code-block:: python
+
+    import matplotlib.pyplot as plt
+
+    from datetime import datetime
+
+    plt.ion()
+
+    from qf_lib.backtesting.events.time_event.regular_time_event.calculate_and_place_orders_event import (
+        CalculateAndPlaceOrdersRegularEvent,
+    )
+    from qf_lib.backtesting.order.execution_style import MarketOrder
+    from qf_lib.backtesting.order.time_in_force import TimeInForce
+    from qf_lib.backtesting.strategies.abstract_strategy import AbstractStrategy
+    from qf_lib.backtesting.trading_session.backtest_trading_session import BacktestTradingSession
+    from qf_lib.backtesting.trading_session.backtest_trading_session_builder import BacktestTradingSessionBuilder
+    from qf_lib.common.enums.frequency import Frequency
+    from qf_lib.common.enums.price_field import PriceField
+    from qf_lib.common.tickers.tickers import YFinanceTicker
+    from qf_lib.common.utils.dateutils.relative_delta import RelativeDelta
+    from qf_lib.data_providers.yfinance.yfinance_data_provider import YFinanceDataProvider
+    from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
+    from qf_lib.documents_utils.excel.excel_exporter import ExcelExporter
+    from demo_scripts.demo_configuration.demo_settings import get_demo_settings
+
+
+    class SimpleMAStrategy(AbstractStrategy):
+        def __init__(self, ts: BacktestTradingSession, ticker: YFinanceTicker):
+            super().__init__(ts)
+            self.broker = ts.broker
+            self.order_factory = ts.order_factory
+            self.data_provider = ts.data_provider
+            self.ticker = ticker
+
+        def calculate_and_place_orders(self):
+            long_ma_len = 20
+            short_ma_len = 5
+
+            long_ma_series = self.data_provider.historical_price(
+                self.ticker, PriceField.Close, long_ma_len
+            )
+            long_ma_price = long_ma_series.mean()
+            short_ma_price = long_ma_series.tail(short_ma_len).mean()
+
+            weight = 1.0 if short_ma_price >= long_ma_price else 0.0
+            orders = self.order_factory.target_percent_orders(
+                {self.ticker: weight}, MarketOrder(), TimeInForce.DAY
+            )
+            self.broker.cancel_all_open_orders()
+            self.broker.place_orders(orders)
+
+
+    def main():
+        backtest_name = "Simple MA Strategy (SPY, Yahoo Finance)"
+        start_date = datetime.now() - RelativeDelta(years=1)
+        end_date = datetime.now()
+        ticker = YFinanceTicker("SPY")
+
+        settings = get_demo_settings()
+        pdf_exporter = PDFExporter(settings)
+        excel_exporter = ExcelExporter(settings)
+
+        session_builder = BacktestTradingSessionBuilder(settings, pdf_exporter, excel_exporter)
+        session_builder.set_frequency(Frequency.DAILY)
+        session_builder.set_backtest_name(backtest_name)
+        session_builder.set_data_provider(YFinanceDataProvider())
+
+        ts = session_builder.build(start_date, end_date)
+
+        strategy = SimpleMAStrategy(ts, ticker)
+        CalculateAndPlaceOrdersRegularEvent.set_daily_default_trigger_time()
+        CalculateAndPlaceOrdersRegularEvent.exclude_weekends()
+        strategy.subscribe(CalculateAndPlaceOrdersRegularEvent)
+
+        ts.start_trading()
+
+
+    if __name__ == "__main__":
+        main()
+
+Replace ``get_demo_settings()`` with your own configuration when you move beyond the demo layout.
 
 
 

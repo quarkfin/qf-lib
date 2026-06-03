@@ -18,7 +18,7 @@ This tutorial explains how to connect QF-Lib to market data. You will learn:
 
 .. note::
     For provider-specific installation prerequisites (dependencies, vendor software, credentials),
-    see :doc:`installation`, section ``Installing optional data providers``.
+    see :doc:`../installation`, section ``Installing optional data providers``.
 
 
 
@@ -161,7 +161,7 @@ Example: daily backtest, 30-minute bars for an indicator:
 
     session_builder.set_frequency(Frequency.DAILY)
 
-    # Inside the strategy — session is daily, but this series is 30-minute bars
+    # Inside the strategy - session is daily, but this series is 30-minute bars
     series = self.data_provider.historical_price(
         self.ticker, PriceField.Close, nr_of_bars=20, frequency=Frequency.MIN_30
     )
@@ -215,7 +215,7 @@ Provider-specific settings examples
 
 This section shows what to put in ``settings.json`` and ``secret_settings.json`` for providers that need
 settings-based configuration. For setup prerequisites and package installation commands, see
-:doc:`installation`.
+:doc:`../installation`.
 
 .. _bloomberg-blpapi-settings:
 
@@ -525,7 +525,7 @@ Other market data providers
 
 The snippets below use the same ``get_price`` / ``historical_price`` interface as
 :class:`~qf_lib.data_providers.csv.csv_data_provider.CSVDataProvider`. Install commands refer to
-the project extras in :doc:`installation` (section ``Installing optional data providers``).
+the project extras in :doc:`../installation` (section ``Installing optional data providers``).
 
 .. list-table::
    :header-rows: 1
@@ -657,9 +657,9 @@ Uses ``settings.bbg_dl`` (see :ref:`bloomberg-dl-settings` above). Install with
 HaverDataProvider and PortaraDataProvider
 ==========================================
 
-* **Haver** — point ``settings.haver_path`` at your local Haver database; requires a licensed Haver
+* **Haver** - point ``settings.haver_path`` at your local Haver database; requires a licensed Haver
   Python package from the vendor.
-* **Portara** — reads Portara-exported futures files from disk; configure paths in Python like
+* **Portara** - reads Portara-exported futures files from disk; configure paths in Python like
   ``CSVDataProvider``. Use :class:`~qf_lib.common.tickers.tickers.PortaraTicker` for instrument IDs.
 
 BinanceDataProvider
@@ -676,11 +676,11 @@ BinanceDataProvider
 Which provider should I use?
 ============================
 
-* **Development / tests** — ``CSVDataProvider`` or ``PresetDataProvider`` for reproducible offline work.
-* **Faster backtests on remote data** — wrap any provider with ``PrefetchingDataProvider`` (or
+* **Development / tests** - ``CSVDataProvider`` or ``PresetDataProvider`` for reproducible offline work.
+* **Faster backtests on remote data** - wrap any provider with ``PrefetchingDataProvider`` (or
   ``BacktestTradingSession.use_data_preloading()``).
-* **Quick external experiments** — ``YFinanceDataProvider`` or ``AlpacaDataProvider`` (crypto without API key).
-* **Production with existing licences** — Bloomberg, Quandl, Haver, or Portara, using the settings patterns above.
+* **Quick external experiments** - ``YFinanceDataProvider`` or ``AlpacaDataProvider`` (crypto without API key).
+* **Production with existing licences** - Bloomberg, Quandl, Haver, or Portara, using the settings patterns above.
 
 
 

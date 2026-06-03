@@ -53,6 +53,34 @@ h1 {
     word-break: break-word;
 }
 
+/* GitHub release notes (generated HTML) */
+.qf-release-notes {
+  margin-bottom: 2rem;
+}
+
+.qf-release-notes h2 {
+  margin-top: 0;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--pst-color-border, #e5e7eb);
+}
+
+.qf-release-date {
+  color: var(--pst-color-text-muted, #6b7280);
+  margin-bottom: 1rem;
+}
+
+.qf-release-divider {
+  margin: 2.5rem 0;
+  border: none;
+  border-top: 1px solid var(--pst-color-border, #e5e7eb);
+}
+
+.qf-release-notes-warning {
+  padding: 1rem 1.25rem;
+  border-radius: 0.35rem;
+  background: var(--pst-color-warning, #fef3c7);
+}
+
 .wy-menu-vertical .caption-text {
     color: #55a5d9;
     height: 32px;

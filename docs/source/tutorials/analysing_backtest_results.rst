@@ -329,16 +329,16 @@ asset: all fills from opening a position until it is flat again.
 :class:`~qf_lib.backtesting.portfolio.backtest_position.BacktestPosition` stores that round-trip inside the
 backtester. Each closed position records:
 
-* ``start_time`` / ``end_time`` — when the position was opened and fully closed
-* ``total_pnl`` and ``total_commission()`` — currency P&L including fees
-* ``direction()`` — ``1`` for long, ``-1`` for short
-* ``ticker()`` — the instrument
+* ``start_time`` / ``end_time`` - when the position was opened and fully closed
+* ``total_pnl`` and ``total_commission()`` - currency P&L including fees
+* ``direction()`` - ``1`` for long, ``-1`` for short
+* ``ticker()`` - the instrument
 
 :class:`~qf_lib.analysis.trade_analysis.trades_generator.TradesGenerator` can build
 :class:`~qf_lib.backtesting.portfolio.trade.Trade` objects in two equivalent ways:
 
-1. **From closed positions** — ``portfolio.closed_positions()`` after a backtest (one trade per closed position).
-2. **From transactions** — any sequence of :class:`~qf_lib.backtesting.portfolio.transaction.Transaction`
+1. **From closed positions** - ``portfolio.closed_positions()`` after a backtest (one trade per closed position).
+2. **From transactions** - any sequence of :class:`~qf_lib.backtesting.portfolio.transaction.Transaction`
    objects, including rows loaded from ``Transactions.csv``.
 
 Both paths use the same trade logic; unit tests verify that ``create_trades_from_transactions`` matches
@@ -393,7 +393,7 @@ From ``Transactions.csv`` (after the backtest)
 Columns: ``Timestamp``, ``Asset Name``, ``Contract symbol``, ``Security type``, ``Contract size``,
 ``Quantity``, ``Price``, ``Commission``.
 
-Use this when you want to rebuild trade analysis **without re-running** the backtest — for example from
+Use this when you want to rebuild trade analysis **without re-running** the backtest - for example from
 an archived output folder.
 
 .. code-block:: python

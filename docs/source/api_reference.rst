@@ -17,35 +17,35 @@ Modules
 
    * - Module
      - Description
-   * - :doc:`backtesting`
+   * - :doc:`api_docs/backtesting`
      - Event-driven backtester: strategies, orders, portfolio, execution, and trading session.
-   * - :doc:`data_providers`
+   * - :doc:`api_docs/data_providers`
      - Market data adapters (CSV, Bloomberg, Quandl, YFinance, Alpaca, and others).
-   * - :doc:`containers`
+   * - :doc:`api_docs/containers`
      - Typed pandas and xarray wrappers for prices, returns, and futures data.
-   * - :doc:`common`
+   * - :doc:`api_docs/common`
      - Tickers, enums, date utilities, return and risk ratios, factorisation helpers.
-   * - :doc:`analysis`
+   * - :doc:`api_docs/analysis`
      - Tearsheets, timeseries and trade analysis, signals plotting, overfitting tools.
-   * - :doc:`plotting`
+   * - :doc:`api_docs/plotting`
      - Chart classes, decorators, and plotting helpers built on Matplotlib.
-   * - :doc:`document_utils`
+   * - :doc:`api_docs/document_utils`
      - PDF, HTML, and Excel export utilities for reports and results.
-   * - :doc:`indicators`
+   * - :doc:`api_docs/indicators`
      - Market indicators usable in strategies or standalone analysis.
-   * - :doc:`portfolio_construction`
+   * - :doc:`api_docs/portfolio_construction`
      - Portfolio optimisers and weighting models (Min-Variance, Risk Parity, Black-Litterman).
 
 .. toctree::
    :maxdepth: 2
    :hidden:
 
-   backtesting
-   data_providers
-   containers
-   common
-   analysis
-   plotting
-   document_utils
-   indicators
-   portfolio_construction
+   api_docs/backtesting
+   api_docs/data_providers
+   api_docs/containers
+   api_docs/common
+   api_docs/analysis
+   api_docs/plotting
+   api_docs/document_utils
+   api_docs/indicators
+   api_docs/portfolio_construction
