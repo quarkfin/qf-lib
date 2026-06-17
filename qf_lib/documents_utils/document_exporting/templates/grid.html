@@ -14,17 +14,16 @@
   ~    limitations under the License.
   -->
 
-<table class="grid">
+<table class="grid" style="table-layout: fixed;">
     {% for row in rows %}
+    {% set ns = namespace(total_span=0) %}
+    {% for element in row %}{% set ns.total_span = ns.total_span + element.grid_proportion.to_int() %}{% endfor %}
     <tr>
-        {% set total_span = 0 %}
         {% for element in row %}
-            <td colspan="{{ element.grid_proportion }}">
+            <td style="width: {{ (element.grid_proportion.to_int() / ns.total_span * 100) | round(2) }}%;">
                 {{ element.generate_html(document) }}
             </td>
-            {% set total_span = total_span + element.grid_proportion.to_int() %}
         {% endfor %}
-
     </tr>
     {% endfor %}
 </table>
