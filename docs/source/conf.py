@@ -130,7 +130,8 @@ copybutton_remove_prompts = True
 # -- Extension configuration -------------------------------------------------
 
 autosummary_generate = True
-autodoc_mock_imports = ["cvxopt", "ibapi", "blpapi", "PyJWT", "retrying", "beap_lib", "jwt"]
+autodoc_mock_imports = ["cvxopt", "ibapi", "blpapi", "PyJWT", "retrying", "beap_lib", "jwt",
+                        "cryptography", "fastparquet", "oauthlib", "requests_oauthlib", "urllib3"]
 html_show_sourcelink = False
 
 
