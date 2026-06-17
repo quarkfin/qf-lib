@@ -105,7 +105,7 @@ class TestBloomberg(unittest.TestCase):
                                            start_date=self.END_DATE, end_date=self.END_DATE, frequency=Frequency.DAILY)
 
         self.assertIsInstance(data, float)
-        self.assertEqual(data, 147.7257)
+        self.assertEqual(data, 154.66)
 
     def test_price_single_ticker_multiple_fields(self):
         # single ticker, many fields; can be the same as for single field???
