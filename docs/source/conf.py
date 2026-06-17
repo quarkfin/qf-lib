@@ -130,13 +130,14 @@ copybutton_remove_prompts = True
 # -- Extension configuration -------------------------------------------------
 
 autosummary_generate = True
-autodoc_mock_imports = ["cvxopt", "ibapi", "blpapi", "PyJWT", "retrying", "beap_lib"]
+autodoc_mock_imports = ["cvxopt", "ibapi", "blpapi", "PyJWT", "retrying", "beap_lib", "jwt"]
 html_show_sourcelink = False
 
 
 def setup(app):
     """Generate release notes from GitHub before each documentation build."""
-    from release_notes import generate_release_notes
+
+    from _ext.release_notes import generate_release_notes
 
     generate_release_notes(app.confdir)
     return {
