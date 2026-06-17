@@ -206,12 +206,12 @@ class ModelParamsEvaluationDocument:
             results.sort_index(axis=1, inplace=True)
             results.fillna(TradesEvaluationResult(), inplace=True)
 
-            sqn_avg_nr_trades = results.applymap(lambda x: x.sqn_per_avg_nr_trades).fillna(0)
-            avg_nr_of_trades = results.applymap(lambda x: x.avg_nr_of_trades_1Y).fillna(0)
-            annualised_return = results.applymap(lambda x: x.annualised_return).fillna(0)
+            sqn_avg_nr_trades = results.map(lambda x: x.sqn_per_avg_nr_trades).fillna(0)
+            avg_nr_of_trades = results.map(lambda x: x.avg_nr_of_trades_1Y).fillna(0)
+            annualised_return = results.map(lambda x: x.annualised_return).fillna(0)
 
-            adjusted_start_time = results.applymap(lambda x: x.start_date).min().min()
-            adjusted_end_time = results.applymap(lambda x: x.end_date).max().max()
+            adjusted_start_time = results.map(lambda x: x.start_date).min().min()
+            adjusted_end_time = results.map(lambda x: x.end_date).max().max()
             if adjusted_start_time >= adjusted_end_time:
                 adjusted_end_time = adjusted_start_time if adjusted_start_time <= self.backtest_summary.end_date \
                     else end_time

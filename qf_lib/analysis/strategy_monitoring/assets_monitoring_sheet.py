@@ -253,7 +253,7 @@ class AssetPerfAndDrawdownSheet(AbstractDocument):
     def _create_performance_tables(self, performance_df: QFDataFrame) -> List[DFTable]:
         """ Create a formatted DFTable out of the performance_df data frame. """
         numeric_columns = [col for col in performance_df.columns if is_numeric_dtype(performance_df[col])]
-        performance_df[numeric_columns] = performance_df[numeric_columns].applymap(lambda x: '{:,.0f}'.format(x))
+        performance_df[numeric_columns] = performance_df[numeric_columns].map(lambda x: '{:,.0f}'.format(x))
         performance_df = performance_df.set_index("Asset").sort_index()
 
         # Divide the performance df into a number of data frames, so that each of them contains up to
@@ -290,7 +290,7 @@ class AssetPerfAndDrawdownSheet(AbstractDocument):
         performance_df = concat([performance_df, total_sum_row], ignore_index=True)
 
         # Format the rows using the percentage formatter
-        performance_df[numeric_columns] = performance_df[numeric_columns].applymap(lambda x: '{:.2%}'.format(x))
+        performance_df[numeric_columns] = performance_df[numeric_columns].map(lambda x: '{:.2%}'.format(x))
 
         # Divide the performance dataframe into a number of dataframes, so that each of them contains up to
         # self._max_columns_per_page columns

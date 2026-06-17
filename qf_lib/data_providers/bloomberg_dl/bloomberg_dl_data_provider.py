@@ -478,7 +478,7 @@ class BloombergDLDataProvider(AbstractPriceDataProvider, TickersUniverseProvider
 
             df = QFDataFrame(ticker_data) if len(ticker_data) > 0 else QFDataFrame(
                 columns=["TICKER_AND_EXCH_CODE", "PERCENT_WEIGHT"])
-            df = df.set_index("TICKER_AND_EXCH_CODE").applymap(cast_weight_to_float)
+            df = df.set_index("TICKER_AND_EXCH_CODE").map(cast_weight_to_float)
             df.index = df.index.map(lambda s: str_to_bbg_ticker(s, display_figi))
             universe.append(df)
             if len(df) < MAX_MEMBERS_PER_PAGE:

@@ -331,7 +331,7 @@ class BacktestMonitor(AbstractMonitor):
                 }
 
                 for sheet_name, fun in sheet_names_to_functions.items():
-                    df = signals_df.applymap(fun)
+                    df = signals_df.map(fun)
                     self._excel_exporter.export_container(df, file_path, sheet_name=sheet_name,
                                                           starting_cell='A1', include_column_names=True)
 
