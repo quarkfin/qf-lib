@@ -132,7 +132,7 @@ Functions
     ratios.information_ratio.information_ratio
     ratios.omega_ratio.omega_ratio
     ratios.sharpe_ratio.sharpe_ratio
-    ratios.sorino_ratio.sorino_ratio
+    ratios.sortino_ratio.sortino_ratio
     returns.annualise_total_return.annualise_total_return
     returns.avg_drawdown.avg_drawdown
     returns.avg_drawdown_duration.avg_drawdown_duration
@@ -160,3 +160,4 @@ Functions
     volatility.get_volatility.get_volatility
     volatility.intraday_volatility.intraday_volatility
     volatility.rolling_volatility.rolling_volatility
+

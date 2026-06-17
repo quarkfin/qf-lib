@@ -24,3 +24,4 @@ analysis
     exposure_analysis.exposure_generator.ExposureGenerator
     exposure_analysis.exposure_sheet.ExposureSheet
     exposure_analysis.exposure_settings.ExposureSettings
+

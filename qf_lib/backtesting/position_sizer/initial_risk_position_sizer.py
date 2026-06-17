@@ -28,25 +28,47 @@ from qf_lib.data_providers.data_provider import DataProvider
 
 class InitialRiskPositionSizer(PositionSizer):
     """
-    This PositionSizer converts signals to orders using Initial Risk value that is predefined in the position sizer.
-    Each signal will be sized based on fraction_at_risk.
-    position size = Initial_Risk / signal.fraction_at_risk
+    Sizes positions from risk per trade and the signal's ``fraction_at_risk`` (typically ATR-based).
+
+    For each signal:
+
+    ``target_percentage = (initial_risk / fraction_at_risk) * suggested_exposure.value``
+
+    Optionally capped by ``max_target_percentage``.
 
     Parameters
     ----------
     broker: Broker
     data_provider: DataProvider
     order_factory: OrderFactory
+    signals_register: SignalsRegister
     initial_risk: float
-        should be set once for all signals. It corresponds to the value that we are willing to lose
-        on single trade. For example: initial_risk = 0.02, means that we are willing to lose 2% of portfolio value in
-        single trade
-    max_target_percentage: float
-        max leverage that is accepted by the position sizer.
-        if None, no max_target_percentage is used.
+        Maximum portfolio fraction you are willing to lose if the stop is hit on one trade.
+        For example ``0.02`` means 2% of portfolio at risk per position.
+    max_target_percentage: float, optional
+        Upper cap on absolute target weight. ``None`` disables the cap.
     tolerance_percentage: float
-        percentage used by OrdersFactory target_percent_orders function; it defines tolerance to the
-        target percentages
+        Passed to ``OrderFactory.target_percent_orders``.
+
+    Examples
+    --------
+    ``size_signals`` sizes from ``initial_risk / fraction_at_risk`` (then applies exposure sign).
+    With portfolio 100,000, price 100, ``initial_risk=0.05``, and ``fraction_at_risk=0.02``:
+
+    >>> sizer = InitialRiskPositionSizer(
+    ...     broker, data_provider, order_factory, BacktestSignalsRegister(), initial_risk=0.05)
+    >>> signal = Signal(ticker, Exposure.LONG, fraction_at_risk=0.02, last_available_price=100.0, creation_time=now)
+    >>> orders = sizer.size_signals([signal], use_stop_losses=False)
+    >>> orders[0].quantity
+    2500.0
+
+    The same signal with ``max_target_percentage=1.0`` caps leverage at 100% of portfolio (1,000 shares):
+
+    >>> capped_sizer = InitialRiskPositionSizer(
+    ...     broker, data_provider, order_factory, BacktestSignalsRegister(),
+    ...     initial_risk=0.05, max_target_percentage=1.0)
+    >>> capped_sizer.size_signals([signal], use_stop_losses=False)[0].quantity
+    1000.0
     """
 
     def __init__(self, broker: Broker, data_provider: DataProvider, order_factory: OrderFactory,

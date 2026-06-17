@@ -33,7 +33,19 @@ from qf_lib.data_providers.data_provider import DataProvider
 
 
 class PositionSizer(metaclass=ABCMeta):
-    """ The PositionSizer abstract class converts signals to orders with size specified. """
+    """
+    Converts :class:`~qf_lib.backtesting.signals.signal.Signal` objects into sized orders.
+
+    Concrete implementations map each signal to a target portfolio weight or value, then call
+    :class:`~qf_lib.backtesting.order.order_factory.OrderFactory`. When ``use_stop_losses=True``,
+    :meth:`size_signals` also attaches stop orders from ``fraction_at_risk`` and
+    ``last_available_price``.
+
+    See :class:`~qf_lib.backtesting.position_sizer.simple_position_sizer.SimplePositionSizer`,
+    :class:`~qf_lib.backtesting.position_sizer.fixed_portfolio_percentage_position_sizer.FixedPortfolioPercentagePositionSizer`,
+    :class:`~qf_lib.backtesting.position_sizer.initial_risk_position_sizer.InitialRiskPositionSizer`, and
+    :class:`~qf_lib.backtesting.position_sizer.initial_risk_with_volume_position_sizer.InitialRiskWithVolumePositionSizer`.
+    """
 
     def __init__(self, broker: Broker, data_provider: DataProvider, order_factory: OrderFactory,
                  signals_register: SignalsRegister):
@@ -64,6 +76,39 @@ class PositionSizer(metaclass=ABCMeta):
         For each Market Order a Stop Order is generated if and only if the quantity in Market Order + position quantity
         for this ticker != 0. This means that StopOrders are not generated if the MarketOrder should completely close
         the position for the ticker.
+
+        Returns
+        -------
+        List[Order]
+            Market orders sized by the concrete position sizer, optionally followed by stop orders.
+
+        Examples
+        --------
+
+        Portfolio value is 100,000, price is 100, so a full LONG targets 1,000 shares:
+
+        >>> sizer = SimplePositionSizer(broker, data_provider, order_factory, BacktestSignalsRegister())
+        >>> long_signal = Signal(ticker, Exposure.LONG, 0.02, 100.0, now)
+        >>> orders = sizer.size_signals([long_signal], use_stop_losses=False)
+        >>> len(orders)
+        1
+        >>> orders[0].quantity
+        1000.0
+
+        With ``use_stop_losses=True`` (default), a stop is added at
+        ``last_available_price * (1 - fraction_at_risk)`` for a LONG signal:
+
+        >>> orders = sizer.size_signals([long_signal], use_stop_losses=True)
+        >>> len(orders)
+        2
+        >>> orders[1].execution_style.stop_price
+        98.0
+
+        An ``Exposure.OUT`` signal with no open position is ignored (no orders):
+
+        >>> flat_signal = Signal(ticker, Exposure.OUT, 0.02, 100.0, now)
+        >>> sizer.size_signals([flat_signal], use_stop_losses=False)
+        []
 
         """
 

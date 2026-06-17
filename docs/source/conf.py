@@ -6,70 +6,141 @@
 
 # -- Path setup --------------------------------------------------------------
 
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-#
 import os
+import re
 import sys
 from datetime import datetime
 
-sys.path.append(os.path.abspath('../..'))
+sys.path.insert(0, os.path.abspath('../..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '_ext'))
+
+import qf_lib
 
 # -- Project information -----------------------------------------------------
 
-project = 'QF Lib'
-copyright = datetime.today().strftime("%Y") + ', Karolina Cynk'
+project = 'QF-Lib'
+copyright = datetime.today().strftime("%Y") + ', CERN Pension Fund'
 
-# The full version, including alpha/beta/rc tags
-# release = 'release...'
+release = qf_lib.__version__
+
+
+def _documentation_version_label(full_version: str) -> str:
+    """Use a friendly label for non-tag (development) builds."""
+    base = full_version.split('+')[0]
+    if '+' not in full_version:
+        return base
+    suffix = full_version.split('+', 1)[1]
+    # versioneer dev builds: 4.0.6+1.gd9ae462
+    if re.match(r'^\d+\.g[a-f0-9]+$', suffix, re.IGNORECASE):
+        return 'Latest release'
+    return base
+
+
+_docs_version_label = _documentation_version_label(release)
+version = '.'.join(release.split('+')[0].split('.')[:2])
 
 
 # -- General configuration ---------------------------------------------------
 
-# Add any Sphinx extension module names here, as strings. They can be
-# extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
-# ones.
 extensions = [
+    'myst_parser',
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
-    'sphinx_rtd_theme',
     'sphinx.ext.autosummary',
     'sphinx.ext.viewcode',
-    'autodocsumm',
-    'sphinx.ext.intersphinx'
+    'sphinx.ext.intersphinx',
+    'sphinx_copybutton',
 ]
-numpydoc_show_class_members = False
 
-# Add any paths that contain templates here, relative to this directory.
+# Anchors for version headings in release_notes_generated.md (e.g. release-v4-0-6)
+myst_heading_anchors = 3
+
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3', None),
+    'numpy': ('https://numpy.org/doc/stable/', None),
+    'pandas': ('https://pandas.pydata.org/docs/', None),
+    'matplotlib': ('https://matplotlib.org/stable/', None),
+}
+
 templates_path = ['_templates']
 pygments_style = 'default'
 
-# List of patterns, relative to source directory, that match files and
-# directories to ignore when looking for source files.
-# This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
 
 # -- Options for HTML output -------------------------------------------------
 
-# The theme to use for HTML and HTML Help pages.  See the documentation for
-# a list of builtin themes.
-#
-html_theme = "sphinx_rtd_theme"
+html_theme = "pydata_sphinx_theme"
+html_title = f'{project} ({_docs_version_label})'
 html_theme_options = {
-    'logo_only': True,
-    'navigation_depth': 5,
+    'show_nav_level': 1,
+    'show_toc_level': 2,
+    'navigation_depth': 4,
+    'collapse_navigation': False,
+    'navigation_with_keys': True,
+    'navbar_align': 'left',
+    'logo_text': f'{project} ({_docs_version_label})',
+    'pygments_light_style': 'default',
+    'pygments_dark_style': 'native',
+    'icon_links': [
+        {
+            'name': 'GitHub',
+            'url': 'https://github.com/quarkfin/qf-lib',
+            'icon': 'fa-brands fa-github',
+        },
+        {
+            'name': 'Discord',
+            'url': 'https://discord.gg/CfMf8zaeX9',
+            'icon': 'fa-brands fa-discord',
+        },
+    ],
+    'footer_icons': [
+        {
+            'name': 'GitHub',
+            'url': 'https://github.com/quarkfin/qf-lib',
+            'html': '',
+            'class': 'fa-brands fa-github',
+        },
+        {
+            'name': 'Discord',
+            'url': 'https://discord.gg/CfMf8zaeX9',
+            'html': '',
+            'class': 'fa-brands fa-discord',
+        },
+    ],
 }
 
-# Add any paths that contain custom static files (such as style sheets) here,
-# relative to this directory. They are copied after the builtin static files,
-# so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 html_css_files = [
     'theme_overrides.css',
+    'home.css',
 ]
 
+# -- sphinx-copybutton -------------------------------------------------------
+
+copybutton_prompt_text = (
+    r">>> |\.\.\. "
+    r"|\$ "
+    r"|In \[\d*\]: "
+    r"| {2,5}\.\.\.: "
+    r"| {5,8}: "
+)
+copybutton_only_copy_prompt_lines = False
+copybutton_remove_prompts = True
+
 # -- Extension configuration -------------------------------------------------
+
 autosummary_generate = True
 autodoc_mock_imports = ["cvxopt", "ibapi", "blpapi", "PyJWT", "retrying", "beap_lib"]
 html_show_sourcelink = False
+
+
+def setup(app):
+    """Generate release notes from GitHub before each documentation build."""
+    from release_notes import generate_release_notes
+
+    generate_release_notes(app.confdir)
+    return {
+        'version': '0.1',
+        'parallel_read_safe': True,
+        'parallel_write_safe': True,
+    }

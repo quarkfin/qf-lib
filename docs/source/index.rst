@@ -1,110 +1,93 @@
-QF-Lib Guide
-************************************
+.. raw:: html
+
+   <div class="qf-hero">
+     <h1>QF-Lib</h1>
+     <p>
+       A modular Python library with an advanced event-driven backtester and high-quality tools
+       for quantitative finance - portfolio construction, time series analysis, risk monitoring,
+       and publication-ready reporting.
+     </p>
+     <div class="qf-hero-actions">
+       <a class="qf-btn qf-btn-primary" href="getting_started.html">Get started</a>
+       <a class="qf-btn qf-btn-secondary" href="https://github.com/quarkfin/qf-lib">GitHub</a>
+       <a class="qf-btn qf-btn-secondary" href="tutorials/first_strategy_backtest.html">First backtest</a>
+     </div>
+   </div>
+
+   <div class="qf-feature-grid">
+     <a class="qf-feature-card" href="features.html#multi-tool-for-any-financial-research">
+       <img src="_static/images/multi-tool.png" alt="Multi-tool for financial research" />
+       <h3>Multi-tool for any type of financial research</h3>
+       <p>
+         Portfolio optimisers, rich charting, adapted Pandas containers, and exporters to PDF,
+         Excel, or email - everything you need to analyse and present results.
+       </p>
+       <span class="qf-card-cta">Learn more ↓</span>
+     </a>
+     <a class="qf-feature-card" href="license.html">
+       <img src="_static/images/open-source.png" alt="Developed at CERN, open source" />
+       <h3>Developed at CERN, available as open source</h3>
+       <p>
+         Developed at the CERN Pension Fund and released under the permissive Apache License 2.0.
+         Join the community on Discord or contribute on GitHub.
+       </p>
+       <span class="qf-card-cta">License →</span>
+     </a>
+     <a class="qf-feature-card" href="features.html#a-powerful-event-driven-backtester">
+       <img src="_static/images/backtester.png" alt="Powerful, event-driven Backtester" />
+       <h3>Powerful, event-driven Backtester</h3>
+       <p>
+         Simulate market open, close, and custom events. Test alpha models, position sizing,
+         commissions, and slippage on historical data - then move to production with the same architecture.
+       </p>
+       <span class="qf-card-cta">Learn more ↓</span>
+     </a>
+   </div>
 
 **QF-Lib** is a Python library that provides high quality tools for quantitative finance.
 A large part of the project is dedicated to backtesting investment strategies.
 The Backtester uses an **event-driven architecture** and simulates events such as daily market opening
-or closing. It is designed to **test and evaluate any custom investment strategy**. For more details check the `Projects
-Website`_.
-
-.. _Projects Website: https://quarkfin.github.io/qf-lib-info
-
-Getting started
------------------
-:doc:`installation`
-    How to install this library.
-
-:doc:`configuration`
-    Library configuration and customization options.
-
-:doc:`tutorials/first_strategy_backtest`
-    Step by step guide on how to implement and backtest a strategy.
-
-:doc:`tutorials/first_alpha_model`
-    Step by step guide on how to implement and backtest an Alpha model strategy.
-
-:doc:`tutorials/customize_your_backtest`
-    Enhance your backtest by adding commission and slippage models.
+or closing. It is designed to **test and evaluate any custom investment strategy**.
 
 
-Reference guides
---------------------
-:doc:`reference/backtest_flow`
-    Understand the event-driven architecture of the Backtester and compare different types of Events.
-:doc:`reference/structure`
-    Description of the main modules and components of the library
-
-API Reference
-----------------
-
-:doc:`backtesting`
-    Code of the Backtester, which uses an event-driven architecture.
-
-:doc:`data_providers`
-    Data providers whose purpose is to download the financial data from various vendors such as Bloomberg or Quandl.
-
-:doc:`containers`
-    Data structures that extend the functionality of pandas Series, pandas DataFrame and numpy DataArray containers and facilitate the computations performed on time-indexed structures of prices or price returns.
-
-:doc:`common`
-    Various generic tools.
-
-:doc:`analysis`
-    Analyze strategy progress and generate files containing the analysis results
-
-:doc:`plotting`
-    Chart templates along with some easy-to-use decorators.
-
-:doc:`document_utils`
-    Templates, styles and components used to export the results and save them.
-
-:doc:`indicators`
-    Market indicators that can be implemented in strategies or used for the analysis.
-
-:doc:`portfolio_construction`
-    Components which facilitate the process of portfolio construction. The construction process involves covariance matrix optimization with one of the implemented optimizers.
+Get started
+~~~~~~~~~~~
 
 
+.. raw:: html
 
-.. Hidden TOCs
+   <div class="qf-get-started">
+     <a class="qf-feature-card" href="getting_started.html">
+       <p><strong>Installation</strong></p>
+       <p>Install QF-Lib, optional data providers, and <code>settings.json</code>.</p>
+       <span class="qf-card-cta">Getting started →</span>
+     </a>
+     <a class="qf-feature-card" href="tutorials.html">
+       <p><strong>Tutorials</strong></p>
+       <p>Backtesting, alpha models, data providers, and portfolio construction.</p>
+       <span class="qf-card-cta">Tutorials →</span>
+     </a>
+     <a class="qf-feature-card" href="api_reference.html">
+       <p><strong>API reference</strong></p>
+       <p>Auto-generated module and class reference.</p>
+       <span class="qf-card-cta">API Reference →</span>
+     </a>
+     <a class="qf-feature-card" href="contact.html">
+       <p><strong>Community</strong></p>
+       <p>Questions and collaboration on Discord.</p>
+       <span class="qf-card-cta">Contact us →</span>
+     </a>
+   </div>
+
+
 .. toctree::
-   :caption: Getting started
    :maxdepth: 1
    :hidden:
 
-   installation
-   configuration
-   tutorials/first_strategy_backtest
-   tutorials/first_alpha_model
-   tutorials/customize_your_backtest
-
-.. toctree::
-   :caption: Reference
-   :maxdepth: 1
-   :hidden:
-
-   reference/backtest_flow
-   reference/structure
-
-.. toctree::
-   :caption: API Reference
-   :maxdepth: 2
-   :hidden:
-
-   backtesting
-   data_providers
-   containers
-   common
-   analysis
-   plotting
-   document_utils
-   indicators
-   portfolio_construction
-
-
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
+   getting_started
+   tutorials
+   features
+   api_reference
+   release_notes
+   license
+   contact

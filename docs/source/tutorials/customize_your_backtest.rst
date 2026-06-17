@@ -11,9 +11,9 @@ All the example below use the `Simple Moving Average Strategy`_ introduced in th
 
 .. _Simple Moving Average Strategy: https://github.com/quarkfin/qf-lib/blob/master/demo_scripts/strategies/simple_ma_strategy.py
 
-********************
+*******************************************************
 Commission models
-********************
+*******************************************************
 
 After following the tutorial **How to backtest your strategy**, if you looked carefully at the Transactions file generated
 by your backtest, probably you saw that the commission charged for each transaction was equal to 0. As we would like our
@@ -29,7 +29,7 @@ Let's start with a simple example, where we add a fixed commission of 2.75 to ev
 expressed in the currency of the traded asset, e.g. 1.0 could denote 1.0 USD).
 
 
-.. code-block::
+.. code-block:: python
     :caption: Add fixed commission to your daily backtest
 
     from qf_lib.backtesting.execution_handler.commission_models.fixed_commission_model import \
@@ -66,7 +66,7 @@ Basis points commissions
 In case if you would like to use a fixed bps rate for your trades value, you could use the `BpsTradeValueCommissionModel`.
 For example the configuration below will always use 2pbs of the value of the trade as the commission.
 
-.. code-block::
+.. code-block:: python
     :caption: Add fixed bps commission to your daily backtest
 
     from qf_lib.backtesting.execution_handler.commission_models.bps_trade_value_commission_model import \
@@ -108,7 +108,7 @@ If you would like to see the pricing details, they are available `here`_.
 
 .. _here: https://www.interactivebrokers.co.uk/en/index.php?f=1590&p=stocks1
 
-.. code-block::
+.. code-block:: python
     :caption: Add Interactive Brokers commission to your daily backtest
 
     from qf_lib.backtesting.execution_handler.commission_models.ib_commission_model import \
@@ -143,9 +143,9 @@ If you would like to see the pricing details, they are available `here`_.
 
         ts.start_trading()
 
-********************
+*******************************************************
 Slippage models
-********************
+*******************************************************
 
 Why should I use slippage in my backtests?
 ------------------------------------------
@@ -162,7 +162,7 @@ Let's start with a simple example with `FixedSlippage` model. This model always 
 certain absolute amount of money to the price. For example, to always add a 0.25$ slippage to our backtest, we should
 change our script to include the following:
 
-.. code-block::
+.. code-block:: python
     :caption: Add 0.25$ slippage
 
     from qf_lib.backtesting.execution_handler.slippage.fixed_slippage import \
@@ -218,7 +218,7 @@ To avoid this, we can use another slippage model - `PriceBasedSlippage`, which c
 fixed fraction of the current securities' price (e.g. always 0.1%).
 
 
-.. code-block::
+.. code-block:: python
     :caption: Add 0.1% slippage
 
     from qf_lib.backtesting.execution_handler.slippage.price_based_slippage import \
@@ -263,7 +263,7 @@ square of the volume and volatility ratio(volume traded in bar / average daily v
 The direction of the slippage is always making the price worse for the trader (it increases the price when
 buying and decreases when selling).
 
-.. code-block::
+.. code-block:: python
     :caption: Add square root market impact slippage
 
     from qf_lib.backtesting.execution_handler.slippage.square_root_market_impact_slippage import \
@@ -314,7 +314,7 @@ I.e. if it's 0.5 and the daily volume for a given asset is 1,000,000 USD, then t
 
 Let's see how the Simple Moving Average strategy would perform in case of 0.1% price slippage and 15% max volume share limit:
 
-.. code-block::
+.. code-block:: python
     :caption: Add square root market impact slippage
 
     from qf_lib.backtesting.execution_handler.slippage.price_based_slippage import \
@@ -355,7 +355,7 @@ Let's run the backtest and compare the results with the initial strategy perform
 After the test finished we can see that actually our strategy was not as good as it seemed to be after the initial runs. The price slippage
 of 0.01% and allowing only up to 15% of the daily volume in the fills completely changed the performance of our strategy.
 
-.. code-block::
+.. code-block:: text
 
                              Simple MA Strategy Demo
     Start Date                         2010-01-02
@@ -369,7 +369,7 @@ of 0.01% and allowing only up to 15% of the daily volume in the fills completely
     Omega Ratio                              0.97
     Calmar Ratio                            -0.06
     Gain to Pain Ratio                      -0.10
-    Sorino Ratio                            -0.21
+    Sortino Ratio                           -0.21
     5% CVaR                                 -0.69 %
     Annualised 5% CVaR                     -10.44 %
     Max Drawdown                            12.99 %
@@ -381,3 +381,7 @@ of 0.01% and allowing only up to 15% of the daily volume in the fills completely
     Avg Negative Return                     -0.21 %
     Skewness                                -0.09
     No. of daily samples                     1885
+
+
+
+

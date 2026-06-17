@@ -4,3 +4,4 @@
 .. currentmodule:: {{ module }}
 
 .. autofunction:: {{ objname }}
+

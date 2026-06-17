@@ -23,7 +23,7 @@ from qf_lib.common.utils.ratios.calmar_ratio import calmar_ratio
 from qf_lib.common.utils.ratios.gain_to_pain_ratio import gain_to_pain_ratio
 from qf_lib.common.utils.ratios.omega_ratio import omega_ratio
 from qf_lib.common.utils.ratios.sharpe_ratio import sharpe_ratio
-from qf_lib.common.utils.ratios.sorino_ratio import sorino_ratio
+from qf_lib.common.utils.ratios.sortino_ratio import sortino_ratio
 from qf_lib.common.utils.returns.avg_drawdown import avg_drawdown
 from qf_lib.common.utils.returns.avg_drawdown_duration import avg_drawdown_duration
 from qf_lib.common.utils.returns.cagr import cagr
@@ -59,7 +59,7 @@ class TimeseriesAnalysis(TimeseriesAnalysisDTO):
     - omega_ratio
     - calmar_ratio
     - gain_to_pain_ratio
-    - sorino_ratio
+    - sortino_ratio
 
     - cvar - 5% CVaR expressed related to the specified frequency
     - annualised_cvar - annualised 5% CVaR
@@ -303,7 +303,7 @@ class TimeseriesAnalysis(TimeseriesAnalysisDTO):
         result_list.append(('omega', 'Omega Ratio', num_to_str(self.omega_ratio), ''))
         result_list.append(('calmar', 'Calmar Ratio', num_to_str(self.calmar_ratio), ''))
         result_list.append(('gain/pain', 'Gain to Pain Ratio', num_to_str(self.gain_to_pain_ratio), ''))
-        result_list.append(('sorino', 'Sorino Ratio', num_to_str(self.sorino_ratio), ''))
+        result_list.append(('sortino', 'Sortino Ratio', num_to_str(self.sortino_ratio), ''))
 
         result_list.append(('cvar', '5% CVaR', num_to_str(self.cvar * 100), '%'))
         result_list.append(('cvar_an', 'Annualised 5% CVaR', num_to_str(self.annualised_cvar * 100), '%'))
@@ -346,7 +346,7 @@ class TimeseriesAnalysis(TimeseriesAnalysisDTO):
         self.omega_ratio = omega_ratio(self.returns_tms)
         self.calmar_ratio = calmar_ratio(self.returns_tms, self.frequency)
         self.gain_to_pain_ratio = gain_to_pain_ratio(self.returns_tms)
-        self.sorino_ratio = sorino_ratio(self.returns_tms, self.frequency)
+        self.sortino_ratio = sortino_ratio(self.returns_tms, self.frequency)
 
     def _calculate_risk_stats(self):
         self.cvar = cvar(self.returns_tms, 0.05)  # default is the 5% CVaR

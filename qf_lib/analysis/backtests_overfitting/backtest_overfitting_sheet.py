@@ -38,7 +38,7 @@ from qf_lib.common.utils.logging.qf_parent_logger import qf_logger
 from qf_lib.common.utils.miscellaneous.constants import DAYS_PER_YEAR_AVG
 from qf_lib.common.utils.ratios.omega_ratio import omega_ratio
 from qf_lib.common.utils.ratios.sharpe_ratio import sharpe_ratio
-from qf_lib.common.utils.ratios.sorino_ratio import sorino_ratio
+from qf_lib.common.utils.ratios.sortino_ratio import sortino_ratio
 from qf_lib.containers.dataframe.prices_dataframe import PricesDataFrame
 from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.dataframe.simple_returns_dataframe import SimpleReturnsDataFrame
@@ -94,7 +94,7 @@ class BacktestOverfittingSheet(AbstractDocument):
 
         self.ranking_functions = {
             "Sharpe Ratio": lambda series: sharpe_ratio(series, Frequency.DAILY),
-            "Sortino Ratio": lambda series: sorino_ratio(series, Frequency.DAILY),
+            "Sortino Ratio": lambda series: sortino_ratio(series, Frequency.DAILY),
             "Omega Ratio": omega_ratio,
             "Total return": lambda series: series.to_prices().total_cumulative_return()
         }
