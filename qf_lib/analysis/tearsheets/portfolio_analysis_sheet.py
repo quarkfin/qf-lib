@@ -32,6 +32,7 @@ from qf_lib.documents_utils.document_exporting.element.heading import HeadingEle
 from qf_lib.documents_utils.document_exporting.element.new_page import NewPageElement
 from qf_lib.documents_utils.document_exporting.element.paragraph import ParagraphElement
 from qf_lib.documents_utils.document_exporting.pdf_exporter import PDFExporter
+from qf_lib.analysis.tearsheets.pandas_compat import count_assets_by_name, max_abs_exposure_by_name
 from qf_lib.plotting.charts.line_chart import LineChart
 from qf_lib.plotting.decorators.axes_label_decorator import AxesLabelDecorator
 from qf_lib.plotting.decorators.axes_position_decorator import AxesPositionDecorator
@@ -107,8 +108,7 @@ class PortfolioAnalysisSheet(AbstractDocument):
 
         # Group tickers by name and for each name and date check if there was at least one position open with any
         # of the corresponding tickers. Finally sum all the assets that had a position open on a certain date.
-        number_of_assets = positions_history.groupby(by=lambda ticker: ticker.name, axis='columns') \
-            .apply(lambda x: x.notna().any(axis=1)).sum(axis=1)
+        number_of_assets = count_assets_by_name(positions_history)
         number_of_assets_decorator = DataElementDecorator(number_of_assets)
         chart.add_decorator(number_of_assets_decorator)
         legend.add_entry(number_of_assets_decorator, "Assets")
@@ -144,8 +144,7 @@ class PortfolioAnalysisSheet(AbstractDocument):
         # Group all the tickers by their names and take the maximal total exposure for each of the groups - in case
         # if two contracts for a single asset will be included in the open positions in the portfolio at any point of
         # time, only one (with higher total exposure) will be considered while generating the top assets plot
-        assets_history = positions_history.groupby(by=lambda ticker: ticker.name, axis='columns').apply(
-            lambda x: x.abs().max(axis=1))
+        assets_history = max_abs_exposure_by_name(positions_history)
 
         for assets_number in top_assets_numbers:
             # For each date (row), find the top_assets largest assets and compute the mean value of their market value
