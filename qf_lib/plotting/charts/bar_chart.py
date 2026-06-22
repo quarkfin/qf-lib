@@ -153,7 +153,9 @@ class BarChart(Chart):
             positive_positions = data[data >= 0].reindex(data.index, fill_value=0)
             negative_positions = data[data < 0].reindex(data.index, fill_value=0)
             if last_data_element_positions[0] is not None:
-                positive_positions += last_data_element_positions[0]
+                # Use fill_value=0 so non-overlapping series accumulate
+                # correctly without producing NaN where indices don't match.
+                positive_positions = positive_positions.add(last_data_element_positions[0], fill_value=0)
 
             if last_data_element_positions[1] is not None:
                 negative_positions += last_data_element_positions[1]
@@ -177,6 +179,8 @@ class BarChart(Chart):
     def _plot_bars(self, axes, index, data, last_positions, plot_settings):
         bars = None
         if len(data) > 0:
+            if last_positions is not None:
+                last_positions = last_positions.reindex(data.index, fill_value=0)
             if self._orientation == Orientation.Vertical:
                 # The bottom parameter specifies the y coordinate of where each bar should start (it's a list of values)
                 bars = axes.bar(index, data, bottom=last_positions, width=self._thickness, **plot_settings)
