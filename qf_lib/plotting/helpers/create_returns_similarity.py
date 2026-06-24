@@ -59,13 +59,13 @@ def create_returns_similarity(strategy: QFSeries, benchmark: QFSeries, mean_norm
     scaled_strategy = preprocessing.scale(
         aggregate_strategy, with_mean=mean_normalization, with_std=std_normalization)
     strategy_data_element = DataElementDecorator(
-        scaled_strategy, bw_method="scott", fill=True, label=strategy.name, color=colors[0])
+        scaled_strategy, bw="scott", shade=True, label=strategy.name, color=colors[0])
     chart.add_decorator(strategy_data_element)
 
     scaled_benchmark = preprocessing.scale(
         aggregate_benchmark, with_mean=mean_normalization, with_std=std_normalization)
     benchmark_data_element = DataElementDecorator(
-        scaled_benchmark, bw_method="scott", fill=True, label=benchmark.name, color=colors[1])
+        scaled_benchmark, bw="scott", shade=True, label=benchmark.name, color=colors[1])
     chart.add_decorator(benchmark_data_element)
 
     # Add a title.
