@@ -15,8 +15,8 @@
 import unittest
 
 import matplotlib
+import pandas as pd
 
-from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.plotting.charts.boxplot_chart import BoxplotChart
 
 
@@ -26,8 +26,8 @@ matplotlib.use("Agg")
 class TestBoxplotChart(unittest.TestCase):
     def test_plot_handles_list_of_series_without_hue(self):
         series_list = [
-            QFSeries([1.0, 2.0, 3.0]),
-            QFSeries([1.5, 2.5, 3.5]),
+            pd.Series([1.0, 2.0, 3.0]),
+            pd.Series([1.5, 2.5, 3.5]),
         ]
         chart = BoxplotChart(series_list, linewidth=1)
 
