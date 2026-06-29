@@ -12,7 +12,7 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-from typing import List, Tuple
+from typing import Any, Dict, List, Tuple
 
 import seaborn as sns
 
@@ -37,5 +37,21 @@ class KDEChart(Chart):
 
     def apply_data_element_decorators(self, data_element_decorators: List[DataElementDecorator]):
         for data_element in data_element_decorators:
-            plot_settings = data_element.plot_settings
+            plot_settings = self._normalize_plot_settings(data_element.plot_settings)
             sns.kdeplot(data_element.data, ax=self.axes, **plot_settings)
+
+    @staticmethod
+    def _normalize_plot_settings(plot_settings: Dict[str, Any]) -> Dict[str, Any]:
+        normalized_settings = dict(plot_settings)
+
+        if "bw" in normalized_settings and "bw_method" not in normalized_settings:
+            normalized_settings["bw_method"] = normalized_settings.pop("bw")
+        else:
+            normalized_settings.pop("bw", None)
+
+        if "shade" in normalized_settings and "fill" not in normalized_settings:
+            normalized_settings["fill"] = normalized_settings.pop("shade")
+        else:
+            normalized_settings.pop("shade", None)
+
+        return normalized_settings
