@@ -20,6 +20,10 @@ from qf_lib.plotting.charts.chart import Chart
 from qf_lib.plotting.decorators.data_element_decorator import DataElementDecorator
 
 
+def _translate_deprecated_kdeplot_settings(plot_settings: dict) -> dict:
+    return {{"bw": "bw_method", "shade": "fill"}.get(k, k): v for k, v in plot_settings.items()}
+
+
 class KDEChart(Chart):
     """
     Fits and plots a univariate (bivariate to be implemented) kernel density estimate using Seaborn's kdeplot function.
@@ -37,5 +41,5 @@ class KDEChart(Chart):
 
     def apply_data_element_decorators(self, data_element_decorators: List[DataElementDecorator]):
         for data_element in data_element_decorators:
-            plot_settings = data_element.plot_settings
+            plot_settings = _translate_deprecated_kdeplot_settings(data_element.plot_settings)
             sns.kdeplot(data_element.data, ax=self.axes, **plot_settings)
