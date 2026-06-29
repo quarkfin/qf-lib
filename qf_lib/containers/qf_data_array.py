@@ -29,15 +29,16 @@ from qf_lib.containers.dimension_names import FIELDS, TICKERS, DATES
 
 class QFDataArray(xr.DataArray):
 
+    # Empty __slots__ silences xarray's FutureWarning and, crucially, stops xarray from replacing our custom
+    # __setattr__ with its own (which it does for slot-less subclasses, breaking attribute-style coord assignment).
+    __slots__ = ()
+
     def __init__(self, data, coords=None, dims=None, name=None, attrs=None, indexes: Dict[Hashable, pd.Index] = None,
                  fastpath=False):
         """
         Use the class method `create()` for creating QFDataArrays.
         DO NOT CREATE QFDataArrays using __init__() method (don't create it like this: QFDataArray()).
         The __init__ method should be used only by xr.DataArray internal methods.
-
-        Important: Regardless of the xarray warning message the __slots__ should not be implemented, as they result
-        in Recursion Error.
         """
         if not fastpath:
             self._check_if_dimensions_are_correct(coords, dims)
@@ -47,7 +48,6 @@ class QFDataArray(xr.DataArray):
     def __setattr__(self, name, value):
         # Makes it possible to set indices in this way: qf_data_array.fields = ["OPEN", "CLOSE"].
         # Otherwise one would need to set them like this: qf_data_array[FIELDS] = ["OPEN", "CLOSE"]
-        # if name == TICKERS or name == DATES or name == FIELDS:
         if name in [FIELDS, TICKERS, DATES]:
             self.__setitem__(name, value)
         else:
