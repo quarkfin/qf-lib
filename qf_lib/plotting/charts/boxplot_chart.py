@@ -14,6 +14,7 @@
 
 from typing import List, Tuple
 
+import pandas as pd
 import seaborn as sns
 
 from qf_lib.containers.series.qf_series import QFSeries
@@ -40,15 +41,29 @@ class BoxplotChart(Chart):
         self._data = data
         self.plot_settings = plot_settings
 
+    @staticmethod
+    def _normalize_data_for_seaborn(data: List[QFSeries]):
+        """Convert list-of-series input into a DataFrame before handing it to seaborn."""
+        if not isinstance(data, list):
+            return data
+        if not data:
+            return pd.DataFrame()
+
+        normalized = [series.reset_index(drop=True) for series in data]
+        return pd.concat(normalized, axis=1, ignore_index=True)
+
     def plot(self, figsize: Tuple[float, float] = None):
         self._setup_axes_if_necessary(figsize)
 
         plot_kwargs = self.plot_settings
+        plot_data = self._normalize_data_for_seaborn(self._data)
 
         # Plot the boxes.
         colors = Chart.get_axes_colors()
-        palette = sns.color_palette(colors, n_colors=len(colors))
-        sns.boxplot(ax=self.axes, data=self._data, palette=palette, **plot_kwargs)
+        n_colors = len(plot_data.columns) if isinstance(plot_data, pd.DataFrame) and len(plot_data.columns) > 0 \
+            else len(colors)
+        palette = sns.color_palette(colors, n_colors=n_colors)
+        sns.boxplot(ax=self.axes, data=plot_data, palette=palette, **plot_kwargs)
 
         self._adjust_style()
         self._apply_decorators()
