@@ -307,7 +307,10 @@ class PortfolioAnalysisSheet(AbstractDocument):
                 lambda p: p.total_pnl if isinstance(p, BacktestPositionSummary) else 0)
         })
 
-        all_positions_pnl = pd.concat([closed_positions_pnl, open_positions_pnl], sort=False)
+        pnl_columns = closed_positions_pnl.columns.union(open_positions_pnl.columns, sort=False)
+        populated_pnl = [df for df in (closed_positions_pnl, open_positions_pnl) if not df.empty]
+        all_positions_pnl = pd.concat(populated_pnl).reindex(columns=pnl_columns) \
+            if populated_pnl else QFDataFrame(columns=pnl_columns)
 
         performance_dicts_series = all_positions_pnl.groupby(by="Tickers name").apply(
             self._performance_series_for_ticker)
