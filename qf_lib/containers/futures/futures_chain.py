@@ -49,7 +49,7 @@ class FuturesChain(pd.Series):
         """
         The index consists of expiry dates of the future contracts.
         """
-        super().__init__(data=None, index=None, dtype=object, name=None, copy=False, fastpath=False)
+        super().__init__(data=None, index=None, dtype=object, name=None, copy=False)
 
         self._future_ticker = future_ticker  # type: FutureTicker
         self._data_provider = data_provider  # type: "DataProvider"
