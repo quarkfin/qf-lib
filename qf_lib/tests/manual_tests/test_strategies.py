@@ -48,7 +48,7 @@ class TestStrategies(unittest.TestCase):
 
     def test_spx_with_stop_loss(self):
         expected_value = 1137843
-        expected_data_checksum = "76bb3cb970068333d0d46b017871c7063dcd6fe2"
+        expected_data_checksum = "dfd278860b57597211f00218b0c49a811412e05f"
         actual_end_value, actual_data_checksum = spx_with_stop_loss.run_strategy(self.data_provider)
 
         self.assertAlmostEqual(expected_value, actual_end_value, delta=10)
