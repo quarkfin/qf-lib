@@ -18,6 +18,7 @@ data_providers
     bloomberg.bloomberg_data_provider.BloombergDataProvider
     bloomberg_dl.bloomberg_dl_data_provider.BloombergDLDataProvider
     csv.csv_data_provider.CSVDataProvider
+    fxmacrodata.fxmacrodata_data_provider.FXMacroDataDataProvider
     haver.haver_data_provider.HaverDataProvider
     portara.portara_data_provider.PortaraDataProvider
     quandl.quandl_data_provider.QuandlDataProvider

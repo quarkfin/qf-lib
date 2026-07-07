@@ -68,6 +68,10 @@ The core installation already includes the common built-in providers (for exampl
      - Yahoo Finance downloader for quick external data usage.
      - None for common public datasets.
      - ``pip install -e ".[yfinance]"``
+   * - ``FXMacroDataDataProvider``
+     - Daily FX spot rates from FXMacroData.
+     - Optional FXMacroData API key for authenticated access.
+     - Included in the core installation.
    * - ``AlpacaDataProvider``
      - Alpaca stocks and crypto data.
      - API key for equities (crypto can be used without key).

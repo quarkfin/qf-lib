@@ -17,7 +17,7 @@ The Backtester uses an **event-driven architecture** and simulates events such a
 or closing. It is designed to **test and evaluate any custom investment strategy**.
 
 Main features include:
-* Flexible data sourcing - the project supports the possibility of an easy selection of the data source. Currently provides financial data from **Bloomberg**, **Quandl**, **Haver Analytics** or **Portara**. To check if there are any additional dependencies necessary for any of these data providers please visit [the installation guide](https://qf-lib.readthedocs.io/en/latest/installation.html#installing-optional-data-providers).
+* Flexible data sourcing - the project supports the possibility of an easy selection of the data source. Currently provides financial data from **Bloomberg**, **Quandl**, **Haver Analytics**, **Portara**, or **FXMacroData**. To check if there are any additional dependencies necessary for any of these data providers please visit [the installation guide](https://qf-lib.readthedocs.io/en/latest/installation.html#installing-optional-data-providers).
 * Tools to prevent look-ahead bias in the backtesting environment.
 * Adapted [data containers](https://qf-lib.readthedocs.io/en/latest/reference/structure.html#containers), which extend the functionality of pandas `Series'` and `Dataframes`.
 * Summary generation - all performed studies can be summarized with a practical and informative document explaining the results. [Several document templates](https://qf-lib.readthedocs.io/en/latest/reference/structure.html#analysis) are available in the project.
