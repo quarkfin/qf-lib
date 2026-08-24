@@ -58,7 +58,6 @@ setup(
             "sphinx-copybutton>=0.5.0",
         ],
         "interactive brokers": ["ibapi"],
-        "bloomberg_beap_hapi": ["PyJWT>1.0,<2.0.0", "retrying>=1.3.3", "beap-lib==0.0.1", "requests>=2.25.1,<=2.31.0"],
         "bloomberg_dl": ["cryptography", "fastparquet", "oauthlib", "PyJWT>=2.0.0,<2.11.0", "retrying>=1.3.3",
                          "requests>=2.25.1,<=2.31.0", "requests_oauthlib", "urllib3"],
         "blpapi": ["blpapi>=3.21.0,<=3.24.4"],
