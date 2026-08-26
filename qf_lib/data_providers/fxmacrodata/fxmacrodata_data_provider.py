@@ -54,7 +54,7 @@ class FXMacroDataDataProvider(AbstractPriceDataProvider):
     _api_key_env_vars = ('FXMACRODATA_API_KEY', 'FXMD_API_KEY')
 
     def __init__(
-            self, api_key: Optional[str] = None, base_url: str = 'https://fxmacrodata.com/api/v1',
+            self, api_key: Optional[str] = None, base_url: str = 'https://api.fxmacrodata.com/v1',
             timeout: float = 30, timer: Optional[Timer] = None):
         super().__init__(timer)
         self.api_key = api_key or self._get_env_api_key()
