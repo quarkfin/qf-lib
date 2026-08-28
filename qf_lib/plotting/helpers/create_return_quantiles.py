@@ -19,6 +19,7 @@ from qf_lib.common.enums.frequency import Frequency
 from qf_lib.common.utils.returns.get_aggregate_returns import get_aggregate_returns
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.plotting.charts.boxplot_chart import BoxplotChart
+from qf_lib.plotting.charts.chart import Chart
 from qf_lib.plotting.decorators.axes_label_decorator import AxesLabelDecorator
 from qf_lib.plotting.decorators.axis_tick_labels_decorator import AxisTickLabelsDecorator
 from qf_lib.plotting.decorators.title_decorator import TitleDecorator
@@ -57,11 +58,16 @@ def create_return_quantiles(returns: QFSeries, live_start_date: datetime = None,
 
             oos_weekly = get_aggregate_returns(oos_returns, Frequency.WEEKLY, multi_index=True)
             oos_monthly = get_aggregate_returns(oos_returns, Frequency.MONTHLY, multi_index=True)
-
-            chart = BoxplotChart([in_sample_returns, oos_returns, in_sample_weekly,
-                                  oos_weekly, in_sample_monthly, oos_monthly], linewidth=1)
-
             x_labels = ["daily IS", "daily OOS", "weekly IS", "weekly OOS", "monthly IS", "monthly OOS"]
+            colors = Chart.get_axes_colors()
+            palette = [colors[i % len(colors)] for i in range(len(x_labels))]
+            chart = BoxplotChart(
+                [in_sample_returns, oos_returns, in_sample_weekly,
+                 oos_weekly, in_sample_monthly, oos_monthly],
+                linewidth=1,
+                palette=palette,
+            )
+
             tick_decorator = AxisTickLabelsDecorator(labels=x_labels, axis=Axis.X, rotation=x_axis_labels_rotation)
         else:
             chart, tick_decorator = _get_simple_quantile_chart(simple_returns)

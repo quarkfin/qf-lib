@@ -16,6 +16,7 @@ from typing import List, Tuple
 
 import seaborn as sns
 
+from qf_lib.containers.dataframe.qf_dataframe import QFDataFrame
 from qf_lib.containers.series.qf_series import QFSeries
 from qf_lib.plotting.charts.chart import Chart
 
@@ -43,12 +44,14 @@ class BoxplotChart(Chart):
     def plot(self, figsize: Tuple[float, float] = None):
         self._setup_axes_if_necessary(figsize)
 
-        plot_kwargs = self.plot_settings
-
-        # Plot the boxes.
-        colors = Chart.get_axes_colors()
-        palette = sns.color_palette(colors, n_colors=len(colors))
-        sns.boxplot(ax=self.axes, data=self._data, palette=palette, **plot_kwargs)
+        # Seaborn 0.13.2 raises when it receives a list of Series together
+        # with a palette. Keep the public qf-lib input unchanged, but pass a
+        # qf-lib DataFrame to seaborn so each series remains a separate box.
+        plot_data = QFDataFrame({
+            index: series.reset_index(drop=True)
+            for index, series in enumerate(self._data)
+        })
+        sns.boxplot(ax=self.axes, data=plot_data, **self.plot_settings)
 
         self._adjust_style()
         self._apply_decorators()
