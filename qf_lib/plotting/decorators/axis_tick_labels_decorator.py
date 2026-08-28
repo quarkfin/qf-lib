@@ -56,6 +56,11 @@ class AxisTickLabelsDecorator(ChartDecorator):
 
         if self._labels is not None:
             if self._rotation:
+                if self._tick_values is None:
+                    # Pin the tick locations first. Calling set_ticklabels() installs a
+                    # FixedFormatter, and matplotlib warns when that is combined with a
+                    # non-fixed locator because the labels can then drift off the ticks.
+                    axis.set_ticks(range(len(self._labels)))
                 axis.set_ticklabels(self._labels, ha="right", rotation_mode='anchor')
                 axis.set_tick_params(rotation=self._rotation)
             elif self._tick_values is None:
