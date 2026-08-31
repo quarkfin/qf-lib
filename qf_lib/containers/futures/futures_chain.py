@@ -142,7 +142,7 @@ class FuturesChain(pd.Series):
         if expiration_day_occurred():
             # After expiration day the FutureChain has to be regenerated in case of both FuturesAdjustmentMethods, also
             # in case of the N-th nearest contract method.
-            # This is caused by the use of last_date_in_chain variable to indicate the beginning of the the prices data
+            # This is caused by the use of last_date_in_chain variable to indicate the beginning of the prices data
             # frame, that need to be appended to the chain. An exemplary problem may occur in the following situation:
 
             # Let C1 and C2 denote two consecutive futures contracts, and let C1 expire on the 16th of July. If no

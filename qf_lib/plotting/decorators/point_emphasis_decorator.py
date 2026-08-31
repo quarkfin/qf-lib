@@ -105,7 +105,7 @@ class PointEmphasisDecorator(ChartDecorator, SimpleLegendItem):
         # Calculate the max distance between two labels that still counts as a collision.
         proximity = (axes.get_ylim()[1] - axes.get_ylim()[0]) / 20
 
-        # Go through each each decorator, to see if any point emphasis decorators overlap this one.
+        # Go through each decorator, to see if any point emphasis decorators overlap this one.
         for key, decorator in line_chart._decorators.items():
             if isinstance(decorator, PointEmphasisDecorator) and decorator._text_pos is not None and key != self.key:
                 if abs(pos[1] - decorator._text_pos[1]) < proximity:

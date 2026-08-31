@@ -199,7 +199,7 @@ class FutureTicker(Ticker, metaclass=abc.ABCMeta):
         except (LookupError, ValueError):
             # Function "get_loc(self.timer.now(), method="pad")" may raise KeyError in case if e.g. the current time
             # precedes the first date in the shifted_index.
-            # Function "iloc" may rise IndexError if the requested indexer is out-of-bonds (e.g. a high value of self.N)
+            # Function "iloc" may raise IndexError if the requested indexer is out-of-bounds (e.g. a high value of self.N)
             # Therefore, in case if the data with expiration dates is not available for the current date, the
             # _get_current_specific_ticker function will raise a LookupError.
             raise NoValidTickerException(f"No valid ticker for the FutureTicker {self._name} found on "

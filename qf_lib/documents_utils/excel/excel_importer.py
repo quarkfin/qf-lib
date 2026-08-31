@@ -85,7 +85,7 @@ class ExcelImporter:
             the name of the sheet from which the container should be imported. If no name is given, the active worksheet
             is used.
         include_index
-            if True than it is assumed that index is placed in the first column while values are starting from the 2nd
+            if True then it is assumed that index is placed in the first column while values are starting from the 2nd
             column
         include_column_names
             determines whether the first row in the specified container contains the column names.

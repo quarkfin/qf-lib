@@ -46,8 +46,8 @@ from qf_lib.data_providers.abstract_price_data_provider import AbstractPriceData
 
 class SimulatedExecutionHandler(ExecutionHandler):
     """
-    The simulated execution handler which executes an Order on the open of next bar, unless it is the ExecutionStyle
-    is the StopOrder. Then the Order is executed if the Low field for the price is lower then the limit of that Order.
+    The simulated execution handler which executes an Order on the open of next bar, unless the ExecutionStyle
+    is the StopOrder. Then the Order is executed if the Low field for the price is lower than the limit of that Order.
     StopOrders are executed at the MarketClose (if applicable) with the Low price.
     """
 

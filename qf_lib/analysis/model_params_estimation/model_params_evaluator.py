@@ -264,4 +264,4 @@ class ModelParamsEvaluationDocument:
             filename = datetime.now().strftime(filename)
             self.pdf_exporter.generate([self.document], output_sub_dir, filename)
         else:
-            raise AssertionError("The documnent is not initialized. Build the document first")
+            raise AssertionError("The document is not initialized. Build the document first")

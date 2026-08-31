@@ -90,7 +90,7 @@ class DataPresenter:
         num_of_returns = len(analysed_tms)
         frequency = str(self.model.input_data.frequency)
 
-        model_info += 'The model was build based on {:d} {:s} returns \n' \
+        model_info += 'The model was built based on {:d} {:s} returns \n' \
                       'between {:s} and {:s}. \n'.format(num_of_returns, frequency, start_date, end_date)
 
         return model_info

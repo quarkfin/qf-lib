@@ -82,7 +82,7 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
         -------
         None, PricesSeries, PricesDataFrame, QFDataArray
             If possible the result will be squeezed so that instead of returning QFDataArray (3-D structure),
-            data of lower dimensionality will be returned. The results will be either an QFDataArray (with 3 dimensions:
+            data of lower dimensionality will be returned. The results will be either a QFDataArray (with 3 dimensions:
             dates, tickers, fields), PricesDataFrame (with 2 dimensions: dates, tickers or fields.
             It is also possible to get 2 dimensions ticker and field if single date was provided), or PricesSeries
             with 1 dimension: dates. All the containers will be indexed with PriceField whenever possible
@@ -298,7 +298,7 @@ class AbstractPriceDataProvider(DataProvider, metaclass=ABCMeta):
             self, fields: Union[None, PriceField, Sequence[PriceField]]) \
             -> Union[None, str, Sequence[str]]:
         """
-        The method maps enum to sting that is recognised by the specific database.
+        The method maps enum to string that is recognised by the specific database.
 
         Parameters
         ----------

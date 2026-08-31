@@ -204,7 +204,7 @@ class ExcelExporter:
             the specified column where the number format should take place. It should be the name of the column e.g. "A"
             or "XY"
         number_format: str
-            format of the number, e.g. "0.00%". For the list of all available nuber formats please refer to openpyxl
+            format of the number, e.g. "0.00%". For the list of all available number formats please refer to openpyxl
             documentation.
         sheet_name: str
             the name of the sheet where the format should be written. If a sheet of this name doesn't exist

@@ -114,7 +114,7 @@ class PresetDataProvider(AbstractPriceDataProvider, FuturesDataProvider):
         # The PresetDataProvider does not support data aggregation for frequency lower than daily frequency
         if frequency < self.frequency and frequency <= Frequency.DAILY:
             self.logger.warning("aggregating intraday data to frequency Daily or lower is based on the time of "
-                                "underlying intrady data and might not be identical to getting daily data form the "
+                                "underlying intraday data and might not be identical to getting daily data from the "
                                 "data provider.")
 
         original_end_date = (end_date or self.timer.now()) + RelativeDelta(second=0, microsecond=0)

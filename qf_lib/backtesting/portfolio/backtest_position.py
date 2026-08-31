@@ -171,7 +171,7 @@ class BacktestPosition(Position, metaclass=ABCMeta):
         """
         Sets the current price of the security in a way that takes into account the bid-ask spread
         This is used for market valuation of the open position.
-        This method should be called every time we have have a new price
+        This method should be called every time we have a new price
         """
         self._check_if_open()
         if self._quantity > 0 and is_finite_number(bid_price):  # we are long -> use the lower (bid) price

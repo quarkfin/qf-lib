@@ -29,7 +29,7 @@ class Style:
             try:
                 del self.style[property_name]
             except KeyError:
-                self.logger.warning("The css style for proptyety {} can not be removed, as it does not exist".
+                self.logger.warning("The css style for property {} can not be removed, as it does not exist".
                                     format(property_name))
 
     def styles(self):
