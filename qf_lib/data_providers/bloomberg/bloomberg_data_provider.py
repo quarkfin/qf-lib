@@ -284,7 +284,7 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider,
         -------
         QFSeries, QFDataFrame, QFDataArray
             If possible the result will be squeezed, so that instead of returning QFDataArray, data of lower
-            dimensionality will be returned. The results will be either an QFDataArray (with 3 dimensions: date, ticker,
+            dimensionality will be returned. The results will be either a QFDataArray (with 3 dimensions: date, ticker,
             field), a QFDataFrame (with 2 dimensions: date, ticker or field; it is also possible to get 2 dimensions
             ticker and field if single date was provided) or QFSeries (with 1 dimensions: date).
             If no data is available in the database or a non existing ticker was provided an empty structure

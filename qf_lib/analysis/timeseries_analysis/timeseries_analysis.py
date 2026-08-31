@@ -274,9 +274,9 @@ class TimeseriesAnalysis(TimeseriesAnalysisDTO):
             (short_name, long_name, value, unit)
 
             short_name: is a short string representation that might be treated as a key and should not have spaces in it
-            long_name: it a nice name of the field
+            long_name: it is a nice name of the field
             value: is the string representation of the value rounded to 2 decimal places
-            unit: is an unit in which the value is expressed. Might be empty.
+            unit: is a unit in which the value is expressed. Might be empty.
 
             All elements of the tuple are strings (including the value, which is a string representation
             of the rounded number)

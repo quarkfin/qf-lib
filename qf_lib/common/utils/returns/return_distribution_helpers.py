@@ -53,7 +53,7 @@ def generate_random_paths(sample_len: int, sample_size: int, mean: float, std: f
     sample_size: int
         Number of paths simulated
     mean: float
-        mean simle return
+        mean simple return
     std: float
         standard deviation of returns
     leverage: float

@@ -199,7 +199,7 @@ class ElasticNetFactorsIdentifier(FactorsIdentifier):
 
         max_mse_limit = min_mse + mse_std
 
-        # find largest alpha lower then the given limit
+        # find largest alpha lower than the given limit
         alphas_within_the_limit = alphas[mean_square_errors < max_mse_limit]
         alpha_1se = np.max(alphas_within_the_limit)
 

@@ -44,6 +44,6 @@ def set_starting_dir_abs_path(starting_dir_abs_path: str) -> None:
     """
     global _starting_dir
     if _starting_dir is not None:
-        raise ValueError("Starting directory cannot be change once it was set")
+        raise ValueError("Starting directory cannot be changed once it was set")
     else:
         _starting_dir = starting_dir_abs_path

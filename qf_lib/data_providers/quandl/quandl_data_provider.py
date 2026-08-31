@@ -239,7 +239,7 @@ class QuandlDataProvider(AbstractPriceDataProvider):
         """
         NOTE: Only use one Quandl Database at the time. Do not mix multiple databases.
         """
-        tickers = list(tickers)  # allows iterating the sequence more then once
+        tickers = list(tickers)  # allows iterating the sequence more than once
         tickers_map = {t.as_string(): t for t in tickers}
 
         kwargs = {}
