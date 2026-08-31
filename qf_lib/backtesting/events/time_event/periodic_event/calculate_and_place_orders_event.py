@@ -18,7 +18,7 @@ class CalculateAndPlaceOrdersPeriodicEvent(PeriodicEvent):
     """
     Class used for triggering calculation of signals and placing orders.
     Alternative class to do it is CalculateAndPlaceOrdersRegularEvent
-    This should be used as a trigger for a a strategy to run calculations.
+    This should be used as a trigger for a strategy to run calculations.
 
     Example:
         CalculateAndPlaceOrdersPeriodicEvent.set_frequency(Frequency.MIN_15)

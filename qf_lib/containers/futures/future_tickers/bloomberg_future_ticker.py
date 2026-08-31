@@ -31,7 +31,7 @@ class BloombergFutureTicker(FutureTicker, BloombergTicker):
     name: str
         Field which contains a name (or a short description) of the FutureTicker.
     family_id: str
-        Used to to verify if a specific BloombergTicker belongs to a certain futures family and to the active
+        Used to verify if a specific BloombergTicker belongs to a certain futures family and to the active
         Ticker string, which can be further used by the data provider to download the chain of corresponding Tickers.
         The family ID pattern - e.g. for Cotton, an exemplary ticker string is of the following
         form: "CTZ9 Comdty". The "Z9" part denotes the month and year codes - this is the only variable part of the

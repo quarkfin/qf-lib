@@ -288,7 +288,7 @@ class BloombergDataProvider(AbstractPriceDataProvider, TickersUniverseProvider,
             field), a QFDataFrame (with 2 dimensions: date, ticker or field; it is also possible to get 2 dimensions
             ticker and field if single date was provided) or QFSeries (with 1 dimensions: date).
             If no data is available in the database or a non existing ticker was provided an empty structure
-            (QFSeries, QFDataFrame or QFDataArray) will be returned returned.
+            (QFSeries, QFDataFrame or QFDataArray) will be returned.
         """
         if fields is None:
             raise ValueError("Fields being None is not supported by {}".format(self.__class__.__name__))

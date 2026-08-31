@@ -30,7 +30,7 @@ def max_drawdown(input_data: Union[QFSeries, QFDataFrame], frequency: Frequency 
     input_data: QFSeries, QFDataFrame
         timeseries of prices/returns
     frequency: Frequency
-        optional parameter that improves teh performance of the function it is not need to infer the frequency
+        optional parameter that improves the performance of the function it is not need to infer the frequency
 
     Returns
     -------

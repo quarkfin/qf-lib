@@ -42,8 +42,8 @@ def capture_ratio(strategy: QFSeries, benchmark: QFSeries, upside_capture: bool,
         True - for upside capture ratio
         False - for downside capture ratio
     frequency: Frequency
-        Frequency on which the the ratio is evaluated.
-        For example Frequency.MONTHLY will result in evaluating the ration based on Monthly returns.
+        Frequency on which the ratio is evaluated.
+        For example Frequency.MONTHLY will result in evaluating the ratio based on Monthly returns.
 
     Returns
     -------

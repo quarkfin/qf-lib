@@ -50,9 +50,9 @@ class VolatilityManager:
             how many periods do we need in order to implement the reallocation.
             1 means that already on close of the current day we adjust for the realised volatility of that day
         min_leverage: float
-            min leverage the the function is allowed to apply
+            min leverage the function is allowed to apply
         max_leverage: float
-            max leverage the the function is allowed to apply
+            max leverage the function is allowed to apply
         Returns
         -------
         SimpleReturnsSeries

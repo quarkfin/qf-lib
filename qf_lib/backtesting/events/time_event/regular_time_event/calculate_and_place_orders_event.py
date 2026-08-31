@@ -19,7 +19,7 @@ from qf_lib.backtesting.events.time_event.regular_time_event.regular_market_even
 class CalculateAndPlaceOrdersRegularEvent(RegularMarketEvent):
     """
     Class implementing the logic for all triggering regular calculation of signals and placing orders.
-    This should be used as a trigger for a a strategy to run calculations.
+    This should be used as a trigger for a strategy to run calculations.
 
     Example:
         trigger_time {"hour": 13, "minute": 30, "second": 0, "microsecond": 0}
