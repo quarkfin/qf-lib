@@ -52,6 +52,7 @@ class FXMacroDataDataProvider(AbstractPriceDataProvider):
     """
 
     _api_key_env_vars = ('FXMACRODATA_API_KEY', 'FXMD_API_KEY')
+    _max_pages = 1000
 
     def __init__(
             self, api_key: Optional[str] = None, base_url: str = 'https://api.fxmacrodata.com/v1',
@@ -130,23 +131,36 @@ class FXMacroDataDataProvider(AbstractPriceDataProvider):
 
     def _get_rows(
             self, ticker: FXMacroDataTicker, start_date: datetime, end_date: datetime) -> Sequence[dict]:
-        params = urlencode({
-            'start_date': start_date.strftime('%Y-%m-%d'),
-            'end_date': end_date.strftime('%Y-%m-%d'),
-        })
-        url = (
-            f'{self.base_url}/forex/{ticker.base_ccy.lower()}/{ticker.quote_ccy.lower()}?{params}'
-        )
-        request = Request(url)
-        if self.api_key:
-            request.add_header('X-API-Key', self.api_key)
-        with urlopen(request, timeout=self.timeout) as response:
-            payload = json.loads(response.read().decode('utf-8'))
-        if isinstance(payload, dict):
-            return payload.get('data', [])
-        if isinstance(payload, list):
-            return payload
-        return []
+        # The API returns at most 100 rows per request (newest first), so page through
+        # the window with offset until pagination.has_more is false.
+        rows = []
+        offset = 0
+        for _ in range(self._max_pages):
+            params = urlencode({
+                'start_date': start_date.strftime('%Y-%m-%d'),
+                'end_date': end_date.strftime('%Y-%m-%d'),
+                'limit': 100,
+                'offset': offset,
+            })
+            url = (
+                f'{self.base_url}/forex/{ticker.base_ccy.lower()}/{ticker.quote_ccy.lower()}?{params}'
+            )
+            request = Request(url)
+            if self.api_key:
+                request.add_header('X-API-Key', self.api_key)
+            with urlopen(request, timeout=self.timeout) as response:
+                payload = json.loads(response.read().decode('utf-8'))
+            if isinstance(payload, list):
+                return rows + payload
+            if not isinstance(payload, dict):
+                break
+            page = payload.get('data') or []
+            rows.extend(page)
+            pagination = payload.get('pagination')
+            if not page or not isinstance(pagination, dict) or not pagination.get('has_more'):
+                break
+            offset = pagination.get('next_offset') or offset + len(page)
+        return rows
 
     def _rows_to_data_array(
             self, tickers_data: Dict[FXMacroDataTicker, Sequence[dict]],

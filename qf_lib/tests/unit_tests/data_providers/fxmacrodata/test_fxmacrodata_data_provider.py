@@ -77,7 +77,7 @@ def test_get_price__single_ticker_many_fields(mock_urlopen, provider):
     request = mock_urlopen.call_args.args[0]
     assert request.full_url == (
         'https://example.com/v1/forex/eur/usd?'
-        'start_date=2024-01-02&end_date=2024-01-03'
+        'start_date=2024-01-02&end_date=2024-01-03&limit=100&offset=0'
     )
     assert dict(request.header_items())['X-api-key'] == API_KEY
     assert mock_urlopen.call_args.kwargs['timeout'] == 30
@@ -107,6 +107,34 @@ def test_get_price__single_field_many_tickers(mock_urlopen, provider):
     assert isinstance(result, PricesSeries)
     assert result.loc[FXMacroDataTicker('EURUSD')] == 1.101
     assert result.loc[FXMacroDataTicker('GBPUSD')] == 1.252
+
+
+@patch('qf_lib.data_providers.fxmacrodata.fxmacrodata_data_provider.urlopen')
+def test_get_price__follows_pagination(mock_urlopen, provider):
+    mock_urlopen.side_effect = [
+        FXMacroDataResponse({
+            'data': [{'date': '2024-01-04', 'val': 1.104}, {'date': '2024-01-03', 'val': 1.103}],
+            'pagination': {'has_more': True, 'next_offset': 2},
+        }),
+        FXMacroDataResponse({
+            'data': [{'date': '2024-01-02', 'val': 1.102}],
+            'pagination': {'has_more': False, 'next_offset': None},
+        }),
+    ]
+
+    result = provider.get_price(
+        FXMacroDataTicker('EURUSD'),
+        PriceField.Close,
+        str_to_date('2024-01-02'),
+        str_to_date('2024-01-04'),
+        Frequency.DAILY,
+        look_ahead_bias=True
+    )
+
+    urls = [call.args[0].full_url for call in mock_urlopen.call_args_list]
+    assert urls[0].endswith('limit=100&offset=0')
+    assert urls[1].endswith('limit=100&offset=2')
+    assert result.tolist() == [1.102, 1.103, 1.104]
 
 
 def test_get_history__unsupported_frequency(provider):
