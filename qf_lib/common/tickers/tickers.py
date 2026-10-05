@@ -336,6 +336,62 @@ class YFinanceTicker(Ticker):
             return [YFinanceTicker(t) for t in ticker_str]
 
 
+class FXMacroDataTicker(Ticker):
+    """Representation of FXMacroData FX spot tickers.
+
+    Examples
+    --------
+    ``FXMacroDataTicker("EURUSD")`` and ``FXMacroDataTicker("EUR", "USD")``
+    both represent the EUR/USD spot rate.
+    """
+    def __init__(self, base_ccy: str, quote_ccy: Optional[str] = None,
+                 security_type: SecurityType = SecurityType.FX,
+                 point_value: int = 1):
+        if quote_ccy is None:
+            base_ccy, quote_ccy = self._parse_pair(base_ccy)
+        else:
+            base_ccy = self._normalise_currency(base_ccy)
+            quote_ccy = self._normalise_currency(quote_ccy)
+        super().__init__(base_ccy + quote_ccy, security_type, point_value, quote_ccy)
+        self._base_ccy = base_ccy
+        self._quote_ccy = quote_ccy
+        self._name = f'{base_ccy}/{quote_ccy}'
+
+    @classmethod
+    def from_string(self, ticker_str: Union[str, Sequence[str]]) -> Union['Ticker', Sequence['Ticker']]:
+        if isinstance(ticker_str, str):
+            return FXMacroDataTicker(ticker_str)
+        else:
+            return [FXMacroDataTicker(t) for t in ticker_str]
+
+    @property
+    def base_ccy(self) -> str:
+        return self._base_ccy
+
+    @property
+    def quote_ccy(self) -> str:
+        return self._quote_ccy
+
+    @staticmethod
+    def _normalise_currency(currency: str) -> str:
+        currency = currency.strip().upper()
+        if len(currency) != 3 or not currency.isalpha():
+            raise ValueError('FXMacroData currencies must use three-letter ISO codes.')
+        return currency
+
+    @classmethod
+    def _parse_pair(cls, ticker: str):
+        ticker = ticker.strip().upper()
+        if ticker.endswith('=X'):
+            ticker = ticker[:-2]
+        ticker = ticker.replace('/', '').replace('-', '').replace('_', '')
+        if len(ticker) != 6 or not ticker.isalpha():
+            raise ValueError(
+                "FXMacroData tickers must be currency pairs such as 'EURUSD' or 'EUR/USD'."
+            )
+        return ticker[:3], ticker[3:]
+
+
 class AlpacaTicker(Ticker):
     def __init__(self, ticker: str, security_type: SecurityType = SecurityType.STOCK,
                  point_value: int = 1, currency: Optional[str] = None):

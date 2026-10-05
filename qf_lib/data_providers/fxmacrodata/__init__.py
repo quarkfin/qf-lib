@@ -11,12 +11,4 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
-from qf_lib.data_providers.binance_dp.binance_data_provider import BinanceDataProvider
-from qf_lib.data_providers.bloomberg import BloombergDataProvider
-from qf_lib.data_providers.csv.csv_data_provider import CSVDataProvider
 from qf_lib.data_providers.fxmacrodata.fxmacrodata_data_provider import FXMacroDataDataProvider
-from qf_lib.data_providers.haver import HaverDataProvider
-from qf_lib.data_providers.quandl.quandl_data_provider import QuandlDataProvider
-from qf_lib.data_providers.yfinance.yfinance_data_provider import YFinanceDataProvider
-from qf_lib.data_providers.alpaca_py.alpaca_data_provider import AlpacaDataProvider
-from qf_lib.data_providers.bloomberg_dl.bloomberg_dl_data_provider import BloombergDLDataProvider

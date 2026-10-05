@@ -188,6 +188,8 @@ per data provider so that the provider can interpret the identifier correctly.
      - Nasdaq Data Link (Quandl).
    * - ``YFinanceTicker``
      - Yahoo Finance. Example: ``YFinanceTicker("SPY")``.
+   * - ``FXMacroDataTicker``
+     - FXMacroData daily FX spot rates. Example: ``FXMacroDataTicker("EURUSD")``.
    * - ``AlpacaTicker``
      - Alpaca Markets (equities and crypto). Example: ``AlpacaTicker("AAPL", SecurityType.STOCK)``.
    * - ``BinanceTicker``
@@ -307,6 +309,8 @@ Providers that usually do not need settings files
 
 - ``CSVDataProvider`` / ``PortaraDataProvider``: configured directly via file paths in Python code.
 - ``YFinanceDataProvider``: no settings keys required for standard usage.
+- ``FXMacroDataDataProvider``: accepts an ``api_key`` constructor argument, or reads
+  ``FXMACRODATA_API_KEY`` / ``FXMD_API_KEY`` environment variables when present.
 - ``AlpacaDataProvider``: credentials are usually passed directly to constructor arguments.
 - ``BinanceDataProvider``: credentials are typically handled via client configuration rather than QF-Lib settings.
 - ``PresetDataProvider`` / ``PrefetchingDataProvider``: wrapper providers; they inherit configuration from source data.
@@ -537,6 +541,9 @@ the project extras in :doc:`../installation` (section ``Installing optional data
    * - :class:`~qf_lib.data_providers.yfinance.yfinance_data_provider.YFinanceDataProvider`
      - Yahoo Finance historical data
      - ``pip install -e ".[yfinance]"``
+   * - :class:`~qf_lib.data_providers.fxmacrodata.fxmacrodata_data_provider.FXMacroDataDataProvider`
+     - FXMacroData daily FX spot rates
+     - none
    * - :class:`~qf_lib.data_providers.quandl.quandl_data_provider.QuandlDataProvider`
      - Nasdaq Data Link (Quandl)
      - ``pip install -e ".[quandl]"``
@@ -575,6 +582,27 @@ YFinanceDataProvider
         PriceField.Close,
         str_to_date("2020-01-01"),
         str_to_date("2020-12-31"),
+    )
+
+
+FXMacroDataDataProvider
+=======================
+
+.. code-block:: python
+
+    from qf_lib.common.enums.frequency import Frequency
+    from qf_lib.common.enums.price_field import PriceField
+    from qf_lib.common.tickers.tickers import FXMacroDataTicker
+    from qf_lib.common.utils.dateutils.string_to_date import str_to_date
+    from qf_lib.data_providers.fxmacrodata.fxmacrodata_data_provider import FXMacroDataDataProvider
+
+    provider = FXMacroDataDataProvider()
+    prices = provider.get_price(
+        FXMacroDataTicker("EURUSD"),
+        PriceField.Close,
+        str_to_date("2024-01-01"),
+        str_to_date("2024-12-31"),
+        Frequency.DAILY,
     )
 
 
