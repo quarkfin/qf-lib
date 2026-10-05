@@ -171,3 +171,47 @@ def test_get_price__uses_env_api_key(mock_urlopen, monkeypatch):
 
     request = mock_urlopen.call_args.args[0]
     assert dict(request.header_items())['X-api-key'] == 'env_key'
+
+
+@patch('qf_lib.data_providers.fxmacrodata.fxmacrodata_data_provider.urlopen')
+def test_get_price__api_key_not_forwarded_on_redirect(mock_urlopen, provider):
+    from urllib.request import HTTPRedirectHandler
+    mock_urlopen.return_value = FXMacroDataResponse({'data': []})
+
+    provider.get_price(
+        FXMacroDataTicker('EURUSD'),
+        PriceField.Close,
+        str_to_date('2024-01-02'),
+        str_to_date('2024-01-03'),
+        Frequency.DAILY,
+        look_ahead_bias=True
+    )
+
+    request = mock_urlopen.call_args.args[0]
+    redirected = HTTPRedirectHandler().redirect_request(
+        request, None, 302, 'Found', {}, 'https://elsewhere.example/v1/forex')
+    assert redirected.get_header('X-api-key') is None
+    assert API_KEY not in str(redirected.header_items())
+
+
+def test_api_key_with_control_characters_is_rejected_without_echo():
+    with pytest.raises(ValueError) as excinfo:
+        FXMacroDataDataProvider(api_key='test-key\nInjected: 1')
+    assert 'test-key' not in str(excinfo.value)
+    assert FXMacroDataDataProvider(api_key=' test-key ').api_key == 'test-key'
+
+
+@pytest.mark.parametrize('payload', [{'detail': 'Invalid API key'}, {'data': {'a': 1}}, 'oops'])
+@patch('qf_lib.data_providers.fxmacrodata.fxmacrodata_data_provider.urlopen')
+def test_get_price__error_body_raises_clean_error(mock_urlopen, payload, provider):
+    mock_urlopen.return_value = FXMacroDataResponse(payload)
+
+    with pytest.raises(ValueError, match='Unexpected FXMacroData response'):
+        provider.get_price(
+            FXMacroDataTicker('EURUSD'),
+            PriceField.Close,
+            str_to_date('2024-01-02'),
+            str_to_date('2024-01-03'),
+            Frequency.DAILY,
+            look_ahead_bias=True
+        )

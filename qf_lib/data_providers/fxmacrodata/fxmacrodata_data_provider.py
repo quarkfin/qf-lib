@@ -58,7 +58,9 @@ class FXMacroDataDataProvider(AbstractPriceDataProvider):
             self, api_key: Optional[str] = None, base_url: str = 'https://api.fxmacrodata.com/v1',
             timeout: float = 30, timer: Optional[Timer] = None):
         super().__init__(timer)
-        self.api_key = api_key or self._get_env_api_key()
+        self.api_key = (api_key or self._get_env_api_key() or '').strip() or None
+        if self.api_key and any(ch.isspace() or not ch.isprintable() for ch in self.api_key):
+            raise ValueError('FXMacroData API key contains whitespace or control characters.')
         self.base_url = base_url.rstrip('/')
         self.timeout = timeout
 
@@ -147,14 +149,17 @@ class FXMacroDataDataProvider(AbstractPriceDataProvider):
             )
             request = Request(url)
             if self.api_key:
-                request.add_header('X-API-Key', self.api_key)
+                # Unredirected headers are not copied onto a redirected request,
+                # so the key is never forwarded to another host.
+                request.add_unredirected_header('X-API-Key', self.api_key)
             with urlopen(request, timeout=self.timeout) as response:
                 payload = json.loads(response.read().decode('utf-8'))
-            if isinstance(payload, list):
-                return rows + payload
+            page = payload.get('data') if isinstance(payload, dict) else payload
+            if not isinstance(page, list) or not all(isinstance(row, dict) for row in page):
+                detail = payload.get('detail') if isinstance(payload, dict) else None
+                raise ValueError(f'Unexpected FXMacroData response: {detail or "missing data"}')
             if not isinstance(payload, dict):
-                break
-            page = payload.get('data') or []
+                return rows + page
             rows.extend(page)
             pagination = payload.get('pagination')
             if not page or not isinstance(pagination, dict) or not pagination.get('has_more'):
